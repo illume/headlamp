@@ -435,6 +435,10 @@ export async function fetchAndExecutePlugins(
               secrets['runCmd-scriptjs-headlamp_minikubeprerelease/manage-minikube.js'];
           }
 
+          if (isPackage['@headlamp-k8s/az']) {
+            secretsToReturn['runCmd-az'] = secrets['runCmd-az'];
+          }
+
           return secretsToReturn;
         },
         getArgValues: (pluginName, pluginPath, allowedPermissions) => {
@@ -463,6 +467,31 @@ export async function fetchAndExecutePlugins(
               [pluginRunCommand, pluginPath],
             ];
           }
+          // now for az
+          if (isPackage['@headlamp-k8s/az']) {
+            // We construct a pluginRunCommand that has private
+            //  - permission secrets
+            //  - stored desktopApiSend and desktopApiReceive functions that can't be modified
+            function pluginRunCommand(
+              command: 'minikube' | 'az' | 'scriptjs',
+              args: string[],
+              options: {}
+            ): ReturnType<typeof internalRunCommand> {
+              return internalRunCommand(
+                command,
+                args,
+                options,
+                allowedPermissions,
+                pluginDesktopApiSend,
+                pluginDesktopApiReceive
+              );
+            }
+            return [
+              ['pluginRunCommand', 'pluginPath'],
+              [pluginRunCommand, pluginPath],
+            ];
+          }
+
           return [[], []];
         },
         PrivateFunction,

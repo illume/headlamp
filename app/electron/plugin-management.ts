@@ -1027,8 +1027,13 @@ export function defaultPluginsDir() {
  * @returns {boolean} True if the folder is a valid plugin bin folder, false otherwise.
  */
 function validPluginBinFolder(folder: string): boolean {
-  // For now only allow "headlamp_minikubeprerelease" and "headlamp_minikube"
-  return folder === 'headlamp_minikube' || folder === 'headlamp_minikubeprerelease';
+  // For now only allow these
+  return (
+    folder === 'headlamp_minikube' ||
+    folder === 'headlamp_minikubeprerelease' ||
+    folder === 'headlamp_az' ||
+    folder === 'headlamp_azprerelease'
+  );
 }
 
 /**

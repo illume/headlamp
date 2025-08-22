@@ -136,6 +136,8 @@ const COMMANDS_WITH_CONSENT = {
     'minikube logs',
     'minikube addons',
     'minikube ssh',
+    'az login',
+    'az version',
     'scriptjs headlamp_minikubeprerelease/manage-minikube.js',
     'scriptjs headlamp_minikube/manage-minikube.js',
     'scriptjs minikube/manage-minikube.js',
@@ -347,6 +349,7 @@ export function setupRunCmdHandlers(mainWindow: BrowserWindow | null, ipcMain: E
   let pluginPermissionSecretsSent = false;
   const permissionSecrets = {
     'runCmd-minikube': cryptoRandom(),
+    'runCmd-az': cryptoRandom(),
     'runCmd-scriptjs-minikube/manage-minikube.js': cryptoRandom(),
     'runCmd-scriptjs-headlamp_minikube/manage-minikube.js': cryptoRandom(),
     'runCmd-scriptjs-headlamp_minikubeprerelease/manage-minikube.js': cryptoRandom(),
