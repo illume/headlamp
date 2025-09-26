@@ -200,9 +200,12 @@ jobs:
       with:
         path: ~/image-cache
         key: ${{ steps.cache-image-restore.outputs.cache-primary-key }}
-    - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+    - name: Upload e2e and accessibility artifacts
+      uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
       if: always()
       with:
-        name: e2e-tests-report
-        path: e2e-tests/playwright-report/
+        name: e2e-and-a11y-report
+        path: |
+          e2e-tests/playwright-report/
+          ${{ github.workspace }}/a11y-artifacts
         retention-days: 30
