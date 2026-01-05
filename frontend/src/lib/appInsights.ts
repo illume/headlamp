@@ -28,7 +28,7 @@ let reactPlugin: ReactPlugin | null = null;
  * @returns The connection string or undefined if not set.
  */
 export function getAppInsightsConnectionString(): string | undefined {
-  return import.meta.env.REACT_APP_HEADLAMP_APP_INSIGHTS_CONNECTION;
+  return import.meta.env.HEADLAMP_APP_INSIGHTS_CONNECTION;
 }
 
 /**
