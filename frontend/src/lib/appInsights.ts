@@ -23,21 +23,56 @@ import { useHistory } from 'react-router-dom';
 let appInsights: ApplicationInsights | null = null;
 let reactPlugin: ReactPlugin | null = null;
 
+const APP_INSIGHTS_ENABLED_KEY = 'headlamp-app-insights-enabled';
+
 /**
  * Gets the Application Insights connection string from environment variable.
  * @returns The connection string or undefined if not set.
  */
 export function getAppInsightsConnectionString(): string | undefined {
-  return import.meta.env.HEADLAMP_APP_INSIGHTS_CONNECTION;
+  return import.meta.env.REACT_APP_INSIGHTS_CONNECTION;
 }
 
 /**
- * Checks if Application Insights is enabled.
+ * Checks if the App Insights connection string is configured.
+ * @returns True if the connection string env var is set, false otherwise.
+ */
+export function isAppInsightsConfigured(): boolean {
+  const connectionString = getAppInsightsConnectionString();
+  return !!connectionString && connectionString.trim().length > 0;
+}
+
+/**
+ * Gets the telemetry enabled setting from localStorage.
+ * @returns True if telemetry is enabled, false otherwise. Defaults to false.
+ */
+export function isTelemetryEnabled(): boolean {
+  try {
+    return localStorage.getItem(APP_INSIGHTS_ENABLED_KEY) === 'true';
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Sets the telemetry enabled setting in localStorage.
+ * @param enabled - Whether telemetry should be enabled.
+ */
+export function setTelemetryEnabled(enabled: boolean): void {
+  try {
+    localStorage.setItem(APP_INSIGHTS_ENABLED_KEY, enabled ? 'true' : 'false');
+  } catch {
+    // Ignore localStorage errors
+  }
+}
+
+/**
+ * Checks if Application Insights should be active.
+ * Requires both the connection string to be configured AND telemetry to be enabled in settings.
  * @returns True if enabled, false otherwise.
  */
 export function isAppInsightsEnabled(): boolean {
-  const connectionString = getAppInsightsConnectionString();
-  return !!connectionString && connectionString.trim().length > 0;
+  return isAppInsightsConfigured() && isTelemetryEnabled();
 }
 
 /**

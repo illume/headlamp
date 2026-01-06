@@ -28,7 +28,7 @@ export default defineConfig({
   define: {
     global: 'globalThis',
   },
-  envPrefix: ['REACT_APP_', 'HEADLAMP_'],
+  envPrefix: 'REACT_APP_',
   base: process.env.PUBLIC_URL,
   server: {
     port: 3000,

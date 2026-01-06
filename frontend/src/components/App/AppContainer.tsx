@@ -21,7 +21,7 @@ import { BrowserRouter, HashRouter, useHistory, useLocation } from 'react-router
 import { getBaseUrl } from '../../helpers/getBaseUrl';
 import { setBackendToken } from '../../helpers/getHeadlampAPIHeaders';
 import { isElectron } from '../../helpers/isElectron';
-import { AppInsightsInitializer } from '../../lib/appInsights';
+import { AppInsightsInitializer, isAppInsightsConfigured } from '../../lib/appInsights';
 import Plugins from '../../plugin/Plugins';
 import store from '../../redux/stores/store';
 import { uiSlice } from '../../redux/uiSlice';
@@ -142,7 +142,7 @@ export default function AppContainer() {
         }}
       />
       <Router>
-        <AppInsightsInitializer />
+        {isAppInsightsConfigured() && <AppInsightsInitializer />}
         <PreviousRouteProvider>
           <MonacoEditorLoaderInitializer>
             <Plugins />

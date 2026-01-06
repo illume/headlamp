@@ -3,14 +3,13 @@ import { pluginReact } from '@rsbuild/plugin-react';
 import { pluginSvgr } from '@rsbuild/plugin-svgr';
 import { pluginNodePolyfill } from '@rsbuild/plugin-node-polyfill';
 
-// Dynamically inject REACT_APP_ and HEADLAMP_ environment variables
-const envPrefixes = ['REACT_APP_', 'HEADLAMP_'];
+// Dynamically inject REACT_APP_ environment variables
 const reactAppEnvVars = Object.entries(process.env)
-  .filter(([key, value]) => envPrefixes.some(prefix => key.startsWith(prefix)) && value !== undefined)
+  .filter(([key, value]) => key.startsWith('REACT_APP_') && value !== undefined)
   .reduce((env, [key, value]) => {
     env[`import.meta.env.${key}`] = JSON.stringify(value);
     return env;
-  }, { 'import.meta.env': '{}' } as Record<string, string>);
+  }, { 'import.meta.env': '{}' });
 
 export default defineConfig({
   source: {

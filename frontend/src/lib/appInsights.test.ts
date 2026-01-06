@@ -17,6 +17,8 @@
 import {
   getAppInsights,
   getReactPlugin,
+  isTelemetryEnabled,
+  setTelemetryEnabled,
   trackEvent,
   trackException,
 } from './appInsights';
@@ -76,6 +78,27 @@ describe('appInsights', () => {
 
     it('should handle event with properties', () => {
       expect(() => trackEvent('test-event', { prop1: 'value1' })).not.toThrow();
+    });
+  });
+
+  describe('telemetry settings', () => {
+    beforeEach(() => {
+      localStorage.clear();
+    });
+
+    it('should return false by default for isTelemetryEnabled', () => {
+      expect(isTelemetryEnabled()).toBe(false);
+    });
+
+    it('should persist telemetry enabled setting', () => {
+      setTelemetryEnabled(true);
+      expect(isTelemetryEnabled()).toBe(true);
+    });
+
+    it('should persist telemetry disabled setting', () => {
+      setTelemetryEnabled(true);
+      setTelemetryEnabled(false);
+      expect(isTelemetryEnabled()).toBe(false);
     });
   });
 });
