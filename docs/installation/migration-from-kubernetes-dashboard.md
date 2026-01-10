@@ -7,129 +7,88 @@ sidebar_position: 5
 
 This guide helps you migrate from the Kubernetes Dashboard to Headlamp, providing equivalent installation methods and feature comparisons.
 
+**In this guide:**
+- [Quick Migration Path](#quick-migration-path) - Get started in minutes
+- [Installation Method Comparison](#installation-method-comparison) - Helm and YAML deployment options
+- [Configuration Mapping](#common-configuration-mapping) - Translate Dashboard settings to Headlamp
+- [Authentication](#authentication) - Set up access control
+- [Feature Comparison](#feature-comparison) - Find equivalent features
+- [Advanced Scenarios](#advanced-migration-scenarios) - OIDC, RBAC, and more
+
 ## Quick Migration Path
+
+:::tip
+This is a basic quickstart guide. For production deployments or advanced configurations, please review the complete [installation documentation](./index.mdx) and [in-cluster deployment guide](./in-cluster/index.md).
+:::
 
 If you're currently using Kubernetes Dashboard and want to quickly switch to Headlamp, here's the simplest migration path:
 
-### Prerequisites
-
-- Kubernetes 1.21+
-- kubectl configured with access to your cluster
-- Helm 3.x (for Helm-based installation)
-
 ### Basic Migration Steps
 
-1. **Uninstall Kubernetes Dashboard** (optional - you can run both in parallel during migration):
+1. **Install Headlamp** using Helm:
 
    ```bash
-   # If installed via Helm
-   helm uninstall kubernetes-dashboard -n kubernetes-dashboard
-   
-   # If installed via YAML (legacy v2.x)
-   kubectl delete -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
-   ```
-
-2. **Install Headlamp**:
-
-   ```bash
-   # Add Headlamp repository
    helm repo add headlamp https://kubernetes-sigs.github.io/headlamp/
-   helm repo update
-   
-   # Install Headlamp in the same namespace for easier transition
    helm install headlamp headlamp/headlamp --namespace kube-system
    ```
 
-3. **Access Headlamp**:
+2. **Access Headlamp**:
 
    ```bash
    kubectl port-forward -n kube-system svc/headlamp 8080:80
    ```
    
-   Open http://localhost:8080 in your browser.
+   Then open http://localhost:8080 in your browser.
 
-4. **Authenticate**: Use your existing service account token or create a new one (see [Authentication](#authentication) section below).
+3. **Authenticate**: Use your existing service account token or create a new one (see [Authentication](#authentication) section).
+
+4. **Uninstall Kubernetes Dashboard** (optional - you can run both in parallel during migration):
+
+   ```bash
+   # If installed via Helm
+   helm uninstall kubernetes-dashboard -n kubernetes-dashboard
+   ```
 
 That's it! Headlamp is now running and ready to use.
+
+For more deployment options (YAML, custom configurations, ingress setup), see the sections below.
 
 ## Installation Method Comparison
 
 ### Helm Chart Installation
 
-Both Kubernetes Dashboard (v7+) and Headlamp support Helm chart installation, which is the recommended method for both.
-
-#### Kubernetes Dashboard (v7+)
+**Kubernetes Dashboard** (v7+) requires Helm and uses Kong Gateway:
 
 ```bash
-# Add repository
 helm repo add kubernetes-dashboard https://kubernetes.github.io/dashboard/
-helm repo update
-
-# Install
-helm upgrade --install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard \
+helm install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard \
   --create-namespace --namespace kubernetes-dashboard
-
-# Access
-kubectl -n kubernetes-dashboard port-forward svc/kubernetes-dashboard-kong-proxy 8443:443
 ```
 
-**Chart location**: https://artifacthub.io/packages/helm/k8s-dashboard/kubernetes-dashboard
+[Kubernetes Dashboard Helm Chart](https://artifacthub.io/packages/helm/k8s-dashboard/kubernetes-dashboard)
 
-#### Headlamp Equivalent
+**Headlamp** uses a simpler architecture without Kong Gateway:
 
 ```bash
-# Add repository
 helm repo add headlamp https://kubernetes-sigs.github.io/headlamp/
-helm repo update
-
-# Install
 helm install headlamp headlamp/headlamp --namespace kube-system
-
-# Access
-kubectl port-forward -n kube-system svc/headlamp 8080:80
 ```
 
-**Chart location**: https://artifacthub.io/packages/helm/headlamp/headlamp
+[Headlamp Helm Chart](https://artifacthub.io/packages/helm/headlamp/headlamp)
 
-**Key differences**:
-- Headlamp uses a simpler architecture without requiring Kong Gateway
-- Headlamp defaults to port 80 (service) mapping to port 4466 (container)
-- Headlamp has a smaller resource footprint
-- Both support customization via values.yaml
+### YAML Deployment
 
-### YAML Deployment (Legacy)
-
-#### Kubernetes Dashboard (v2.x - Legacy)
-
-Before v7, Kubernetes Dashboard could be installed via a single YAML file:
+**Kubernetes Dashboard** v2.x (legacy - deprecated in v7+):
 
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.7.0/aio/deploy/recommended.yaml
-
-# Access
-kubectl proxy
-# Visit: http://localhost:8001/api/v1/namespaces/kubernetes-dashboard/services/https:kubernetes-dashboard:/proxy/
 ```
 
-**Note**: This method is deprecated and no longer supported in v7+.
-
-#### Headlamp Equivalent
-
-Headlamp maintains a simple YAML deployment option:
+**Headlamp** maintains an actively supported YAML option:
 
 ```bash
 kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/headlamp/main/kubernetes-headlamp.yaml
-
-# Access
-kubectl port-forward -n kube-system svc/headlamp 8080:80
 ```
-
-Then open http://localhost:8080 in your browser.
-
-**Key differences**:
-- Headlamp continues to support both Helm and YAML deployment methods
-- Headlamp's YAML deployment is actively maintained and recommended for simple use cases
-- Headlamp deploys to `kube-system` namespace by default (vs `kubernetes-dashboard`)
 
 ## Common Configuration Mapping
 
@@ -186,20 +145,17 @@ ingress:
 
 ### Installing with Custom Values
 
-**Kubernetes Dashboard**:
-```bash
-helm install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard \
-  --namespace kubernetes-dashboard \
-  --set service.type=LoadBalancer \
-  --set protocolHttp=true
-```
+Both platforms support customization via Helm values. Example for enabling ingress:
 
-**Headlamp Equivalent**:
 ```bash
+# Headlamp
 helm install headlamp headlamp/headlamp \
   --namespace kube-system \
-  --set service.type=LoadBalancer
+  --set ingress.enabled=true \
+  --set ingress.hosts[0].host=headlamp.example.com
 ```
+
+See the [Headlamp Helm Chart documentation](https://github.com/kubernetes-sigs/headlamp/tree/main/charts/headlamp) for all available values.
 
 ## Authentication
 
@@ -348,38 +304,37 @@ If users have bookmarked specific Dashboard URLs:
 
 You may need to update bookmarks, but the structure is similar.
 
-## Plugin Migration
+## Extending Headlamp with Plugins
 
-If you've extended Kubernetes Dashboard with custom metrics or features, consider migrating them to Headlamp plugins:
+Headlamp's plugin system allows you to customize and extend functionality beyond what's available in the base installation. This is a unique advantage over Kubernetes Dashboard.
 
-- Browse available plugins: https://artifacthub.io/packages/search?kind=21&sort=relevance&page=1
-- Plugin development guide: https://headlamp.dev/docs/latest/development/plugins/
-- Official plugin examples: https://github.com/headlamp-k8s/plugins
+**Why use plugins:**
+- Add custom resource visualizations
+- Integrate with your CI/CD pipelines
+- Create custom dashboards for your team
+- Add organization-specific workflows
 
-## Getting Help
+**Getting started with plugins:**
+- Browse available plugins at [Artifact Hub](https://artifacthub.io/packages/search?kind=21&sort=relevance&page=1)
+- Learn about [plugin development](https://headlamp.dev/docs/latest/development/plugins/)
+- See [official plugin examples](https://github.com/headlamp-k8s/plugins)
+- Deploy plugins [using the plugin manager in-cluster](./in-cluster/index.md#plugin-management)
 
-If you encounter issues during migration:
+## Resources and Support
 
-- **Documentation**: https://headlamp.dev/docs/
-- **FAQ**: https://headlamp.dev/docs/latest/faq
-- **Slack**: #headlamp channel in [Kubernetes Slack](https://kubernetes.slack.com)
-- **GitHub Issues**: https://github.com/kubernetes-sigs/headlamp/issues
-- **Monthly Community Meeting**: https://zoom-lfx.platform.linuxfoundation.org/meetings/headlamp
-
-## Next Steps
-
-After migration:
-
-1. **Explore plugins**: Extend Headlamp with community plugins
-2. **Try desktop app**: Install the desktop version for local cluster management
-3. **Customize**: Adjust Helm values to match your requirements
-4. **Share feedback**: Join the community and share your migration experience
-
-## Additional Resources
-
+**Documentation:**
 - [Headlamp Documentation](https://headlamp.dev/docs/)
-- [Headlamp GitHub Repository](https://github.com/kubernetes-sigs/headlamp)
-- [Headlamp Helm Chart](https://github.com/kubernetes-sigs/headlamp/tree/main/charts/headlamp)
 - [Installation Guide](./index.mdx)
 - [In-cluster Installation](./in-cluster/index.md)
 - [Desktop Installation](./desktop/index.mdx)
+- [FAQ](https://headlamp.dev/docs/latest/faq)
+
+**Get Help:**
+- [GitHub Issues](https://github.com/kubernetes-sigs/headlamp/issues)
+- [#headlamp channel](https://kubernetes.slack.com/messages/headlamp) in Kubernetes Slack
+- [Monthly Community Meeting](https://zoom-lfx.platform.linuxfoundation.org/meetings/headlamp)
+
+**After Migration:**
+1. Explore community plugins to extend functionality
+2. Try the desktop app for local cluster management
+3. Join the community and share your experience
