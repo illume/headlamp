@@ -161,7 +161,35 @@ See the [Headlamp Helm Chart documentation](https://github.com/kubernetes-sigs/h
 
 Both Kubernetes Dashboard and Headlamp support similar authentication methods.
 
-### Service Account Token (Recommended)
+### Available Authentication Guides
+
+Headlamp provides comprehensive guides for various authentication providers:
+
+- [Microsoft Azure Entra ID](./in-cluster/azure-entra-id/index.md)
+- [Amazon EKS](./in-cluster/eks/index.md)
+- [AKS Cluster OAuth](./in-cluster/aks-cluster-oauth/index.md)
+- [Keycloak](./in-cluster/keycloak/index.md)
+- [Dex](./in-cluster/dex/index.md)
+
+### OIDC Authentication
+
+Both support OpenID Connect (OIDC) for single sign-on.
+
+**Kubernetes Dashboard**: Requires complex configuration with additional authentication proxy.
+
+**Headlamp**: Built-in OIDC support with simpler configuration:
+
+```bash
+helm install headlamp headlamp/headlamp \
+  --namespace kube-system \
+  --set config.oidc.clientID=your-client-id \
+  --set config.oidc.clientSecret=your-client-secret \
+  --set config.oidc.issuerURL=https://your-issuer-url
+```
+
+See [OIDC documentation](./in-cluster/oidc.md) for detailed setup instructions.
+
+### Service Account Token
 
 The process is nearly identical for both:
 
@@ -194,33 +222,9 @@ The process is nearly identical for both:
 
 4. **Use the token**: Paste it into the Headlamp login screen.
 
-### OIDC Authentication
-
-Both support OpenID Connect (OIDC) for single sign-on.
-
-**Kubernetes Dashboard**: Requires complex configuration with additional authentication proxy.
-
-**Headlamp**: Built-in OIDC support with simpler configuration:
-
-```bash
-helm install headlamp headlamp/headlamp \
-  --namespace kube-system \
-  --set config.oidc.clientID=your-client-id \
-  --set config.oidc.clientSecret=your-client-secret \
-  --set config.oidc.issuerURL=https://your-issuer-url
-```
-
-See [OIDC documentation](./in-cluster/oidc.md) for detailed setup instructions.
-
-#### Available Authentication Guides
-
-- [Microsoft Azure Entra ID](./in-cluster/azure-entra-id/index.md)
-- [Amazon EKS](./in-cluster/eks/index.md)
-- [AKS Cluster OAuth](./in-cluster/aks-cluster-oauth/index.md)
-- [Keycloak](./in-cluster/keycloak/index.md)
-- [Dex](./in-cluster/dex/index.md)
-
 ## Using Headlamp for Kubernetes Dashboard Users
+
+If you're familiar with Kubernetes Dashboard, here's how to find equivalent features in Headlamp:
 
 | Kubernetes Dashboard Feature | Headlamp Equivalent |
 |------------------------------|---------------------|
@@ -260,7 +264,7 @@ If you have custom RBAC roles for Dashboard users:
 2. Users with the same service accounts will have the same permissions
 3. Headlamp respects Kubernetes RBAC automatically
 
-### Running Both in Parallel
+### Running Kubernetes Dashboard and Headlamp in Parallel
 
 During migration, you can run both dashboards simultaneously:
 
