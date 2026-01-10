@@ -212,7 +212,8 @@ helm install headlamp headlamp/headlamp \
 
 See [OIDC documentation](./in-cluster/oidc.md) for detailed setup instructions.
 
-**Available authentication guides:**
+#### Available Authentication Guides
+
 - [Microsoft Azure Entra ID](./in-cluster/azure-entra-id/index.md)
 - [Amazon EKS](./in-cluster/eks/index.md)
 - [AKS Cluster OAuth](./in-cluster/aks-cluster-oauth/index.md)
@@ -288,13 +289,14 @@ You may need to update bookmarks, but the structure is similar.
 
 If you're using OAuth2 Proxy with Kubernetes Dashboard for SSO and user impersonation, you can achieve similar functionality with Headlamp.
 
-**How Kubernetes Dashboard used OAuth2 Proxy:**
+#### How Kubernetes Dashboard Used OAuth2 Proxy
+
 - OAuth2 Proxy handled external authentication (e.g., via Azure AD, Keycloak, GitHub)
 - The proxy set impersonation headers (`Impersonate-User`, `Impersonate-Group`)
 - A service account with impersonation RBAC rights made API calls on behalf of users
 - User access was controlled via Kubernetes RBAC based on impersonated identity
 
-**How to configure Headlamp with OAuth2 Proxy:**
+#### How to Configure Headlamp with OAuth2 Proxy
 
 Headlamp supports integration with OAuth2 Proxy through the `meUserInfoURL` configuration option. This allows Headlamp to fetch additional user information from OAuth2 Proxy's `/oauth2/userinfo` endpoint.
 
@@ -329,7 +331,8 @@ Headlamp supports integration with OAuth2 Proxy through the `meUserInfoURL` conf
    - User permissions are controlled through Kubernetes RBAC
    - No additional impersonation setup needed on the Headlamp side
 
-**Key differences from Dashboard:**
+#### Key Differences from Dashboard
+
 - Headlamp has built-in OIDC support, reducing complexity
 - OAuth2 Proxy integration is optional but supported via `meUserInfoURL`
 - Headlamp can work directly with OIDC providers without requiring OAuth2 Proxy in many cases
@@ -340,19 +343,22 @@ Headlamp supports integration with OAuth2 Proxy through the `meUserInfoURL` conf
 
 Using a different Kubernetes extension or CNCF project? Headlamp's plugin system might already have what you need. Plugins allow you to customize and extend functionality beyond what's available in the base installation.
 
-**Popular plugins:**
+### Popular Plugins
+
 - **[Backstage](https://artifacthub.io/packages/headlamp/headlamp-plugins/backstage)** - Integrate with Backstage's service catalog
 - **[Prometheus](https://artifacthub.io/packages/headlamp/headlamp-plugins/prometheus)** - Enhanced Prometheus metrics visualization
 - **[App Catalog](https://artifacthub.io/packages/headlamp/headlamp-plugins/app-catalog)** - Browse and install applications
 - [Browse all available plugins](https://headlamp.dev/plugins)
 
-**Why use plugins:**
+### Why Use Plugins
+
 - Add custom resource visualizations
 - Integrate with your CI/CD pipelines and monitoring tools
 - Create custom dashboards for your team
 - Add organization-specific workflows
 
-**Getting started with plugins:**
+### Getting Started with Plugins
+
 - Browse the [plugin marketplace](https://headlamp.dev/plugins)
 - Learn about [plugin development](https://headlamp.dev/docs/latest/development/plugins/)
 - See [official plugin examples](https://github.com/headlamp-k8s/plugins)
