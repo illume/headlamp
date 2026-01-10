@@ -284,6 +284,58 @@ If users have bookmarked specific Dashboard URLs:
 
 You may need to update bookmarks, but the structure is similar.
 
+### OAuth2 Proxy and User Impersonation
+
+If you're using OAuth2 Proxy with Kubernetes Dashboard for SSO and user impersonation, you can achieve similar functionality with Headlamp.
+
+**How Kubernetes Dashboard used OAuth2 Proxy:**
+- OAuth2 Proxy handled external authentication (e.g., via Azure AD, Keycloak, GitHub)
+- The proxy set impersonation headers (`Impersonate-User`, `Impersonate-Group`)
+- A service account with impersonation RBAC rights made API calls on behalf of users
+- User access was controlled via Kubernetes RBAC based on impersonated identity
+
+**How to configure Headlamp with OAuth2 Proxy:**
+
+Headlamp supports integration with OAuth2 Proxy through the `meUserInfoURL` configuration option. This allows Headlamp to fetch additional user information from OAuth2 Proxy's `/oauth2/userinfo` endpoint.
+
+1. **Deploy Headlamp with OAuth2 Proxy configuration:**
+
+   ```bash
+   helm install headlamp headlamp/headlamp \
+     --namespace kube-system \
+     --set config.oidc.clientID=$CLIENT_ID \
+     --set config.oidc.clientSecret=$CLIENT_SECRET \
+     --set config.oidc.issuerURL=$ISSUER_URL \
+     --set config.oidc.meUserInfoURL=/oauth2/userinfo
+   ```
+
+   Or via values.yaml:
+   ```yaml
+   config:
+     oidc:
+       clientID: "your-client-id"
+       clientSecret: "your-client-secret"
+       issuerURL: "https://your-issuer-url"
+       meUserInfoURL: "/oauth2/userinfo"
+   ```
+
+2. **Configure OAuth2 Proxy:**
+   - Set up OAuth2 Proxy as a reverse proxy in front of Headlamp
+   - Configure it to inject authentication headers
+   - See the [AKS with OAuth2 Proxy tutorial](./in-cluster/aks-cluster-oauth/index.md) for a complete example
+
+3. **RBAC Configuration:**
+   - The same RBAC rules you had for Dashboard users apply to Headlamp
+   - User permissions are controlled through Kubernetes RBAC
+   - No additional impersonation setup needed on the Headlamp side
+
+**Key differences from Dashboard:**
+- Headlamp has built-in OIDC support, reducing complexity
+- OAuth2 Proxy integration is optional but supported via `meUserInfoURL`
+- Headlamp can work directly with OIDC providers without requiring OAuth2 Proxy in many cases
+
+**Note:** For production deployments with OAuth2 Proxy, refer to the [AKS cluster OAuth tutorial](./in-cluster/aks-cluster-oauth/index.md) which provides a complete working example with Azure Entra ID.
+
 ## Extending Headlamp with Plugins
 
 Using a different Kubernetes extension or CNCF project? Headlamp's plugin system might already have what you need. Plugins allow you to customize and extend functionality beyond what's available in the base installation.
