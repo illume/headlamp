@@ -12,13 +12,13 @@ This guide helps you migrate from the Kubernetes Dashboard to Headlamp, providin
 - [Installation Method Comparison](#installation-method-comparison) - Helm and YAML deployment options
 - [Configuration Mapping](#common-configuration-mapping) - Translate Dashboard settings to Headlamp
 - [Authentication](#authentication) - Set up access control
-- [Feature Comparison](#feature-comparison) - Find equivalent features
+- [Using Headlamp for Kubernetes Dashboard Users](#using-headlamp-for-kubernetes-dashboard-users) - Find equivalent features
 - [Advanced Scenarios](#advanced-migration-scenarios) - OIDC, RBAC, and more
 
 ## Quick Migration Path
 
 :::tip
-This is a basic quickstart guide. For production deployments or advanced configurations, please review the complete [installation documentation](./index.mdx) and [in-cluster deployment guide](./in-cluster/index.md).
+This is a basic quickstart guide. For production deployments or advanced configurations, please review the complete [installation documentation](./index.mdx) and [in-cluster deployment guide](./in-cluster/index.md). Running both Kubernetes Dashboard and Headlamp in parallel before removing Dashboard is a good practice during migration.
 :::
 
 If you're currently using Kubernetes Dashboard and want to quickly switch to Headlamp, here's the simplest migration path:
@@ -212,34 +212,14 @@ helm install headlamp headlamp/headlamp \
 
 See [OIDC documentation](./in-cluster/oidc.md) for detailed setup instructions.
 
-## Feature Comparison
+**Available authentication guides:**
+- [Microsoft Azure Entra ID](./in-cluster/azure-entra-id/index.md)
+- [Amazon EKS](./in-cluster/eks/index.md)
+- [AKS Cluster OAuth](./in-cluster/aks-cluster-oauth/index.md)
+- [Keycloak](./in-cluster/keycloak/index.md)
+- [Dex](./in-cluster/dex/index.md)
 
-### What You Get in Both
-
-Both Kubernetes Dashboard and Headlamp provide:
-
-- ✅ View and manage cluster resources (Pods, Deployments, Services, etc.)
-- ✅ View logs and execute into containers
-- ✅ Create, edit, and delete resources
-- ✅ RBAC-based access control
-- ✅ Multi-cluster support
-- ✅ Real-time resource updates
-- ✅ Resource metrics and monitoring
-
-### Headlamp Additional Features
-
-Headlamp provides additional capabilities:
-
-- ✅ **Plugin system**: Extend functionality with custom plugins
-- ✅ **Desktop app**: Run as a local desktop application (Windows, Mac, Linux)
-- ✅ **Modern UI**: Built with React and Material-UI
-- ✅ **Dark mode**: Built-in dark mode support
-- ✅ **Helm support**: Install, upgrade, and uninstall Helm charts directly from the UI (when enabled)
-- ✅ **Resource editor**: Edit resources with inline documentation
-- ✅ **Better performance**: Lighter resource footprint
-- ✅ **Active development**: Regular updates and new features
-
-### If You Use... in Dashboard
+## Using Headlamp for Kubernetes Dashboard Users
 
 | Kubernetes Dashboard Feature | Headlamp Equivalent |
 |------------------------------|---------------------|
@@ -306,35 +286,45 @@ You may need to update bookmarks, but the structure is similar.
 
 ## Extending Headlamp with Plugins
 
-Headlamp's plugin system allows you to customize and extend functionality beyond what's available in the base installation. This is a unique advantage over Kubernetes Dashboard.
+Using a different Kubernetes extension or CNCF project? Headlamp's plugin system might already have what you need. Plugins allow you to customize and extend functionality beyond what's available in the base installation.
+
+**Popular plugins:**
+- **[Backstage](https://artifacthub.io/packages/headlamp/headlamp-plugins/backstage)** - Integrate with Backstage's service catalog
+- **[Prometheus](https://artifacthub.io/packages/headlamp/headlamp-plugins/prometheus)** - Enhanced Prometheus metrics visualization
+- **[App Catalog](https://artifacthub.io/packages/headlamp/headlamp-plugins/app-catalog)** - Browse and install applications
+- [Browse all available plugins](https://headlamp.dev/plugins)
 
 **Why use plugins:**
 - Add custom resource visualizations
-- Integrate with your CI/CD pipelines
+- Integrate with your CI/CD pipelines and monitoring tools
 - Create custom dashboards for your team
 - Add organization-specific workflows
 
 **Getting started with plugins:**
-- Browse available plugins at [Artifact Hub](https://artifacthub.io/packages/search?kind=21&sort=relevance&page=1)
+- Browse the [plugin marketplace](https://headlamp.dev/plugins)
 - Learn about [plugin development](https://headlamp.dev/docs/latest/development/plugins/)
 - See [official plugin examples](https://github.com/headlamp-k8s/plugins)
-- Deploy plugins [using the plugin manager in-cluster](./in-cluster/index.md#plugin-management)
+- Deploy plugins [in-cluster with the plugin manager](./in-cluster/index.md#plugin-management)
+- Install plugins [in the desktop app](./desktop/plugins-install-desktop.md)
 
 ## Resources and Support
 
-**Documentation:**
+### Documentation
+
 - [Headlamp Documentation](https://headlamp.dev/docs/)
 - [Installation Guide](./index.mdx)
 - [In-cluster Installation](./in-cluster/index.md)
 - [Desktop Installation](./desktop/index.mdx)
 - [FAQ](https://headlamp.dev/docs/latest/faq)
 
-**Get Help:**
+### Get Help
+
 - [GitHub Issues](https://github.com/kubernetes-sigs/headlamp/issues)
 - [#headlamp channel](https://kubernetes.slack.com/messages/headlamp) in Kubernetes Slack
 - [Monthly Community Meeting](https://zoom-lfx.platform.linuxfoundation.org/meetings/headlamp)
 
-**After Migration:**
+### After Migration
+
 1. Explore community plugins to extend functionality
 2. Try the desktop app for local cluster management
 3. Join the community and share your experience
