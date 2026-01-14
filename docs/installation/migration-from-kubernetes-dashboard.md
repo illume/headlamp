@@ -259,28 +259,7 @@ If you have custom RBAC roles for Dashboard users:
 
 ### Running Kubernetes Dashboard and Headlamp in Parallel
 
-During migration, you can run both dashboards simultaneously:
-
-```bash
-# Kubernetes Dashboard in its own namespace
-helm install kubernetes-dashboard kubernetes-dashboard/kubernetes-dashboard \
-  --namespace kubernetes-dashboard
-
-# Headlamp in kube-system
-helm install headlamp headlamp/headlamp \
-  --namespace kube-system
-```
-
-This allows gradual user migration and comparison before full switchover.
-
-### Migrating Bookmarks and URLs
-
-If users have bookmarked specific Dashboard URLs:
-
-- **Dashboard URL pattern**: `/#!/<resource>/<namespace>/<name>`
-- **Headlamp URL pattern**: `/<resource>/<namespace>/<name>`
-
-You may need to update bookmarks, but the structure is similar.
+During migration, you can run both dashboards simultaneously. This allows gradual user migration and comparison before full switchover.
 
 ### OAuth2 Proxy and User Impersonation
 
