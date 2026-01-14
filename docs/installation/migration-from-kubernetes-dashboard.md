@@ -25,29 +25,33 @@ If you're currently using Kubernetes Dashboard and want to quickly switch to Hea
 
 ### Basic Migration Steps
 
-1. **Install Headlamp** using Helm:
+#### 1. Install Headlamp using Helm
 
-   ```bash
-   helm repo add headlamp https://kubernetes-sigs.github.io/headlamp/
-   helm install headlamp headlamp/headlamp --namespace kube-system
-   ```
+```bash
+helm repo add headlamp https://kubernetes-sigs.github.io/headlamp/
+helm install headlamp headlamp/headlamp --namespace kube-system
+```
 
-2. **Access Headlamp**:
+#### 2. Access Headlamp
 
-   ```bash
-   kubectl port-forward -n kube-system svc/headlamp 8080:80
-   ```
-   
-   Then open http://localhost:8080 in your browser.
+```bash
+kubectl port-forward -n kube-system svc/headlamp 8080:80
+```
 
-3. **Authenticate**: Use your existing service account token or create a new one (see [Authentication](#authentication) section).
+Then open http://localhost:8080 in your browser.
 
-4. **Uninstall Kubernetes Dashboard** (optional - you can run both in parallel during migration):
+#### 3. Authenticate
 
-   ```bash
-   # If installed via Helm
-   helm uninstall kubernetes-dashboard -n kubernetes-dashboard
-   ```
+Use your existing service account token or create a new one (see [Authentication](#authentication) section).
+
+#### 4. Uninstall Kubernetes Dashboard (Optional)
+
+You can run both in parallel during migration:
+
+```bash
+# If installed via Helm
+helm uninstall kubernetes-dashboard -n kubernetes-dashboard
+```
 
 That's it! Headlamp is now running and ready to use.
 
@@ -175,10 +179,6 @@ Headlamp provides comprehensive guides for various authentication providers:
 
 Both support OpenID Connect (OIDC) for single sign-on.
 
-**Kubernetes Dashboard**: Requires complex configuration with additional authentication proxy.
-
-**Headlamp**: Built-in OIDC support with simpler configuration:
-
 ```bash
 helm install headlamp headlamp/headlamp \
   --namespace kube-system \
@@ -209,15 +209,8 @@ The process is nearly identical for both:
 
 3. **Generate token**:
 
-   For Kubernetes 1.24+:
    ```bash
    kubectl create token headlamp-admin -n kube-system
-   ```
-
-   For older versions:
-   ```bash
-   kubectl get secret $(kubectl get sa headlamp-admin -n kube-system -o jsonpath='{.secrets[0].name}') \
-     -n kube-system -o jsonpath='{.data.token}' | base64 --decode
    ```
 
 4. **Use the token**: Paste it into the Headlamp login screen.
@@ -351,7 +344,9 @@ Using a different Kubernetes extension or CNCF project? Headlamp's plugin system
 
 - **[Backstage](https://artifacthub.io/packages/headlamp/headlamp-plugins/backstage)** - Integrate with Backstage's service catalog
 - **[Prometheus](https://artifacthub.io/packages/headlamp/headlamp-plugins/prometheus)** - Enhanced Prometheus metrics visualization
-- **[App Catalog](https://artifacthub.io/packages/headlamp/headlamp-plugins/app-catalog)** - Browse and install applications
+- **[Helm App Catalog](https://artifacthub.io/packages/headlamp/headlamp-plugins/app-catalog)** - Browse and install applications
+- **[Cert-Manager](https://artifacthub.io/packages/headlamp/headlamp-plugins/cert-manager)** - Manage TLS certificates
+- **[Flux](https://artifacthub.io/packages/headlamp/headlamp-plugins/flux)** - GitOps continuous delivery
 - [Browse all available plugins](https://headlamp.dev/plugins)
 
 ### Why Use Plugins
