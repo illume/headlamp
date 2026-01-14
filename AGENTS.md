@@ -28,6 +28,7 @@ default_agent: "@dev-agent"
 > - `/docs/development/index.md` - Main development guide with build/run commands
 > - `/docs/development/frontend.md` - Frontend development guide
 > - `/docs/development/backend.md` - Backend development guide with testing commands
+> - `/docs/development/app.md` - Desktop app development guide
 > - `/docs/development/testing.md` - Load testing guide
 > - `/docs/development/architecture.md` - Architecture documentation
 > - `/docs/development/plugins/index.md` - Plugin system overview
@@ -83,7 +84,7 @@ should NOT unless explicitly requested or strictly necessary for the change
 - **`backend/`** — Go server and API; see `/backend/README.md` and `/docs/development/backend.md` for server commands.
 - **`docs/`** — all developer and user docs; reference specific files under `docs/` for workflows.
 - **`plugins/`** — plugin system and examples; see `/plugins/README.md` and `/docs/development/plugins/`.
-- **`app/`** — desktop application (Electron); see `/app/README.md`.
+- **`app/`** — desktop application (Electron); see `/app/README.md` and `/docs/development/app.md` for build/run/test commands.
 - **CI & infra:** `.github/workflows/`, Dockerfiles (`/Dockerfile`, `/Dockerfile.plugins`), Kubernetes manifests (`kubernetes-headlamp*.yaml`), Helm charts (`/charts/`) — treat as manual-review-only.
 
 ---
@@ -117,10 +118,13 @@ should NOT unless explicitly requested or strictly necessary for the change
 - **Lint backend (fix):** `npm run backend:lint:fix` (from `/package.json`, documented in `/docs/development/backend.md`)
 - **Lint frontend:** `npm run frontend:lint` (from `/package.json`)
 - **Lint frontend (fix):** `npm run frontend:lint:fix` (from `/package.json`)
+- **Lint app:** `npm run app:lint` (from `/package.json`, documented in `/docs/development/app.md`)
+- **Lint app (fix):** `npm run app:lint:fix` (from `/package.json`, documented in `/docs/development/app.md`)
 
 #### Format commands (from `/package.json` and `/docs/development/backend.md`):
 - **Format backend:** `npm run backend:format` (from `/package.json`, documented in `/docs/development/backend.md`)
 - **Format and lint frontend:** `npm run frontend:lint:fix` (from `/package.json`)
+- **Format app:** `npm run app:format` (from `/package.json`, documented in `/docs/development/app.md`)
 
 #### Documentation generation (from `/package.json` and `/docs/development/frontend.md`):
 - **Generate API docs:** `npm run docs` (from `/package.json`, documented in `/docs/development/frontend.md`)
@@ -227,14 +231,25 @@ should NOT unless explicitly requested or strictly necessary for the change
   3. `npm run backend:test` (from `/package.json`, documented in `/docs/development/backend.md`)
   4. `npm run backend:format` (from `/package.json`, documented in `/docs/development/backend.md`)
 
-#### Example 3: Documentation update
+#### Example 3: Desktop app code fix
+- **Files to change:** `app/electron/example.ts` (example path)
+- **Rationale:** Fix window management issue in Electron app
+- **Commands to validate:**
+  1. `npm run app:install` (from `/package.json`)
+  2. `npm run app:lint:fix` (from `/package.json`, documented in `/docs/development/app.md`)
+  3. `npm run app:format` (from `/package.json`, documented in `/docs/development/app.md`)
+  4. `npm run app:lint` (from `/package.json`, documented in `/docs/development/app.md`)
+  5. `npm run app:tsc` (from `/package.json`, documented in `/docs/development/app.md`)
+  6. `npm run app:test` (from `/package.json`, documented in `/docs/development/app.md`)
+
+#### Example 4: Documentation update
 - **Files to change:** `docs/development/index.md` (from consulted files list)
 - **Rationale:** Clarify local dev startup steps to match current npm scripts
 - **Commands to validate:**
   - Run the documented commands exactly as written and confirm they succeed
   - For doc-only changes, testing commands is sufficient; no build needed
 
-#### Example 4: Plugin development
+#### Example 5: Plugin development
 - **Files to change:** Plugin code in `/plugins/examples/` directory
 - **Rationale:** Add new plugin example
 - **Commands to validate:**
@@ -327,7 +342,8 @@ Reference: `/docs/contributing.md` and `/.github/pull_request_template.md`
 1. `/docs/development/index.md` - Primary development guide (lines 1-310)
 2. `/docs/development/frontend.md` - Frontend dev guide (lines 1-82)
 3. `/docs/development/backend.md` - Backend dev guide (lines 1-69)
-4. `/docs/development/testing.md` - Testing guide (lines 1-83)
+4. `/docs/development/app.md` - Desktop app dev guide
+5. `/docs/development/testing.md` - Testing guide (lines 1-83)
 5. `/docs/development/architecture.md` - System architecture
 6. `/docs/development/plugins/index.md` - Plugin system
 7. `/docs/development/plugins/building.md` - Building plugins
