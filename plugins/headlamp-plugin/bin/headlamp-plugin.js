@@ -95,7 +95,6 @@ function create(name, link, noInstall) {
   replaceFileVariables(packageLockPath);
   replaceFileVariables(indexPath);
   replaceFileVariables(readmePath);
-  replaceFileVariables(agentsPath);
 
   // This can be used to make testing locally easier.
   if (link) {
@@ -980,23 +979,11 @@ function upgrade(packageFolder, skipPackageUpdates, headlampPluginVersion) {
         // Make the folder in to there if it is not.
         fs.mkdirSync(path.dirname(to), { recursive: true });
         fs.copyFileSync(from, to);
-
-        // Replace variables in AGENTS.md
-        if (pathToCheck === 'AGENTS.md') {
-          const content = fs.readFileSync(to, 'utf8');
-          const updatedContent = content.replace(/\$\$\{name\}/g, packageName);
-          fs.writeFileSync(to, updatedContent);
-        }
       }
-      // Add file if it is different (but need to compare with variable replacement for AGENTS.md)
+      // Add file if it is different
       if (fs.existsSync(to)) {
-        let fromContent = fs.readFileSync(from, 'utf8');
+        const fromContent = fs.readFileSync(from, 'utf8');
         const toContent = fs.readFileSync(to, 'utf8');
-
-        // For AGENTS.md, replace variables in template before comparing
-        if (pathToCheck === 'AGENTS.md') {
-          fromContent = fromContent.replace(/\$\$\{name\}/g, packageName);
-        }
 
         if (fromContent !== toContent) {
           console.log(`Updating file: "${to}"`);

@@ -45,7 +45,6 @@ function testHeadlampPlugin() {
     checkFileExists(join('examples', plugin, 'package.json'));
     checkFileExists(join('examples', plugin, 'src', 'index.tsx'));
   });
-  console.log('✓ Example plugins are bundled correctly');
 
   // Check that official plugins are present
   const officialPlugins = ['prometheus', 'opencost', 'cert-manager', 'keda'];
@@ -67,12 +66,8 @@ function testHeadlampPlugin() {
   curDir = join('.', PACKAGE_NAME);
   run('npm', ['install', join('..', packedFile)]);
 
-  // test AGENTS.md was created and has correct package name
+  // test AGENTS.md was created
   checkFileExists(join(PACKAGE_NAME, 'AGENTS.md'));
-  const agentsContent = fs.readFileSync(join(PACKAGE_NAME, 'AGENTS.md'), 'utf8');
-  if (!agentsContent.includes(`# AGENTS.md for ${PACKAGE_NAME}`)) {
-    exit(`Error: AGENTS.md does not contain correct package name ${PACKAGE_NAME}`);
-  }
 
   // test headlamp-plugin build
   run('node', [join('..', 'bin', 'headlamp-plugin.js'), 'build']);
