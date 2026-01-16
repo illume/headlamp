@@ -53,7 +53,6 @@ function testHeadlampPlugin() {
     checkFileExists(join('official-plugins', plugin));
     checkFileExists(join('official-plugins', plugin, 'package.json'));
   });
-  console.log('✓ Official plugins are bundled correctly');
 
   run('npm', ['pack']);
 
@@ -74,7 +73,6 @@ function testHeadlampPlugin() {
   if (!agentsContent.includes(`# AGENTS.md for ${PACKAGE_NAME}`)) {
     exit(`Error: AGENTS.md does not contain correct package name ${PACKAGE_NAME}`);
   }
-  console.log('✓ AGENTS.md created with correct package name');
 
   // test headlamp-plugin build
   run('node', [join('..', 'bin', 'headlamp-plugin.js'), 'build']);
