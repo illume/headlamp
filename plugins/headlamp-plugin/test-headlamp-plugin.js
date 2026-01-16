@@ -45,6 +45,14 @@ function testHeadlampPlugin() {
   curDir = join('.', PACKAGE_NAME);
   run('npm', ['install', join('..', packedFile)]);
 
+  // test AGENTS.md was created and has correct package name
+  checkFileExists(join(PACKAGE_NAME, 'AGENTS.md'));
+  const agentsContent = fs.readFileSync(join(PACKAGE_NAME, 'AGENTS.md'), 'utf8');
+  if (!agentsContent.includes(`# AGENTS.md for ${PACKAGE_NAME}`)) {
+    exit(`Error: AGENTS.md does not contain correct package name ${PACKAGE_NAME}`);
+  }
+  console.log('✓ AGENTS.md created with correct package name');
+
   // test headlamp-plugin build
   run('node', [join('..', 'bin', 'headlamp-plugin.js'), 'build']);
   checkFileExists(join(PACKAGE_NAME, 'dist', 'main.js'));
@@ -108,6 +116,7 @@ function testHeadlampPlugin() {
     'tsconfig.json',
     join('src', 'headlamp-plugin.d.ts'),
     join('.vscode', 'extensions.json'),
+    'AGENTS.md',
   ];
   filesToRemove.forEach(file => {
     fs.rmSync(join(curDir, file), { recursive: true });
@@ -116,6 +125,7 @@ function testHeadlampPlugin() {
   checkFileExists(join(curDir, 'tsconfig.json'));
   checkFileExists(join(curDir, 'src', 'headlamp-plugin.d.ts'));
   checkFileExists(join(curDir, '.vscode', 'extensions.json'));
+  checkFileExists(join(curDir, 'AGENTS.md'));
 
   // Does it upgrade "@kinvolk/headlamp-plugin" from an old version?
   // change @kinvolk/headlamp-plugin version in package.json to an old one "^0.4.9"
