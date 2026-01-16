@@ -18,7 +18,7 @@
 
 /**
  * This script copies example plugins from plugins/examples into
- * code-examples/ directory for bundling with headlamp-plugin package.
+ * examples/ directory for bundling with headlamp-plugin package.
  */
 
 const fs = require('fs-extra');
@@ -27,19 +27,19 @@ const path = require('path');
 const scriptDir = __dirname;
 const pluginDir = path.resolve(scriptDir, '..');
 const examplesSourceDir = path.resolve(pluginDir, '..', 'examples');
-const examplesDestDir = path.resolve(pluginDir, 'code-examples');
+const examplesDestDir = path.resolve(pluginDir, 'examples');
 
 console.log('Bundling example plugins...');
 console.log(`Source: ${examplesSourceDir}`);
 console.log(`Destination: ${examplesDestDir}`);
 
-// Remove existing code-examples directory if it exists
+// Remove existing examples directory if it exists
 if (fs.existsSync(examplesDestDir)) {
-  console.log('Removing existing code-examples directory...');
+  console.log('Removing existing examples directory...');
   fs.rmSync(examplesDestDir, { recursive: true });
 }
 
-// Create code-examples directory
+// Create examples directory
 fs.mkdirSync(examplesDestDir, { recursive: true });
 
 // Get list of example plugins
@@ -72,4 +72,4 @@ examplePlugins.forEach(pluginName => {
   });
 });
 
-console.log(`Successfully bundled ${examplePlugins.length} example plugins to code-examples/`);
+console.log(`Successfully bundled ${examplePlugins.length} example plugins to examples/`);

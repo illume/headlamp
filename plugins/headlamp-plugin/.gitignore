@@ -2,6 +2,6 @@ node_modules
 kinvolk-headlamp-plugin-*.tgz
 kinvolk-headlamp-plugin-*.tar.gz
 lib
-code-examples
+examples
 official-plugins
 .temp-official-plugins

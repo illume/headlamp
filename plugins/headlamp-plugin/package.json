@@ -135,7 +135,7 @@
     "lib",
     "types",
     ".storybook",
-    "code-examples",
+    "examples",
     "official-plugins",
     "plugin-management/plugin-management.js",
     "plugin-management/multi-plugin-management.js"

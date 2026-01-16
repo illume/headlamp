@@ -35,15 +35,15 @@ function testHeadlampPlugin() {
   
   // test that example and official plugins are bundled after build
   console.log('Testing that example and official plugins are bundled...');
-  checkFileExists('code-examples');
+  checkFileExists('examples');
   checkFileExists('official-plugins');
-  
+
   // Check that example plugins are present
   const examplePlugins = ['pod-counter', 'sidebar', 'change-logo', 'custom-theme'];
   examplePlugins.forEach(plugin => {
-    checkFileExists(join('code-examples', plugin));
-    checkFileExists(join('code-examples', plugin, 'package.json'));
-    checkFileExists(join('code-examples', plugin, 'src', 'index.tsx'));
+    checkFileExists(join('examples', plugin));
+    checkFileExists(join('examples', plugin, 'package.json'));
+    checkFileExists(join('examples', plugin, 'src', 'index.tsx'));
   });
   console.log('✓ Example plugins are bundled correctly');
   

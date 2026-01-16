@@ -22,7 +22,7 @@ The following npm scripts are available for development and testing:
 
 ### Example Plugins
 
-Explore these example plugins in `node_modules/@kinvolk/headlamp-plugin/code-examples/` to learn common patterns:
+Explore these example plugins in `node_modules/@kinvolk/headlamp-plugin/examples/` to learn common patterns:
 
 - **activity** - Shows how to add activity tracking and monitoring
 - **app-menus** - Demonstrates adding custom menus to the app bar
@@ -91,32 +91,32 @@ Check out production-ready plugins in `node_modules/@kinvolk/headlamp-plugin/off
 #### Adding Items to the App Bar
 
 - **Example:** `pod-counter` - Shows `registerAppBarAction` to add items to top bar
-- **File:** `code-examples/pod-counter/src/index.tsx`
+- **File:** `examples/pod-counter/src/index.tsx`
 
 #### Customizing the Sidebar
 
 - **Example:** `sidebar` - Demonstrates `registerSidebarEntry` and `registerSidebarEntryFilter`
-- **File:** `code-examples/sidebar/src/index.tsx`
+- **File:** `examples/sidebar/src/index.tsx`
 
 #### Working with Resource Details
 
 - **Example:** `details-view` - Shows how to customize resource detail pages
-- **File:** `code-examples/details-view/src/index.tsx`
+- **File:** `examples/details-view/src/index.tsx`
 
 #### Creating Custom Tables
 
 - **Example:** `tables` - Demonstrates custom table implementations
-- **File:** `code-examples/tables/src/index.tsx`
+- **File:** `examples/tables/src/index.tsx`
 
 #### Adding Charts and Visualizations
 
 - **Example:** `resource-charts` - Shows how to add custom charts
-- **File:** `code-examples/resource-charts/src/index.tsx`
+- **File:** `examples/resource-charts/src/index.tsx`
 
 #### Theme Customization
 
 - **Example:** `custom-theme` - Demonstrates theme customization
-- **File:** `code-examples/custom-theme/src/index.tsx`
+- **File:** `examples/custom-theme/src/index.tsx`
 
 #### Internationalization (i18n)
 
