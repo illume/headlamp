@@ -32,6 +32,29 @@ function testHeadlampPlugin() {
   // Make a package file of headlamp-plugin we can test
   run('npm', ['install']);
   run('npm', ['run', 'build']);
+  
+  // test that example and official plugins are bundled after build
+  console.log('Testing that example and official plugins are bundled...');
+  checkFileExists('code-examples');
+  checkFileExists('official-plugins');
+  
+  // Check that example plugins are present
+  const examplePlugins = ['pod-counter', 'sidebar', 'change-logo', 'custom-theme'];
+  examplePlugins.forEach(plugin => {
+    checkFileExists(join('code-examples', plugin));
+    checkFileExists(join('code-examples', plugin, 'package.json'));
+    checkFileExists(join('code-examples', plugin, 'src', 'index.tsx'));
+  });
+  console.log('✓ Example plugins are bundled correctly');
+  
+  // Check that official plugins are present
+  const officialPlugins = ['prometheus', 'opencost', 'cert-manager', 'keda'];
+  officialPlugins.forEach(plugin => {
+    checkFileExists(join('official-plugins', plugin));
+    checkFileExists(join('official-plugins', plugin, 'package.json'));
+  });
+  console.log('✓ Official plugins are bundled correctly');
+  
   run('npm', ['pack']);
 
   const packedFile = fs
