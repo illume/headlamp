@@ -207,12 +207,9 @@ function testHeadlampPlugin() {
   }
 
   // test there are no @material-ui imports, they should be mui
-  if (
-    fs
-      .readFileSync(join(curDir, "src", "index.tsx"), "utf8")
-      .includes("@material-ui")
-  ) {
-    exit(`Error: @material-ui imports in ${mainJsPath}`);
+  const indexTsxPath = join(curDir, "src", "index.tsx");
+  if (fs.readFileSync(indexTsxPath, "utf8").includes("@material-ui")) {
+    exit(`Error: @material-ui imports in ${indexTsxPath}`);
   }
 }
 
