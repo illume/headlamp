@@ -24,6 +24,12 @@
 const fs = require('fs-extra');
 const path = require('path');
 const { execSync } = require('child_process');
+const {
+  getRemoteGitHash,
+  getStoredHash,
+  storeHash,
+  shouldSkipBasedOnHash,
+} = require('./git-hash-utils');
 
 const scriptDir = __dirname;
 const pluginDir = path.resolve(scriptDir, '..');
@@ -33,58 +39,11 @@ const officialPluginsRepo = 'https://github.com/headlamp-k8s/plugins.git';
 
 console.log('Fetching official plugins...');
 
-/**
- * Get the latest commit hash from the remote repository
- */
-function getRemoteHash() {
-  try {
-    const output = execSync(`git ls-remote ${officialPluginsRepo} HEAD`, {
-      encoding: 'utf8',
-    });
-    return output.split('\t')[0].trim();
-  } catch (error) {
-    console.error('Failed to get remote hash:', error.message);
-    return null;
-  }
-}
-
-/**
- * Get the stored hash from the last fetch
- */
-function getStoredHash() {
-  if (fs.existsSync(hashFile)) {
-    return fs.readFileSync(hashFile, 'utf8').trim();
-  }
-  return null;
-}
-
-/**
- * Check if we should skip fetching based on stored hash
- */
-function shouldSkipFetch() {
-  // Check if directory exists and has content
-  if (!fs.existsSync(officialPluginsDir)) {
-    return false;
-  }
-
-  const entries = fs.readdirSync(officialPluginsDir).filter(e => e !== '.git-hash');
-  if (entries.length === 0) {
-    return false;
-  }
-
-  // Check if hashes match
-  const remoteHash = getRemoteHash();
-  const storedHash = getStoredHash();
-
-  if (!remoteHash || !storedHash) {
-    return false;
-  }
-
-  return remoteHash === storedHash;
-}
+// Get the current remote hash
+const currentHash = getRemoteGitHash(officialPluginsRepo);
 
 // Check if we can skip fetching
-if (shouldSkipFetch()) {
+if (shouldSkipBasedOnHash(officialPluginsDir, hashFile, currentHash)) {
   console.log('Official plugins are already up to date (git hash matches)');
   console.log('Skipping fetch...');
   process.exit(0);
@@ -154,7 +113,7 @@ try {
   });
 
   // Store the git hash
-  fs.writeFileSync(hashFile, currentHash);
+  storeHash(hashFile, currentHash);
 
   console.log(
     `Successfully fetched ${pluginDirs.length} official plugins to official-plugins/`
