@@ -23,15 +23,77 @@
 
 const fs = require('fs-extra');
 const path = require('path');
+const { execSync } = require('child_process');
 
 const scriptDir = __dirname;
 const pluginDir = path.resolve(scriptDir, '..');
 const examplesSourceDir = path.resolve(pluginDir, '..', 'examples');
 const examplesDestDir = path.resolve(pluginDir, 'examples');
+const hashFile = path.resolve(examplesDestDir, '.git-hash');
 
 console.log('Bundling example plugins...');
 console.log(`Source: ${examplesSourceDir}`);
 console.log(`Destination: ${examplesDestDir}`);
+
+/**
+ * Get the git hash of the examples directory
+ */
+function getSourceHash() {
+  try {
+    // Get the latest commit hash that affected the examples directory
+    const output = execSync('git log -1 --format=%H -- plugins/examples', {
+      cwd: path.resolve(pluginDir, '..', '..'),
+      encoding: 'utf8',
+    });
+    return output.trim();
+  } catch (error) {
+    // If git is not available or we're not in a git repo, return null
+    console.log('Git not available or not in a git repository');
+    return null;
+  }
+}
+
+/**
+ * Get the stored hash from the last bundle
+ */
+function getStoredHash() {
+  if (fs.existsSync(hashFile)) {
+    return fs.readFileSync(hashFile, 'utf8').trim();
+  }
+  return null;
+}
+
+/**
+ * Check if we should skip bundling based on stored hash
+ */
+function shouldSkipBundle() {
+  // Check if directory exists and has content
+  if (!fs.existsSync(examplesDestDir)) {
+    return false;
+  }
+
+  const entries = fs.readdirSync(examplesDestDir).filter(e => e !== '.git-hash');
+  if (entries.length === 0) {
+    return false;
+  }
+
+  // Check if hashes match
+  const sourceHash = getSourceHash();
+  const storedHash = getStoredHash();
+
+  if (!sourceHash || !storedHash) {
+    return false;
+  }
+
+  return sourceHash === storedHash;
+}
+
+// Check if we can skip bundling
+if (shouldSkipBundle()) {
+  console.log('Example plugins are already up to date (git hash matches)');
+  console.log('Skipping bundle...');
+  process.exit(0);
+}
 
 // Remove existing examples directory if it exists
 if (fs.existsSync(examplesDestDir)) {
@@ -72,4 +134,12 @@ examplePlugins.forEach(pluginName => {
   });
 });
 
-console.log(`Successfully bundled ${examplePlugins.length} example plugins to examples/`);
+// Store the git hash if available
+const currentHash = getSourceHash();
+if (currentHash) {
+  fs.writeFileSync(hashFile, currentHash);
+  console.log(`Successfully bundled ${examplePlugins.length} example plugins to examples/`);
+  console.log(`Git hash: ${currentHash}`);
+} else {
+  console.log(`Successfully bundled ${examplePlugins.length} example plugins to examples/`);
+}
