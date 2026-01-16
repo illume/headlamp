@@ -23,179 +23,202 @@ This tests unpublished @kinvolk/headlamp-plugin package in repo.
 
 Assumes being run within the plugins/headlamp-plugin folder
 `;
-const PACKAGE_NAME = 'headlamp-myfancy';
+const PACKAGE_NAME = "headlamp-myfancy";
 
 function testHeadlampPlugin() {
   // remove some temporary files.
   cleanup();
 
   // Make a package file of headlamp-plugin we can test
-  run('npm', ['install']);
-  run('npm', ['run', 'build']);
+  run("npm", ["install"]);
+  run("npm", ["run", "build"]);
 
   // test that example and official plugins are bundled after build
-  console.log('Testing that example and official plugins are bundled...');
-  checkFileExists('examples');
-  checkFileExists('official-plugins');
+  console.log("Testing that example and official plugins are bundled...");
+  checkFileExists("examples");
+  checkFileExists("official-plugins");
 
   // Check that example plugins are present
-  const examplePlugins = ['pod-counter', 'sidebar', 'change-logo', 'custom-theme'];
-  examplePlugins.forEach(plugin => {
-    checkFileExists(join('examples', plugin));
-    checkFileExists(join('examples', plugin, 'package.json'));
-    checkFileExists(join('examples', plugin, 'src', 'index.tsx'));
+  const examplePlugins = [
+    "pod-counter",
+    "sidebar",
+    "change-logo",
+    "custom-theme",
+  ];
+  examplePlugins.forEach((plugin) => {
+    checkFileExists(join("examples", plugin));
+    checkFileExists(join("examples", plugin, "package.json"));
+    checkFileExists(join("examples", plugin, "src", "index.tsx"));
   });
 
   // Check that official plugins are present
-  const officialPlugins = ['prometheus', 'opencost', 'cert-manager', 'keda'];
-  officialPlugins.forEach(plugin => {
-    checkFileExists(join('official-plugins', plugin));
-    checkFileExists(join('official-plugins', plugin, 'package.json'));
+  const officialPlugins = ["prometheus", "opencost", "cert-manager", "keda"];
+  officialPlugins.forEach((plugin) => {
+    checkFileExists(join("official-plugins", plugin));
+    checkFileExists(join("official-plugins", plugin, "package.json"));
   });
 
   // Test that git hash skipping works by running the scripts again
-  console.log('Testing git hash skipping for bundle-examples.js...');
-  const bundleExamplesOutput = runAndCaptureOutput('node', [
-    'scripts/bundle-examples.js',
+  console.log("Testing git hash skipping for bundle-examples.js...");
+  const bundleExamplesOutput = runAndCaptureOutput("node", [
+    "scripts/bundle-examples.js",
   ]);
-  if (!bundleExamplesOutput.includes('are already up to date')) {
+  if (!bundleExamplesOutput.includes("are already up to date")) {
     throw new Error(
-      'Expected bundle-examples.js to skip bundling (git hash should match)'
+      "Expected bundle-examples.js to skip bundling (git hash should match)",
     );
   }
-  console.log('✓ bundle-examples.js correctly skipped bundling (hash matched)');
+  console.log("✓ bundle-examples.js correctly skipped bundling (hash matched)");
 
-  console.log('Testing git hash skipping for fetch-official-plugins.js...');
-  const fetchPluginsOutput = runAndCaptureOutput('node', [
-    'scripts/fetch-official-plugins.js',
+  console.log("Testing git hash skipping for fetch-official-plugins.js...");
+  const fetchPluginsOutput = runAndCaptureOutput("node", [
+    "scripts/fetch-official-plugins.js",
   ]);
-  if (!fetchPluginsOutput.includes('are already up to date')) {
+  if (!fetchPluginsOutput.includes("are already up to date")) {
     throw new Error(
-      'Expected fetch-official-plugins.js to skip fetching (git hash should match)'
+      "Expected fetch-official-plugins.js to skip fetching (git hash should match)",
     );
   }
-  console.log('✓ fetch-official-plugins.js correctly skipped fetching (hash matched)');
+  console.log(
+    "✓ fetch-official-plugins.js correctly skipped fetching (hash matched)",
+  );
 
-  run('npm', ['pack']);
+  run("npm", ["pack"]);
 
   const packedFile = fs
-    .readdirSync('.')
-    .filter(file => file.match('kinvolk-headlamp-plugin-.*gz'))[0];
-  console.log('Packed headlamp-plugin package file:', packedFile);
+    .readdirSync(".")
+    .filter((file) => file.match("kinvolk-headlamp-plugin-.*gz"))[0];
+  console.log("Packed headlamp-plugin package file:", packedFile);
 
   // Use "link" to test the repo version of the headlamp-plugin tool.
-  run('npm', ['link']);
-  run('node', ['bin/headlamp-plugin.js', 'create', PACKAGE_NAME, '--link']);
-  curDir = join('.', PACKAGE_NAME);
-  run('npm', ['install', join('..', packedFile)]);
+  run("npm", ["link"]);
+  run("node", ["bin/headlamp-plugin.js", "create", PACKAGE_NAME, "--link"]);
+  curDir = join(".", PACKAGE_NAME);
+  run("npm", ["install", join("..", packedFile)]);
 
   // test AGENTS.md was created
-  checkFileExists(join(PACKAGE_NAME, 'AGENTS.md'));
+  checkFileExists(join(PACKAGE_NAME, "AGENTS.md"));
 
   // test headlamp-plugin build
-  run('node', [join('..', 'bin', 'headlamp-plugin.js'), 'build']);
-  checkFileExists(join(PACKAGE_NAME, 'dist', 'main.js'));
+  run("node", [join("..", "bin", "headlamp-plugin.js"), "build"]);
+  checkFileExists(join(PACKAGE_NAME, "dist", "main.js"));
 
   // test headlamp-plugin build folder
-  curDir = '.';
+  curDir = ".";
   fs.rmSync(PACKAGE_NAME, { recursive: true });
-  run('node', ['bin/headlamp-plugin.js', 'create', PACKAGE_NAME, '--link']);
+  run("node", ["bin/headlamp-plugin.js", "create", PACKAGE_NAME, "--link"]);
   curDir = PACKAGE_NAME;
-  run('npm', ['install', join('..', packedFile)]);
-  curDir = '.';
-  run('node', ['bin/headlamp-plugin.js', 'build', PACKAGE_NAME]);
-  checkFileExists(join(PACKAGE_NAME, 'dist', 'main.js'));
+  run("npm", ["install", join("..", packedFile)]);
+  curDir = ".";
+  run("node", ["bin/headlamp-plugin.js", "build", PACKAGE_NAME]);
+  checkFileExists(join(PACKAGE_NAME, "dist", "main.js"));
 
-  fs.writeFileSync(join(PACKAGE_NAME, 'dist', 'extra.txt'), 'All dist/ files will be copied.');
+  fs.writeFileSync(
+    join(PACKAGE_NAME, "dist", "extra.txt"),
+    "All dist/ files will be copied.",
+  );
 
   // test extraction works
-  run('node', ['bin/headlamp-plugin.js', 'extract', '.', '.plugins']);
-  checkFileExists(join('.plugins', PACKAGE_NAME, 'main.js'));
-  checkFileExists(join('.plugins', PACKAGE_NAME, 'package.json'));
+  run("node", ["bin/headlamp-plugin.js", "extract", ".", ".plugins"]);
+  checkFileExists(join(".plugins", PACKAGE_NAME, "main.js"));
+  checkFileExists(join(".plugins", PACKAGE_NAME, "package.json"));
   // make sure extra files in dist/ folder are copied too
-  checkFileExists(join('.plugins', PACKAGE_NAME, 'extra.txt'));
+  checkFileExists(join(".plugins", PACKAGE_NAME, "extra.txt"));
 
   // test packing works
-  const tmpDir = fs.mkdtempSync('headlamp-plugin-test-');
-  run('node', ['bin/headlamp-plugin.js', 'package', PACKAGE_NAME, tmpDir]);
+  const tmpDir = fs.mkdtempSync("headlamp-plugin-test-");
+  run("node", ["bin/headlamp-plugin.js", "package", PACKAGE_NAME, tmpDir]);
   checkFileExists(join(tmpDir, `${PACKAGE_NAME}-0.1.0.tar.gz`));
   // extract archive and check files
-  const extractionFolder = join(tmpDir, 'dst');
+  const extractionFolder = join(tmpDir, "dst");
   fs.mkdirSync(extractionFolder, { recursive: true });
-  run('tar', ['-xzf', join(tmpDir, `${PACKAGE_NAME}-0.1.0.tar.gz`), '-C', extractionFolder]);
-  checkFileExists(join(extractionFolder, `${PACKAGE_NAME}`, 'main.js'));
-  checkFileExists(join(extractionFolder, `${PACKAGE_NAME}`, 'package.json'));
+  run("tar", [
+    "-xzf",
+    join(tmpDir, `${PACKAGE_NAME}-0.1.0.tar.gz`),
+    "-C",
+    extractionFolder,
+  ]);
+  checkFileExists(join(extractionFolder, `${PACKAGE_NAME}`, "main.js"));
+  checkFileExists(join(extractionFolder, `${PACKAGE_NAME}`, "package.json"));
   fs.rmSync(tmpDir, { recursive: true });
 
   // test format command and that default code is formatted correctly
   fs.rmSync(PACKAGE_NAME, { recursive: true });
-  run('node', ['bin/headlamp-plugin.js', 'create', PACKAGE_NAME, '--link']);
+  run("node", ["bin/headlamp-plugin.js", "create", PACKAGE_NAME, "--link"]);
   curDir = PACKAGE_NAME;
-  run('npm', ['install', join('..', packedFile)]);
-  run('npm', ['run', 'format']);
+  run("npm", ["install", join("..", packedFile)]);
+  run("npm", ["run", "format"]);
 
   // test lint command and default code is lint free
-  run('npm', ['run', 'lint']);
-  run('npm', ['run', 'lint-fix']);
+  run("npm", ["run", "lint"]);
+  run("npm", ["run", "lint-fix"]);
 
   // test type script error checks
-  run('npm', ['run', 'tsc']);
+  run("npm", ["run", "tsc"]);
 
   // test the storybook builds
-  run('npm', ['run', 'storybook-build']);
+  run("npm", ["run", "storybook-build"]);
 
   // test "npm run storybook" works
-  curDir = '.';
-  run('node', ['check-storybook.mjs', PACKAGE_NAME]);
+  curDir = ".";
+  run("node", ["check-storybook.mjs", PACKAGE_NAME]);
 
   curDir = PACKAGE_NAME;
 
   // test upgrade adds missing files
   const filesToRemove = [
-    'tsconfig.json',
-    join('src', 'headlamp-plugin.d.ts'),
-    join('.vscode', 'extensions.json'),
-    'AGENTS.md',
+    "tsconfig.json",
+    join("src", "headlamp-plugin.d.ts"),
+    join(".vscode", "extensions.json"),
+    "AGENTS.md",
   ];
-  filesToRemove.forEach(file => {
+  filesToRemove.forEach((file) => {
     fs.rmSync(join(curDir, file), { recursive: true });
   });
-  run('node', [join('..', 'bin', 'headlamp-plugin.js'), 'upgrade', '--skip-package-updates']);
-  checkFileExists(join(curDir, 'tsconfig.json'));
-  checkFileExists(join(curDir, 'src', 'headlamp-plugin.d.ts'));
-  checkFileExists(join(curDir, '.vscode', 'extensions.json'));
-  checkFileExists(join(curDir, 'AGENTS.md'));
+  run("node", [
+    join("..", "bin", "headlamp-plugin.js"),
+    "upgrade",
+    "--skip-package-updates",
+  ]);
+  checkFileExists(join(curDir, "tsconfig.json"));
+  checkFileExists(join(curDir, "src", "headlamp-plugin.d.ts"));
+  checkFileExists(join(curDir, ".vscode", "extensions.json"));
+  checkFileExists(join(curDir, "AGENTS.md"));
 
   // Does it upgrade "@kinvolk/headlamp-plugin" from an old version?
   // change @kinvolk/headlamp-plugin version in package.json to an old one "^0.4.9"
-  const packageJsonPath = join(curDir, 'package.json');
-  const packageJson = fs.readFileSync(packageJsonPath, 'utf8');
+  const packageJsonPath = join(curDir, "package.json");
+  const packageJson = fs.readFileSync(packageJsonPath, "utf8");
   const changedJson = packageJson
-    .split('\n')
-    .map(line =>
+    .split("\n")
+    .map((line) =>
       line.includes('"@kinvolk/headlamp-plugin"')
         ? '    "@kinvolk/headlamp-plugin": "^0.4.9"\n'
-        : line
+        : line,
     )
-    .join('\n');
+    .join("\n");
   fs.writeFileSync(packageJsonPath, changedJson);
 
   // test upgrade updates the package line, and the old version is not in there
-  run('node', [join('..', 'bin', 'headlamp-plugin.js'), 'upgrade']);
-  const oldVersion = '0.4.9';
-  if (fs.readFileSync(packageJsonPath, 'utf8').includes(oldVersion)) {
+  run("node", [join("..", "bin", "headlamp-plugin.js"), "upgrade"]);
+  const oldVersion = "0.4.9";
+  if (fs.readFileSync(packageJsonPath, "utf8").includes(oldVersion)) {
     exit(`Error: old version still in ${packageJsonPath}`);
   }
 
   // test there are no @material-ui imports, they should be mui
-  if (fs.readFileSync(join(curDir, 'src', 'index.tsx'), 'utf8').includes('@material-ui')) {
+  if (
+    fs
+      .readFileSync(join(curDir, "src", "index.tsx"), "utf8")
+      .includes("@material-ui")
+  ) {
     exit(`Error: @material-ui imports in ${mainJsPath}`);
   }
 }
 
-const fs = require('fs');
-const child_process = require('child_process');
-const path = require('path');
+const fs = require("fs");
+const child_process = require("child_process");
+const path = require("path");
 const join = path.join;
 const resolve = path.resolve;
 let curDir;
@@ -203,28 +226,28 @@ let curDir;
 function cleanup() {
   console.log(`Cleaning up. Removing temp files...`);
 
-  fs.readdirSync('.')
-    .filter(file => file.match('kinvolk-headlamp-plugin-.*gz'))
-    .forEach(file => fs.rmSync(file));
+  fs.readdirSync(".")
+    .filter((file) => file.match("kinvolk-headlamp-plugin-.*gz"))
+    .forEach((file) => fs.rmSync(file));
 
-  const foldersToRemove = [path.join('.plugins', PACKAGE_NAME), PACKAGE_NAME];
-  console.log('Temp foldersToRemove', foldersToRemove);
+  const foldersToRemove = [path.join(".plugins", PACKAGE_NAME), PACKAGE_NAME];
+  console.log("Temp foldersToRemove", foldersToRemove);
   foldersToRemove
-    .filter(folder => fs.existsSync(folder))
-    .forEach(folder => fs.rmSync(folder, { recursive: true }));
+    .filter((folder) => fs.existsSync(folder))
+    .forEach((folder) => fs.rmSync(folder, { recursive: true }));
 }
 
 function run(cmd, args) {
-  console.log('');
+  console.log("");
   console.log(
-    `Running cmd:${cmd} with args:${args.join(' ')} inside of cwd:${curDir} abs: "${resolve(
-      curDir
-    )}"`
+    `Running cmd:${cmd} with args:${args.join(" ")} inside of cwd:${curDir} abs: "${resolve(
+      curDir,
+    )}"`,
   );
-  console.log('');
+  console.log("");
   try {
     const res = child_process.spawnSync(cmd, args, {
-      stdio: 'inherit',
+      stdio: "inherit",
       cwd: curDir,
       env: process.env,
     });
@@ -232,55 +255,55 @@ function run(cmd, args) {
       throw res.error;
     }
     if (res.status !== 0) {
-      const signal = res.signal ? ` (killed by signal ${res.signal})` : '';
+      const signal = res.signal ? ` (killed by signal ${res.signal})` : "";
       exit(
-        `Error: Problem running "${cmd} ${args.join(' ')}" inside of "${curDir}" abs: "${resolve(
-          curDir
-        )}"${signal}`
+        `Error: Problem running "${cmd} ${args.join(" ")}" inside of "${curDir}" abs: "${resolve(
+          curDir,
+        )}"${signal}`,
       );
     }
   } catch (e) {
     exit(
-      `Error: Problem running "${cmd} ${args.join(' ')}" inside of "${curDir}" abs: "${resolve(
-        curDir
-      )}": ${e && e.message ? e.message : e}`
+      `Error: Problem running "${cmd} ${args.join(" ")}" inside of "${curDir}" abs: "${resolve(
+        curDir,
+      )}": ${e && e.message ? e.message : e}`,
     );
   }
 }
 
 function runAndCaptureOutput(cmd, args) {
-  console.log('');
+  console.log("");
   console.log(
-    `Running cmd:${cmd} with args:${args.join(' ')} inside of cwd:${curDir} abs: "${resolve(
-      curDir
-    )}" (capturing output)`
+    `Running cmd:${cmd} with args:${args.join(" ")} inside of cwd:${curDir} abs: "${resolve(
+      curDir,
+    )}" (capturing output)`,
   );
-  console.log('');
+  console.log("");
   try {
     const res = child_process.spawnSync(cmd, args, {
       cwd: curDir,
       env: process.env,
-      encoding: 'utf8',
+      encoding: "utf8",
     });
     if (res.error) {
       throw res.error;
     }
-    const output = (res.stdout || '') + (res.stderr || '');
+    const output = (res.stdout || "") + (res.stderr || "");
     console.log(output);
     if (res.status !== 0) {
-      const signal = res.signal ? ` (killed by signal ${res.signal})` : '';
+      const signal = res.signal ? ` (killed by signal ${res.signal})` : "";
       exit(
-        `Error: Problem running "${cmd} ${args.join(' ')}" inside of "${curDir}" abs: "${resolve(
-          curDir
-        )}"${signal}`
+        `Error: Problem running "${cmd} ${args.join(" ")}" inside of "${curDir}" abs: "${resolve(
+          curDir,
+        )}"${signal}`,
       );
     }
     return output;
   } catch (e) {
     exit(
-      `Error: Problem running "${cmd} ${args.join(' ')}" inside of "${curDir}" abs: "${resolve(
-        curDir
-      )}": ${e && e.message ? e.message : e}`
+      `Error: Problem running "${cmd} ${args.join(" ")}" inside of "${curDir}" abs: "${resolve(
+        curDir,
+      )}": ${e && e.message ? e.message : e}`,
     );
   }
 }
@@ -297,11 +320,11 @@ function exit(message) {
 }
 
 (function () {
-  if (process.argv[1].includes('test-headlamp-plugin')) {
+  if (process.argv[1].includes("test-headlamp-plugin")) {
     console.log(USAGE);
-    curDir = '.';
+    curDir = ".";
 
-    process.on('beforeExit', cleanup);
+    process.on("beforeExit", cleanup);
     testHeadlampPlugin();
   }
 })();
