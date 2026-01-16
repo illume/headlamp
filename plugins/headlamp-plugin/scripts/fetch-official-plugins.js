@@ -24,7 +24,6 @@
 const fs = require('fs-extra');
 const path = require('path');
 const { execSync } = require('child_process');
-const crypto = require('crypto');
 
 const scriptDir = __dirname;
 const pluginDir = path.resolve(scriptDir, '..');
