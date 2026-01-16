@@ -53,6 +53,29 @@ function testHeadlampPlugin() {
     checkFileExists(join('official-plugins', plugin, 'package.json'));
   });
 
+  // Test that git hash skipping works by running the scripts again
+  console.log('Testing git hash skipping for bundle-examples.js...');
+  const bundleExamplesOutput = runAndCaptureOutput('node', [
+    'scripts/bundle-examples.js',
+  ]);
+  if (!bundleExamplesOutput.includes('are already up to date')) {
+    throw new Error(
+      'Expected bundle-examples.js to skip bundling (git hash should match)'
+    );
+  }
+  console.log('✓ bundle-examples.js correctly skipped bundling (hash matched)');
+
+  console.log('Testing git hash skipping for fetch-official-plugins.js...');
+  const fetchPluginsOutput = runAndCaptureOutput('node', [
+    'scripts/fetch-official-plugins.js',
+  ]);
+  if (!fetchPluginsOutput.includes('are already up to date')) {
+    throw new Error(
+      'Expected fetch-official-plugins.js to skip fetching (git hash should match)'
+    );
+  }
+  console.log('✓ fetch-official-plugins.js correctly skipped fetching (hash matched)');
+
   run('npm', ['pack']);
 
   const packedFile = fs
@@ -224,6 +247,44 @@ function run(cmd, args) {
     );
   }
 }
+
+function runAndCaptureOutput(cmd, args) {
+  console.log('');
+  console.log(
+    `Running cmd:${cmd} with args:${args.join(' ')} inside of cwd:${curDir} abs: "${resolve(
+      curDir
+    )}" (capturing output)`
+  );
+  console.log('');
+  try {
+    const res = child_process.spawnSync(cmd, args, {
+      cwd: curDir,
+      env: process.env,
+      encoding: 'utf8',
+    });
+    if (res.error) {
+      throw res.error;
+    }
+    const output = (res.stdout || '') + (res.stderr || '');
+    console.log(output);
+    if (res.status !== 0) {
+      const signal = res.signal ? ` (killed by signal ${res.signal})` : '';
+      exit(
+        `Error: Problem running "${cmd} ${args.join(' ')}" inside of "${curDir}" abs: "${resolve(
+          curDir
+        )}"${signal}`
+      );
+    }
+    return output;
+  } catch (e) {
+    exit(
+      `Error: Problem running "${cmd} ${args.join(' ')}" inside of "${curDir}" abs: "${resolve(
+        curDir
+      )}": ${e && e.message ? e.message : e}`
+    );
+  }
+}
+
 function checkFileExists(fname) {
   if (!fs.existsSync(fname)) {
     exit(`Error: ${fname} does not exist.`);

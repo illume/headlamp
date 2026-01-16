@@ -35,10 +35,10 @@ const officialPluginsRepo = 'https://github.com/headlamp-k8s/plugins.git';
 console.log('Fetching official plugins...');
 
 // Get the current remote hash
-const currentHash = getRemoteGitHash(officialPluginsRepo);
+const remoteHash = getRemoteGitHash(officialPluginsRepo);
 
 // Check if we can skip fetching
-if (shouldSkipBasedOnHash(officialPluginsDir, hashFile, currentHash)) {
+if (shouldSkipBasedOnHash(officialPluginsDir, hashFile, remoteHash)) {
   console.log('Official plugins are already up to date (git hash matches)');
   console.log('Skipping fetch...');
   process.exit(0);
