@@ -139,7 +139,6 @@ Check out production-ready plugins in `node_modules/@kinvolk/headlamp-plugin/off
 - Follow the patterns shown in the example plugins
 - Use TypeScript for type safety
 - Keep plugins focused on a single feature or enhancement
-- Test your plugin with multiple Kubernetes clusters
 - Document your plugin's functionality in the README.md
 
 ## API Documentation
