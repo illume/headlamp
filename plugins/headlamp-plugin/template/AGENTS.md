@@ -45,6 +45,7 @@ Explore these example plugins in `node_modules/@kinvolk/headlamp-plugin/code-exa
 Check out production-ready plugins in `node_modules/@kinvolk/headlamp-plugin/official-plugins/` for advanced patterns:
 
 #### Using Custom Resource Definitions (CRDs)
+
 - **cert-manager** - Complete CRD integration for cert-manager resources
   - Files: `official-plugins/cert-manager/src/resources/` (certificate.ts, issuer.ts, clusterIssuer.ts, etc.)
   - Shows how to register and display custom resources for certificates, issuers, challenges, and orders
@@ -59,12 +60,14 @@ Check out production-ready plugins in `node_modules/@kinvolk/headlamp-plugin/off
   - Demonstrates multiple CRD deployment types (EKS Auto Mode, self-installed)
 
 #### Visualizing Relationships with Maps
+
 - **keda** - Map view showing KEDA resource relationships
   - File: `official-plugins/keda/src/mapView.tsx`
   - Uses edge creation (`makeKubeToKubeEdge`) to visualize connections between ScaledObjects, ScaledJobs, and TriggerAuthentications
   - Shows how to build graph visualizations of resource dependencies
 
 #### Adding Metrics and Charts
+
 - **prometheus** - Advanced charts for workload resources
   - Files: `official-plugins/prometheus/src/components/Chart/`
   - Provides CPU, memory, network, and disk charts using Prometheus metrics
@@ -78,6 +81,7 @@ Check out production-ready plugins in `node_modules/@kinvolk/headlamp-plugin/off
   - Demonstrates time-series data visualization with stacked area charts
 
 #### Other Advanced Patterns
+
 - **ai-assistant** - AI integration for cluster management
 - **app-catalog** - Helm chart catalog powered by ArtifactHub
 - **backstage** - Integration with Backstage developer portal
@@ -85,30 +89,37 @@ Check out production-ready plugins in `node_modules/@kinvolk/headlamp-plugin/off
 ### Key Topics and Examples
 
 #### Adding Items to the App Bar
+
 - **Example:** `pod-counter` - Shows `registerAppBarAction` to add items to top bar
 - **File:** `code-examples/pod-counter/src/index.tsx`
 
 #### Customizing the Sidebar
+
 - **Example:** `sidebar` - Demonstrates `registerSidebarEntry` and `registerSidebarEntryFilter`
 - **File:** `code-examples/sidebar/src/index.tsx`
 
 #### Working with Resource Details
+
 - **Example:** `details-view` - Shows how to customize resource detail pages
 - **File:** `code-examples/details-view/src/index.tsx`
 
 #### Creating Custom Tables
+
 - **Example:** `tables` - Demonstrates custom table implementations
 - **File:** `code-examples/tables/src/index.tsx`
 
 #### Adding Charts and Visualizations
+
 - **Example:** `resource-charts` - Shows how to add custom charts
 - **File:** `code-examples/resource-charts/src/index.tsx`
 
 #### Theme Customization
+
 - **Example:** `custom-theme` - Demonstrates theme customization
 - **File:** `code-examples/custom-theme/src/index.tsx`
 
 #### Internationalization (i18n)
+
 - Use `npm run i18n <locale>` to add new locales (e.g., `npm run i18n es` for Spanish)
 - Translation files are in `locales/<locale>/translation.json`
 - Use `useTranslation()` hook from `@kinvolk/headlamp-plugin/i18n`
@@ -134,12 +145,7 @@ Check out production-ready plugins in `node_modules/@kinvolk/headlamp-plugin/off
 ## API Documentation
 
 For detailed API documentation, visit:
+
 - [Headlamp Plugin API Reference](https://headlamp.dev/docs/latest/development/api/)
 - [Plugin Development Guide](https://headlamp.dev/docs/latest/development/plugins/)
 - [UI Component Storybook](https://headlamp.dev/docs/latest/development/frontend/#storybook)
-
-## Getting Help
-
-- Check the example plugins for similar functionality
-- Review the API documentation
-- Ask questions in the [Headlamp community](https://github.com/kubernetes-sigs/headlamp/discussions)

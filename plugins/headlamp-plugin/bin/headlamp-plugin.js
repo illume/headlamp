@@ -991,7 +991,7 @@ function upgrade(packageFolder, skipPackageUpdates, headlampPluginVersion) {
       // Add file if it is different (but need to compare with variable replacement for AGENTS.md)
       if (fs.existsSync(to)) {
         let fromContent = fs.readFileSync(from, 'utf8');
-        let toContent = fs.readFileSync(to, 'utf8');
+        const toContent = fs.readFileSync(to, 'utf8');
 
         // For AGENTS.md, replace variables in template before comparing
         if (pathToCheck === 'AGENTS.md') {
