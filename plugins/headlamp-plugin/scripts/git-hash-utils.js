@@ -17,7 +17,9 @@
  */
 
 /**
- * Shared utilities for git hash tracking used by bundling scripts
+ * Shared utilities for git hash tracking used by bundling scripts.
+ * These hashing functions make development faster by meaning the plugins
+ * are not copied again and again if they don't change.
  */
 
 const fs = require('fs-extra');

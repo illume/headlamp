@@ -19,6 +19,7 @@
 /**
  * This script fetches official plugins from https://github.com/headlamp-k8s/plugins/
  * and bundles them into official-plugins/ directory for inclusion with headlamp-plugin package.
+ * These plugins are referenced in AGENTS.md and help agents write good plugins.
  */
 
 const fs = require('fs-extra');

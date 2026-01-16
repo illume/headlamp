@@ -19,6 +19,7 @@
 /**
  * This script copies example plugins from plugins/examples into
  * examples/ directory for bundling with headlamp-plugin package.
+ * These plugins are referenced in AGENTS.md and help agents write good plugins.
  */
 
 const fs = require('fs-extra');
