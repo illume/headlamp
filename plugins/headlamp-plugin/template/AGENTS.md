@@ -1,0 +1,110 @@
+# AGENTS.md for $${name}
+
+This file provides guidance for AI coding agents working on this Headlamp plugin.
+
+## Available Scripts
+
+The following npm scripts are available for development and testing:
+
+- **`npm run format`** - Format code with prettier
+- **`npm run lint`** - Lint code with eslint for coding issues
+- **`npm run lint-fix`** - Automatically fix linting issues
+- **`npm run build`** - Build the plugin for production
+- **`npm run tsc`** - Type check code with TypeScript compiler
+- **`npm run test`** - Run tests with vitest
+- **`npm start`** - Start development server watching for changes
+- **`npm run storybook`** - Start Storybook for component development
+- **`npm run storybook-build`** - Build static Storybook
+- **`npm run i18n`** - Extract translatable strings for internationalization
+- **`npm run package`** - Create a tarball of the plugin package
+
+## Plugin Development Resources
+
+### Example Plugins
+
+Explore these example plugins in `node_modules/@kinvolk/headlamp-plugin/code-examples/` to learn common patterns:
+
+- **activity** - Shows how to add activity tracking and monitoring
+- **app-menus** - Demonstrates adding custom menus to the app bar
+- **change-logo** - Shows how to customize the Headlamp logo
+- **cluster-chooser** - Demonstrates cluster selection UI
+- **custom-theme** - Shows how to create custom themes
+- **customizing-map** - Demonstrates customizing resource visualization maps
+- **details-view** - Shows how to customize resource detail views
+- **dynamic-clusters** - Demonstrates dynamic cluster configuration
+- **headlamp-events** - Shows how to work with Kubernetes events
+- **pod-counter** - Simple example counting pods and displaying in app bar
+- **projects** - Demonstrates project/namespace organization
+- **resource-charts** - Shows how to add custom charts for resources
+- **sidebar** - Demonstrates customizing the sidebar navigation
+- **tables** - Shows how to create custom resource tables
+- **ui-panels** - Demonstrates adding custom UI panels
+
+### Official Plugins
+
+Check out production-ready plugins in `node_modules/@kinvolk/headlamp-plugin/official-plugins/` for advanced patterns:
+
+- Official plugins include metrics integration, advanced visualizations, and more
+- These plugins demonstrate best practices for production deployments
+
+### Key Topics and Examples
+
+#### Adding Items to the App Bar
+- **Example:** `pod-counter` - Shows `registerAppBarAction` to add items to top bar
+- **File:** `code-examples/pod-counter/src/index.tsx`
+
+#### Customizing the Sidebar
+- **Example:** `sidebar` - Demonstrates `registerSidebarEntry` and `registerSidebarEntryFilter`
+- **File:** `code-examples/sidebar/src/index.tsx`
+
+#### Working with Resource Details
+- **Example:** `details-view` - Shows how to customize resource detail pages
+- **File:** `code-examples/details-view/src/index.tsx`
+
+#### Creating Custom Tables
+- **Example:** `tables` - Demonstrates custom table implementations
+- **File:** `code-examples/tables/src/index.tsx`
+
+#### Adding Charts and Visualizations
+- **Example:** `resource-charts` - Shows how to add custom charts
+- **File:** `code-examples/resource-charts/src/index.tsx`
+
+#### Theme Customization
+- **Example:** `custom-theme` - Demonstrates theme customization
+- **File:** `code-examples/custom-theme/src/index.tsx`
+
+#### Internationalization (i18n)
+- Use `npm run i18n <locale>` to add new locales (e.g., `npm run i18n es` for Spanish)
+- Translation files are in `locales/<locale>/translation.json`
+- Use `useTranslation()` hook from `@kinvolk/headlamp-plugin/i18n`
+
+## Development Workflow
+
+1. **Start Development:** Run `npm start` to watch for changes
+2. **Make Changes:** Edit files in `src/`
+3. **Type Check:** Run `npm run tsc` to check for TypeScript errors
+4. **Lint:** Run `npm run lint` to check for code quality issues
+5. **Format:** Run `npm run format` to format code
+6. **Test:** Run `npm run test` to run tests
+7. **Build:** Run `npm run build` to create production build
+
+## Best Practices
+
+- Follow the patterns shown in the example plugins
+- Use TypeScript for type safety
+- Keep plugins focused on a single feature or enhancement
+- Test your plugin with multiple Kubernetes clusters
+- Document your plugin's functionality in the README.md
+
+## API Documentation
+
+For detailed API documentation, visit:
+- [Headlamp Plugin API Reference](https://headlamp.dev/docs/latest/development/api/)
+- [Plugin Development Guide](https://headlamp.dev/docs/latest/development/plugins/)
+- [UI Component Storybook](https://headlamp.dev/docs/latest/development/frontend/#storybook)
+
+## Getting Help
+
+- Check the example plugins for similar functionality
+- Review the API documentation
+- Ask questions in the [Headlamp community](https://github.com/kubernetes-sigs/headlamp/discussions)
