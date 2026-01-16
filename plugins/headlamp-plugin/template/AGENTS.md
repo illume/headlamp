@@ -44,8 +44,43 @@ Explore these example plugins in `node_modules/@kinvolk/headlamp-plugin/code-exa
 
 Check out production-ready plugins in `node_modules/@kinvolk/headlamp-plugin/official-plugins/` for advanced patterns:
 
-- Official plugins include metrics integration, advanced visualizations, and more
-- These plugins demonstrate best practices for production deployments
+#### Using Custom Resource Definitions (CRDs)
+- **cert-manager** - Complete CRD integration for cert-manager resources
+  - Files: `official-plugins/cert-manager/src/resources/` (certificate.ts, issuer.ts, clusterIssuer.ts, etc.)
+  - Shows how to register and display custom resources for certificates, issuers, challenges, and orders
+- **flux** - GitOps CRDs for Flux resources
+  - Files: `official-plugins/flux/src/` (kustomization, helmrelease, gitrepository resources)
+  - Demonstrates working with Flux CRDs for GitOps workflows
+- **keda** - Kubernetes Event Driven Autoscaling CRDs
+  - Files: `official-plugins/keda/src/resources/` (scaledobject.ts, scaledjob.ts, triggerauthentication.ts)
+  - Shows CRD integration for event-driven autoscaling
+- **karpenter** - Node provisioning CRDs
+  - Files: `official-plugins/karpenter/src/` (NodeClass, EC2NodeClass resources)
+  - Demonstrates multiple CRD deployment types (EKS Auto Mode, self-installed)
+
+#### Visualizing Relationships with Maps
+- **keda** - Map view showing KEDA resource relationships
+  - File: `official-plugins/keda/src/mapView.tsx`
+  - Uses edge creation (`makeKubeToKubeEdge`) to visualize connections between ScaledObjects, ScaledJobs, and TriggerAuthentications
+  - Shows how to build graph visualizations of resource dependencies
+
+#### Adding Metrics and Charts
+- **prometheus** - Advanced charts for workload resources
+  - Files: `official-plugins/prometheus/src/components/Chart/`
+  - Provides CPU, memory, network, and disk charts using Prometheus metrics
+  - Includes specialized charts for Karpenter (KarpenterChart, KarpenterNodeClaimCreationChart)
+  - Shows KEDA metrics (KedaActiveJobsChart, KedaScalerMetricsChart, KedaHPAReplicasChart)
+  - File: `official-plugins/prometheus/src/request.tsx` for fetching Prometheus data
+- **opencost** - Cost metrics and visualization
+  - File: `official-plugins/opencost/src/detail.tsx`
+  - Uses `recharts` library (AreaChart, CartesianGrid, Tooltip) to display cost data
+  - Shows how to fetch and display custom metrics from external services
+  - Demonstrates time-series data visualization with stacked area charts
+
+#### Other Advanced Patterns
+- **ai-assistant** - AI integration for cluster management
+- **app-catalog** - Helm chart catalog powered by ArtifactHub
+- **backstage** - Integration with Backstage developer portal
 
 ### Key Topics and Examples
 
