@@ -56,7 +56,6 @@ function create(name, link, noInstall) {
   const packagePath = path.join(dstFolder, 'package.json');
   const packageLockPath = path.join(dstFolder, 'package-lock.json');
   const readmePath = path.join(dstFolder, 'README.md');
-  const agentsPath = path.join(dstFolder, 'AGENTS.md');
 
   if (fs.existsSync(name)) {
     console.error(`"${name}" already exists, not initializing`);
@@ -956,18 +955,6 @@ function upgrade(packageFolder, skipPackageUpdates, headlampPluginVersion) {
       'AGENTS.md',
     ];
     const templateFolder = path.resolve(__dirname, '..', 'template');
-
-    // Get package name for variable replacement
-    const packageJsonPath = path.join('.', 'package.json');
-    let packageName = 'plugin';
-    if (fs.existsSync(packageJsonPath)) {
-      try {
-        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf8'));
-        packageName = packageJson.name || 'plugin';
-      } catch (e) {
-        // Use default if can't read package.json
-      }
-    }
 
     missingFiles.forEach(pathToCheck => {
       const from = path.join(templateFolder, pathToCheck);

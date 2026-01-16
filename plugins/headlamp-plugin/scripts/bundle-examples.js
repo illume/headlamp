@@ -23,12 +23,7 @@
 
 const fs = require('fs-extra');
 const path = require('path');
-const {
-  getLocalGitHash,
-  getStoredHash,
-  storeHash,
-  shouldSkipBasedOnHash,
-} = require('./git-hash-utils');
+const { getLocalGitHash, storeHash, shouldSkipBasedOnHash } = require('./git-hash-utils');
 
 const scriptDir = __dirname;
 const pluginDir = path.resolve(scriptDir, '..');

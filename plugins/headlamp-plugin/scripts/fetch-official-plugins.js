@@ -24,12 +24,7 @@
 const fs = require('fs-extra');
 const path = require('path');
 const { execSync } = require('child_process');
-const {
-  getRemoteGitHash,
-  getStoredHash,
-  storeHash,
-  shouldSkipBasedOnHash,
-} = require('./git-hash-utils');
+const { getRemoteGitHash, storeHash, shouldSkipBasedOnHash } = require('./git-hash-utils');
 
 const scriptDir = __dirname;
 const pluginDir = path.resolve(scriptDir, '..');
