@@ -111,6 +111,7 @@
     "build": "cross-env PUBLIC_URL=./ NODE_OPTIONS=--max-old-space-size=8096 vite build && npx shx rm -f build/frontend/index.baseUrl.html",
     "pretest": "npm run make-version",
     "test": "vitest",
+    "test:a11y": "npm run build-storybook && axe-storybook --build-dir ../docs/development/storybook",
     "start-without-multiplexer": "cross-env REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER=false npm run start",
     "lint": "eslint --cache -c package.json --ext .js,.ts,.tsx src/ ../app/electron ../plugins/headlamp-plugin --ignore-pattern ../plugins/headlamp-plugin/template --ignore-pattern ../plugins/headlamp-plugin/lib/",
     "format": "prettier --config package.json --write --cache src ../app/electron ../app/tsconfig.json ../app/scripts ../plugins/headlamp-plugin/bin ../plugins/headlamp-plugin/config ../plugins/headlamp-plugin/template ../plugins/headlamp-plugin/test*.js ../plugins/headlamp-plugin/*.json ../plugins/headlamp-plugin/*.js",
@@ -206,6 +207,7 @@
   },
   "prettier": "@headlamp-k8s/eslint-config/prettier-config",
   "devDependencies": {
+    "@chanzuckerberg/axe-storybook-testing": "^9.0.0",
     "@rsbuild/core": "^1.4.15",
     "@rsbuild/plugin-node-polyfill": "^1.4.1",
     "@rsbuild/plugin-react": "^1.3.5",
