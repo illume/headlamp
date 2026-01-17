@@ -319,7 +319,7 @@ export const PureSidebar = memo(
           direction="column"
           justifyContent="space-between"
           wrap="nowrap"
-          inert={!largeSideBarOpen ? '' : undefined}
+          {...(!largeSideBarOpen && { inert: 'true' as any })}
         >
           <Grid item>
             <List
