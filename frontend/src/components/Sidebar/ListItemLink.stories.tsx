@@ -40,7 +40,7 @@ export default {
     Story => (
       <TestContext>
         <Paper elevation={0} sx={{ width: 240, bgcolor: 'sidebar.background', padding: 1 }}>
-          <List component="nav">
+          <List>
             <Story />
           </List>
         </Paper>
