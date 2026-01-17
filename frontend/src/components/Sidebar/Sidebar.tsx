@@ -319,7 +319,7 @@ export const PureSidebar = memo(
           direction="column"
           justifyContent="space-between"
           wrap="nowrap"
-          aria-hidden={!largeSideBarOpen}
+          inert={!largeSideBarOpen ? '' : undefined}
         >
           <Grid item>
             <List
