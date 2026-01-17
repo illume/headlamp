@@ -62,7 +62,7 @@ jobs:
           cd frontend && npm ci
 
       - name: Run Chromatic
-        uses: chromaui/action@11a4bc03867dd574c67df1c6766b7b4feccfab2b # v11
+        uses: chromaui/action@latest
         with:
           projectToken: ${{ secrets.CHROMATIC_PROJECT_TOKEN }}
           workingDir: frontend
