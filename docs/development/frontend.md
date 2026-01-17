@@ -62,7 +62,41 @@ current or future stories:
 </TestContext>
 ```
 
+### Building Storybook
+
+To build a static version of Storybook:
+
+```bash
+npm run frontend:build:storybook
+```
+
 ## Accessibility (a11y)
+
+### Storybook a11y addon
+
+The [Storybook a11y addon](https://storybook.js.org/addons/@storybook/addon-a11y) is enabled in the project to help identify accessibility issues in components. When running Storybook locally, you'll see an "Accessibility" tab in the addons panel that shows:
+
+- Violations: Accessibility issues that need to be fixed
+- Passes: Checks that passed successfully
+- Incomplete: Rules that couldn't be fully tested
+
+The addon uses [axe-core](https://github.com/dequelabs/axe-core) to run automated accessibility tests.
+
+### Chromatic for visual and a11y testing
+
+This project uses [Chromatic](https://www.chromatic.com/) for automated visual testing and accessibility testing of Storybook stories. Chromatic runs on every pull request and helps catch:
+
+- Visual regressions in UI components
+- Accessibility violations
+- Cross-browser compatibility issues
+
+To run Chromatic locally (requires a `CHROMATIC_PROJECT_TOKEN`):
+
+```bash
+npm run frontend:chromatic
+```
+
+The Chromatic workflow runs automatically on pull requests via GitHub Actions.
 
 ### Developer console warnings and errors
 

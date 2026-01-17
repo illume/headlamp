@@ -14,23 +14,16 @@
  * limitations under the License.
  */
 
-import type { StorybookConfig } from '@storybook/react-vite';
-
-// Please also update: plugins/headlamp-plugin/config/.storybook/main.js
-
-export default {
-  framework: '@storybook/react-vite',
-  stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
-
-  addons: ['@storybook/addon-links', '@storybook/addon-docs', '@storybook/addon-a11y'],
-
-  core: {
-    disableTelemetry: true,
-  },
-
-  docs: {},
-
-  typescript: {
-    reactDocgen: 'react-docgen-typescript',
-  },
-} satisfies StorybookConfig;
+module.exports = {
+  // Automatically detect and run only changed stories
+  onlyChanged: true,
+  
+  // Exit with 0 code even if there are changes (useful for CI)
+  exitZeroOnChanges: true,
+  
+  // Build script name from package.json
+  buildScriptName: 'build-storybook',
+  
+  // Skip Chromatic snapshots for stories that are in development
+  skip: 'dependabot/**',
+};

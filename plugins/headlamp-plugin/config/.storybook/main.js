@@ -10,6 +10,7 @@ module.exports = {
     '@storybook/addon-links',
     '@storybook/addon-webpack5-compiler-swc',
     '@storybook/addon-docs',
+    '@storybook/addon-a11y',
   ],
   staticDirs: ['./public'],
   core: {
