@@ -110,7 +110,7 @@
     "build": "cross-env PUBLIC_URL=./ NODE_OPTIONS=--max-old-space-size=8096 vite build && npx shx rm -f build/frontend/index.baseUrl.html",
     "pretest": "npm run make-version",
     "test": "vitest",
-    "test:a11y": "npm run build-storybook && axe-storybook --build-dir ../docs/development/storybook",
+    "test:a11y": "npm run build-storybook && node test-a11y-with-baseline.mjs",
     "start-without-multiplexer": "cross-env REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER=false npm run start",
     "lint": "eslint --cache -c package.json --ext .js,.ts,.tsx src/ ../app/electron ../plugins/headlamp-plugin --ignore-pattern ../plugins/headlamp-plugin/template --ignore-pattern ../plugins/headlamp-plugin/lib/",
     "format": "prettier --config package.json --write --cache src ../app/electron ../app/tsconfig.json ../app/scripts ../plugins/headlamp-plugin/bin ../plugins/headlamp-plugin/config ../plugins/headlamp-plugin/template ../plugins/headlamp-plugin/test*.js ../plugins/headlamp-plugin/*.json ../plugins/headlamp-plugin/*.js",

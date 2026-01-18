@@ -205,7 +205,6 @@ jobs:
           npx playwright install --with-deps chromium
 
       - name: Run accessibility tests
-        # Continue on error to allow CI to pass while violations are being addressed
-        continue-on-error: true
+        # Tests use baseline file to allow known failures while catching new violations
         run: |
           make frontend-test-a11y
