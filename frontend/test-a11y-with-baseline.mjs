@@ -35,6 +35,8 @@ const axeProcess = spawn('npx', [
 let output = '';
 let errorOutput = '';
 let currentTest = null;
+let currentComponent = null;
+let currentStoryName = null;
 const testResults = {
   passes: 0,
   failures: [],
@@ -55,13 +57,32 @@ axeProcess.stdout.on('data', (data) => {
       testResults.passes++;
       testResults.total++;
     }
-    // Detect failed tests - format: "  1) Component/Story"
-    const failMatch = line.match(/^\s+\d+\)\s+(.+)$/);
-    if (failMatch) {
-      currentTest = failMatch[1].trim();
+    
+    // Detect failed test - format: "  1) Component/Path"
+    const failComponentMatch = line.match(/^\s+\d+\)\s+([A-Za-z][\w/]*(?:\/[\w]+)*)\s*$/);
+    if (failComponentMatch) {
+      currentComponent = failComponentMatch[1];
+      currentStoryName = null;
+      currentTest = null;
     }
-    // Detect violation rules - format: "1. rule-name (description)"
-    const violationMatch = line.match(/^\s+\d+\.\s+([a-z-]+)\s+\(/);
+    
+    // Detect story name after component - format: "       Story Name:"
+    // Story names should not start with common violation detail keywords
+    const storyNameMatch = line.match(/^\s{7}([^:]+):\s*$/);
+    if (storyNameMatch && currentComponent) {
+      const storyName = storyNameMatch[1].trim();
+      // Filter out violation details that look like story names
+      if (!storyName.includes('summary') && 
+          !storyName.includes('Check these nodes') &&
+          !storyName.includes('html') &&
+          !storyName.includes('Detected')) {
+        currentStoryName = storyName;
+        currentTest = `${currentComponent}/${currentStoryName}`;
+      }
+    }
+    
+    // Detect violation rules - format: "     1. rule-name (description)"
+    const violationMatch = line.match(/^\s{5,}\d+\.\s+([a-z-]+)\s+\(/);
     if (violationMatch && currentTest) {
       const rule = violationMatch[1];
       let existing = testResults.failures.find(f => f.story === currentTest);
