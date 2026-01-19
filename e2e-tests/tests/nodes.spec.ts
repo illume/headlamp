@@ -17,6 +17,11 @@
 import { expect, test } from '@playwright/test';
 import { HeadlampPage } from './headlampPage';
 
+// TODO: Enable a11y checks once UI accessibility issues are fixed
+// Currently disabled due to pre-existing link color contrast violations (1.94:1 vs required 3:1)
+// See: https://dequeuniversity.com/rules/axe/4.10/link-in-text-block
+const ENABLE_A11Y_CHECKS = false;
+
 let headlampPage: HeadlampPage;
 
 test.beforeEach(async ({ page }) => {
@@ -34,6 +39,10 @@ test('nodes list page should load and display table', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Nodes');
+  // TODO: Re-enable when UI a11y issues are fixed
+  if (ENABLE_A11Y_CHECKS) {
+    await headlampPage.a11y();
+  }
 });
 
 test('nodes list page should have table with expected columns', async ({ page }) => {
@@ -47,6 +56,10 @@ test('nodes list page should have table with expected columns', async ({ page })
 
   const expectedHeaders = ['Name', 'Ready', 'CPU', 'Memory'];
   await headlampPage.tableHasHeaders('table', expectedHeaders);
+  // TODO: Re-enable when UI a11y issues are fixed
+  if (ENABLE_A11Y_CHECKS) {
+    await headlampPage.a11y();
+  }
 });
 
 test('node details page should load', async ({ page }) => {
@@ -80,5 +93,9 @@ test('node details page should load', async ({ page }) => {
     // Check that we're on the node details page
     const nodeHeading = page.getByRole('heading', { level: 1, name: new RegExp(nodeName) });
     await expect(nodeHeading).toBeVisible();
+    // TODO: Re-enable when UI a11y issues are fixed
+    if (ENABLE_A11Y_CHECKS) {
+      await headlampPage.a11y();
+    }
   }
 });

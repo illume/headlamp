@@ -17,6 +17,11 @@
 import { test } from '@playwright/test';
 import { HeadlampPage } from './headlampPage';
 
+// TODO: Enable a11y checks once UI accessibility issues are fixed
+// Currently disabled due to pre-existing link color contrast violations (1.94:1 vs required 3:1)
+// See: https://dequeuniversity.com/rules/axe/4.10/link-in-text-block
+const ENABLE_A11Y_CHECKS = false;
+
 let headlampPage: HeadlampPage;
 
 test.beforeEach(async ({ page }) => {
@@ -34,6 +39,10 @@ test('endpoints list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Endpoints');
+  // TODO: Re-enable when UI a11y issues are fixed
+  if (ENABLE_A11Y_CHECKS) {
+    await headlampPage.a11y();
+  }
 });
 
 test('endpoint slices list page should load', async ({ page }) => {
@@ -46,6 +55,10 @@ test('endpoint slices list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('EndpointSlices');
+  // TODO: Re-enable when UI a11y issues are fixed
+  if (ENABLE_A11Y_CHECKS) {
+    await headlampPage.a11y();
+  }
 });
 
 test('ingresses list page should load', async ({ page }) => {
@@ -58,6 +71,10 @@ test('ingresses list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Ingresses');
+  // TODO: Re-enable when UI a11y issues are fixed
+  if (ENABLE_A11Y_CHECKS) {
+    await headlampPage.a11y();
+  }
 });
 
 test('ingress classes list page should load', async ({ page }) => {
@@ -70,6 +87,10 @@ test('ingress classes list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('IngressClasses');
+  // TODO: Re-enable when UI a11y issues are fixed
+  if (ENABLE_A11Y_CHECKS) {
+    await headlampPage.a11y();
+  }
 });
 
 test('network policies list page should load', async ({ page }) => {
@@ -82,4 +103,8 @@ test('network policies list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Network Policies');
+  // TODO: Re-enable when UI a11y issues are fixed
+  if (ENABLE_A11Y_CHECKS) {
+    await headlampPage.a11y();
+  }
 });
