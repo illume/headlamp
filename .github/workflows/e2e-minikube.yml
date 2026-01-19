@@ -41,6 +41,20 @@ jobs:
           minikube version
           kubectl version --client
       
+      # Clear disk space before building to ensure we have enough space
+      - name: Free Disk Space Before Building
+        run: |
+          echo "Disk space before cleanup:"
+          df -h
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf /opt/ghc
+          sudo rm -rf "/usr/local/share/boost"
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo apt-get clean
+          echo "Disk space after cleanup:"
+          df -h
+      
       - name: Restore image-cache Folder
         id: cache-image-restore
         uses: actions/cache/restore@0c907a75c2c80ebcb7f088228285e798b750cf8f # v4.2.1
@@ -99,6 +113,15 @@ jobs:
           DELETE_CLUSTER: "true"
         run: |
           make e2e-minikube
+      
+      # Clear disk space by removing unnecessary files, apt files and uninstall some playwright dependencies
+      - name: Clear Disk Space
+        if: steps.cache-image-restore.outputs.cache-hit != 'true'
+        run: |
+          export SHELL=/bin/bash
+          sudo rm -rf /var/lib/apt/lists/*
+          sudo apt-get remove -y libgbm-dev libxcb-dri3-0 libxcb-dri2-0 libxcb-xfixes0 libxcb-shape0 libxcb-shm0 libxcb-render0 libxcb-glx0 || true
+          sudo rm -rf e2e-tests/node_modules/
       
       - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
         if: always()
