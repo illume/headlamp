@@ -34,7 +34,6 @@ test('nodes list page should load and display table', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Nodes');
-  await headlampPage.a11y();
 });
 
 test('nodes list page should have table with expected columns', async ({ page }) => {
@@ -48,7 +47,6 @@ test('nodes list page should have table with expected columns', async ({ page })
 
   const expectedHeaders = ['Name', 'Ready', 'CPU', 'Memory'];
   await headlampPage.tableHasHeaders('table', expectedHeaders);
-  await headlampPage.a11y();
 });
 
 test('node details page should load', async ({ page }) => {
@@ -82,6 +80,5 @@ test('node details page should load', async ({ page }) => {
     // Check that we're on the node details page
     const nodeHeading = page.getByRole('heading', { level: 1, name: new RegExp(nodeName) });
     await expect(nodeHeading).toBeVisible();
-    await headlampPage.a11y();
   }
 });

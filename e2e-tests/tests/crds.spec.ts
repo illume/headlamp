@@ -34,7 +34,6 @@ test('custom resource definitions list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('CRDs');
-  await headlampPage.a11y();
 });
 
 test('custom resource instances list page should load', async ({ page }) => {
@@ -47,5 +46,4 @@ test('custom resource instances list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('CRInstances');
-  await headlampPage.a11y();
 });

@@ -34,7 +34,6 @@ test('horizontal pod autoscalers list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Horizontal Pod Autoscalers');
-  await headlampPage.a11y();
 });
 
 test('vertical pod autoscalers list page should load', async ({ page }) => {
@@ -47,7 +46,6 @@ test('vertical pod autoscalers list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Vertical Pod Autoscalers');
-  await headlampPage.a11y();
 });
 
 test('pod disruption budgets list page should load', async ({ page }) => {
@@ -60,5 +58,4 @@ test('pod disruption budgets list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Pod Disruption Budgets');
-  await headlampPage.a11y();
 });

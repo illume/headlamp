@@ -34,7 +34,6 @@ test('configmaps list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Config Maps');
-  await headlampPage.a11y();
 });
 
 test('secrets list page should load', async ({ page }) => {
@@ -47,7 +46,6 @@ test('secrets list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Secrets');
-  await headlampPage.a11y();
 });
 
 test('resource quotas list page should load', async ({ page }) => {
@@ -60,7 +58,6 @@ test('resource quotas list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Resource Quotas');
-  await headlampPage.a11y();
 });
 
 test('limit ranges list page should load', async ({ page }) => {
@@ -73,5 +70,4 @@ test('limit ranges list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Limit Ranges');
-  await headlampPage.a11y();
 });

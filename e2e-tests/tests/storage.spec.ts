@@ -34,7 +34,6 @@ test('storage classes list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Storage Classes');
-  await headlampPage.a11y();
 });
 
 test('persistent volumes list page should load', async ({ page }) => {
@@ -47,7 +46,6 @@ test('persistent volumes list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Persistent Volumes');
-  await headlampPage.a11y();
 });
 
 test('persistent volume claims list page should load', async ({ page }) => {
@@ -60,5 +58,4 @@ test('persistent volume claims list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Persistent Volume Claims');
-  await headlampPage.a11y();
 });

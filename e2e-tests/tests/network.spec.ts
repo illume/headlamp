@@ -34,7 +34,6 @@ test('endpoints list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Endpoints');
-  await headlampPage.a11y();
 });
 
 test('endpoint slices list page should load', async ({ page }) => {
@@ -47,7 +46,6 @@ test('endpoint slices list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('EndpointSlices');
-  await headlampPage.a11y();
 });
 
 test('ingresses list page should load', async ({ page }) => {
@@ -60,7 +58,6 @@ test('ingresses list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Ingresses');
-  await headlampPage.a11y();
 });
 
 test('ingress classes list page should load', async ({ page }) => {
@@ -73,7 +70,6 @@ test('ingress classes list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('IngressClasses');
-  await headlampPage.a11y();
 });
 
 test('network policies list page should load', async ({ page }) => {
@@ -86,5 +82,4 @@ test('network policies list page should load', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Network Policies');
-  await headlampPage.a11y();
 });

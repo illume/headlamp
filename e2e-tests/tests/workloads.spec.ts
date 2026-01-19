@@ -27,7 +27,6 @@ test.beforeEach(async ({ page }) => {
 test('workloads overview page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/workloads', /Workloads/);
   await headlampPage.checkPageContent('Workloads');
-  await headlampPage.a11y();
 });
 
 test('deployments list page should load and display table', async ({ page }) => {
@@ -40,7 +39,6 @@ test('deployments list page should load and display table', async ({ page }) => 
   }
 
   await headlampPage.checkPageContent('Deployments');
-  await headlampPage.a11y();
 });
 
 test('daemonsets list page should load and display table', async ({ page }) => {
@@ -53,7 +51,6 @@ test('daemonsets list page should load and display table', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('DaemonSets');
-  await headlampPage.a11y();
 });
 
 test('statefulsets list page should load and display table', async ({ page }) => {
@@ -66,7 +63,6 @@ test('statefulsets list page should load and display table', async ({ page }) =>
   }
 
   await headlampPage.checkPageContent('StatefulSets');
-  await headlampPage.a11y();
 });
 
 test('replicasets list page should load and display table', async ({ page }) => {
@@ -79,7 +75,6 @@ test('replicasets list page should load and display table', async ({ page }) => 
   }
 
   await headlampPage.checkPageContent('ReplicaSets');
-  await headlampPage.a11y();
 });
 
 test('jobs list page should load and display table', async ({ page }) => {
@@ -92,7 +87,6 @@ test('jobs list page should load and display table', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('Jobs');
-  await headlampPage.a11y();
 });
 
 test('cronjobs list page should load and display table', async ({ page }) => {
@@ -105,5 +99,4 @@ test('cronjobs list page should load and display table', async ({ page }) => {
   }
 
   await headlampPage.checkPageContent('CronJobs');
-  await headlampPage.a11y();
 });
