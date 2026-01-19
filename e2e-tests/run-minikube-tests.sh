@@ -78,10 +78,12 @@ if minikube profile list 2>/dev/null | grep -q "$MINIKUBE_PROFILE"; then
     echo "Minikube profile '$MINIKUBE_PROFILE' already exists. Reusing existing cluster."
     echo "To start fresh, delete the cluster first with: make e2e-minikube-clean"
     
-    # Ensure the cluster is running
-    if ! minikube status -p "$MINIKUBE_PROFILE" 2>/dev/null | grep -q "Running"; then
+    # Ensure the cluster is running - check host status specifically
+    if ! minikube status -p "$MINIKUBE_PROFILE" --format='{{.Host}}' 2>/dev/null | grep -q "Running"; then
         echo "Starting existing minikube profile: $MINIKUBE_PROFILE"
         minikube start -p "$MINIKUBE_PROFILE" --driver=docker
+    else
+        echo "Cluster is already running."
     fi
 else
     # Start minikube with a dedicated profile
@@ -91,7 +93,19 @@ fi
 
 # Rename the context to 'test' to match e2e test expectations
 echo "Ensuring kubectl context is named 'test' (required by e2e tests)"
-kubectl config rename-context "$MINIKUBE_PROFILE" test 2>/dev/null || true
+# Check if context 'test' already exists and is pointing to our cluster
+if kubectl config get-contexts test &>/dev/null; then
+    # Context exists, verify it's our cluster
+    current_cluster=$(kubectl config view -o jsonpath="{.contexts[?(@.name=='test')].context.cluster}" 2>/dev/null)
+    if [ "$current_cluster" != "$MINIKUBE_PROFILE" ]; then
+        # It's a different cluster, try to delete it first
+        kubectl config delete-context test 2>/dev/null || true
+        kubectl config rename-context "$MINIKUBE_PROFILE" test 2>/dev/null || true
+    fi
+else
+    # Context doesn't exist, rename from profile name
+    kubectl config rename-context "$MINIKUBE_PROFILE" test 2>/dev/null || true
+fi
 kubectl config use-context test
 
 # Build Docker images if they don't exist
