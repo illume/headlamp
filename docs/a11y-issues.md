@@ -105,4 +105,4 @@ The tests are configured to pass even with these known baseline failures. New ac
 
 ## Baseline Configuration
 
-Known failures are tracked in `frontend/.axe-storybook-baseline.json`. This file is used by the test suite to allow known failures while catching new violations.
+Known failures are tracked in `frontend/.axe-storybook-baseline.test-a11y.json`. This file is used by the test suite to allow known failures while catching new violations.

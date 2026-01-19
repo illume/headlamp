@@ -1,4 +1,12 @@
 {
+  "_comment": "Baseline configuration for accessibility testing (test-a11y-with-baseline.mjs)",
+  "_instructions": [
+    "This file tracks known accessibility violations that are allowed in CI.",
+    "Format: { 'Story/Path': ['rule-id-1', 'rule-id-2'] }",
+    "To update: Run 'npm run test:a11y' locally and add new baseline entries if needed.",
+    "CI will pass with these violations but fail on any NEW violations.",
+    "See docs/a11y-issues.md for details on each violation and how to fix them."
+  ],
   "baseline": {
     "Settings/PluginSettings/Few Items": ["heading-order"],
     "Settings/PluginSettings/Default Save Enable": ["heading-order"],

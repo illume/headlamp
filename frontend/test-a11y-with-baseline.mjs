@@ -19,7 +19,7 @@
  * Baseline-aware wrapper for axe-storybook accessibility testing.
  * 
  * This script runs axe-storybook tests and compares the results against a baseline
- * configuration file (.axe-storybook-baseline.json). It allows known accessibility
+ * configuration file (.axe-storybook-baseline.test-a11y.json). It allows known accessibility
  * violations to pass while failing the build if any new violations are detected.
  * 
  * This ensures CI passes with tracked baseline failures but catches any regressions
@@ -34,7 +34,7 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const BASELINE_FILE = path.join(__dirname, '.axe-storybook-baseline.json');
+const BASELINE_FILE = path.join(__dirname, '.axe-storybook-baseline.test-a11y.json');
 
 // Load baseline
 let baseline = { baseline: {} };
@@ -174,7 +174,7 @@ axeProcess.on('close', (code) => {
     console.log('='.repeat(70));
     console.log('\nTo fix this:');
     console.log('  1. Fix the new accessibility violations in the components');
-    console.log('  2. OR if intentional, update frontend/.axe-storybook-baseline.json');
+    console.log('  2. OR if intentional, update frontend/.axe-storybook-baseline.test-a11y.json');
     console.log('  3. Run "npm run frontend:test:a11y" locally to verify\n');
     process.exit(1);
   }
