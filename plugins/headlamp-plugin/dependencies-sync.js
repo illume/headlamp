@@ -72,6 +72,7 @@ const dependenciesToNotCopy = [
   'resize-observer-polyfill',
   'vitest-canvas-mock',
   '@tanstack/react-query-devtools',
+  '@chanzuckerberg/axe-storybook-testing',
 ];
 
 const yargs = require('yargs/yargs');

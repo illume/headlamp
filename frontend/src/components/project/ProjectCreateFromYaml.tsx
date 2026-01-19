@@ -335,7 +335,7 @@ export function CreateNew() {
                       <Box sx={{ pt: 2 }}>
                         <DropZoneBox border={1} borderColor="secondary.main" {...getRootProps()}>
                           <FormControl>
-                            <input {...getInputProps()} />
+                            <input {...getInputProps()} aria-label={t('Upload YAML files')} />
                             <Tooltip
                               title={t('Drag & drop YAML files here or click to choose files')}
                               placement="top"

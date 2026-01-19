@@ -80,6 +80,30 @@ REACT_APP_SKIP_A11Y=false npm run frontend:start
 
 This shows an alert when an a11y issue is detected.
 
+### Storybook accessibility testing
+
+Accessibility testing can be performed on all Storybook stories using axe-storybook-testing.
+This runs automated accessibility checks against all components in the Storybook.
+
+To run the accessibility tests:
+
+```bash
+npm run frontend:test:a11y
+```
+
+Or from within the frontend directory:
+
+```bash
+npm run test:a11y
+```
+
+This command will:
+1. Build the Storybook
+2. Run axe accessibility tests on all stories
+3. Report any accessibility violations found
+
+The tests will fail if any accessibility issues are detected, making it useful for CI/CD pipelines.
+
 ## Property testing (fuzzing)
 
 We are using [fast-check](https://fast-check.dev/) for property testing.

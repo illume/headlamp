@@ -129,6 +129,7 @@ export default function ListItemLink(props: ListItemLinkProps) {
     <StyledLi level={calcLevel}>
       <ListItemButton
         component={renderLink}
+        aria-label={iconOnly ? name : undefined}
         {...other}
         sx={theme => ({
           color:
