@@ -74,14 +74,14 @@ echo "Building Docker images..."
 echo "============================================"
 cd "$PROJECT_ROOT"
 
-if ! docker images | grep -q "ghcr.io/headlamp-k8s/headlamp:latest"; then
+if ! docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^ghcr.io/headlamp-k8s/headlamp:latest$'; then
     echo "Building Headlamp image..."
     DOCKER_IMAGE_VERSION=latest make image
 else
     echo "Headlamp image already exists, skipping build."
 fi
 
-if ! docker images | grep -q "ghcr.io/headlamp-k8s/headlamp-plugins-test:latest"; then
+if ! docker images --format '{{.Repository}}:{{.Tag}}' | grep -q '^ghcr.io/headlamp-k8s/headlamp-plugins-test:latest$'; then
     echo "Building plugins test image..."
     # Build plugin example for testing
     cd plugins/examples/pod-counter
