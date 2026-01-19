@@ -419,9 +419,9 @@ stop-monitoring:
 .PHONY: e2e-minikube
 e2e-minikube:
 	@echo "Running e2e tests with minikube..."
-	cd e2e-tests && ./run-minikube-tests.sh
+	cd e2e-tests && node run-minikube-tests.js
 
 .PHONY: e2e-minikube-clean
 e2e-minikube-clean:
 	@echo "Cleaning up minikube e2e test cluster..."
-	cd e2e-tests && ./clean-minikube-tests.sh
+	cd e2e-tests && node clean-minikube-tests.js

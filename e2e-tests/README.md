@@ -6,7 +6,7 @@ npx playwright install
 
 ## Automated Testing with Minikube
 
-The easiest way to run e2e tests is using the automated script that handles all setup:
+The easiest way to run e2e tests is using the automated Node.js script that handles all setup and works cross-platform (Linux, macOS, Windows):
 
 ```bash
 # From the project root
@@ -30,6 +30,8 @@ This script will:
 - Debugging failed tests
 - Inspecting the cluster state
 
+The scripts are written in JavaScript (Node.js) and work on all platforms including Windows.
+
 To delete the test cluster when you're done:
 
 ```bash
@@ -41,6 +43,7 @@ npm run e2e:minikube:clean
 ```
 
 **Requirements:**
+- Node.js >= 20.11.1
 - `minikube` installed ([installation guide](https://minikube.sigs.k8s.io/docs/start/))
 - `kubectl` installed
 - `docker` installed and running
