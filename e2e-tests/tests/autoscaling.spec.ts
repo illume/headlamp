@@ -33,13 +33,12 @@ test('horizontal pod autoscalers list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/horizontalpodautoscalers');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view HPAs
-  if (!content.includes('Horizontal Pod Autoscalers') || !content.includes('href="/c/test/horizontalpodautoscalers"')) {
+  // Skip test if page doesn't exist, lacks permission, or HPAs not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Horizontal Pod Autoscalers') || 
+      !content.includes('href="/c/test/horizontalpodautoscalers"')) {
     test.skip();
     return;
   }
@@ -55,13 +54,12 @@ test('vertical pod autoscalers list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/verticalpodautoscalers');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view VPAs
-  if (!content.includes('Vertical Pod Autoscalers') || !content.includes('href="/c/test/verticalpodautoscalers"')) {
+  // Skip test if page doesn't exist, lacks permission, or VPAs not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Vertical Pod Autoscalers') || 
+      !content.includes('href="/c/test/verticalpodautoscalers"')) {
     test.skip();
     return;
   }
@@ -77,13 +75,12 @@ test('pod disruption budgets list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/poddisruptionbudgets');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view PDBs
-  if (!content.includes('Pod Disruption Budgets') || !content.includes('href="/c/test/poddisruptionbudgets"')) {
+  // Skip test if page doesn't exist, lacks permission, or PDBs not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Pod Disruption Budgets') || 
+      !content.includes('href="/c/test/poddisruptionbudgets"')) {
     test.skip();
     return;
   }

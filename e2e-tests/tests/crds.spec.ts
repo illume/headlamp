@@ -35,15 +35,12 @@ test('custom resource definitions list page should load', async ({ page }) => {
   
   // Check if page loaded successfully or if we got a 404
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    // CRDs feature not available in this environment, skip test
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view CRDs  
-  if (!content.includes('CRDs') || !content.includes('href="/c/test/crds"')) {
-    // No permission or CRDs not available, skip the test
+  // Skip test if page doesn't exist, lacks permission, or CRDs not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('CRDs') || 
+      !content.includes('href="/c/test/crds"')) {
     test.skip();
     return;
   }
@@ -61,15 +58,12 @@ test('custom resource instances list page should load', async ({ page }) => {
   
   // Check if page loaded successfully or if we got a 404
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    // CR instances feature not available in this environment, skip test
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view CR instances
-  if (!content.includes('CRInstances') || !content.includes('href="/c/test/crs"')) {
-    // No permission or CR instances not available, skip the test
+  // Skip test if page doesn't exist, lacks permission, or CR instances not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('CRInstances') || 
+      !content.includes('href="/c/test/crs"')) {
     test.skip();
     return;
   }

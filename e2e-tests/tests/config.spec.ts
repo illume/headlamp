@@ -33,13 +33,12 @@ test('configmaps list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/configmaps');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view configmaps
-  if (!content.includes('Config') || !content.includes('href="/c/test/configmaps"')) {
+  // Skip test if page doesn't exist, lacks permission, or configmaps not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Config') || 
+      !content.includes('href="/c/test/configmaps"')) {
     test.skip();
     return;
   }
@@ -55,13 +54,12 @@ test('secrets list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/secrets');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view secrets
-  if (!content.includes('Secrets') || !content.includes('href="/c/test/secrets"')) {
+  // Skip test if page doesn't exist, lacks permission, or secrets not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Secrets') || 
+      !content.includes('href="/c/test/secrets"')) {
     test.skip();
     return;
   }
@@ -77,13 +75,12 @@ test('resource quotas list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/resourcequotas');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view resource quotas
-  if (!content.includes('Resource Quotas') || !content.includes('href="/c/test/resourcequotas"')) {
+  // Skip test if page doesn't exist, lacks permission, or resource quotas not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Resource Quotas') || 
+      !content.includes('href="/c/test/resourcequotas"')) {
     test.skip();
     return;
   }
@@ -99,13 +96,12 @@ test('limit ranges list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/limitranges');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view limit ranges
-  if (!content.includes('Limit Ranges') || !content.includes('href="/c/test/limitranges"')) {
+  // Skip test if page doesn't exist, lacks permission, or limit ranges not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Limit Ranges') || 
+      !content.includes('href="/c/test/limitranges"')) {
     test.skip();
     return;
   }

@@ -33,13 +33,12 @@ test('storage classes list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/storage/classes');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view storage classes
-  if (!content.includes('Storage') || !content.includes('href="/c/test/storage/classes"')) {
+  // Skip test if page doesn't exist, lacks permission, or storage classes not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Storage') || 
+      !content.includes('href="/c/test/storage/classes"')) {
     test.skip();
     return;
   }
@@ -55,13 +54,12 @@ test('persistent volumes list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/storage/persistentvolumes');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view persistent volumes
-  if (!content.includes('Persistent Volumes') || !content.includes('href="/c/test/storage/persistentvolumes"')) {
+  // Skip test if page doesn't exist, lacks permission, or persistent volumes not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Persistent Volumes') || 
+      !content.includes('href="/c/test/storage/persistentvolumes"')) {
     test.skip();
     return;
   }
@@ -77,13 +75,12 @@ test('persistent volume claims list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/storage/persistentvolumeclaims');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view persistent volume claims
-  if (!content.includes('Persistent Volume Claims') || !content.includes('href="/c/test/storage/persistentvolumeclaims"')) {
+  // Skip test if page doesn't exist, lacks permission, or persistent volume claims not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Persistent Volume Claims') || 
+      !content.includes('href="/c/test/storage/persistentvolumeclaims"')) {
     test.skip();
     return;
   }

@@ -33,12 +33,12 @@ test('workloads overview page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/workloads');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  if (!content.includes('Workloads')) {
+  // Skip test if page doesn't exist or lacks permission, workloads must be available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Workloads')) {
+    test.skip();
     return;
   }
   
@@ -53,13 +53,12 @@ test('deployments list page should load and display table', async ({ page }) => 
   await headlampPage.navigateTopage('/c/test/deployments');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view deployments
-  if (!content.includes('Deployments') || !content.includes('href="/c/test/deployments"')) {
+  // Skip test if page doesn't exist, lacks permission, or deployments not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Deployments') || 
+      !content.includes('href="/c/test/deployments"')) {
     test.skip();
     return;
   }
@@ -75,13 +74,12 @@ test('daemonsets list page should load and display table', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/daemonsets');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view daemonsets
-  if (!content.includes('DaemonSets') || !content.includes('href="/c/test/daemonsets"')) {
+  // Skip test if page doesn't exist, lacks permission, or daemonsets not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('DaemonSets') || 
+      !content.includes('href="/c/test/daemonsets"')) {
     test.skip();
     return;
   }
@@ -97,13 +95,12 @@ test('statefulsets list page should load and display table', async ({ page }) =>
   await headlampPage.navigateTopage('/c/test/statefulsets');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view statefulsets
-  if (!content.includes('StatefulSets') || !content.includes('href="/c/test/statefulsets"')) {
+  // Skip test if page doesn't exist, lacks permission, or statefulsets not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('StatefulSets') || 
+      !content.includes('href="/c/test/statefulsets"')) {
     test.skip();
     return;
   }
@@ -119,13 +116,12 @@ test('replicasets list page should load and display table', async ({ page }) => 
   await headlampPage.navigateTopage('/c/test/replicasets');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view replicasets
-  if (!content.includes('ReplicaSets') || !content.includes('href="/c/test/replicasets"')) {
+  // Skip test if page doesn't exist, lacks permission, or replicasets not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('ReplicaSets') || 
+      !content.includes('href="/c/test/replicasets"')) {
     test.skip();
     return;
   }
@@ -141,13 +137,12 @@ test('jobs list page should load and display table', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/jobs');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view jobs
-  if (!content.includes('Jobs') || !content.includes('href="/c/test/jobs"')) {
+  // Skip test if page doesn't exist, lacks permission, or jobs not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Jobs') || 
+      !content.includes('href="/c/test/jobs"')) {
     test.skip();
     return;
   }
@@ -163,13 +158,12 @@ test('cronjobs list page should load and display table', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/cronjobs');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view cronjobs
-  if (!content.includes('CronJobs') || !content.includes('href="/c/test/cronjobs"')) {
+  // Skip test if page doesn't exist, lacks permission, or cronjobs not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('CronJobs') || 
+      !content.includes('href="/c/test/cronjobs"')) {
     test.skip();
     return;
   }

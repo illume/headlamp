@@ -33,13 +33,12 @@ test('endpoints list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/endpoints');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view endpoints
-  if (!content.includes('Endpoints') || !content.includes('href="/c/test/endpoints"')) {
+  // Skip test if page doesn't exist, lacks permission, or endpoints not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Endpoints') || 
+      !content.includes('href="/c/test/endpoints"')) {
     test.skip();
     return;
   }
@@ -55,13 +54,12 @@ test('endpoint slices list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/endpointslices');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view endpoint slices
-  if (!content.includes('EndpointSlices') || !content.includes('href="/c/test/endpointslices"')) {
+  // Skip test if page doesn't exist, lacks permission, or endpoint slices not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('EndpointSlices') || 
+      !content.includes('href="/c/test/endpointslices"')) {
     test.skip();
     return;
   }
@@ -77,13 +75,12 @@ test('ingresses list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/ingresses');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view ingresses
-  if (!content.includes('Ingresses') || !content.includes('href="/c/test/ingresses"')) {
+  // Skip test if page doesn't exist, lacks permission, or ingresses not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Ingresses') || 
+      !content.includes('href="/c/test/ingresses"')) {
     test.skip();
     return;
   }
@@ -99,13 +96,12 @@ test('ingress classes list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/ingressclasses');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view ingress classes
-  if (!content.includes('IngressClasses') || !content.includes('href="/c/test/ingressclasses"')) {
+  // Skip test if page doesn't exist, lacks permission, or ingress classes not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('IngressClasses') || 
+      !content.includes('href="/c/test/ingressclasses"')) {
     test.skip();
     return;
   }
@@ -121,13 +117,12 @@ test('network policies list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/networkpolicies');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view network policies
-  if (!content.includes('Network Policies') || !content.includes('href="/c/test/networkpolicies"')) {
+  // Skip test if page doesn't exist, lacks permission, or network policies not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Network Policies') || 
+      !content.includes('href="/c/test/networkpolicies"')) {
     test.skip();
     return;
   }

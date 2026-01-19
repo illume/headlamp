@@ -33,13 +33,12 @@ test('nodes list page should load and display table', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/nodes');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view nodes
-  if (!content.includes('Nodes') || !content.includes('href="/c/test/nodes"')) {
+  // Skip test if page doesn't exist, lacks permission, or nodes not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Nodes') || 
+      !content.includes('href="/c/test/nodes"')) {
     test.skip();
     return;
   }
@@ -55,13 +54,12 @@ test('nodes list page should have table with expected columns', async ({ page })
   await headlampPage.navigateTopage('/c/test/nodes');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view nodes
-  if (!content.includes('Nodes') || !content.includes('href="/c/test/nodes"')) {
+  // Skip test if page doesn't exist, lacks permission, or nodes not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Nodes') || 
+      !content.includes('href="/c/test/nodes"')) {
     test.skip();
     return;
   }
@@ -78,13 +76,12 @@ test('node details page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/nodes');
   
   const content = await page.content();
-  if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
-    test.skip();
-    return; // Must return immediately after test.skip()
-  }
   
-  // Check if we have permission to view nodes
-  if (!content.includes('Nodes') || !content.includes('href="/c/test/nodes"')) {
+  // Skip test if page doesn't exist, lacks permission, or nodes not available
+  if (content.includes("Whoops! This page doesn't exist") || 
+      content.includes('404') ||
+      !content.includes('Nodes') || 
+      !content.includes('href="/c/test/nodes"')) {
     test.skip();
     return;
   }
