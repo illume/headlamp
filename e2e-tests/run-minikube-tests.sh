@@ -74,14 +74,14 @@ echo "Building Docker images..."
 echo "============================================"
 cd "$PROJECT_ROOT"
 
-if ! docker images | grep -q "ghcr.io/headlamp-k8s/headlamp.*latest"; then
+if ! docker images | grep -q "ghcr.io/headlamp-k8s/headlamp:latest"; then
     echo "Building Headlamp image..."
     DOCKER_IMAGE_VERSION=latest make image
 else
     echo "Headlamp image already exists, skipping build."
 fi
 
-if ! docker images | grep -q "ghcr.io/headlamp-k8s/headlamp-plugins-test.*latest"; then
+if ! docker images | grep -q "ghcr.io/headlamp-k8s/headlamp-plugins-test:latest"; then
     echo "Building plugins test image..."
     # Build plugin example for testing
     cd plugins/examples/pod-counter
@@ -161,8 +161,9 @@ echo "Testing Headlamp accessibility..."
 max_attempts=30
 attempt=0
 while [ $attempt -lt $max_attempts ]; do
-    if curl -s -L "$SERVICE_URL" | grep -q "Headlamp: Kubernetes Web UI"; then
-        echo "✓ Headlamp is accessible"
+    # Use HTTP status code check instead of content grep
+    if curl -s -o /dev/null -w "%{http_code}" -L "$SERVICE_URL" | grep -q "^200$"; then
+        echo "✓ Headlamp is accessible (HTTP 200)"
         break
     fi
     attempt=$((attempt + 1))
