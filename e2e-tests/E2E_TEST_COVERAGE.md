@@ -40,7 +40,7 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [x] e2e-tests: namespace-create: Add test for namespace creation (tested in `namespaces.spec.ts`)
 - [x] e2e-tests: namespace-delete: Add test for namespace deletion (tested in `namespaces.spec.ts`)
 - [x] e2e-tests: nodes-list: Add test for nodes list page (tested in `nodes.spec.ts`)
-- [x] e2e-tests: node-details: Add test for node details page (**SKIPPED** in `nodes.spec.ts` - CI timeout issues)
+- [ ] e2e-tests: node-details: Add test for node details page (**SKIPPED** in `nodes.spec.ts` - CI timeout issues)
 
 ### Storage
 - [x] e2e-tests: storage-classes-list: Add test for storage classes list page (tested in `storage.spec.ts`)
@@ -75,11 +75,11 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [x] e2e-tests: service-details: Add test for service details page (tested in `headlamp.spec.ts`)
 - [x] e2e-tests: endpoints-list: Add test for endpoints list page (tested in `network.spec.ts`)
 - [ ] e2e-tests: endpoint-details: Add test for endpoint details page
-- [x] e2e-tests: endpointslices-list: Add test for endpoint slices list page (**SKIPPED** in `network.spec.ts` - CI timeout issues)
+- [ ] e2e-tests: endpointslices-list: Add test for endpoint slices list page (**SKIPPED** in `network.spec.ts` - CI timeout issues)
 - [ ] e2e-tests: endpointslice-details: Add test for endpoint slice details page
 - [x] e2e-tests: ingresses-list: Add test for ingresses list page (tested in `network.spec.ts`)
 - [ ] e2e-tests: ingress-details: Add test for ingress details page
-- [x] e2e-tests: ingress-classes-list: Add test for ingress classes list page (**SKIPPED** in `network.spec.ts` - CI timeout issues)
+- [ ] e2e-tests: ingress-classes-list: Add test for ingress classes list page (**SKIPPED** in `network.spec.ts` - CI timeout issues)
 - [ ] e2e-tests: ingress-class-details: Add test for ingress class details page
 - [x] e2e-tests: network-policies-list: Add test for network policies list page (tested in `network.spec.ts`)
 - [ ] e2e-tests: network-policy-details: Add test for network policy details page
@@ -144,11 +144,11 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [ ] e2e-tests: validating-webhook-config-details: Add test for validating webhook configuration details page
 
 ### Custom Resources
-- [x] e2e-tests: crds-list: Add test for CRDs list page (**SKIPPED** in `crds.spec.ts` - CI timeout issues)
+- [ ] e2e-tests: crds-list: Add test for CRDs list page (**SKIPPED** in `crds.spec.ts` - CI timeout issues)
 - [ ] e2e-tests: crd-details: Add test for CRD details page
 - [ ] e2e-tests: custom-resources-list: Add test for custom resources list page
 - [ ] e2e-tests: custom-resource-details: Add test for custom resource details page
-- [x] e2e-tests: cr-instances-list: Add test for CR instances list page (**SKIPPED** in `crds.spec.ts` - CI timeout issues)
+- [ ] e2e-tests: cr-instances-list: Add test for CR instances list page (**SKIPPED** in `crds.spec.ts` - CI timeout issues)
 
 ### Settings & Configuration
 - [ ] e2e-tests: settings-general: Add test for general settings page
