@@ -96,6 +96,8 @@ jobs:
           key: ${{ steps.cache-image-restore.outputs.cache-primary-key }}
       
       - name: Run E2E tests with minikube
+        env:
+          DELETE_CLUSTER: "true"
         run: |
           make e2e-minikube
       

@@ -6,7 +6,7 @@ npx playwright install
 
 ## Automated Testing with Minikube
 
-The easiest way to run e2e tests is using the automated script that handles all setup and teardown:
+The easiest way to run e2e tests is using the automated script that handles all setup:
 
 ```bash
 # From the project root
@@ -17,11 +17,28 @@ npm run e2e:minikube
 ```
 
 This script will:
-1. Start a minikube cluster with a dedicated profile (`headlamp-e2e-test`)
-2. Build and load the Headlamp Docker images
+1. Check if a minikube cluster with profile `headlamp-e2e-test` already exists
+   - If it exists, reuse it (skips cluster creation)
+   - If it doesn't exist, create a new one
+2. Build and load the Headlamp Docker images (if not already built)
 3. Deploy Headlamp to the cluster
 4. Run all Playwright e2e tests
-5. Clean up by deleting the minikube profile
+5. **Keep the cluster running** for faster subsequent test runs
+
+**Note:** By default, the cluster is NOT deleted after tests complete. This allows for:
+- Faster subsequent test runs (cluster reuse)
+- Debugging failed tests
+- Inspecting the cluster state
+
+To delete the test cluster when you're done:
+
+```bash
+# Using make
+make e2e-minikube-clean
+
+# Or using npm
+npm run e2e:minikube:clean
+```
 
 **Requirements:**
 - `minikube` installed ([installation guide](https://minikube.sigs.k8s.io/docs/start/))

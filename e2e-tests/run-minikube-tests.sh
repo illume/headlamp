@@ -19,21 +19,35 @@ MINIKUBE_PROFILE="headlamp-e2e-test"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# Check if DELETE_CLUSTER environment variable is set
+# Default is to NOT delete the cluster
+DELETE_CLUSTER="${DELETE_CLUSTER:-false}"
+
 echo "============================================"
 echo "Headlamp E2E Tests with Minikube"
 echo "============================================"
 echo "Profile: $MINIKUBE_PROFILE"
+echo "Delete cluster after tests: $DELETE_CLUSTER"
 echo ""
 
-# Cleanup function to ensure minikube is stopped even on failure
+# Cleanup function to delete minikube cluster if requested
 cleanup() {
-    echo ""
-    echo "============================================"
-    echo "Cleaning up..."
-    echo "============================================"
-    if minikube profile list | grep -q "$MINIKUBE_PROFILE"; then
-        echo "Deleting minikube profile: $MINIKUBE_PROFILE"
-        minikube delete -p "$MINIKUBE_PROFILE" || true
+    if [ "$DELETE_CLUSTER" = "true" ]; then
+        echo ""
+        echo "============================================"
+        echo "Cleaning up..."
+        echo "============================================"
+        if minikube profile list 2>/dev/null | grep -q "$MINIKUBE_PROFILE"; then
+            echo "Deleting minikube profile: $MINIKUBE_PROFILE"
+            minikube delete -p "$MINIKUBE_PROFILE" || true
+        fi
+    else
+        echo ""
+        echo "============================================"
+        echo "Cluster preserved for debugging"
+        echo "============================================"
+        echo "To delete the cluster later, run: make e2e-minikube-clean"
+        echo "Or: npm run e2e:minikube:clean"
     fi
 }
 
@@ -59,12 +73,24 @@ if ! command -v docker &> /dev/null; then
     exit 1
 fi
 
-# Start minikube with a dedicated profile
-echo "Starting minikube with profile: $MINIKUBE_PROFILE"
-minikube start -p "$MINIKUBE_PROFILE" --driver=docker --wait=all
+# Check if minikube profile already exists
+if minikube profile list 2>/dev/null | grep -q "$MINIKUBE_PROFILE"; then
+    echo "Minikube profile '$MINIKUBE_PROFILE' already exists. Reusing existing cluster."
+    echo "To start fresh, delete the cluster first with: make e2e-minikube-clean"
+    
+    # Ensure the cluster is running
+    if ! minikube status -p "$MINIKUBE_PROFILE" 2>/dev/null | grep -q "Running"; then
+        echo "Starting existing minikube profile: $MINIKUBE_PROFILE"
+        minikube start -p "$MINIKUBE_PROFILE" --driver=docker
+    fi
+else
+    # Start minikube with a dedicated profile
+    echo "Starting new minikube with profile: $MINIKUBE_PROFILE"
+    minikube start -p "$MINIKUBE_PROFILE" --driver=docker --wait=all
+fi
 
 # Rename the context to 'test' to match e2e test expectations
-echo "Renaming kubectl context to 'test' (required by e2e tests)"
+echo "Ensuring kubectl context is named 'test' (required by e2e tests)"
 kubectl config rename-context "$MINIKUBE_PROFILE" test 2>/dev/null || true
 kubectl config use-context test
 
