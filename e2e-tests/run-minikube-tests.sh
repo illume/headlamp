@@ -117,11 +117,14 @@ kubectl create clusterrolebinding headlamp-admin --serviceaccount=kube-system:he
 
 # Generate token for tests
 echo "Generating service account token..."
-export HEADLAMP_TEST_TOKEN=$(kubectl create token headlamp-admin --duration 24h -n kube-system)
+HEADLAMP_TEST_TOKEN=$(kubectl create token headlamp-admin --duration 24h -n kube-system)
+export HEADLAMP_TEST_TOKEN
 
 # Get cluster info for kubeconfig
-export TEST_CA_DATA=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')
-export TEST_SERVER=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}')
+TEST_CA_DATA=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')
+export TEST_CA_DATA
+TEST_SERVER=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}')
+export TEST_SERVER
 
 # Create a second dummy cluster configuration for multi-cluster tests
 # Using the same cluster but with different context names
@@ -148,7 +151,8 @@ echo "Getting service URL..."
 echo "============================================"
 SERVICE_PORT=$(kubectl get services headlamp -n kube-system -o=jsonpath='{.spec.ports[0].nodePort}')
 MINIKUBE_IP=$(minikube ip -p "$MINIKUBE_PROFILE")
-export SERVICE_URL="http://${MINIKUBE_IP}:${SERVICE_PORT}"
+SERVICE_URL="http://${MINIKUBE_IP}:${SERVICE_PORT}"
+export SERVICE_URL
 
 echo "Headlamp URL: $SERVICE_URL"
 
@@ -188,7 +192,8 @@ echo ""
 echo "============================================"
 echo "Running Playwright e2e tests..."
 echo "============================================"
-export HEADLAMP_TEST_URL=$SERVICE_URL
+HEADLAMP_TEST_URL=$SERVICE_URL
+export HEADLAMP_TEST_URL
 npx playwright test
 
 exit_code=$?
