@@ -29,7 +29,7 @@ test('configmaps list page should load', async ({ page }) => {
   
   // Check if we have permission to view configmaps
   const content = await page.content();
-  if (!content.includes('Config') || !content.includes('href="/c/test/configmaps')) {
+  if (!content.includes('Config') || !content.includes('href="/c/test/configmaps"')) {
     return;
   }
 
@@ -42,7 +42,7 @@ test('secrets list page should load', async ({ page }) => {
   
   // Check if we have permission to view secrets
   const content = await page.content();
-  if (!content.includes('Secrets') || !content.includes('href="/c/test/secrets')) {
+  if (!content.includes('Secrets') || !content.includes('href="/c/test/secrets"')) {
     return;
   }
 
@@ -55,7 +55,7 @@ test('resource quotas list page should load', async ({ page }) => {
   
   // Check if we have permission to view resource quotas
   const content = await page.content();
-  if (!content.includes('Resource Quotas') || !content.includes('href="/c/test/resourcequotas')) {
+  if (!content.includes('Resource Quotas') || !content.includes('href="/c/test/resourcequotas"')) {
     return;
   }
 
@@ -68,7 +68,7 @@ test('limit ranges list page should load', async ({ page }) => {
   
   // Check if we have permission to view limit ranges
   const content = await page.content();
-  if (!content.includes('Limit Ranges') || !content.includes('href="/c/test/limitranges')) {
+  if (!content.includes('Limit Ranges') || !content.includes('href="/c/test/limitranges"')) {
     return;
   }
 

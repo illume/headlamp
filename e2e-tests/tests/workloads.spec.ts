@@ -35,7 +35,7 @@ test('deployments list page should load and display table', async ({ page }) => 
   
   // Check if we have permission to view deployments
   const content = await page.content();
-  if (!content.includes('Deployments') || !content.includes('href="/c/test/deployments')) {
+  if (!content.includes('Deployments') || !content.includes('href="/c/test/deployments"')) {
     return;
   }
 
@@ -48,7 +48,7 @@ test('daemonsets list page should load and display table', async ({ page }) => {
   
   // Check if we have permission to view daemonsets
   const content = await page.content();
-  if (!content.includes('DaemonSets') || !content.includes('href="/c/test/daemonsets')) {
+  if (!content.includes('DaemonSets') || !content.includes('href="/c/test/daemonsets"')) {
     return;
   }
 
@@ -61,7 +61,7 @@ test('statefulsets list page should load and display table', async ({ page }) =>
   
   // Check if we have permission to view statefulsets
   const content = await page.content();
-  if (!content.includes('StatefulSets') || !content.includes('href="/c/test/statefulsets')) {
+  if (!content.includes('StatefulSets') || !content.includes('href="/c/test/statefulsets"')) {
     return;
   }
 
@@ -74,7 +74,7 @@ test('replicasets list page should load and display table', async ({ page }) => 
   
   // Check if we have permission to view replicasets
   const content = await page.content();
-  if (!content.includes('ReplicaSets') || !content.includes('href="/c/test/replicasets')) {
+  if (!content.includes('ReplicaSets') || !content.includes('href="/c/test/replicasets"')) {
     return;
   }
 
@@ -87,7 +87,7 @@ test('jobs list page should load and display table', async ({ page }) => {
   
   // Check if we have permission to view jobs
   const content = await page.content();
-  if (!content.includes('Jobs') || !content.includes('href="/c/test/jobs')) {
+  if (!content.includes('Jobs') || !content.includes('href="/c/test/jobs"')) {
     return;
   }
 
@@ -100,7 +100,7 @@ test('cronjobs list page should load and display table', async ({ page }) => {
   
   // Check if we have permission to view cronjobs
   const content = await page.content();
-  if (!content.includes('CronJobs') || !content.includes('href="/c/test/cronjobs')) {
+  if (!content.includes('CronJobs') || !content.includes('href="/c/test/cronjobs"')) {
     return;
   }
 

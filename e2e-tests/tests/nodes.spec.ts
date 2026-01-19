@@ -29,7 +29,7 @@ test('nodes list page should load and display table', async ({ page }) => {
   
   // Check if we have permission to view nodes
   const content = await page.content();
-  if (!content.includes('Nodes') || !content.includes('href="/c/test/nodes')) {
+  if (!content.includes('Nodes') || !content.includes('href="/c/test/nodes"')) {
     return;
   }
 
@@ -42,7 +42,7 @@ test('nodes list page should have table with expected columns', async ({ page })
   
   // Check if we have permission to view nodes
   const content = await page.content();
-  if (!content.includes('Nodes') || !content.includes('href="/c/test/nodes')) {
+  if (!content.includes('Nodes') || !content.includes('href="/c/test/nodes"')) {
     return;
   }
 
@@ -56,7 +56,7 @@ test('node details page should load', async ({ page }) => {
   
   // Check if we have permission to view nodes
   const content = await page.content();
-  if (!content.includes('Nodes') || !content.includes('href="/c/test/nodes')) {
+  if (!content.includes('Nodes') || !content.includes('href="/c/test/nodes"')) {
     return;
   }
 

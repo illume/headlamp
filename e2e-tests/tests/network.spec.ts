@@ -29,7 +29,7 @@ test('endpoints list page should load', async ({ page }) => {
   
   // Check if we have permission to view endpoints
   const content = await page.content();
-  if (!content.includes('Endpoints') || !content.includes('href="/c/test/endpoints')) {
+  if (!content.includes('Endpoints') || !content.includes('href="/c/test/endpoints"')) {
     return;
   }
 
@@ -42,7 +42,7 @@ test('endpoint slices list page should load', async ({ page }) => {
   
   // Check if we have permission to view endpoint slices
   const content = await page.content();
-  if (!content.includes('EndpointSlices') || !content.includes('href="/c/test/endpointslices')) {
+  if (!content.includes('EndpointSlices') || !content.includes('href="/c/test/endpointslices"')) {
     return;
   }
 
@@ -55,7 +55,7 @@ test('ingresses list page should load', async ({ page }) => {
   
   // Check if we have permission to view ingresses
   const content = await page.content();
-  if (!content.includes('Ingresses') || !content.includes('href="/c/test/ingresses')) {
+  if (!content.includes('Ingresses') || !content.includes('href="/c/test/ingresses"')) {
     return;
   }
 
@@ -68,7 +68,7 @@ test('ingress classes list page should load', async ({ page }) => {
   
   // Check if we have permission to view ingress classes
   const content = await page.content();
-  if (!content.includes('IngressClasses') || !content.includes('href="/c/test/ingressclasses')) {
+  if (!content.includes('IngressClasses') || !content.includes('href="/c/test/ingressclasses"')) {
     return;
   }
 
@@ -81,7 +81,7 @@ test('network policies list page should load', async ({ page }) => {
   
   // Check if we have permission to view network policies
   const content = await page.content();
-  if (!content.includes('Network Policies') || !content.includes('href="/c/test/networkpolicies')) {
+  if (!content.includes('Network Policies') || !content.includes('href="/c/test/networkpolicies"')) {
     return;
   }
 

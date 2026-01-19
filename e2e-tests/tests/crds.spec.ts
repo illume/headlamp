@@ -29,7 +29,7 @@ test('custom resource definitions list page should load', async ({ page }) => {
   
   // Check if we have permission to view CRDs
   const content = await page.content();
-  if (!content.includes('CRDs') || !content.includes('href="/c/test/crds')) {
+  if (!content.includes('CRDs') || !content.includes('href="/c/test/crds"')) {
     return;
   }
 
@@ -42,7 +42,7 @@ test('custom resource instances list page should load', async ({ page }) => {
   
   // Check if we have permission to view CR instances
   const content = await page.content();
-  if (!content.includes('CRInstances') || !content.includes('href="/c/test/crs')) {
+  if (!content.includes('CRInstances') || !content.includes('href="/c/test/crs"')) {
     return;
   }
 
