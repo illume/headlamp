@@ -17,12 +17,13 @@
 
 const { execSync } = require('child_process');
 
-const MINIKUBE_PROFILE = 'headlamp-e2e-test';
+const MINIKUBE_PROFILE_1 = 'test';
+const MINIKUBE_PROFILE_2 = 'test2';
 
 console.log('============================================');
-console.log('Cleaning up Minikube E2E Test Cluster');
+console.log('Cleaning up Minikube E2E Test Clusters');
 console.log('============================================');
-console.log(`Profile: ${MINIKUBE_PROFILE}`);
+console.log(`Profiles: ${MINIKUBE_PROFILE_1}, ${MINIKUBE_PROFILE_2}`);
 console.log('');
 
 // Helper function to check if command exists
@@ -59,13 +60,21 @@ if (!commandExists('minikube')) {
   process.exit(1);
 }
 
-// Check if profile exists
+// Check if profiles exist and delete them
 const { output } = runCommand('minikube profile list', { silent: true, ignoreError: true });
 
-if (output.includes(MINIKUBE_PROFILE)) {
-  console.log(`Deleting minikube profile: ${MINIKUBE_PROFILE}`);
-  runCommand(`minikube delete -p ${MINIKUBE_PROFILE}`);
-  console.log('✓ Cluster deleted successfully');
+let deleted = false;
+
+for (const profile of [MINIKUBE_PROFILE_1, MINIKUBE_PROFILE_2]) {
+  if (output.includes(profile)) {
+    console.log(`Deleting minikube profile: ${profile}`);
+    runCommand(`minikube delete -p ${profile}`);
+    deleted = true;
+  }
+}
+
+if (deleted) {
+  console.log('✓ Clusters deleted successfully');
 } else {
-  console.log(`Profile '${MINIKUBE_PROFILE}' does not exist. Nothing to clean up.`);
+  console.log(`Profiles '${MINIKUBE_PROFILE_1}' and '${MINIKUBE_PROFILE_2}' do not exist. Nothing to clean up.`);
 }

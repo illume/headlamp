@@ -21,9 +21,11 @@ const fs = require('fs');
 const http = require('http');
 
 // In CI, the GitHub Action already starts minikube with the default profile
-// Locally, we use a custom profile to avoid conflicts
+// Locally, we use custom profiles to avoid conflicts
+// We need two profiles to match the test/test2 cluster names expected by e2e tests
 const IS_CI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
-const MINIKUBE_PROFILE = IS_CI ? 'minikube' : 'headlamp-e2e-test';
+const MINIKUBE_PROFILE_1 = 'test';
+const MINIKUBE_PROFILE_2 = 'test2';
 const SCRIPT_DIR = __dirname;
 const PROJECT_ROOT = path.join(SCRIPT_DIR, '..');
 
@@ -35,10 +37,8 @@ console.log('============================================');
 console.log('Headlamp E2E Tests with Minikube');
 console.log('============================================');
 console.log(`Environment: ${IS_CI ? 'CI' : 'Local'}`);
-console.log(`Profile: ${MINIKUBE_PROFILE}`);
-console.log('============================================');
-console.log(`Profile: ${MINIKUBE_PROFILE}`);
-console.log(`Delete cluster after tests: ${DELETE_CLUSTER}`);
+console.log(`Profiles: ${MINIKUBE_PROFILE_1}, ${MINIKUBE_PROFILE_2}`);
+console.log(`Delete clusters after tests: ${DELETE_CLUSTER}`);
 console.log('');
 
 // Helper function to run commands
@@ -103,16 +103,18 @@ function sleep(ms) {
 // Cleanup function
 function cleanup() {
   if (DELETE_CLUSTER && !IS_CI) {
-    // Only delete cluster locally; in CI the action manages it
+    // Only delete clusters locally; in CI the action manages it
     console.log('');
     console.log('============================================');
     console.log('Cleaning up...');
     console.log('============================================');
     
     const { output } = runCommand('minikube profile list', { silent: true, ignoreError: true });
-    if (output.includes(MINIKUBE_PROFILE)) {
-      console.log(`Deleting minikube profile: ${MINIKUBE_PROFILE}`);
-      runCommand(`minikube delete -p ${MINIKUBE_PROFILE}`, { ignoreError: true });
+    for (const profile of [MINIKUBE_PROFILE_1, MINIKUBE_PROFILE_2]) {
+      if (output.includes(profile)) {
+        console.log(`Deleting minikube profile: ${profile}`);
+        runCommand(`minikube delete -p ${profile}`, { ignoreError: true });
+      }
     }
   } else if (IS_CI) {
     console.log('');
@@ -122,9 +124,9 @@ function cleanup() {
   } else {
     console.log('');
     console.log('============================================');
-    console.log('Cluster preserved for debugging');
+    console.log('Clusters preserved for debugging');
     console.log('============================================');
-    console.log('To delete the cluster later, run: make e2e-minikube-clean');
+    console.log('To delete the clusters later, run: make e2e-minikube-clean');
     console.log('Or: npm run e2e:minikube:clean');
   }
 }
@@ -152,13 +154,15 @@ async function main() {
       process.exit(1);
     }
 
-    // In CI, minikube is already started by the GitHub Action
+    // Start/verify minikube clusters
     if (IS_CI) {
-      console.log('Running in CI - minikube should already be started by GitHub Action');
+      // In CI, use the single minikube instance created by GitHub Action
+      // We'll configure it to have both test and test2 contexts pointing to the same cluster
+      console.log('Running in CI - using minikube instance from GitHub Action');
       
-      // Verify minikube is running
+      // Verify minikube is running (uses default 'minikube' profile)
       const { output: statusOutput } = runCommand(
-        `minikube status -p ${MINIKUBE_PROFILE} --format='{{.Host}}'`,
+        `minikube status --format='{{.Host}}'`,
         { silent: true, ignoreError: true }
       );
       
@@ -167,68 +171,59 @@ async function main() {
         process.exit(1);
       }
       console.log('✓ Minikube is running');
+      
+      // Rename default minikube context to test
+      console.log('Configuring contexts...');
+      runCommand('kubectl config rename-context minikube test', { silent: true, ignoreError: true });
+      runCommand('kubectl config use-context test');
     } else {
-      // Local development: check if minikube profile already exists
+      // Local development: create two separate minikube clusters named test and test2
+      console.log('Local development - creating two minikube profiles: test and test2');
+      
       const { output: profileList } = runCommand('minikube profile list', {
         silent: true,
         ignoreError: true,
       });
 
-      if (profileList.includes(MINIKUBE_PROFILE)) {
-        console.log(`Minikube profile '${MINIKUBE_PROFILE}' already exists. Reusing existing cluster.`);
-        console.log('To start fresh, delete the cluster first with: make e2e-minikube-clean');
-
-        // Ensure the cluster is running - check host status specifically
-        const { output: statusOutput } = runCommand(
-          `minikube status -p ${MINIKUBE_PROFILE} --format='{{.Host}}'`,
+      // Start or verify first cluster (test)
+      if (profileList.includes(MINIKUBE_PROFILE_1)) {
+        console.log(`Profile '${MINIKUBE_PROFILE_1}' already exists. Checking if running...`);
+        const { output: status1 } = runCommand(
+          `minikube status -p ${MINIKUBE_PROFILE_1} --format='{{.Host}}'`,
           { silent: true, ignoreError: true }
         );
-
-        if (!statusOutput.includes('Running')) {
-          console.log(`Starting existing minikube profile: ${MINIKUBE_PROFILE}`);
-          runCommand(`minikube start -p ${MINIKUBE_PROFILE} --driver=docker`);
+        if (!status1.includes('Running')) {
+          console.log(`Starting profile: ${MINIKUBE_PROFILE_1}`);
+          runCommand(`minikube start -p ${MINIKUBE_PROFILE_1} --driver=docker`);
         } else {
-          console.log('Cluster is already running.');
+          console.log(`✓ Profile ${MINIKUBE_PROFILE_1} is running`);
         }
       } else {
-        // Start minikube with a dedicated profile
-        console.log(`Starting new minikube with profile: ${MINIKUBE_PROFILE}`);
-        runCommand(`minikube start -p ${MINIKUBE_PROFILE} --driver=docker --wait=all`);
+        console.log(`Creating new profile: ${MINIKUBE_PROFILE_1}`);
+        runCommand(`minikube start -p ${MINIKUBE_PROFILE_1} --driver=docker --wait=all`);
       }
-    }
 
-    // Rename the context to 'test' to match e2e test expectations
-    console.log("Ensuring kubectl context is named 'test' (required by e2e tests)");
-    
-    // Check if context 'test' already exists
-    const { success: contextExists } = runCommand('kubectl config get-contexts test', {
-      silent: true,
-      ignoreError: true,
-    });
-
-    if (contextExists) {
-      // Context exists, verify it's our cluster
-      const { output: currentCluster } = runCommand(
-        `kubectl config view -o jsonpath="{.contexts[?(@.name=='test')].context.cluster}"`,
-        { silent: true, ignoreError: true }
-      );
-
-      if (currentCluster.trim() !== MINIKUBE_PROFILE) {
-        // It's a different cluster, try to delete it first
-        runCommand('kubectl config delete-context test', { silent: true, ignoreError: true });
-        runCommand(`kubectl config rename-context ${MINIKUBE_PROFILE} test`, {
-          silent: true,
-          ignoreError: true,
-        });
+      // Start or verify second cluster (test2)
+      if (profileList.includes(MINIKUBE_PROFILE_2)) {
+        console.log(`Profile '${MINIKUBE_PROFILE_2}' already exists. Checking if running...`);
+        const { output: status2 } = runCommand(
+          `minikube status -p ${MINIKUBE_PROFILE_2} --format='{{.Host}}'`,
+          { silent: true, ignoreError: true }
+        );
+        if (!status2.includes('Running')) {
+          console.log(`Starting profile: ${MINIKUBE_PROFILE_2}`);
+          runCommand(`minikube start -p ${MINIKUBE_PROFILE_2} --driver=docker`);
+        } else {
+          console.log(`✓ Profile ${MINIKUBE_PROFILE_2} is running`);
+        }
+      } else {
+        console.log(`Creating new profile: ${MINIKUBE_PROFILE_2}`);
+        runCommand(`minikube start -p ${MINIKUBE_PROFILE_2} --driver=docker --wait=all`);
       }
-    } else {
-      // Context doesn't exist, rename from profile name
-      runCommand(`kubectl config rename-context ${MINIKUBE_PROFILE} test`, {
-        silent: true,
-        ignoreError: true,
-      });
+      
+      // Set test as the active profile
+      runCommand(`kubectl config use-context ${MINIKUBE_PROFILE_1}`);
     }
-    runCommand('kubectl config use-context test');
 
     // Build Docker images if they don't exist
     console.log('');
@@ -272,8 +267,8 @@ async function main() {
     console.log('============================================');
     console.log('Loading Docker images into minikube...');
     console.log('============================================');
-    runCommand(`minikube -p ${MINIKUBE_PROFILE} image load ghcr.io/headlamp-k8s/headlamp:latest`);
-    runCommand(`minikube -p ${MINIKUBE_PROFILE} image load ghcr.io/headlamp-k8s/headlamp-plugins-test:latest`);
+    runCommand(`minikube -p ${MINIKUBE_PROFILE_1} image load ghcr.io/headlamp-k8s/headlamp:latest`);
+    runCommand(`minikube -p ${MINIKUBE_PROFILE_1} image load ghcr.io/headlamp-k8s/headlamp-plugins-test:latest`);
 
     // Create service account and RBAC
     console.log('');
@@ -283,53 +278,105 @@ async function main() {
     
     // Create service account if it doesn't exist
     const { success: saExists } = runCommand(
-      `minikube -p ${MINIKUBE_PROFILE} kubectl -- get serviceaccount headlamp-admin --namespace kube-system`,
+      `minikube -p ${MINIKUBE_PROFILE_1} kubectl -- get serviceaccount headlamp-admin --namespace kube-system`,
       { silent: true, ignoreError: true }
     );
     
     if (!saExists) {
-      runCommand(`minikube -p ${MINIKUBE_PROFILE} kubectl -- create serviceaccount headlamp-admin --namespace kube-system`);
+      runCommand(`minikube -p ${MINIKUBE_PROFILE_1} kubectl -- create serviceaccount headlamp-admin --namespace kube-system`);
     } else {
       console.log('Service account headlamp-admin already exists, skipping creation.');
     }
     
     // Create cluster role binding if it doesn't exist
     const { success: crbExists } = runCommand(
-      `minikube -p ${MINIKUBE_PROFILE} kubectl -- get clusterrolebinding headlamp-admin`,
+      `minikube -p ${MINIKUBE_PROFILE_1} kubectl -- get clusterrolebinding headlamp-admin`,
       { silent: true, ignoreError: true }
     );
     
     if (!crbExists) {
-      runCommand(`minikube -p ${MINIKUBE_PROFILE} kubectl -- create clusterrolebinding headlamp-admin --serviceaccount=kube-system:headlamp-admin --clusterrole=cluster-admin`);
+      runCommand(`minikube -p ${MINIKUBE_PROFILE_1} kubectl -- create clusterrolebinding headlamp-admin --serviceaccount=kube-system:headlamp-admin --clusterrole=cluster-admin`);
     } else {
       console.log('ClusterRoleBinding headlamp-admin already exists, skipping creation.');
     }
 
     // Generate token for tests
-    console.log('Generating service account token...');
+    console.log('Generating service account token for cluster 1 (test)...');
     const { output: token } = runCommand(
-      `minikube -p ${MINIKUBE_PROFILE} kubectl -- create token headlamp-admin --duration 24h -n kube-system`,
+      `minikube -p ${MINIKUBE_PROFILE_1} kubectl -- create token headlamp-admin --duration 24h -n kube-system`,
       { silent: true }
     );
     process.env.HEADLAMP_TEST_TOKEN = token.trim();
 
-    // Get cluster info for kubeconfig
+    // Get cluster info for kubeconfig (cluster 1)
     const { output: caData } = runCommand(
-      `minikube -p ${MINIKUBE_PROFILE} kubectl -- config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}'`,
+      `minikube -p ${MINIKUBE_PROFILE_1} kubectl -- config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}'`,
       { silent: true }
     );
     process.env.TEST_CA_DATA = caData.trim();
 
     const { output: server } = runCommand(
-      `minikube -p ${MINIKUBE_PROFILE} kubectl -- config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}'`,
+      `minikube -p ${MINIKUBE_PROFILE_1} kubectl -- config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}'`,
       { silent: true }
     );
     process.env.TEST_SERVER = server.trim();
 
-    // Create a second dummy cluster configuration for multi-cluster tests
-    process.env.TEST2_CA_DATA = process.env.TEST_CA_DATA;
-    process.env.TEST2_SERVER = process.env.TEST_SERVER;
-    process.env.HEADLAMP_TEST2_TOKEN = process.env.HEADLAMP_TEST_TOKEN;
+    // Set up second cluster (test2) configuration
+    if (IS_CI) {
+      // In CI, test2 uses the same cluster as test
+      console.log('In CI: test2 uses same cluster as test');
+      process.env.TEST2_CA_DATA = process.env.TEST_CA_DATA;
+      process.env.TEST2_SERVER = process.env.TEST_SERVER;
+      process.env.HEADLAMP_TEST2_TOKEN = process.env.HEADLAMP_TEST_TOKEN;
+    } else {
+      // Locally, set up RBAC for second cluster
+      console.log('Setting up RBAC for cluster 2 (test2)...');
+      
+      // Create service account if it doesn't exist
+      const { success: sa2Exists } = runCommand(
+        `minikube -p ${MINIKUBE_PROFILE_2} kubectl -- get serviceaccount headlamp-admin --namespace kube-system`,
+        { silent: true, ignoreError: true }
+      );
+      
+      if (!sa2Exists) {
+        runCommand(`minikube -p ${MINIKUBE_PROFILE_2} kubectl -- create serviceaccount headlamp-admin --namespace kube-system`);
+      } else {
+        console.log('Service account headlamp-admin already exists in test2, skipping creation.');
+      }
+      
+      // Create cluster role binding if it doesn't exist
+      const { success: crb2Exists } = runCommand(
+        `minikube -p ${MINIKUBE_PROFILE_2} kubectl -- get clusterrolebinding headlamp-admin`,
+        { silent: true, ignoreError: true }
+      );
+      
+      if (!crb2Exists) {
+        runCommand(`minikube -p ${MINIKUBE_PROFILE_2} kubectl -- create clusterrolebinding headlamp-admin --serviceaccount=kube-system:headlamp-admin --clusterrole=cluster-admin`);
+      } else {
+        console.log('ClusterRoleBinding headlamp-admin already exists in test2, skipping creation.');
+      }
+
+      // Generate token for test2
+      console.log('Generating service account token for cluster 2 (test2)...');
+      const { output: token2 } = runCommand(
+        `minikube -p ${MINIKUBE_PROFILE_2} kubectl -- create token headlamp-admin --duration 24h -n kube-system`,
+        { silent: true }
+      );
+      process.env.HEADLAMP_TEST2_TOKEN = token2.trim();
+
+      // Get cluster info for test2
+      const { output: caData2 } = runCommand(
+        `minikube -p ${MINIKUBE_PROFILE_2} kubectl -- config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}'`,
+        { silent: true }
+      );
+      process.env.TEST2_CA_DATA = caData2.trim();
+
+      const { output: server2 } = runCommand(
+        `minikube -p ${MINIKUBE_PROFILE_2} kubectl -- config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}'`,
+        { silent: true }
+      );
+      process.env.TEST2_SERVER = server2.trim();
+    }
 
     // Deploy Headlamp
     console.log('');
@@ -352,7 +399,7 @@ async function main() {
     fs.writeFileSync(tempManifest, expandedManifest);
 
     try {
-      runCommand(`minikube -p ${MINIKUBE_PROFILE} kubectl -- apply -f ${tempManifest}`);
+      runCommand(`minikube -p ${MINIKUBE_PROFILE_1} kubectl -- apply -f ${tempManifest}`);
     } finally {
       if (fs.existsSync(tempManifest)) {
         fs.unlinkSync(tempManifest);
@@ -362,7 +409,7 @@ async function main() {
     // Wait for deployment to be ready
     console.log('Waiting for Headlamp deployment to be ready...');
     runCommand(
-      `minikube -p ${MINIKUBE_PROFILE} kubectl -- wait deployment -n kube-system headlamp --for condition=Available=True --timeout=120s`
+      `minikube -p ${MINIKUBE_PROFILE_1} kubectl -- wait deployment -n kube-system headlamp --for condition=Available=True --timeout=120s`
     );
 
     // Get service URL
@@ -372,11 +419,11 @@ async function main() {
     console.log('============================================');
 
     const { output: servicePort } = runCommand(
-      `minikube -p ${MINIKUBE_PROFILE} kubectl -- get services headlamp -n kube-system -o=jsonpath='{.spec.ports[0].nodePort}'`,
+      `minikube -p ${MINIKUBE_PROFILE_1} kubectl -- get services headlamp -n kube-system -o=jsonpath='{.spec.ports[0].nodePort}'`,
       { silent: true }
     );
 
-    const { output: minikubeIp } = runCommand(`minikube ip -p ${MINIKUBE_PROFILE}`, {
+    const { output: minikubeIp } = runCommand(`minikube ip -p ${MINIKUBE_PROFILE_1}`, {
       silent: true,
     });
 
@@ -400,10 +447,10 @@ async function main() {
       if (attempt === maxAttempts) {
         console.error(`Error: Headlamp is not accessible after ${maxAttempts} attempts`);
         runCommand(
-          `minikube -p ${MINIKUBE_PROFILE} kubectl -- get pods -n kube-system -l app.kubernetes.io/name=headlamp`
+          `minikube -p ${MINIKUBE_PROFILE_1} kubectl -- get pods -n kube-system -l app.kubernetes.io/name=headlamp`
         );
         runCommand(
-          `minikube -p ${MINIKUBE_PROFILE} kubectl -- logs -n kube-system -l app.kubernetes.io/name=headlamp --tail=50`
+          `minikube -p ${MINIKUBE_PROFILE_1} kubectl -- logs -n kube-system -l app.kubernetes.io/name=headlamp --tail=50`
         );
         process.exit(1);
       }
@@ -443,11 +490,11 @@ async function main() {
       console.log('============================================');
       console.log('Debugging information:');
       runCommand(
-        `minikube -p ${MINIKUBE_PROFILE} kubectl -- get pods -n kube-system -l app.kubernetes.io/name=headlamp`,
+        `minikube -p ${MINIKUBE_PROFILE_1} kubectl -- get pods -n kube-system -l app.kubernetes.io/name=headlamp`,
         { ignoreError: true }
       );
       runCommand(
-        `minikube -p ${MINIKUBE_PROFILE} kubectl -- logs -n kube-system -l app.kubernetes.io/name=headlamp --tail=100`,
+        `minikube -p ${MINIKUBE_PROFILE_1} kubectl -- logs -n kube-system -l app.kubernetes.io/name=headlamp --tail=100`,
         { ignoreError: true }
       );
     }
