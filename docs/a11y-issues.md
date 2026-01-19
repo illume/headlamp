@@ -52,7 +52,7 @@ DialogTitle components rendering empty h1 elements.
 
 ### 4. ARIA Dialog Name (1 issue)
 
-- [ ] **VersionDialog**: `frontend/src/components/App/VersionDialog.tsx` - Add aria-label attribute to Dialog component to provide accessible name
+- [ ] **TopBar/Version Dialog**: `frontend/src/components/App/VersionDialog.tsx` - Add aria-label attribute to Dialog component to provide accessible name
 
 ### 5. Landmark Unique (1 issue)
 

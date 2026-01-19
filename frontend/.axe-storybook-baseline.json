@@ -16,7 +16,7 @@
     "TopBar/With Email Only": ["color-contrast"],
     "TopBar/Undefined Data": ["color-contrast"],
     "TopBar/Empty User Info": ["color-contrast"],
-    "Version Dialog/Version Dialog": ["aria-dialog-name"],
+    "TopBar/Version Dialog": ["aria-dialog-name"],
     "AuthToken/Show Error": ["empty-heading"],
     "AuthToken/Show Actions": ["empty-heading"],
     "Activity/Basic": ["landmark-unique"],
