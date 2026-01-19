@@ -251,8 +251,30 @@ async function main() {
     console.log('============================================');
     console.log('Setting up RBAC...');
     console.log('============================================');
-    runCommand(`minikube -p ${MINIKUBE_PROFILE} kubectl -- create serviceaccount headlamp-admin --namespace kube-system`);
-    runCommand(`minikube -p ${MINIKUBE_PROFILE} kubectl -- create clusterrolebinding headlamp-admin --serviceaccount=kube-system:headlamp-admin --clusterrole=cluster-admin`);
+    
+    // Create service account if it doesn't exist
+    const { success: saExists } = runCommand(
+      `minikube -p ${MINIKUBE_PROFILE} kubectl -- get serviceaccount headlamp-admin --namespace kube-system`,
+      { silent: true, ignoreError: true }
+    );
+    
+    if (!saExists) {
+      runCommand(`minikube -p ${MINIKUBE_PROFILE} kubectl -- create serviceaccount headlamp-admin --namespace kube-system`);
+    } else {
+      console.log('Service account headlamp-admin already exists, skipping creation.');
+    }
+    
+    // Create cluster role binding if it doesn't exist
+    const { success: crbExists } = runCommand(
+      `minikube -p ${MINIKUBE_PROFILE} kubectl -- get clusterrolebinding headlamp-admin`,
+      { silent: true, ignoreError: true }
+    );
+    
+    if (!crbExists) {
+      runCommand(`minikube -p ${MINIKUBE_PROFILE} kubectl -- create clusterrolebinding headlamp-admin --serviceaccount=kube-system:headlamp-admin --clusterrole=cluster-admin`);
+    } else {
+      console.log('ClusterRoleBinding headlamp-admin already exists, skipping creation.');
+    }
 
     // Generate token for tests
     console.log('Generating service account token...');
@@ -294,13 +316,18 @@ async function main() {
       .replace(/\${TEST2_SERVER}/g, process.env.TEST2_SERVER)
       .replace(/\${TEST2_CA_DATA}/g, process.env.TEST2_CA_DATA);
 
-    const tempManifest = path.join(SCRIPT_DIR, '.temp-manifest.yaml');
+    // Use unique temporary filename with random component
+    const crypto = require('crypto');
+    const randomSuffix = crypto.randomBytes(8).toString('hex');
+    const tempManifest = path.join(SCRIPT_DIR, `.temp-manifest-${randomSuffix}.yaml`);
     fs.writeFileSync(tempManifest, expandedManifest);
 
     try {
       runCommand(`minikube -p ${MINIKUBE_PROFILE} kubectl -- apply -f ${tempManifest}`);
     } finally {
-      fs.unlinkSync(tempManifest);
+      if (fs.existsSync(tempManifest)) {
+        fs.unlinkSync(tempManifest);
+      }
     }
 
     // Wait for deployment to be ready

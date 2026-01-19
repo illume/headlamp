@@ -47,6 +47,9 @@ npm run e2e:minikube:clean
 - `minikube` installed ([installation guide](https://minikube.sigs.k8s.io/docs/start/))
 - `kubectl` installed
 - `docker` installed and running
+- For Windows: If using `make` commands, install [Make for Windows](https://gnuwin32.sourceforge.net/packages/make.htm) or use the npm scripts instead
+
+**Note:** The scripts use `make` to build Docker images. On Windows, if you don't have `make` installed, use the npm scripts (`npm run e2e:minikube`) which will work the same way.
 
 ## Manual Testing with Minikube
 
