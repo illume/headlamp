@@ -35,14 +35,12 @@ test('configmaps list page should load', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view configmaps
-  if (!content.includes('Config')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/configmaps"')) {
+  if (!content.includes('Config') || !content.includes('href="/c/test/configmaps"')) {
+    test.skip();
     return;
   }
 
@@ -59,14 +57,12 @@ test('secrets list page should load', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view secrets
-  if (!content.includes('Secrets')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/secrets"')) {
+  if (!content.includes('Secrets') || !content.includes('href="/c/test/secrets"')) {
+    test.skip();
     return;
   }
 
@@ -83,14 +79,12 @@ test('resource quotas list page should load', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view resource quotas
-  if (!content.includes('Resource Quotas')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/resourcequotas"')) {
+  if (!content.includes('Resource Quotas') || !content.includes('href="/c/test/resourcequotas"')) {
+    test.skip();
     return;
   }
 
@@ -107,14 +101,12 @@ test('limit ranges list page should load', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view limit ranges
-  if (!content.includes('Limit Ranges')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/limitranges"')) {
+  if (!content.includes('Limit Ranges') || !content.includes('href="/c/test/limitranges"')) {
+    test.skip();
     return;
   }
 

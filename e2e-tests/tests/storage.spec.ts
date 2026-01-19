@@ -35,14 +35,12 @@ test('storage classes list page should load', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view storage classes
-  if (!content.includes('Storage')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/storage/classes"')) {
+  if (!content.includes('Storage') || !content.includes('href="/c/test/storage/classes"')) {
+    test.skip();
     return;
   }
 
@@ -59,14 +57,12 @@ test('persistent volumes list page should load', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view persistent volumes
-  if (!content.includes('Persistent Volumes')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/storage/persistentvolumes"')) {
+  if (!content.includes('Persistent Volumes') || !content.includes('href="/c/test/storage/persistentvolumes"')) {
+    test.skip();
     return;
   }
 
@@ -83,14 +79,12 @@ test('persistent volume claims list page should load', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view persistent volume claims
-  if (!content.includes('Persistent Volume Claims')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/storage/persistentvolumeclaims"')) {
+  if (!content.includes('Persistent Volume Claims') || !content.includes('href="/c/test/storage/persistentvolumeclaims"')) {
+    test.skip();
     return;
   }
 

@@ -35,6 +35,7 @@ test('workloads overview page should load', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   if (!content.includes('Workloads')) {
@@ -54,14 +55,12 @@ test('deployments list page should load and display table', async ({ page }) => 
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view deployments
-  if (!content.includes('Deployments')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/deployments"')) {
+  if (!content.includes('Deployments') || !content.includes('href="/c/test/deployments"')) {
+    test.skip();
     return;
   }
 
@@ -78,14 +77,12 @@ test('daemonsets list page should load and display table', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view daemonsets
-  if (!content.includes('DaemonSets')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/daemonsets"')) {
+  if (!content.includes('DaemonSets') || !content.includes('href="/c/test/daemonsets"')) {
+    test.skip();
     return;
   }
 
@@ -102,14 +99,12 @@ test('statefulsets list page should load and display table', async ({ page }) =>
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view statefulsets
-  if (!content.includes('StatefulSets')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/statefulsets"')) {
+  if (!content.includes('StatefulSets') || !content.includes('href="/c/test/statefulsets"')) {
+    test.skip();
     return;
   }
 
@@ -126,14 +121,12 @@ test('replicasets list page should load and display table', async ({ page }) => 
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view replicasets
-  if (!content.includes('ReplicaSets')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/replicasets"')) {
+  if (!content.includes('ReplicaSets') || !content.includes('href="/c/test/replicasets"')) {
+    test.skip();
     return;
   }
 
@@ -150,14 +143,12 @@ test('jobs list page should load and display table', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view jobs
-  if (!content.includes('Jobs')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/jobs"')) {
+  if (!content.includes('Jobs') || !content.includes('href="/c/test/jobs"')) {
+    test.skip();
     return;
   }
 
@@ -174,14 +165,12 @@ test('cronjobs list page should load and display table', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view cronjobs
-  if (!content.includes('CronJobs')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/cronjobs"')) {
+  if (!content.includes('CronJobs') || !content.includes('href="/c/test/cronjobs"')) {
+    test.skip();
     return;
   }
 

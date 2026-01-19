@@ -35,14 +35,12 @@ test('horizontal pod autoscalers list page should load', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view HPAs
-  if (!content.includes('Horizontal Pod Autoscalers')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/horizontalpodautoscalers"')) {
+  if (!content.includes('Horizontal Pod Autoscalers') || !content.includes('href="/c/test/horizontalpodautoscalers"')) {
+    test.skip();
     return;
   }
 
@@ -59,14 +57,12 @@ test('vertical pod autoscalers list page should load', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view VPAs
-  if (!content.includes('Vertical Pod Autoscalers')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/verticalpodautoscalers"')) {
+  if (!content.includes('Vertical Pod Autoscalers') || !content.includes('href="/c/test/verticalpodautoscalers"')) {
+    test.skip();
     return;
   }
 
@@ -83,14 +79,12 @@ test('pod disruption budgets list page should load', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view PDBs
-  if (!content.includes('Pod Disruption Budgets')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/poddisruptionbudgets"')) {
+  if (!content.includes('Pod Disruption Budgets') || !content.includes('href="/c/test/poddisruptionbudgets"')) {
+    test.skip();
     return;
   }
 

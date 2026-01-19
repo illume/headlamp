@@ -35,14 +35,12 @@ test('endpoints list page should load', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view endpoints
-  if (!content.includes('Endpoints')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/endpoints"')) {
+  if (!content.includes('Endpoints') || !content.includes('href="/c/test/endpoints"')) {
+    test.skip();
     return;
   }
 
@@ -59,14 +57,12 @@ test('endpoint slices list page should load', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view endpoint slices
-  if (!content.includes('EndpointSlices')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/endpointslices"')) {
+  if (!content.includes('EndpointSlices') || !content.includes('href="/c/test/endpointslices"')) {
+    test.skip();
     return;
   }
 
@@ -83,14 +79,12 @@ test('ingresses list page should load', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view ingresses
-  if (!content.includes('Ingresses')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/ingresses"')) {
+  if (!content.includes('Ingresses') || !content.includes('href="/c/test/ingresses"')) {
+    test.skip();
     return;
   }
 
@@ -107,14 +101,12 @@ test('ingress classes list page should load', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view ingress classes
-  if (!content.includes('IngressClasses')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/ingressclasses"')) {
+  if (!content.includes('IngressClasses') || !content.includes('href="/c/test/ingressclasses"')) {
+    test.skip();
     return;
   }
 
@@ -131,14 +123,12 @@ test('network policies list page should load', async ({ page }) => {
   const content = await page.content();
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     test.skip();
+    return; // Must return immediately after test.skip()
   }
   
   // Check if we have permission to view network policies
-  if (!content.includes('Network Policies')) {
-    return;
-  }
-  
-  if (!content.includes('href="/c/test/networkpolicies"')) {
+  if (!content.includes('Network Policies') || !content.includes('href="/c/test/networkpolicies"')) {
+    test.skip();
     return;
   }
 
