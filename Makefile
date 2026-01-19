@@ -415,3 +415,8 @@ stop-monitoring:
 	@echo "Stopping monitoring containers..."
 	@docker rm -f jaeger prometheus 2>/dev/null || true
 	@echo "Monitoring containers stopped"
+
+.PHONY: e2e-minikube
+e2e-minikube:
+	@echo "Running e2e tests with minikube..."
+	cd e2e-tests && ./run-minikube-tests.sh

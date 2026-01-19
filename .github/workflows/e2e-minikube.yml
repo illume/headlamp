@@ -1,0 +1,107 @@
+name: E2E Tests with Minikube
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'Makefile'
+      - '.github/**'
+      - 'Dockerfile'
+      - 'Dockerfile.plugins'
+      - 'e2e-tests/**'
+  push:
+    branches:
+      - main
+      - rc-*
+      - testing-rc-*
+
+permissions:
+  contents: read
+
+jobs:
+  e2e-minikube:
+    runs-on: ubuntu-22.04
+    name: E2E tests with minikube
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+      
+      - uses: actions/setup-node@1a4442cacd436585916779262731d5b162bc6ec7 # v3.8.2
+        with:
+          node-version: 20.x
+      
+      - name: Setup Minikube
+        uses: medyagh/setup-minikube@latest
+        with:
+          minikube-version: latest
+          driver: docker
+          start: false
+      
+      - name: Verify minikube installation
+        run: |
+          minikube version
+          kubectl version --client
+      
+      - name: Restore image-cache Folder
+        id: cache-image-restore
+        uses: actions/cache/restore@0c907a75c2c80ebcb7f088228285e798b750cf8f # v4.2.1
+        with:
+          path: ~/image-cache
+          # Cache the container images based on source code
+          key: ${{ runner.os }}-image-${{ hashFiles('backend/pkg/**', 'backend/cmd/**', 'backend/go.*', 'frontend/src/**', 'frontend/package.json', 'frontend/package-lock.json', 'Makefile', '.github/workflows/e2e-minikube.yml', 'Dockerfile', 'Dockerfile.plugins') }}
+      
+      - name: Restore Cached Docker Images
+        if: steps.cache-image-restore.outputs.cache-hit == 'true'
+        run: |
+          mkdir -p ~/image-cache
+          if [ -f ~/image-cache/headlamp-plugins-test.tar.gz ]; then
+            gzip -dc ~/image-cache/headlamp-plugins-test.tar.gz | docker load
+          fi
+          if [ -f ~/image-cache/headlamp.tar.gz ]; then
+            gzip -dc ~/image-cache/headlamp.tar.gz | docker load
+          fi
+      
+      - name: Build Docker images if not cached
+        if: steps.cache-image-restore.outputs.cache-hit != 'true'
+        run: |
+          # Build plugin example
+          cd plugins/examples/pod-counter
+          npm ci
+          npm run build
+          cd ../../../
+          
+          # Extract plugin
+          cd plugins/headlamp-plugin
+          npm ci
+          node bin/headlamp-plugin.js extract ../examples/pod-counter ../../.plugins/
+          cd ../../
+          
+          # Build images
+          DOCKER_IMAGE_VERSION=latest make image
+          DOCKER_IMAGE_VERSION=latest DOCKER_PLUGINS_IMAGE_NAME=headlamp-plugins-test make build-plugins-container
+      
+      - name: Save Docker Images to cache
+        if: steps.cache-image-restore.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/image-cache
+          docker save ghcr.io/headlamp-k8s/headlamp-plugins-test:latest | gzip -9 > ~/image-cache/headlamp-plugins-test.tar.gz
+          docker save ghcr.io/headlamp-k8s/headlamp:latest | gzip -9 > ~/image-cache/headlamp.tar.gz
+      
+      - name: Cache image-cache Folder
+        if: steps.cache-image-restore.outputs.cache-hit != 'true'
+        id: cache-image-save
+        uses: actions/cache/save@0c907a75c2c80ebcb7f088228285e798b750cf8f # v4.2.1
+        with:
+          path: ~/image-cache
+          key: ${{ steps.cache-image-restore.outputs.cache-primary-key }}
+      
+      - name: Run E2E tests with minikube
+        run: |
+          make e2e-minikube
+      
+      - uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        if: always()
+        with:
+          name: e2e-minikube-test-report
+          path: e2e-tests/playwright-report/
+          retention-days: 30
