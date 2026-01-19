@@ -38,11 +38,15 @@ test('custom resource definitions list page should load', async ({ page }) => {
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     // CRDs feature not available in this environment, skip test
     test.skip();
+  }
+  
+  // Check if we have permission to view CRDs  
+  if (!content.includes('CRDs')) {
+    // No permission or CRDs not available, skip the test
     return;
   }
   
-  // Check if we have permission to view CRDs
-  if (!content.includes('CRDs') || !content.includes('href="/c/test/crds"')) {
+  if (!content.includes('href="/c/test/crds"')) {
     return;
   }
 
@@ -62,11 +66,15 @@ test('custom resource instances list page should load', async ({ page }) => {
   if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
     // CR instances feature not available in this environment, skip test
     test.skip();
-    return;
   }
   
   // Check if we have permission to view CR instances
-  if (!content.includes('CRInstances') || !content.includes('href="/c/test/crs"')) {
+  if (!content.includes('CRInstances')) {
+    // No permission or CR instances not available, skip the test
+    return;
+  }
+  
+  if (!content.includes('href="/c/test/crs"')) {
     return;
   }
 
