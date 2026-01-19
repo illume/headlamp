@@ -20,16 +20,22 @@ const path = require('path');
 const fs = require('fs');
 const http = require('http');
 
-const MINIKUBE_PROFILE = 'headlamp-e2e-test';
+// In CI, the GitHub Action already starts minikube with the default profile
+// Locally, we use a custom profile to avoid conflicts
+const IS_CI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
+const MINIKUBE_PROFILE = IS_CI ? 'minikube' : 'headlamp-e2e-test';
 const SCRIPT_DIR = __dirname;
 const PROJECT_ROOT = path.join(SCRIPT_DIR, '..');
 
 // Check if DELETE_CLUSTER environment variable is set
-// Default is to NOT delete the cluster
+// Default is to NOT delete the cluster (except in CI where the action handles it)
 const DELETE_CLUSTER = process.env.DELETE_CLUSTER === 'true';
 
 console.log('============================================');
 console.log('Headlamp E2E Tests with Minikube');
+console.log('============================================');
+console.log(`Environment: ${IS_CI ? 'CI' : 'Local'}`);
+console.log(`Profile: ${MINIKUBE_PROFILE}`);
 console.log('============================================');
 console.log(`Profile: ${MINIKUBE_PROFILE}`);
 console.log(`Delete cluster after tests: ${DELETE_CLUSTER}`);
@@ -96,7 +102,8 @@ function sleep(ms) {
 
 // Cleanup function
 function cleanup() {
-  if (DELETE_CLUSTER) {
+  if (DELETE_CLUSTER && !IS_CI) {
+    // Only delete cluster locally; in CI the action manages it
     console.log('');
     console.log('============================================');
     console.log('Cleaning up...');
@@ -107,6 +114,11 @@ function cleanup() {
       console.log(`Deleting minikube profile: ${MINIKUBE_PROFILE}`);
       runCommand(`minikube delete -p ${MINIKUBE_PROFILE}`, { ignoreError: true });
     }
+  } else if (IS_CI) {
+    console.log('');
+    console.log('============================================');
+    console.log('Running in CI - cluster managed by GitHub Action');
+    console.log('============================================');
   } else {
     console.log('');
     console.log('============================================');
@@ -140,32 +152,49 @@ async function main() {
       process.exit(1);
     }
 
-    // Check if minikube profile already exists
-    const { output: profileList } = runCommand('minikube profile list', {
-      silent: true,
-      ignoreError: true,
-    });
-
-    if (profileList.includes(MINIKUBE_PROFILE)) {
-      console.log(`Minikube profile '${MINIKUBE_PROFILE}' already exists. Reusing existing cluster.`);
-      console.log('To start fresh, delete the cluster first with: make e2e-minikube-clean');
-
-      // Ensure the cluster is running - check host status specifically
+    // In CI, minikube is already started by the GitHub Action
+    if (IS_CI) {
+      console.log('Running in CI - minikube should already be started by GitHub Action');
+      
+      // Verify minikube is running
       const { output: statusOutput } = runCommand(
         `minikube status -p ${MINIKUBE_PROFILE} --format='{{.Host}}'`,
         { silent: true, ignoreError: true }
       );
-
+      
       if (!statusOutput.includes('Running')) {
-        console.log(`Starting existing minikube profile: ${MINIKUBE_PROFILE}`);
-        runCommand(`minikube start -p ${MINIKUBE_PROFILE} --driver=docker`);
-      } else {
-        console.log('Cluster is already running.');
+        console.error('Error: Minikube is not running in CI. The setup-minikube action may have failed.');
+        process.exit(1);
       }
+      console.log('✓ Minikube is running');
     } else {
-      // Start minikube with a dedicated profile
-      console.log(`Starting new minikube with profile: ${MINIKUBE_PROFILE}`);
-      runCommand(`minikube start -p ${MINIKUBE_PROFILE} --driver=docker --wait=all`);
+      // Local development: check if minikube profile already exists
+      const { output: profileList } = runCommand('minikube profile list', {
+        silent: true,
+        ignoreError: true,
+      });
+
+      if (profileList.includes(MINIKUBE_PROFILE)) {
+        console.log(`Minikube profile '${MINIKUBE_PROFILE}' already exists. Reusing existing cluster.`);
+        console.log('To start fresh, delete the cluster first with: make e2e-minikube-clean');
+
+        // Ensure the cluster is running - check host status specifically
+        const { output: statusOutput } = runCommand(
+          `minikube status -p ${MINIKUBE_PROFILE} --format='{{.Host}}'`,
+          { silent: true, ignoreError: true }
+        );
+
+        if (!statusOutput.includes('Running')) {
+          console.log(`Starting existing minikube profile: ${MINIKUBE_PROFILE}`);
+          runCommand(`minikube start -p ${MINIKUBE_PROFILE} --driver=docker`);
+        } else {
+          console.log('Cluster is already running.');
+        }
+      } else {
+        // Start minikube with a dedicated profile
+        console.log(`Starting new minikube with profile: ${MINIKUBE_PROFILE}`);
+        runCommand(`minikube start -p ${MINIKUBE_PROFILE} --driver=docker --wait=all`);
+      }
     }
 
     // Rename the context to 'test' to match e2e test expectations

@@ -35,7 +35,6 @@ jobs:
         with:
           minikube-version: latest
           driver: docker
-          start: false
       
       - name: Verify minikube installation
         run: |

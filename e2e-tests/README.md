@@ -17,18 +17,22 @@ npm run e2e:minikube
 ```
 
 This script will:
-1. Check if a minikube cluster with profile `headlamp-e2e-test` already exists
-   - If it exists, reuse it (skips cluster creation)
-   - If it doesn't exist, create a new one
+1. Check if a minikube cluster already exists
+   - **In CI**: Uses the default `minikube` profile created by GitHub Actions
+   - **Locally**: Uses custom profile `headlamp-e2e-test` to avoid conflicts
+   - If the local profile exists, reuse it (skips cluster creation)
+   - If it doesn't exist locally, create a new one
 2. Build and load the Headlamp Docker images (if not already built)
 3. Deploy Headlamp to the cluster
 4. Run all Playwright e2e tests
-5. **Keep the cluster running** for faster subsequent test runs
+5. **Keep the cluster running** for faster subsequent test runs (local only)
 
-**Note:** By default, the cluster is NOT deleted after tests complete. This allows for:
+**Note:** By default, the cluster is NOT deleted after tests complete locally. This allows for:
 - Faster subsequent test runs (cluster reuse)
 - Debugging failed tests
 - Inspecting the cluster state
+
+In CI environments, the GitHub Actions workflow manages the minikube lifecycle automatically.
 
 The scripts are written in JavaScript (Node.js) and work on all platforms including Windows.
 
