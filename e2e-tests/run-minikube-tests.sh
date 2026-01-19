@@ -63,9 +63,10 @@ fi
 echo "Starting minikube with profile: $MINIKUBE_PROFILE"
 minikube start -p "$MINIKUBE_PROFILE" --driver=docker --wait=all
 
-# Set kubectl context to the minikube profile
-echo "Setting kubectl context to: $MINIKUBE_PROFILE"
-kubectl config use-context "$MINIKUBE_PROFILE"
+# Rename the context to 'test' to match e2e test expectations
+echo "Renaming kubectl context to 'test' (required by e2e tests)"
+kubectl config rename-context "$MINIKUBE_PROFILE" test 2>/dev/null || true
+kubectl config use-context test
 
 # Build Docker images if they don't exist
 echo ""
@@ -112,18 +113,18 @@ echo ""
 echo "============================================"
 echo "Setting up RBAC..."
 echo "============================================"
-kubectl create serviceaccount headlamp-admin --namespace kube-system
-kubectl create clusterrolebinding headlamp-admin --serviceaccount=kube-system:headlamp-admin --clusterrole=cluster-admin
+minikube -p "$MINIKUBE_PROFILE" kubectl -- create serviceaccount headlamp-admin --namespace kube-system
+minikube -p "$MINIKUBE_PROFILE" kubectl -- create clusterrolebinding headlamp-admin --serviceaccount=kube-system:headlamp-admin --clusterrole=cluster-admin
 
 # Generate token for tests
 echo "Generating service account token..."
-HEADLAMP_TEST_TOKEN=$(kubectl create token headlamp-admin --duration 24h -n kube-system)
+HEADLAMP_TEST_TOKEN=$(minikube -p "$MINIKUBE_PROFILE" kubectl -- create token headlamp-admin --duration 24h -n kube-system)
 export HEADLAMP_TEST_TOKEN
 
 # Get cluster info for kubeconfig
-TEST_CA_DATA=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')
+TEST_CA_DATA=$(minikube -p "$MINIKUBE_PROFILE" kubectl -- config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}')
 export TEST_CA_DATA
-TEST_SERVER=$(kubectl config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}')
+TEST_SERVER=$(minikube -p "$MINIKUBE_PROFILE" kubectl -- config view --raw --minify -o jsonpath='{.clusters[0].cluster.server}')
 export TEST_SERVER
 
 # Create a second dummy cluster configuration for multi-cluster tests
@@ -138,18 +139,18 @@ echo "============================================"
 echo "Deploying Headlamp to minikube..."
 echo "============================================"
 cd "$SCRIPT_DIR"
-envsubst < kubernetes-headlamp-ci.yaml | kubectl apply -f -
+envsubst < kubernetes-headlamp-ci.yaml | minikube -p "$MINIKUBE_PROFILE" kubectl -- apply -f -
 
 # Wait for deployment to be ready
 echo "Waiting for Headlamp deployment to be ready..."
-kubectl wait deployment -n kube-system headlamp --for condition=Available=True --timeout=120s
+minikube -p "$MINIKUBE_PROFILE" kubectl -- wait deployment -n kube-system headlamp --for condition=Available=True --timeout=120s
 
 # Get service URL
 echo ""
 echo "============================================"
 echo "Getting service URL..."
 echo "============================================"
-SERVICE_PORT=$(kubectl get services headlamp -n kube-system -o=jsonpath='{.spec.ports[0].nodePort}')
+SERVICE_PORT=$(minikube -p "$MINIKUBE_PROFILE" kubectl -- get services headlamp -n kube-system -o=jsonpath='{.spec.ports[0].nodePort}')
 MINIKUBE_IP=$(minikube ip -p "$MINIKUBE_PROFILE")
 SERVICE_URL="http://${MINIKUBE_IP}:${SERVICE_PORT}"
 export SERVICE_URL
@@ -169,8 +170,8 @@ while [ $attempt -lt $max_attempts ]; do
     attempt=$((attempt + 1))
     if [ $attempt -eq $max_attempts ]; then
         echo "Error: Headlamp is not accessible after $max_attempts attempts"
-        kubectl get pods -n kube-system -l app.kubernetes.io/name=headlamp
-        kubectl logs -n kube-system -l app.kubernetes.io/name=headlamp --tail=50
+        minikube -p "$MINIKUBE_PROFILE" kubectl -- get pods -n kube-system -l app.kubernetes.io/name=headlamp
+        minikube -p "$MINIKUBE_PROFILE" kubectl -- logs -n kube-system -l app.kubernetes.io/name=headlamp --tail=50
         exit 1
     fi
     echo "Waiting for Headlamp to be accessible (attempt $attempt/$max_attempts)..."
@@ -205,8 +206,8 @@ if [ $exit_code -ne 0 ]; then
     echo "❌ E2E tests failed with exit code $exit_code"
     echo "============================================"
     echo "Debugging information:"
-    kubectl get pods -n kube-system -l app.kubernetes.io/name=headlamp
-    kubectl logs -n kube-system -l app.kubernetes.io/name=headlamp --tail=100
+    minikube -p "$MINIKUBE_PROFILE" kubectl -- get pods -n kube-system -l app.kubernetes.io/name=headlamp
+    minikube -p "$MINIKUBE_PROFILE" kubectl -- logs -n kube-system -l app.kubernetes.io/name=headlamp --tail=100
     exit $exit_code
 else
     echo ""
