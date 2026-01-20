@@ -24,8 +24,8 @@ const http = require('http');
 // Locally, we use custom profiles to avoid conflicts
 // We need two profiles to match the test/test2 cluster names expected by e2e tests
 const IS_CI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true';
-const MINIKUBE_PROFILE_1 = 'test';
-const MINIKUBE_PROFILE_2 = 'test2';
+const MINIKUBE_PROFILE_1 = IS_CI ? 'minikube' : 'test';
+const MINIKUBE_PROFILE_2 = IS_CI ? 'minikube' : 'test2';
 const SCRIPT_DIR = __dirname;
 const PROJECT_ROOT = path.join(SCRIPT_DIR, '..');
 
