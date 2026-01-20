@@ -470,6 +470,68 @@ async function main() {
     }
     runCommand('npx playwright install --with-deps', { cwd: SCRIPT_DIR });
 
+    // Prepare kubeconfig with certificate files for e2e tests
+    console.log('');
+    console.log('============================================');
+    console.log('Preparing kubeconfig for e2e tests...');
+    console.log('============================================');
+    
+    const kubeconfigPath = path.join(process.env.HOME || process.env.USERPROFILE, '.kube', 'config');
+    process.env.KUBECONFIG = kubeconfigPath;
+    
+    // Get IP address
+    const { output: ipAddress } = runCommand(
+      `minikube -p ${MINIKUBE_PROFILE_1} kubectl -- get nodes -o=jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}'`,
+      { silent: true }
+    );
+    const IP_ADDRESS = ipAddress.trim();
+    
+    // Extract and write certificates to files
+    console.log('Extracting certificates from kubeconfig...');
+    
+    // CA certificate
+    const { output: caCertB64 } = runCommand(
+      `minikube -p ${MINIKUBE_PROFILE_1} kubectl -- config view --raw --minify -o jsonpath='{.clusters[0].cluster.certificate-authority-data}'`,
+      { silent: true }
+    );
+    const caCertData = Buffer.from(caCertB64.trim(), 'base64').toString('utf-8');
+    const caCertPath = path.join(PROJECT_ROOT, 'ca.crt');
+    fs.writeFileSync(caCertPath, caCertData);
+    
+    // Client certificate
+    const { output: clientCertB64 } = runCommand(
+      `minikube -p ${MINIKUBE_PROFILE_1} kubectl -- config view --raw --minify -o jsonpath='{.users[0].user.client-certificate-data}'`,
+      { silent: true }
+    );
+    const clientCertData = Buffer.from(clientCertB64.trim(), 'base64').toString('utf-8');
+    const clientCertPath = path.join(PROJECT_ROOT, 'client.crt');
+    fs.writeFileSync(clientCertPath, clientCertData);
+    
+    // Client key
+    const { output: clientKeyB64 } = runCommand(
+      `minikube -p ${MINIKUBE_PROFILE_1} kubectl -- config view --raw --minify -o jsonpath='{.users[0].user.client-key-data}'`,
+      { silent: true }
+    );
+    const clientKeyData = Buffer.from(clientKeyB64.trim(), 'base64').toString('utf-8');
+    const clientKeyPath = path.join(PROJECT_ROOT, 'client.key');
+    fs.writeFileSync(clientKeyPath, clientKeyData);
+    
+    // Get the context name (minikube or test depending on environment)
+    const contextName = IS_CI ? 'minikube' : 'test';
+    const clusterName = IS_CI ? 'minikube' : 'test';
+    const userName = IS_CI ? 'minikube' : `admin@${clusterName}`;
+    
+    // Update kubeconfig to use file paths instead of embedded data
+    console.log('Updating kubeconfig to use certificate files...');
+    runCommand(`kubectl config set-cluster ${clusterName} --certificate-authority=${caCertPath} --server=https://${IP_ADDRESS}:${servicePort.trim()}`);
+    runCommand(`kubectl config unset clusters.${clusterName}.certificate-authority-data`, { ignoreError: true });
+    runCommand(`kubectl config set-credentials ${userName} --client-certificate=${clientCertPath} --client-key=${clientKeyPath}`);
+    runCommand(`kubectl config unset users.${userName}.client-certificate-data`, { ignoreError: true });
+    runCommand(`kubectl config unset users.${userName}.client-key-data`, { ignoreError: true });
+    
+    console.log('Modified kubeconfig:');
+    runCommand('cat $KUBECONFIG');
+
     // Run e2e tests
     console.log('');
     console.log('============================================');
@@ -502,6 +564,17 @@ async function main() {
     console.error('Error:', error.message);
     exitCode = 1;
   } finally {
+    // Clean up certificate files
+    try {
+      const caCertPath = path.join(PROJECT_ROOT, 'ca.crt');
+      const clientCertPath = path.join(PROJECT_ROOT, 'client.crt');
+      const clientKeyPath = path.join(PROJECT_ROOT, 'client.key');
+      if (fs.existsSync(caCertPath)) fs.unlinkSync(caCertPath);
+      if (fs.existsSync(clientCertPath)) fs.unlinkSync(clientCertPath);
+      if (fs.existsSync(clientKeyPath)) fs.unlinkSync(clientKeyPath);
+    } catch (e) {
+      // Ignore cleanup errors
+    }
     cleanup();
   }
 
