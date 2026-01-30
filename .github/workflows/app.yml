@@ -99,17 +99,18 @@ jobs:
           echo "Found Headlamp at: $HEADLAMP_EXEC"
           # Run with list-plugins command (exits immediately, no GUI needed)
           chmod +x "$HEADLAMP_EXEC"
-          if timeout 30 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1; then
+          timeout 30 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
+          EXIT_CODE=$?
+          if [ $EXIT_CODE -eq 0 ]; then
             echo "✓ App executed successfully"
             cat /tmp/plugins-output.txt
+          elif [ $EXIT_CODE -eq 124 ]; then
+            echo "✗ App timed out"
+            cat /tmp/plugins-output.txt || true
+            exit 1
           else
-            EXIT_CODE=$?
-            if [ $EXIT_CODE -eq 124 ]; then
-              echo "✗ App timed out"
-            else
-              echo "✗ App failed to run (exit code: $EXIT_CODE)"
-              cat /tmp/plugins-output.txt || true
-            fi
+            echo "✗ App failed to run (exit code: $EXIT_CODE)"
+            cat /tmp/plugins-output.txt || true
             exit 1
           fi
         fi
@@ -201,16 +202,24 @@ jobs:
           Write-Host "Found Headlamp at: $($appPath.FullName)"
           # Run with list-plugins command (exits immediately, no GUI needed)
           try {
-            $process = Start-Process -FilePath $appPath.FullName -ArgumentList "list-plugins" -Wait -PassThru -NoNewWindow -RedirectStandardOutput "C:\temp\plugins-output.txt" -RedirectStandardError "C:\temp\plugins-error.txt"
+            # Create temp directory if it doesn't exist
+            $tempDir = "$env:TEMP\headlamp-test"
+            if (-not (Test-Path $tempDir)) {
+              New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+            }
+            $outputFile = Join-Path $tempDir "plugins-output.txt"
+            $errorFile = Join-Path $tempDir "plugins-error.txt"
+            
+            $process = Start-Process -FilePath $appPath.FullName -ArgumentList "list-plugins" -Wait -PassThru -NoNewWindow -RedirectStandardOutput $outputFile -RedirectStandardError $errorFile
             if ($process.ExitCode -eq 0) {
               Write-Host "✓ App executed successfully"
-              if (Test-Path "C:\temp\plugins-output.txt") {
-                Get-Content "C:\temp\plugins-output.txt"
+              if (Test-Path $outputFile) {
+                Get-Content $outputFile
               }
             } else {
               Write-Host "✗ App failed to run (exit code: $($process.ExitCode))"
-              if (Test-Path "C:\temp\plugins-error.txt") {
-                Get-Content "C:\temp\plugins-error.txt"
+              if (Test-Path $errorFile) {
+                Get-Content $errorFile
               }
               exit 1
             }
@@ -291,7 +300,8 @@ jobs:
           DMG_FILE=$(ls app/dist/*.dmg | head -n 1)
           if [ ! -z "$DMG_FILE" ]; then
             echo "Mounting DMG: $DMG_FILE"
-            MOUNT_POINT=$(hdiutil attach "$DMG_FILE" | grep Volumes | awk '{print $3}')
+            # Capture the full mount point path (everything after the last tab, which includes spaces)
+            MOUNT_POINT=$(hdiutil attach "$DMG_FILE" | grep Volumes | tail -1 | sed 's/.*\t//')
             if [ ! -z "$MOUNT_POINT" ]; then
               echo "DMG mounted at: $MOUNT_POINT"
               APP_BUNDLE=$(find "$MOUNT_POINT" -name "*.app" -type d | head -n 1)
@@ -304,16 +314,29 @@ jobs:
                   echo "Backend version: $VERSION_OUTPUT"
                   if echo "$VERSION_OUTPUT" | grep -q "Headlamp"; then
                     echo "✓ Backend binary is working"
+                    hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
                   else
                     echo "✗ Backend version check failed"
                     hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
                     exit 1
                   fi
+                else
+                  echo "✗ Backend server binary not found at $BACKEND_PATH"
+                  hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+                  exit 1
                 fi
+              else
+                echo "✗ App bundle not found in DMG"
+                hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+                exit 1
               fi
-              # Unmount the DMG
-              hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+            else
+              echo "✗ Failed to mount DMG"
+              exit 1
             fi
+          else
+            echo "✗ No DMG file found"
+            exit 1
           fi
         fi
     - name: Verify Electron app can run
@@ -328,17 +351,18 @@ jobs:
               echo "Found Headlamp at: $HEADLAMP_EXEC"
               chmod +x "$HEADLAMP_EXEC"
               # Run with list-plugins command (exits immediately, no GUI needed)
-              if timeout 30 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1; then
+              timeout 30 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
+              EXIT_CODE=$?
+              if [ $EXIT_CODE -eq 0 ]; then
                 echo "✓ App executed successfully"
                 cat /tmp/plugins-output.txt
+              elif [ $EXIT_CODE -eq 124 ]; then
+                echo "✗ App timed out"
+                cat /tmp/plugins-output.txt || true
+                exit 1
               else
-                EXIT_CODE=$?
-                if [ $EXIT_CODE -eq 124 ]; then
-                  echo "✗ App timed out"
-                else
-                  echo "✗ App failed to run (exit code: $EXIT_CODE)"
-                  cat /tmp/plugins-output.txt || true
-                fi
+                echo "✗ App failed to run (exit code: $EXIT_CODE)"
+                cat /tmp/plugins-output.txt || true
                 exit 1
               fi
             else
