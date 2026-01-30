@@ -335,6 +335,8 @@ jobs:
               echo "⚠ App timed out (expected on macOS CI without display)"
               cat /tmp/plugins-output.txt || true
               echo "✓ App verification completed (app started but timed out as expected in headless environment)"
+              # Explicitly succeed since timeout is expected
+              EXIT_CODE=0
             else
               echo "✗ App failed to run (exit code: $EXIT_CODE)"
               cat /tmp/plugins-output.txt || true
@@ -404,6 +406,8 @@ jobs:
                   cat /tmp/plugins-output.txt || true
                   echo "✓ App verification completed (app started but timed out as expected in headless environment)"
                   hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+                  # Explicitly succeed since timeout is expected
+                  EXIT_CODE=0
                 else
                   echo "✗ App failed to run (exit code: $EXIT_CODE)"
                   cat /tmp/plugins-output.txt || true
