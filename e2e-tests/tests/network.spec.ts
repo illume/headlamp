@@ -31,17 +31,6 @@ test.beforeEach(async ({ page }) => {
 
 test('endpoints list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/endpoints');
-  
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or endpoints not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Endpoints') || 
-      !content.includes('href="/c/test/endpoints"')) {
-    test.skip();
-    return;
-  }
 
   await headlampPage.checkPageContent('Endpoints');
   // TODO: Re-enable when UI a11y issues are fixed
