@@ -24,7 +24,10 @@
     "star": "node scripts/start.js --star",
     "test": "npm run compile-tests && jest electron --testMatch \"**/electron/**/*.test.ts\"",
     "compile-tests": "babel electron --out-dir electron/ --extensions .ts",
-    "tsc": "tsc"
+    "tsc": "tsc",
+    "verify-build-linux": "bash scripts/verify-build-linux.sh",
+    "verify-build-mac": "bash scripts/verify-build-mac.sh",
+    "verify-build-windows": "powershell -ExecutionPolicy Bypass -File scripts/verify-build-windows.ps1"
   },
   "build": {
     "appId": "com.microsoft.Headlamp",
