@@ -111,32 +111,26 @@ See the generated app files in app/dist/ .
 
 ### Verifying Builds
 
-After building the desktop app, you can verify that the built binaries work correctly by running the appropriate verification command:
+After building the desktop app, you can verify that the built binaries work correctly by running the appropriate verification command. This is useful to ensure the built binaries run properly, especially when upgrading packages that build binaries or when updating Electron.
 
-**Linux:**
+#### Linux
 ```bash
-cd app && npm run verify-build-linux
+npm run app:verify-build-linux
 ```
 
-**macOS:**
+#### macOS
 ```bash
-cd app && npm run verify-build-mac
+npm run app:verify-build-mac
 ```
 
-**Windows:**
+#### Windows
 ```powershell
-cd app
-npm run verify-build-windows
+npm run app:verify-build-windows
 ```
 
-These verification scripts will:
-1. Check that build artifacts (AppImage, tar.gz, DMG, or NSIS installer) exist in `app/dist/`
-2. Extract and test the backend server binary with the `--version` flag
-3. Run the Electron app with the `list-plugins` command to ensure it executes correctly
+These verification scripts will check that build artifacts exist, test the backend server binary, and run the Electron app to ensure it executes correctly.
 
-**Note for macOS:** On systems without a display server (like CI environments), the Electron app may timeout when running `list-plugins`. This is expected behavior and is treated as success if the app at least starts.
-
-The verification scripts are located in `app/scripts/` and are also used by the GitHub Actions workflow to verify builds in CI.
+**Note for macOS:** On systems without a display server (like CI environments), the Electron app may timeout. This is expected behavior and is treated as success if the app at least starts.
 
 ### Running the app
 
