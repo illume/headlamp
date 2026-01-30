@@ -109,10 +109,23 @@ if ($appPath -and (Test-Path $appPath)) {
       if (Test-Path $errorFile) {
         Get-Content $errorFile
       }
+      # Cleanup temp directory before exiting
+      if (Test-Path $tempDir) {
+        Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+      }
       exit 1
+    }
+    
+    # Cleanup temp directory
+    if (Test-Path $tempDir) {
+      Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
     }
   } catch {
     Write-Host "[FAIL] Error running app: $_" -ForegroundColor Red
+    # Cleanup temp directory before exiting
+    if (Test-Path $tempDir) {
+      Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
     exit 1
   }
 } else {
