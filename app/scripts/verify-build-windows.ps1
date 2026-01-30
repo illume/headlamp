@@ -92,11 +92,9 @@ if ($appPath -and (Test-Path $appPath)) {
   Write-Host "Found Headlamp at: $appPath"
   
   try {
-    # Create temp directory if it doesn't exist
-    $tempDir = Join-Path $env:TEMP "headlamp-test"
-    if (-not (Test-Path $tempDir)) {
-      New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
-    }
+    # Create a unique temp directory for this run
+    $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
+    New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
     $outputFile = Join-Path $tempDir "plugins-output.txt"
     $errorFile = Join-Path $tempDir "plugins-error.txt"
     
