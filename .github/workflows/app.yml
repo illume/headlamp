@@ -74,7 +74,10 @@ jobs:
           echo "Found backend at: $BACKEND_PATH"
           # Test version command
           chmod +x "$BACKEND_PATH"
-          VERSION_OUTPUT=$("$BACKEND_PATH" --version)
+          if ! VERSION_OUTPUT=$("$BACKEND_PATH" --version 2>&1); then
+            echo "✗ Failed to execute backend --version"
+            exit 1
+          fi
           echo "Backend version: $VERSION_OUTPUT"
           if echo "$VERSION_OUTPUT" | grep -q "Headlamp"; then
             echo "✓ Backend binary is working"
@@ -83,7 +86,8 @@ jobs:
             exit 1
           fi
         else
-          echo "No x64 tar.gz found, skipping backend verification"
+          echo "✗ No x64 tar.gz found for backend verification"
+          exit 1
         fi
     - name: Verify Electron app can run
       run: |
@@ -119,7 +123,8 @@ jobs:
             exit 1
           fi
         else
-          echo "No x64 tar.gz found, skipping app verification"
+          echo "✗ No x64 tar.gz found for app verification"
+          exit 1
         fi
   build-windows:
     runs-on: windows-2025
@@ -169,7 +174,12 @@ jobs:
           if ($backendPath) {
             Write-Host "Found backend at: $($backendPath.FullName)"
             # Test version command
-            $versionOutput = & $backendPath.FullName --version
+            $versionOutput = & $backendPath.FullName --version 2>&1
+            $exitCode = $LASTEXITCODE
+            if ($exitCode -ne 0) {
+              Write-Host "✗ Backend version command failed with exit code $exitCode"
+              exit $exitCode
+            }
             Write-Host "Backend version: $versionOutput"
             if ($versionOutput -match "Headlamp") {
               Write-Host "✓ Backend binary is working"
@@ -187,7 +197,12 @@ jobs:
           $backendPath = Get-ChildItem -Path app/dist -Recurse -Filter "headlamp-server.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
           if ($backendPath) {
             Write-Host "Found backend at: $($backendPath.FullName)"
-            $versionOutput = & $backendPath.FullName --version
+            $versionOutput = & $backendPath.FullName --version 2>&1
+            $exitCode = $LASTEXITCODE
+            if ($exitCode -ne 0) {
+              Write-Host "✗ Backend version command failed with exit code $exitCode"
+              exit $exitCode
+            }
             Write-Host "Backend version: $versionOutput"
             if ($versionOutput -match "Headlamp") {
               Write-Host "✓ Backend binary is working"
@@ -196,7 +211,8 @@ jobs:
               exit 1
             }
           } else {
-            Write-Host "Warning: Could not find unpacked backend to test"
+            Write-Host "✗ Could not find backend binary to test in dist output"
+            exit 1
           }
         }
     - name: Verify Electron app can run
@@ -235,7 +251,8 @@ jobs:
             exit 1
           }
         } else {
-          Write-Host "Unpacked app not found, skipping app verification"
+          Write-Host "✗ Unpacked app not found, failing app verification"
+          exit 1
         }
   build-mac:
     runs-on: macos-latest
@@ -289,7 +306,10 @@ jobs:
             echo "Found backend at: $BACKEND_PATH"
             # Test version command
             chmod +x "$BACKEND_PATH"
-            VERSION_OUTPUT=$("$BACKEND_PATH" --version)
+            if ! VERSION_OUTPUT=$("$BACKEND_PATH" --version 2>&1); then
+              echo "✗ Failed to execute backend --version"
+              exit 1
+            fi
             echo "Backend version: $VERSION_OUTPUT"
             if echo "$VERSION_OUTPUT" | grep -q "Headlamp"; then
               echo "✓ Backend binary is working"
@@ -308,7 +328,11 @@ jobs:
           if [ ! -z "$DMG_FILE" ]; then
             echo "Mounting DMG: $DMG_FILE"
             # Capture the full mount point path (last field after tab delimiter)
-            MOUNT_POINT=$(hdiutil attach "$DMG_FILE" | grep Volumes | tail -1 | awk -F'\t' '{print $NF}')
+            MOUNT_POINT=$(hdiutil attach "$DMG_FILE" 2>&1 | grep Volumes | tail -1 | awk -F'\t' '{print $NF}')
+            if [ -z "$MOUNT_POINT" ]; then
+              echo "✗ Failed to mount DMG or parse mount point"
+              exit 1
+            fi
             if [ ! -z "$MOUNT_POINT" ]; then
               echo "DMG mounted at: $MOUNT_POINT"
               APP_BUNDLE=$(find "$MOUNT_POINT" -name "*.app" -type d | head -n 1)
@@ -317,7 +341,11 @@ jobs:
                 BACKEND_PATH="$APP_BUNDLE/Contents/Resources/headlamp-server"
                 if [ -f "$BACKEND_PATH" ]; then
                   chmod +x "$BACKEND_PATH"
-                  VERSION_OUTPUT=$("$BACKEND_PATH" --version)
+                  if ! VERSION_OUTPUT=$("$BACKEND_PATH" --version 2>&1); then
+                    echo "✗ Backend --version command failed"
+                    hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+                    exit 1
+                  fi
                   echo "Backend version: $VERSION_OUTPUT"
                   if echo "$VERSION_OUTPUT" | grep -q "Headlamp"; then
                     echo "✓ Backend binary is working"
@@ -337,9 +365,6 @@ jobs:
                 hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
                 exit 1
               fi
-            else
-              echo "✗ Failed to mount DMG"
-              exit 1
             fi
           else
             echo "✗ No DMG file found"
@@ -377,7 +402,7 @@ jobs:
                 exit 1
               fi
             else
-              echo "Headlamp executable not found at $HEADLAMP_EXEC"
+              echo "✗ Headlamp executable not found at $HEADLAMP_EXEC"
               exit 1
             fi
           else
@@ -389,7 +414,11 @@ jobs:
           DMG_FILE=$(ls app/dist/*.dmg | head -n 1)
           if [ ! -z "$DMG_FILE" ]; then
             echo "Mounting DMG: $DMG_FILE"
-            MOUNT_POINT=$(hdiutil attach "$DMG_FILE" | grep Volumes | tail -1 | awk -F'\t' '{print $NF}')
+            MOUNT_POINT=$(hdiutil attach "$DMG_FILE" 2>&1 | grep Volumes | tail -1 | awk -F'\t' '{print $NF}')
+            if [ -z "$MOUNT_POINT" ]; then
+              echo "✗ Failed to mount DMG or parse mount point"
+              exit 1
+            fi
             if [ ! -z "$MOUNT_POINT" ]; then
               echo "DMG mounted at: $MOUNT_POINT"
               APP_BUNDLE=$(find "$MOUNT_POINT" -name "*.app" -type d | head -n 1)
@@ -429,9 +458,6 @@ jobs:
                 hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
                 exit 1
               fi
-            else
-              echo "✗ Failed to mount DMG"
-              exit 1
             fi
           else
             echo "✗ No DMG file found for app verification"
