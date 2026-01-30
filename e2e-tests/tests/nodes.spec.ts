@@ -31,17 +31,6 @@ test.beforeEach(async ({ page }) => {
 
 test('nodes list page should load and display table', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/nodes');
-  
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or nodes not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Nodes') || 
-      !content.includes('href="/c/test/nodes"')) {
-    test.skip();
-    return;
-  }
 
   await headlampPage.checkPageContent('Nodes');
   // TODO: Re-enable when UI a11y issues are fixed

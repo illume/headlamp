@@ -31,17 +31,7 @@ test.beforeEach(async ({ page }) => {
 
 test('workloads overview page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/workloads');
-  
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist or lacks permission, workloads must be available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Workloads')) {
-    test.skip();
-    return;
-  }
-  
+
   await headlampPage.checkPageContent('Workloads');
   // TODO: Re-enable when UI a11y issues are fixed
   if (ENABLE_A11Y_CHECKS) {

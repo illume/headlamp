@@ -65,17 +65,6 @@ test.skip('endpoint slices list page should load', async ({ page }) => {
 
 test('ingresses list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/ingresses');
-  
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or ingresses not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Ingresses') || 
-      !content.includes('href="/c/test/ingresses"')) {
-    test.skip();
-    return;
-  }
 
   await headlampPage.checkPageContent('Ingresses');
   // TODO: Re-enable when UI a11y issues are fixed

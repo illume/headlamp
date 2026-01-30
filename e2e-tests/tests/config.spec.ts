@@ -31,17 +31,6 @@ test.beforeEach(async ({ page }) => {
 
 test('configmaps list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/configmaps');
-  
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or configmaps not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Config') || 
-      !content.includes('href="/c/test/configmaps"')) {
-    test.skip();
-    return;
-  }
 
   await headlampPage.checkPageContent('Config Maps');
   // TODO: Re-enable when UI a11y issues are fixed

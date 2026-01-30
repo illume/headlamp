@@ -31,17 +31,6 @@ test.beforeEach(async ({ page }) => {
 
 test('storage classes list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/storage/classes');
-  
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or storage classes not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Storage') || 
-      !content.includes('href="/c/test/storage/classes"')) {
-    test.skip();
-    return;
-  }
 
   await headlampPage.checkPageContent('Storage Classes');
   // TODO: Re-enable when UI a11y issues are fixed
