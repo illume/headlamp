@@ -109,6 +109,35 @@ npm run app:package:win:msi
 
 See the generated app files in app/dist/ .
 
+### Verifying Builds
+
+After building the desktop app, you can verify that the built binaries work correctly by running the appropriate verification command:
+
+**Linux:**
+```bash
+cd app && npm run verify-build-linux
+```
+
+**macOS:**
+```bash
+cd app && npm run verify-build-mac
+```
+
+**Windows:**
+```powershell
+cd app
+npm run verify-build-windows
+```
+
+These verification scripts will:
+1. Check that build artifacts (AppImage, tar.gz, DMG, or NSIS installer) exist in `app/dist/`
+2. Extract and test the backend server binary with the `--version` flag
+3. Run the Electron app with the `list-plugins` command to ensure it executes correctly
+
+**Note for macOS:** On systems without a display server (like CI environments), the Electron app may timeout when running `list-plugins`. This is expected behavior and is treated as success if the app at least starts.
+
+The verification scripts are located in `app/scripts/` and are also used by the GitHub Actions workflow to verify builds in CI.
+
 ### Running the app
 
 If you already have **BOTH** the `backend` and `frontend` up and running, the quickest way to
