@@ -20,6 +20,71 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 APP_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 DIST_DIR="$APP_DIR/dist"
 
+# Function to test backend binary
+test_backend() {
+  local BACKEND_PATH="$1"
+  if [ -f "$BACKEND_PATH" ]; then
+    echo "Found backend at: $BACKEND_PATH"
+    chmod +x "$BACKEND_PATH"
+    if ! VERSION_OUTPUT=$("$BACKEND_PATH" --version 2>&1); then
+      echo "✗ Failed to execute backend --version"
+      return 1
+    fi
+    echo "Backend version: $VERSION_OUTPUT"
+    if echo "$VERSION_OUTPUT" | grep -q "Headlamp"; then
+      echo "✓ Backend binary is working"
+      return 0
+    else
+      echo "✗ Backend version check failed"
+      return 1
+    fi
+  else
+    echo "✗ Backend server binary not found at $BACKEND_PATH"
+    return 1
+  fi
+}
+
+# Function to test Electron app
+test_electron_app() {
+  local HEADLAMP_EXEC="$1"
+  if [ -f "$HEADLAMP_EXEC" ]; then
+    echo "Found Headlamp at: $HEADLAMP_EXEC"
+    chmod +x "$HEADLAMP_EXEC"
+    
+    echo "Running app with 10 second timeout..."
+    # Create unique temporary file for output
+    local OUTPUT_FILE=$(mktemp)
+    
+    # Use perl-based timeout as timeout command is not available on macOS by default
+    set +e  # Temporarily disable exit on error
+    perl -e 'alarm shift; exec @ARGV' 10 "$HEADLAMP_EXEC" list-plugins > "$OUTPUT_FILE" 2>&1
+    local EXIT_CODE=$?
+    set -e  # Re-enable exit on error
+    
+    echo "App exited with code: $EXIT_CODE"
+    echo "Output from app:"
+    cat "$OUTPUT_FILE" || echo "(no output)"
+    rm -f "$OUTPUT_FILE"
+    echo ""
+    
+    if [ $EXIT_CODE -eq 0 ]; then
+      echo "✓ App executed successfully"
+      return 0
+    elif [ $EXIT_CODE -eq 142 ]; then
+      # Timeout occurred - app started but didn't exit cleanly (expected on macOS CI without display)
+      echo "⚠ App timed out after 10 seconds (expected behavior on macOS CI without display)"
+      echo "✓ App verification completed - timeout indicates app started successfully"
+      return 0
+    else
+      echo "✗ App failed to run (exit code: $EXIT_CODE)"
+      return 1
+    fi
+  else
+    echo "✗ Headlamp executable not found at $HEADLAMP_EXEC"
+    return 1
+  fi
+}
+
 echo "=== Verifying Mac Build Artifacts ==="
 echo ""
 
@@ -52,59 +117,13 @@ if [ -d "$DIST_DIR/mac" ]; then
   
   # Test backend binary
   BACKEND_PATH="$APP_BUNDLE/Contents/Resources/headlamp-server"
-  if [ -f "$BACKEND_PATH" ]; then
-    echo "Found backend at: $BACKEND_PATH"
-    chmod +x "$BACKEND_PATH"
-    if ! VERSION_OUTPUT=$("$BACKEND_PATH" --version 2>&1); then
-      echo "✗ Failed to execute backend --version"
-      exit 1
-    fi
-    echo "Backend version: $VERSION_OUTPUT"
-    if echo "$VERSION_OUTPUT" | grep -q "Headlamp"; then
-      echo "✓ Backend binary is working"
-    else
-      echo "✗ Backend version check failed"
-      exit 1
-    fi
-  else
-    echo "✗ Backend server binary not found at $BACKEND_PATH"
-    exit 1
-  fi
+  test_backend "$BACKEND_PATH" || exit 1
   echo ""
   
   # Test Electron app
   echo "=== Verifying Electron App ==="
   HEADLAMP_EXEC="$APP_BUNDLE/Contents/MacOS/Headlamp"
-  if [ -f "$HEADLAMP_EXEC" ]; then
-    echo "Found Headlamp at: $HEADLAMP_EXEC"
-    chmod +x "$HEADLAMP_EXEC"
-    
-    echo "Running app with 10 second timeout..."
-    # Use perl-based timeout as timeout command is not available on macOS by default
-    set +e  # Temporarily disable exit on error
-    perl -e 'alarm shift; exec @ARGV' 10 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
-    EXIT_CODE=$?
-    set -e  # Re-enable exit on error
-    
-    echo "App exited with code: $EXIT_CODE"
-    echo "Output from app:"
-    cat /tmp/plugins-output.txt || echo "(no output)"
-    echo ""
-    
-    if [ $EXIT_CODE -eq 0 ]; then
-      echo "✓ App executed successfully"
-    elif [ $EXIT_CODE -eq 142 ]; then
-      # Timeout occurred - app started but didn't exit cleanly (expected on macOS CI without display)
-      echo "⚠ App timed out after 10 seconds (expected behavior on macOS CI without display)"
-      echo "✓ App verification completed - timeout indicates app started successfully"
-    else
-      echo "✗ App failed to run (exit code: $EXIT_CODE)"
-      exit 1
-    fi
-  else
-    echo "✗ Headlamp executable not found at $HEADLAMP_EXEC"
-    exit 1
-  fi
+  test_electron_app "$HEADLAMP_EXEC" || exit 1
 else
   echo "Mac build directory not found, checking DMG contents..."
   
@@ -125,23 +144,7 @@ else
       
       # Test backend binary
       BACKEND_PATH="$APP_BUNDLE/Contents/Resources/headlamp-server"
-      if [ -f "$BACKEND_PATH" ]; then
-        chmod +x "$BACKEND_PATH"
-        if ! VERSION_OUTPUT=$("$BACKEND_PATH" --version 2>&1); then
-          echo "✗ Backend --version command failed"
-          hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-          exit 1
-        fi
-        echo "Backend version: $VERSION_OUTPUT"
-        if echo "$VERSION_OUTPUT" | grep -q "Headlamp"; then
-          echo "✓ Backend binary is working"
-        else
-          echo "✗ Backend version check failed"
-          hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-          exit 1
-        fi
-      else
-        echo "✗ Backend server binary not found at $BACKEND_PATH"
+      if ! test_backend "$BACKEND_PATH"; then
         hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
         exit 1
       fi
@@ -150,38 +153,12 @@ else
       # Test Electron app
       echo "=== Verifying Electron App from DMG ==="
       HEADLAMP_EXEC="$APP_BUNDLE/Contents/MacOS/Headlamp"
-      if [ -f "$HEADLAMP_EXEC" ]; then
-        chmod +x "$HEADLAMP_EXEC"
-        
-        echo "Running app with 10 second timeout..."
-        set +e  # Temporarily disable exit on error
-        perl -e 'alarm shift; exec @ARGV' 10 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
-        EXIT_CODE=$?
-        set -e  # Re-enable exit on error
-        
-        echo "App exited with code: $EXIT_CODE"
-        echo "Output from app:"
-        cat /tmp/plugins-output.txt || echo "(no output)"
-        echo ""
-        
-        if [ $EXIT_CODE -eq 0 ]; then
-          echo "✓ App executed successfully"
-          hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-        elif [ $EXIT_CODE -eq 142 ]; then
-          # Timeout occurred - app started but didn't exit cleanly (expected on macOS CI without display)
-          echo "⚠ App timed out after 10 seconds (expected behavior on macOS CI without display)"
-          echo "✓ App verification completed - timeout indicates app started successfully"
-          hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-        else
-          echo "✗ App failed to run (exit code: $EXIT_CODE)"
-          hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-          exit 1
-        fi
-      else
-        echo "✗ Headlamp executable not found in DMG app bundle"
+      if ! test_electron_app "$HEADLAMP_EXEC"; then
         hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
         exit 1
       fi
+      
+      hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
     else
       echo "✗ App bundle not found in DMG"
       hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1

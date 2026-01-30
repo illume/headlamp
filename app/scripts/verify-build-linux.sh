@@ -82,27 +82,33 @@ if [ ! -z "$TARBALL" ]; then
   fi
   echo "Found Headlamp at: $HEADLAMP_EXEC"
   
+  # Create unique temporary file for output
+  OUTPUT_FILE=$(mktemp)
+  
   # Run with list-plugins command (exits immediately, no GUI needed)
   chmod +x "$HEADLAMP_EXEC"
-  timeout 30 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
+  timeout 30 "$HEADLAMP_EXEC" list-plugins > "$OUTPUT_FILE" 2>&1
   EXIT_CODE=$?
   if [ $EXIT_CODE -eq 0 ]; then
     echo "✓ App executed successfully"
-    cat /tmp/plugins-output.txt
+    cat "$OUTPUT_FILE"
   elif [ $EXIT_CODE -eq 124 ]; then
     echo "✗ App timed out"
-    cat /tmp/plugins-output.txt || true
+    cat "$OUTPUT_FILE" || true
     rm -rf "$EXTRACT_DIR"
+    rm -f "$OUTPUT_FILE"
     exit 1
   else
     echo "✗ App failed to run (exit code: $EXIT_CODE)"
-    cat /tmp/plugins-output.txt || true
+    cat "$OUTPUT_FILE" || true
     rm -rf "$EXTRACT_DIR"
+    rm -f "$OUTPUT_FILE"
     exit 1
   fi
   
   # Cleanup
   rm -rf "$EXTRACT_DIR"
+  rm -f "$OUTPUT_FILE"
   echo ""
   echo "✓ All Linux verification checks passed"
 else
