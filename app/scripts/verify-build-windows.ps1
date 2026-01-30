@@ -1,0 +1,128 @@
+# Copyright 2025 The Kubernetes Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Verify Windows build artifacts and binaries
+$ErrorActionPreference = "Stop"
+
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$appDir = Split-Path -Parent $scriptDir
+$distDir = Join-Path $appDir "dist"
+
+Write-Host "=== Verifying Windows Build Artifacts ===" -ForegroundColor Cyan
+Write-Host ""
+
+# Step 1: Verify artifacts exist
+Write-Host "Checking for built artifacts..."
+Get-ChildItem $distDir | Format-Table
+
+$installers = Get-ChildItem "$distDir\*.exe" -ErrorAction SilentlyContinue
+if ($installers) {
+  Write-Host "✓ Windows installer found" -ForegroundColor Green
+} else {
+  Write-Host "✗ No Windows installer found" -ForegroundColor Red
+  exit 1
+}
+Write-Host ""
+
+# Step 2: Verify backend binary in unpacked resources
+Write-Host "=== Verifying Backend Binary ===" -ForegroundColor Cyan
+$unpackedDir = Join-Path $distDir "win-unpacked"
+if (Test-Path $unpackedDir) {
+  Write-Host "Found unpacked build directory"
+  $backendPath = Join-Path $unpackedDir "resources\headlamp-server.exe"
+  if (Test-Path $backendPath) {
+    Write-Host "Found backend at: $backendPath"
+    # Test version command
+    $versionOutput = & $backendPath --version 2>&1
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
+      Write-Host "✗ Backend version command failed with exit code $exitCode" -ForegroundColor Red
+      exit $exitCode
+    }
+    Write-Host "Backend version: $versionOutput"
+    if ($versionOutput -match "Headlamp") {
+      Write-Host "✓ Backend binary is working" -ForegroundColor Green
+    } else {
+      Write-Host "✗ Backend version check failed" -ForegroundColor Red
+      exit 1
+    }
+  } else {
+    Write-Host "✗ Backend server binary not found in unpacked resources" -ForegroundColor Red
+    exit 1
+  }
+} else {
+  Write-Host "Unpacked directory not found, checking in build output..." -ForegroundColor Yellow
+  $backendPath = Get-ChildItem -Path $distDir -Recurse -Filter "headlamp-server.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+  if ($backendPath) {
+    Write-Host "Found backend at: $($backendPath.FullName)"
+    $versionOutput = & $backendPath.FullName --version 2>&1
+    $exitCode = $LASTEXITCODE
+    if ($exitCode -ne 0) {
+      Write-Host "✗ Backend version command failed with exit code $exitCode" -ForegroundColor Red
+      exit $exitCode
+    }
+    Write-Host "Backend version: $versionOutput"
+    if ($versionOutput -match "Headlamp") {
+      Write-Host "✓ Backend binary is working" -ForegroundColor Green
+    } else {
+      Write-Host "✗ Backend version check failed" -ForegroundColor Red
+      exit 1
+    }
+  } else {
+    Write-Host "✗ Could not find backend binary to test in dist output" -ForegroundColor Red
+    exit 1
+  }
+}
+Write-Host ""
+
+# Step 3: Verify Electron app can run
+Write-Host "=== Verifying Electron App ===" -ForegroundColor Cyan
+$appPath = Join-Path $unpackedDir "Headlamp.exe"
+if (Test-Path $appPath) {
+  Write-Host "Testing Electron app..."
+  Write-Host "Found Headlamp at: $appPath"
+  
+  try {
+    # Create temp directory if it doesn't exist
+    $tempDir = Join-Path $env:TEMP "headlamp-test"
+    if (-not (Test-Path $tempDir)) {
+      New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+    }
+    $outputFile = Join-Path $tempDir "plugins-output.txt"
+    $errorFile = Join-Path $tempDir "plugins-error.txt"
+    
+    $process = Start-Process -FilePath $appPath -ArgumentList "list-plugins" -Wait -PassThru -NoNewWindow -RedirectStandardOutput $outputFile -RedirectStandardError $errorFile
+    if ($process.ExitCode -eq 0) {
+      Write-Host "✓ App executed successfully" -ForegroundColor Green
+      if (Test-Path $outputFile) {
+        Get-Content $outputFile
+      }
+    } else {
+      Write-Host "✗ App failed to run (exit code: $($process.ExitCode))" -ForegroundColor Red
+      if (Test-Path $errorFile) {
+        Get-Content $errorFile
+      }
+      exit 1
+    }
+  } catch {
+    Write-Host "✗ Error running app: $_" -ForegroundColor Red
+    exit 1
+  }
+} else {
+  Write-Host "✗ Unpacked app not found, failing app verification" -ForegroundColor Red
+  exit 1
+}
+
+Write-Host ""
+Write-Host "✓ All Windows verification checks passed" -ForegroundColor Green
