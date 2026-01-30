@@ -325,21 +325,23 @@ jobs:
             # Run with list-plugins command to verify app can start
             # Note: On macOS CI without display, the app may not exit cleanly even with list-plugins
             # Use perl-based timeout as timeout command is not available on macOS by default
+            echo "Running app with 10 second timeout..."
+            set +e  # Temporarily disable exit on error
             perl -e 'alarm shift; exec @ARGV' 10 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
             EXIT_CODE=$?
+            set -e  # Re-enable exit on error
+            echo "App exited with code: $EXIT_CODE"
+            echo "Output from app:"
+            cat /tmp/plugins-output.txt || echo "(no output)"
+            
             if [ $EXIT_CODE -eq 0 ]; then
               echo "✓ App executed successfully"
-              cat /tmp/plugins-output.txt
             elif [ $EXIT_CODE -eq 142 ]; then
               # Timeout occurred - app started but didn't exit cleanly (expected on macOS CI without display)
-              echo "⚠ App timed out (expected on macOS CI without display)"
-              cat /tmp/plugins-output.txt || true
-              echo "✓ App verification completed (app started but timed out as expected in headless environment)"
-              # Explicitly succeed since timeout is expected
-              EXIT_CODE=0
+              echo "⚠ App timed out after 10 seconds (expected behavior on macOS CI without display)"
+              echo "✓ App verification completed - timeout indicates app started successfully"
             else
               echo "✗ App failed to run (exit code: $EXIT_CODE)"
-              cat /tmp/plugins-output.txt || true
               exit 1
             fi
           else
@@ -394,23 +396,25 @@ jobs:
                 # Run with list-plugins command to verify app can start
                 # Note: On macOS CI without display, the app may not exit cleanly even with list-plugins
                 # Use perl-based timeout as timeout command is not available on macOS by default
+                echo "Running app with 10 second timeout..."
+                set +e  # Temporarily disable exit on error
                 perl -e 'alarm shift; exec @ARGV' 10 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
                 EXIT_CODE=$?
+                set -e  # Re-enable exit on error
+                echo "App exited with code: $EXIT_CODE"
+                echo "Output from app:"
+                cat /tmp/plugins-output.txt || echo "(no output)"
+                
                 if [ $EXIT_CODE -eq 0 ]; then
                   echo "✓ App executed successfully"
-                  cat /tmp/plugins-output.txt
                   hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
                 elif [ $EXIT_CODE -eq 142 ]; then
                   # Timeout occurred - app started but didn't exit cleanly (expected on macOS CI without display)
-                  echo "⚠ App timed out (expected on macOS CI without display)"
-                  cat /tmp/plugins-output.txt || true
-                  echo "✓ App verification completed (app started but timed out as expected in headless environment)"
+                  echo "⚠ App timed out after 10 seconds (expected behavior on macOS CI without display)"
+                  echo "✓ App verification completed - timeout indicates app started successfully"
                   hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-                  # Explicitly succeed since timeout is expected
-                  EXIT_CODE=0
                 else
                   echo "✗ App failed to run (exit code: $EXIT_CODE)"
-                  cat /tmp/plugins-output.txt || true
                   hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
                   exit 1
                 fi
