@@ -45,6 +45,74 @@ jobs:
     - name: App linux
       run: |
         make app-linux
+    - name: Verify Linux binaries exist
+      run: |
+        echo "Checking for built artifacts..."
+        ls -lh app/dist/
+        # Verify at least one AppImage or tar.gz was created
+        if ls app/dist/*.AppImage 1> /dev/null 2>&1 || ls app/dist/*.tar.gz 1> /dev/null 2>&1; then
+          echo "✓ Linux artifacts found"
+        else
+          echo "✗ No Linux artifacts found"
+          exit 1
+        fi
+    - name: Extract and verify backend binary
+      run: |
+        # Extract tar.gz if it exists (easier to test than AppImage)
+        if ls app/dist/*.tar.gz 1> /dev/null 2>&1; then
+          echo "Extracting tar.gz..."
+          mkdir -p /tmp/headlamp-test
+          tar -xzf app/dist/*.tar.gz -C /tmp/headlamp-test
+          # Find the backend server binary
+          BACKEND_PATH=$(find /tmp/headlamp-test -name "headlamp-server" -type f | head -n 1)
+          if [ -z "$BACKEND_PATH" ]; then
+            echo "✗ Backend server binary not found in package"
+            exit 1
+          fi
+          echo "Found backend at: $BACKEND_PATH"
+          # Test version command
+          chmod +x "$BACKEND_PATH"
+          VERSION_OUTPUT=$("$BACKEND_PATH" --version)
+          echo "Backend version: $VERSION_OUTPUT"
+          if echo "$VERSION_OUTPUT" | grep -q "Headlamp"; then
+            echo "✓ Backend binary is working"
+          else
+            echo "✗ Backend version check failed"
+            exit 1
+          fi
+        else
+          echo "No tar.gz found, skipping backend verification"
+        fi
+    - name: Verify Electron app can run
+      run: |
+        # Extract and run the app with list-plugins command (doesn't require GUI)
+        if ls app/dist/*.tar.gz 1> /dev/null 2>&1; then
+          echo "Testing Electron app..."
+          mkdir -p /tmp/headlamp-app-test
+          tar -xzf app/dist/*.tar.gz -C /tmp/headlamp-app-test
+          # Find the headlamp executable
+          HEADLAMP_EXEC=$(find /tmp/headlamp-app-test -name "headlamp" -type f -executable | head -n 1)
+          if [ -z "$HEADLAMP_EXEC" ]; then
+            echo "✗ Headlamp executable not found"
+            exit 1
+          fi
+          echo "Found Headlamp at: $HEADLAMP_EXEC"
+          # Run with list-plugins command (exits immediately, no GUI needed)
+          chmod +x "$HEADLAMP_EXEC"
+          if timeout 30 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1; then
+            echo "✓ App executed successfully"
+            cat /tmp/plugins-output.txt
+          else
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 124 ]; then
+              echo "✗ App timed out"
+            else
+              echo "✗ App failed to run (exit code: $EXIT_CODE)"
+              cat /tmp/plugins-output.txt || true
+            fi
+            exit 1
+          fi
+        fi
   build-windows:
     runs-on: windows-2025
     strategy:
@@ -69,6 +137,90 @@ jobs:
       run: make app-tsc
     - name: App Windows
       run: make app-win
+    - name: Verify Windows binaries exist
+      shell: pwsh
+      run: |
+        Write-Host "Checking for built artifacts..."
+        Get-ChildItem app/dist/ | Format-Table
+        # Verify NSIS installer was created
+        $installers = Get-ChildItem app/dist/*.exe -ErrorAction SilentlyContinue
+        if ($installers) {
+          Write-Host "✓ Windows installer found"
+        } else {
+          Write-Host "✗ No Windows installer found"
+          exit 1
+        }
+    - name: Verify backend binary in unpacked resources
+      shell: pwsh
+      run: |
+        # Check if there's an unpacked directory
+        $unpackedDirs = Get-ChildItem app/dist/win-unpacked -ErrorAction SilentlyContinue
+        if ($unpackedDirs) {
+          Write-Host "Found unpacked build directory"
+          $backendPath = Get-ChildItem app/dist/win-unpacked/resources/headlamp-server.exe -ErrorAction SilentlyContinue
+          if ($backendPath) {
+            Write-Host "Found backend at: $($backendPath.FullName)"
+            # Test version command
+            $versionOutput = & $backendPath.FullName --version
+            Write-Host "Backend version: $versionOutput"
+            if ($versionOutput -match "Headlamp") {
+              Write-Host "✓ Backend binary is working"
+            } else {
+              Write-Host "✗ Backend version check failed"
+              exit 1
+            }
+          } else {
+            Write-Host "✗ Backend server binary not found in unpacked resources"
+            exit 1
+          }
+        } else {
+          Write-Host "Unpacked directory not found, checking in build output..."
+          # Alternative: look in the dist folder structure
+          $backendPath = Get-ChildItem -Path app/dist -Recurse -Filter "headlamp-server.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($backendPath) {
+            Write-Host "Found backend at: $($backendPath.FullName)"
+            $versionOutput = & $backendPath.FullName --version
+            Write-Host "Backend version: $versionOutput"
+            if ($versionOutput -match "Headlamp") {
+              Write-Host "✓ Backend binary is working"
+            } else {
+              Write-Host "✗ Backend version check failed"  
+              exit 1
+            }
+          } else {
+            Write-Host "Warning: Could not find unpacked backend to test"
+          }
+        }
+    - name: Verify Electron app can run
+      shell: pwsh
+      run: |
+        # Try to run the app with list-plugins command
+        $appPath = Get-ChildItem app/dist/win-unpacked/Headlamp.exe -ErrorAction SilentlyContinue
+        if ($appPath) {
+          Write-Host "Testing Electron app..."
+          Write-Host "Found Headlamp at: $($appPath.FullName)"
+          # Run with list-plugins command (exits immediately, no GUI needed)
+          try {
+            $process = Start-Process -FilePath $appPath.FullName -ArgumentList "list-plugins" -Wait -PassThru -NoNewWindow -RedirectStandardOutput "C:\temp\plugins-output.txt" -RedirectStandardError "C:\temp\plugins-error.txt"
+            if ($process.ExitCode -eq 0) {
+              Write-Host "✓ App executed successfully"
+              if (Test-Path "C:\temp\plugins-output.txt") {
+                Get-Content "C:\temp\plugins-output.txt"
+              }
+            } else {
+              Write-Host "✗ App failed to run (exit code: $($process.ExitCode))"
+              if (Test-Path "C:\temp\plugins-error.txt") {
+                Get-Content "C:\temp\plugins-error.txt"
+              }
+              exit 1
+            }
+          } catch {
+            Write-Host "✗ Error running app: $_"
+            exit 1
+          }
+        } else {
+          Write-Host "Unpacked app not found, skipping app verification"
+        }
   build-mac:
     runs-on: macos-latest
     strategy:
@@ -92,3 +244,107 @@ jobs:
     - name: App Mac
       run: |
         make app-mac
+    - name: Verify Mac binaries exist
+      run: |
+        echo "Checking for built artifacts..."
+        ls -lh app/dist/
+        # Verify DMG was created
+        if ls app/dist/*.dmg 1> /dev/null 2>&1; then
+          echo "✓ Mac DMG found"
+        else
+          echo "✗ No Mac DMG found"
+          exit 1
+        fi
+    - name: Verify app bundle and backend binary
+      run: |
+        # Check if there's a mac directory with the app bundle
+        if [ -d "app/dist/mac" ]; then
+          echo "Found mac build directory"
+          # Find the .app bundle
+          APP_BUNDLE=$(find app/dist/mac -name "*.app" -type d | head -n 1)
+          if [ -z "$APP_BUNDLE" ]; then
+            echo "✗ App bundle not found"
+            exit 1
+          fi
+          echo "Found app bundle at: $APP_BUNDLE"
+          # Find the backend server in Resources
+          BACKEND_PATH="$APP_BUNDLE/Contents/Resources/headlamp-server"
+          if [ -f "$BACKEND_PATH" ]; then
+            echo "Found backend at: $BACKEND_PATH"
+            # Test version command
+            chmod +x "$BACKEND_PATH"
+            VERSION_OUTPUT=$("$BACKEND_PATH" --version)
+            echo "Backend version: $VERSION_OUTPUT"
+            if echo "$VERSION_OUTPUT" | grep -q "Headlamp"; then
+              echo "✓ Backend binary is working"
+            else
+              echo "✗ Backend version check failed"
+              exit 1
+            fi
+          else
+            echo "✗ Backend server binary not found at $BACKEND_PATH"
+            exit 1
+          fi
+        else
+          echo "Mac build directory not found, checking DMG contents..."
+          # Mount the DMG and check contents
+          DMG_FILE=$(ls app/dist/*.dmg | head -n 1)
+          if [ ! -z "$DMG_FILE" ]; then
+            echo "Mounting DMG: $DMG_FILE"
+            MOUNT_POINT=$(hdiutil attach "$DMG_FILE" | grep Volumes | awk '{print $3}')
+            if [ ! -z "$MOUNT_POINT" ]; then
+              echo "DMG mounted at: $MOUNT_POINT"
+              APP_BUNDLE=$(find "$MOUNT_POINT" -name "*.app" -type d | head -n 1)
+              if [ ! -z "$APP_BUNDLE" ]; then
+                echo "Found app in DMG: $APP_BUNDLE"
+                BACKEND_PATH="$APP_BUNDLE/Contents/Resources/headlamp-server"
+                if [ -f "$BACKEND_PATH" ]; then
+                  chmod +x "$BACKEND_PATH"
+                  VERSION_OUTPUT=$("$BACKEND_PATH" --version)
+                  echo "Backend version: $VERSION_OUTPUT"
+                  if echo "$VERSION_OUTPUT" | grep -q "Headlamp"; then
+                    echo "✓ Backend binary is working"
+                  else
+                    echo "✗ Backend version check failed"
+                    hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+                    exit 1
+                  fi
+                fi
+              fi
+              # Unmount the DMG
+              hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+            fi
+          fi
+        fi
+    - name: Verify Electron app can run
+      run: |
+        # Try to run the app with list-plugins command
+        if [ -d "app/dist/mac" ]; then
+          APP_BUNDLE=$(find app/dist/mac -name "*.app" -type d | head -n 1)
+          if [ ! -z "$APP_BUNDLE" ]; then
+            echo "Testing Electron app..."
+            HEADLAMP_EXEC="$APP_BUNDLE/Contents/MacOS/Headlamp"
+            if [ -f "$HEADLAMP_EXEC" ]; then
+              echo "Found Headlamp at: $HEADLAMP_EXEC"
+              chmod +x "$HEADLAMP_EXEC"
+              # Run with list-plugins command (exits immediately, no GUI needed)
+              if timeout 30 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1; then
+                echo "✓ App executed successfully"
+                cat /tmp/plugins-output.txt
+              else
+                EXIT_CODE=$?
+                if [ $EXIT_CODE -eq 124 ]; then
+                  echo "✗ App timed out"
+                else
+                  echo "✗ App failed to run (exit code: $EXIT_CODE)"
+                  cat /tmp/plugins-output.txt || true
+                fi
+                exit 1
+              fi
+            else
+              echo "Headlamp executable not found at $HEADLAMP_EXEC"
+            fi
+          fi
+        else
+          echo "Mac unpacked directory not found, skipping app verification"
+        fi
