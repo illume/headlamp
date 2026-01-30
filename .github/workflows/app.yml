@@ -91,39 +91,33 @@ jobs:
         fi
     - name: Verify Electron app can run
       run: |
-        # Extract and run the app with list-plugins command (doesn't require GUI)
-        # Use x64 tar.gz for testing
-        TARBALL=$(ls app/dist/*-linux-x64.tar.gz 2>/dev/null | head -n 1)
-        if [ ! -z "$TARBALL" ]; then
-          echo "Testing Electron app..."
-          echo "Using tarball: $TARBALL"
-          mkdir -p /tmp/headlamp-app-test
-          tar -xzf "$TARBALL" -C /tmp/headlamp-app-test
-          # Find the headlamp executable
-          HEADLAMP_EXEC=$(find /tmp/headlamp-app-test -name "headlamp" -type f -executable | head -n 1)
-          if [ -z "$HEADLAMP_EXEC" ]; then
-            echo "✗ Headlamp executable not found"
-            exit 1
-          fi
-          echo "Found Headlamp at: $HEADLAMP_EXEC"
-          # Run with list-plugins command (exits immediately, no GUI needed)
-          chmod +x "$HEADLAMP_EXEC"
-          timeout 30 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
-          EXIT_CODE=$?
-          if [ $EXIT_CODE -eq 0 ]; then
-            echo "✓ App executed successfully"
-            cat /tmp/plugins-output.txt
-          elif [ $EXIT_CODE -eq 124 ]; then
-            echo "✗ App timed out"
-            cat /tmp/plugins-output.txt || true
-            exit 1
-          else
-            echo "✗ App failed to run (exit code: $EXIT_CODE)"
-            cat /tmp/plugins-output.txt || true
-            exit 1
-          fi
+        # Reuse the extracted files from the previous step
+        if [ ! -d /tmp/headlamp-test ]; then
+          echo "✗ Expected extracted directory /tmp/headlamp-test not found"
+          exit 1
+        fi
+        echo "Testing Electron app using previously extracted files..."
+        # Find the headlamp executable in the previously extracted directory
+        HEADLAMP_EXEC=$(find /tmp/headlamp-test -name "headlamp" -type f -executable | head -n 1)
+        if [ -z "$HEADLAMP_EXEC" ]; then
+          echo "✗ Headlamp executable not found"
+          exit 1
+        fi
+        echo "Found Headlamp at: $HEADLAMP_EXEC"
+        # Run with list-plugins command (exits immediately, no GUI needed)
+        chmod +x "$HEADLAMP_EXEC"
+        timeout 30 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
+        EXIT_CODE=$?
+        if [ $EXIT_CODE -eq 0 ]; then
+          echo "✓ App executed successfully"
+          cat /tmp/plugins-output.txt
+        elif [ $EXIT_CODE -eq 124 ]; then
+          echo "✗ App timed out"
+          cat /tmp/plugins-output.txt || true
+          exit 1
         else
-          echo "✗ No x64 tar.gz found for app verification"
+          echo "✗ App failed to run (exit code: $EXIT_CODE)"
+          cat /tmp/plugins-output.txt || true
           exit 1
         fi
   build-windows:
@@ -321,9 +315,38 @@ jobs:
             echo "✗ Backend server binary not found at $BACKEND_PATH"
             exit 1
           fi
+          
+          # Now test the Electron app
+          echo "Testing Electron app..."
+          HEADLAMP_EXEC="$APP_BUNDLE/Contents/MacOS/Headlamp"
+          if [ -f "$HEADLAMP_EXEC" ]; then
+            echo "Found Headlamp at: $HEADLAMP_EXEC"
+            chmod +x "$HEADLAMP_EXEC"
+            # Run with list-plugins command to verify app can start
+            # Note: On macOS CI without display, the app may not exit cleanly even with list-plugins
+            # Use perl-based timeout as timeout command is not available on macOS by default
+            perl -e 'alarm shift; exec @ARGV' 10 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
+            EXIT_CODE=$?
+            if [ $EXIT_CODE -eq 0 ]; then
+              echo "✓ App executed successfully"
+              cat /tmp/plugins-output.txt
+            elif [ $EXIT_CODE -eq 142 ]; then
+              # Timeout occurred - app started but didn't exit cleanly (expected on macOS CI without display)
+              echo "⚠ App timed out (expected on macOS CI without display)"
+              cat /tmp/plugins-output.txt || true
+              echo "✓ App verification completed (app started but timed out as expected in headless environment)"
+            else
+              echo "✗ App failed to run (exit code: $EXIT_CODE)"
+              cat /tmp/plugins-output.txt || true
+              exit 1
+            fi
+          else
+            echo "✗ Headlamp executable not found at $HEADLAMP_EXEC"
+            exit 1
+          fi
         else
           echo "Mac build directory not found, checking DMG contents..."
-          # Mount the DMG and check contents
+          # Mount the DMG and test both backend and app
           DMG_FILE=$(ls app/dist/*.dmg | head -n 1)
           if [ ! -z "$DMG_FILE" ]; then
             echo "Mounting DMG: $DMG_FILE"
@@ -333,134 +356,72 @@ jobs:
               echo "✗ Failed to mount DMG or parse mount point"
               exit 1
             fi
-            if [ ! -z "$MOUNT_POINT" ]; then
-              echo "DMG mounted at: $MOUNT_POINT"
-              APP_BUNDLE=$(find "$MOUNT_POINT" -name "*.app" -type d | head -n 1)
-              if [ ! -z "$APP_BUNDLE" ]; then
-                echo "Found app in DMG: $APP_BUNDLE"
-                BACKEND_PATH="$APP_BUNDLE/Contents/Resources/headlamp-server"
-                if [ -f "$BACKEND_PATH" ]; then
-                  chmod +x "$BACKEND_PATH"
-                  if ! VERSION_OUTPUT=$("$BACKEND_PATH" --version 2>&1); then
-                    echo "✗ Backend --version command failed"
-                    hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-                    exit 1
-                  fi
-                  echo "Backend version: $VERSION_OUTPUT"
-                  if echo "$VERSION_OUTPUT" | grep -q "Headlamp"; then
-                    echo "✓ Backend binary is working"
-                    hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-                  else
-                    echo "✗ Backend version check failed"
-                    hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-                    exit 1
-                  fi
+            echo "DMG mounted at: $MOUNT_POINT"
+            APP_BUNDLE=$(find "$MOUNT_POINT" -name "*.app" -type d | head -n 1)
+            if [ ! -z "$APP_BUNDLE" ]; then
+              echo "Found app in DMG: $APP_BUNDLE"
+              
+              # Test backend binary
+              BACKEND_PATH="$APP_BUNDLE/Contents/Resources/headlamp-server"
+              if [ -f "$BACKEND_PATH" ]; then
+                chmod +x "$BACKEND_PATH"
+                if ! VERSION_OUTPUT=$("$BACKEND_PATH" --version 2>&1); then
+                  echo "✗ Backend --version command failed"
+                  hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+                  exit 1
+                fi
+                echo "Backend version: $VERSION_OUTPUT"
+                if echo "$VERSION_OUTPUT" | grep -q "Headlamp"; then
+                  echo "✓ Backend binary is working"
                 else
-                  echo "✗ Backend server binary not found at $BACKEND_PATH"
+                  echo "✗ Backend version check failed"
                   hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
                   exit 1
                 fi
               else
-                echo "✗ App bundle not found in DMG"
+                echo "✗ Backend server binary not found at $BACKEND_PATH"
                 hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
                 exit 1
               fi
-            fi
-          else
-            echo "✗ No DMG file found"
-            exit 1
-          fi
-        fi
-    - name: Verify Electron app can run
-      run: |
-        # Try to run the app with list-plugins command
-        if [ -d "app/dist/mac" ]; then
-          APP_BUNDLE=$(find app/dist/mac -name "*.app" -type d | head -n 1)
-          if [ ! -z "$APP_BUNDLE" ]; then
-            echo "Testing Electron app..."
-            HEADLAMP_EXEC="$APP_BUNDLE/Contents/MacOS/Headlamp"
-            if [ -f "$HEADLAMP_EXEC" ]; then
-              echo "Found Headlamp at: $HEADLAMP_EXEC"
-              chmod +x "$HEADLAMP_EXEC"
-              # Run with list-plugins command to verify app can start
-              # Note: On macOS CI without display, the app may not exit cleanly even with list-plugins
-              # Use perl-based timeout as timeout command is not available on macOS by default
-              perl -e 'alarm shift; exec @ARGV' 10 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
-              EXIT_CODE=$?
-              if [ $EXIT_CODE -eq 0 ]; then
-                echo "✓ App executed successfully"
-                cat /tmp/plugins-output.txt
-              elif [ $EXIT_CODE -eq 142 ]; then
-                # Timeout occurred - app started but didn't exit cleanly (expected on macOS CI without display)
-                echo "⚠ App timed out (expected on macOS CI without display)"
-                cat /tmp/plugins-output.txt || true
-                # Check if app at least started by looking for any output or process activity
-                echo "✓ App verification completed (app started but timed out as expected in headless environment)"
+              
+              # Test Electron app
+              echo "Testing Electron app from DMG..."
+              HEADLAMP_EXEC="$APP_BUNDLE/Contents/MacOS/Headlamp"
+              if [ -f "$HEADLAMP_EXEC" ]; then
+                chmod +x "$HEADLAMP_EXEC"
+                # Run with list-plugins command to verify app can start
+                # Note: On macOS CI without display, the app may not exit cleanly even with list-plugins
+                # Use perl-based timeout as timeout command is not available on macOS by default
+                perl -e 'alarm shift; exec @ARGV' 10 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
+                EXIT_CODE=$?
+                if [ $EXIT_CODE -eq 0 ]; then
+                  echo "✓ App executed successfully"
+                  cat /tmp/plugins-output.txt
+                  hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+                elif [ $EXIT_CODE -eq 142 ]; then
+                  # Timeout occurred - app started but didn't exit cleanly (expected on macOS CI without display)
+                  echo "⚠ App timed out (expected on macOS CI without display)"
+                  cat /tmp/plugins-output.txt || true
+                  echo "✓ App verification completed (app started but timed out as expected in headless environment)"
+                  hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+                else
+                  echo "✗ App failed to run (exit code: $EXIT_CODE)"
+                  cat /tmp/plugins-output.txt || true
+                  hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+                  exit 1
+                fi
               else
-                echo "✗ App failed to run (exit code: $EXIT_CODE)"
-                cat /tmp/plugins-output.txt || true
+                echo "✗ Headlamp executable not found in DMG app bundle"
+                hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
                 exit 1
               fi
             else
-              echo "✗ Headlamp executable not found at $HEADLAMP_EXEC"
+              echo "✗ App bundle not found in DMG"
+              hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
               exit 1
             fi
           else
-            echo "✗ App bundle not found in mac directory"
-            exit 1
-          fi
-        else
-          echo "Mac build directory not found, trying to mount and test DMG..."
-          DMG_FILE=$(ls app/dist/*.dmg | head -n 1)
-          if [ ! -z "$DMG_FILE" ]; then
-            echo "Mounting DMG: $DMG_FILE"
-            MOUNT_POINT=$(hdiutil attach "$DMG_FILE" 2>&1 | grep Volumes | tail -1 | awk -F'\t' '{print $NF}')
-            if [ -z "$MOUNT_POINT" ]; then
-              echo "✗ Failed to mount DMG or parse mount point"
-              exit 1
-            fi
-            if [ ! -z "$MOUNT_POINT" ]; then
-              echo "DMG mounted at: $MOUNT_POINT"
-              APP_BUNDLE=$(find "$MOUNT_POINT" -name "*.app" -type d | head -n 1)
-              if [ ! -z "$APP_BUNDLE" ]; then
-                echo "Testing Electron app from DMG..."
-                HEADLAMP_EXEC="$APP_BUNDLE/Contents/MacOS/Headlamp"
-                if [ -f "$HEADLAMP_EXEC" ]; then
-                  chmod +x "$HEADLAMP_EXEC"
-                  # Run with list-plugins command to verify app can start
-                  # Note: On macOS CI without display, the app may not exit cleanly even with list-plugins
-                  # Use perl-based timeout as timeout command is not available on macOS by default
-                  perl -e 'alarm shift; exec @ARGV' 10 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
-                  EXIT_CODE=$?
-                  if [ $EXIT_CODE -eq 0 ]; then
-                    echo "✓ App executed successfully"
-                    cat /tmp/plugins-output.txt
-                    hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-                  elif [ $EXIT_CODE -eq 142 ]; then
-                    # Timeout occurred - app started but didn't exit cleanly (expected on macOS CI without display)
-                    echo "⚠ App timed out (expected on macOS CI without display)"
-                    cat /tmp/plugins-output.txt || true
-                    echo "✓ App verification completed (app started but timed out as expected in headless environment)"
-                    hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-                  else
-                    echo "✗ App failed to run (exit code: $EXIT_CODE)"
-                    cat /tmp/plugins-output.txt || true
-                    hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-                    exit 1
-                  fi
-                else
-                  echo "✗ Headlamp executable not found in DMG app bundle"
-                  hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-                  exit 1
-                fi
-              else
-                echo "✗ App bundle not found in DMG"
-                hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-                exit 1
-              fi
-            fi
-          else
-            echo "✗ No DMG file found for app verification"
+            echo "✗ No DMG file found"
             exit 1
           fi
         fi
