@@ -28,9 +28,9 @@ Get-ChildItem $distDir | Format-Table
 
 $installers = Get-ChildItem "$distDir\*.exe" -ErrorAction SilentlyContinue
 if ($installers) {
-  Write-Host "✓ Windows installer found" -ForegroundColor Green
+  Write-Host "[PASS] Windows installer found" -ForegroundColor Green
 } else {
-  Write-Host "✗ No Windows installer found" -ForegroundColor Red
+  Write-Host "[FAIL] No Windows installer found" -ForegroundColor Red
   exit 1
 }
 Write-Host ""
@@ -47,18 +47,18 @@ if (Test-Path $unpackedDir) {
     $versionOutput = & $backendPath --version 2>&1
     $exitCode = $LASTEXITCODE
     if ($exitCode -ne 0) {
-      Write-Host "✗ Backend version command failed with exit code $exitCode" -ForegroundColor Red
+      Write-Host "[FAIL] Backend version command failed with exit code $exitCode" -ForegroundColor Red
       exit $exitCode
     }
     Write-Host "Backend version: $versionOutput"
     if ($versionOutput -match "Headlamp") {
-      Write-Host "✓ Backend binary is working" -ForegroundColor Green
+      Write-Host "[PASS] Backend binary is working" -ForegroundColor Green
     } else {
-      Write-Host "✗ Backend version check failed" -ForegroundColor Red
+      Write-Host "[FAIL] Backend version check failed" -ForegroundColor Red
       exit 1
     }
   } else {
-    Write-Host "✗ Backend server binary not found in unpacked resources" -ForegroundColor Red
+    Write-Host "[FAIL] Backend server binary not found in unpacked resources" -ForegroundColor Red
     exit 1
   }
 } else {
@@ -69,18 +69,18 @@ if (Test-Path $unpackedDir) {
     $versionOutput = & $backendPath.FullName --version 2>&1
     $exitCode = $LASTEXITCODE
     if ($exitCode -ne 0) {
-      Write-Host "✗ Backend version command failed with exit code $exitCode" -ForegroundColor Red
+      Write-Host "[FAIL] Backend version command failed with exit code $exitCode" -ForegroundColor Red
       exit $exitCode
     }
     Write-Host "Backend version: $versionOutput"
     if ($versionOutput -match "Headlamp") {
-      Write-Host "✓ Backend binary is working" -ForegroundColor Green
+      Write-Host "[PASS] Backend binary is working" -ForegroundColor Green
     } else {
-      Write-Host "✗ Backend version check failed" -ForegroundColor Red
+      Write-Host "[FAIL] Backend version check failed" -ForegroundColor Red
       exit 1
     }
   } else {
-    Write-Host "✗ Could not find backend binary to test in dist output" -ForegroundColor Red
+    Write-Host "[FAIL] Could not find backend binary to test in dist output" -ForegroundColor Red
     exit 1
   }
 }
@@ -104,25 +104,26 @@ if (Test-Path $appPath) {
     
     $process = Start-Process -FilePath $appPath -ArgumentList "list-plugins" -Wait -PassThru -NoNewWindow -RedirectStandardOutput $outputFile -RedirectStandardError $errorFile
     if ($process.ExitCode -eq 0) {
-      Write-Host "✓ App executed successfully" -ForegroundColor Green
+      Write-Host "[PASS] App executed successfully" -ForegroundColor Green
       if (Test-Path $outputFile) {
         Get-Content $outputFile
       }
     } else {
-      Write-Host "✗ App failed to run (exit code: $($process.ExitCode))" -ForegroundColor Red
+      Write-Host "[FAIL] App failed to run (exit code: $($process.ExitCode))" -ForegroundColor Red
       if (Test-Path $errorFile) {
         Get-Content $errorFile
       }
       exit 1
     }
   } catch {
-    Write-Host "✗ Error running app: $_" -ForegroundColor Red
+    Write-Host "[FAIL] Error running app: $_" -ForegroundColor Red
     exit 1
   }
 } else {
-  Write-Host "✗ Unpacked app not found, failing app verification" -ForegroundColor Red
+  Write-Host "[FAIL] Unpacked app not found, failing app verification" -ForegroundColor Red
   exit 1
 }
 
 Write-Host ""
-Write-Host "✓ All Windows verification checks passed" -ForegroundColor Green
+Write-Host "[PASS] All Windows verification checks passed" -ForegroundColor Green
+
