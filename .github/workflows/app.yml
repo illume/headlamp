@@ -59,10 +59,12 @@ jobs:
     - name: Extract and verify backend binary
       run: |
         # Extract tar.gz if it exists (easier to test than AppImage)
-        if ls app/dist/*.tar.gz 1> /dev/null 2>&1; then
-          echo "Extracting tar.gz..."
+        # Use x64 tar.gz for testing
+        TARBALL=$(ls app/dist/*-linux-x64.tar.gz 2>/dev/null | head -n 1)
+        if [ ! -z "$TARBALL" ]; then
+          echo "Extracting tar.gz: $TARBALL"
           mkdir -p /tmp/headlamp-test
-          tar -xzf app/dist/*.tar.gz -C /tmp/headlamp-test
+          tar -xzf "$TARBALL" -C /tmp/headlamp-test
           # Find the backend server binary
           BACKEND_PATH=$(find /tmp/headlamp-test -name "headlamp-server" -type f | head -n 1)
           if [ -z "$BACKEND_PATH" ]; then
@@ -81,15 +83,18 @@ jobs:
             exit 1
           fi
         else
-          echo "No tar.gz found, skipping backend verification"
+          echo "No x64 tar.gz found, skipping backend verification"
         fi
     - name: Verify Electron app can run
       run: |
         # Extract and run the app with list-plugins command (doesn't require GUI)
-        if ls app/dist/*.tar.gz 1> /dev/null 2>&1; then
+        # Use x64 tar.gz for testing
+        TARBALL=$(ls app/dist/*-linux-x64.tar.gz 2>/dev/null | head -n 1)
+        if [ ! -z "$TARBALL" ]; then
           echo "Testing Electron app..."
+          echo "Using tarball: $TARBALL"
           mkdir -p /tmp/headlamp-app-test
-          tar -xzf app/dist/*.tar.gz -C /tmp/headlamp-app-test
+          tar -xzf "$TARBALL" -C /tmp/headlamp-app-test
           # Find the headlamp executable
           HEADLAMP_EXEC=$(find /tmp/headlamp-app-test -name "headlamp" -type f -executable | head -n 1)
           if [ -z "$HEADLAMP_EXEC" ]; then
@@ -113,6 +118,8 @@ jobs:
             cat /tmp/plugins-output.txt || true
             exit 1
           fi
+        else
+          echo "No x64 tar.gz found, skipping app verification"
         fi
   build-windows:
     runs-on: windows-2025
@@ -351,12 +358,13 @@ jobs:
               echo "Found Headlamp at: $HEADLAMP_EXEC"
               chmod +x "$HEADLAMP_EXEC"
               # Run with list-plugins command (exits immediately, no GUI needed)
-              timeout 30 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
+              # Use perl-based timeout as timeout command is not available on macOS by default
+              perl -e 'alarm shift; exec @ARGV' 30 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
               EXIT_CODE=$?
               if [ $EXIT_CODE -eq 0 ]; then
                 echo "✓ App executed successfully"
                 cat /tmp/plugins-output.txt
-              elif [ $EXIT_CODE -eq 124 ]; then
+              elif [ $EXIT_CODE -eq 142 ]; then
                 echo "✗ App timed out"
                 cat /tmp/plugins-output.txt || true
                 exit 1
@@ -387,13 +395,14 @@ jobs:
                 HEADLAMP_EXEC="$APP_BUNDLE/Contents/MacOS/Headlamp"
                 if [ -f "$HEADLAMP_EXEC" ]; then
                   chmod +x "$HEADLAMP_EXEC"
-                  timeout 30 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
+                  # Use perl-based timeout as timeout command is not available on macOS by default
+                  perl -e 'alarm shift; exec @ARGV' 30 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
                   EXIT_CODE=$?
                   if [ $EXIT_CODE -eq 0 ]; then
                     echo "✓ App executed successfully"
                     cat /tmp/plugins-output.txt
                     hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-                  elif [ $EXIT_CODE -eq 124 ]; then
+                  elif [ $EXIT_CODE -eq 142 ]; then
                     echo "✗ App timed out"
                     cat /tmp/plugins-output.txt || true
                     hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
