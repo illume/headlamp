@@ -185,7 +185,7 @@ jobs:
             if ($versionOutput -match "Headlamp") {
               Write-Host "✓ Backend binary is working"
             } else {
-              Write-Host "✗ Backend version check failed"  
+              Write-Host "✗ Backend version check failed"
               exit 1
             }
           } else {
@@ -300,8 +300,8 @@ jobs:
           DMG_FILE=$(ls app/dist/*.dmg | head -n 1)
           if [ ! -z "$DMG_FILE" ]; then
             echo "Mounting DMG: $DMG_FILE"
-            # Capture the full mount point path (everything after the last tab, which includes spaces)
-            MOUNT_POINT=$(hdiutil attach "$DMG_FILE" | grep Volumes | tail -1 | sed 's/.*\t//')
+            # Capture the full mount point path (last field after tab delimiter)
+            MOUNT_POINT=$(hdiutil attach "$DMG_FILE" | grep Volumes | tail -1 | awk -F'\t' '{print $NF}')
             if [ ! -z "$MOUNT_POINT" ]; then
               echo "DMG mounted at: $MOUNT_POINT"
               APP_BUNDLE=$(find "$MOUNT_POINT" -name "*.app" -type d | head -n 1)
@@ -367,8 +367,59 @@ jobs:
               fi
             else
               echo "Headlamp executable not found at $HEADLAMP_EXEC"
+              exit 1
             fi
+          else
+            echo "✗ App bundle not found in mac directory"
+            exit 1
           fi
         else
-          echo "Mac unpacked directory not found, skipping app verification"
+          echo "Mac build directory not found, trying to mount and test DMG..."
+          DMG_FILE=$(ls app/dist/*.dmg | head -n 1)
+          if [ ! -z "$DMG_FILE" ]; then
+            echo "Mounting DMG: $DMG_FILE"
+            MOUNT_POINT=$(hdiutil attach "$DMG_FILE" | grep Volumes | tail -1 | awk -F'\t' '{print $NF}')
+            if [ ! -z "$MOUNT_POINT" ]; then
+              echo "DMG mounted at: $MOUNT_POINT"
+              APP_BUNDLE=$(find "$MOUNT_POINT" -name "*.app" -type d | head -n 1)
+              if [ ! -z "$APP_BUNDLE" ]; then
+                echo "Testing Electron app from DMG..."
+                HEADLAMP_EXEC="$APP_BUNDLE/Contents/MacOS/Headlamp"
+                if [ -f "$HEADLAMP_EXEC" ]; then
+                  chmod +x "$HEADLAMP_EXEC"
+                  timeout 30 "$HEADLAMP_EXEC" list-plugins > /tmp/plugins-output.txt 2>&1
+                  EXIT_CODE=$?
+                  if [ $EXIT_CODE -eq 0 ]; then
+                    echo "✓ App executed successfully"
+                    cat /tmp/plugins-output.txt
+                    hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+                  elif [ $EXIT_CODE -eq 124 ]; then
+                    echo "✗ App timed out"
+                    cat /tmp/plugins-output.txt || true
+                    hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+                    exit 1
+                  else
+                    echo "✗ App failed to run (exit code: $EXIT_CODE)"
+                    cat /tmp/plugins-output.txt || true
+                    hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+                    exit 1
+                  fi
+                else
+                  echo "✗ Headlamp executable not found in DMG app bundle"
+                  hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+                  exit 1
+                fi
+              else
+                echo "✗ App bundle not found in DMG"
+                hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+                exit 1
+              fi
+            else
+              echo "✗ Failed to mount DMG"
+              exit 1
+            fi
+          else
+            echo "✗ No DMG file found for app verification"
+            exit 1
+          fi
         fi
