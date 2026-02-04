@@ -51,7 +51,7 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [ ] e2e-tests: persistent-volume-claim-details: Add test for PVC details page
 
 ### Workloads
-- [x] e2e-tests: workloads-overview: Add test for workloads overview page (tested in `workloads.spec.ts`)
+- [ ] e2e-tests: workloads-overview: Add test for workloads overview page (**SKIPPED** in `workloads.spec.ts` - CI timeout issues)
 - [x] e2e-tests: pods-list: Add test for pods list page (tested in `podsPage.spec.ts`)
 - [x] e2e-tests: pod-details: Add test for pod details page (tested in `podsPage.spec.ts`)
 - [x] e2e-tests: pod-logs: Add test for pod logs view with search hotkey (tested in `podsPage.spec.ts`)
