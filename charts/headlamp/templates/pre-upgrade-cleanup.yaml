@@ -66,8 +66,6 @@ spec:
     spec:
       serviceAccountName: {{ include "headlamp.fullname" . }}-pre-upgrade
       restartPolicy: Never
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
       - name: pre-upgrade-cleanup
         image: alpine/kubectl:1.35.0@sha256:e7e078c7bb25012141e5957d500834b2a5b266d6de20ecfa862b30d8a892fc7e
@@ -112,13 +110,9 @@ spec:
           limits:
             cpu: 100m
             memory: 128Mi
+
         securityContext:
-          {{- if .Values.securityContext }}
-            {{- toYaml .Values.securityContext | nindent 10 }}
-          {{- else }}
-            {{- $defaultSC := dict "allowPrivilegeEscalation" false "runAsNonRoot" true "seccompProfile" (dict "type" "RuntimeDefault") "capabilities" (dict "drop" (list "ALL")) }}
-            {{- toYaml $defaultSC | nindent 10 }}
-          {{- end }}
+          {}
         volumeMounts:
         - name: tmp
           mountPath: /tmp
