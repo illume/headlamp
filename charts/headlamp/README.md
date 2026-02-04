@@ -61,7 +61,7 @@ Starting from version 0.39.0, the chart implements enhanced security by default:
 
 - **Removed Permissions**: The default ClusterRoleBinding creation has been disabled (`create: false`), removing the previous `cluster-admin` binding.
 
-**Automatic Migration**: When `clusterRoleBinding.create` is enabled, a pre-upgrade hook removes the old `headlamp-admin` ClusterRoleBinding during upgrades to help migrate to the new security configuration. If you have disabled this option or manage ClusterRoleBindings manually, you must remove any existing `headlamp-admin` ClusterRoleBinding yourself.
+**Automatic Migration**: A pre-upgrade hook automatically removes the old `headlamp-admin` ClusterRoleBinding during upgrades to help migrate to the new security configuration. The hook only removes ClusterRoleBindings that were created by Helm, preserving any user-created resources with the same name.
 
 ## Configuration
 
