@@ -1,0 +1,5 @@
+clusterRoleBinding:
+  create: true
+  clusterRoleName: "view"
+  annotations:
+    example.com/annotation: "test-value"
