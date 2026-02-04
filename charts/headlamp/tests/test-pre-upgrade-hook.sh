@@ -10,6 +10,9 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 
+# Expected number of pre-upgrade hook resources (ServiceAccount, ClusterRole, ClusterRoleBinding, Job)
+EXPECTED_HOOK_RESOURCES=4
+
 echo "========================================"
 echo "Testing Pre-Upgrade Hook Configuration"
 echo "========================================"
@@ -73,8 +76,8 @@ fi
 # Test 5: Verify RBAC permissions are correct
 echo ""
 echo "Test 5: Verifying pre-upgrade ClusterRole has correct permissions..."
-if echo "$TEMPLATE_OUTPUT" | grep -q 'resources: \["clusterrolebindings"\]' && \
-   echo "$TEMPLATE_OUTPUT" | grep -q 'verbs: \["get", "delete"\]'; then
+if echo "$TEMPLATE_OUTPUT" | grep -q 'resources:.*clusterrolebindings' && \
+   echo "$TEMPLATE_OUTPUT" | grep -q 'verbs:.*get.*delete'; then
     echo -e "${GREEN}✓ PASS${NC}: ClusterRole has correct permissions (get, delete on clusterrolebindings)"
 else
     echo -e "${RED}✗ FAIL${NC}: ClusterRole permissions are missing or incorrect"
@@ -114,11 +117,11 @@ fi
 echo ""
 echo "Test 8: Verifying all pre-upgrade hook resources are present..."
 HOOK_RESOURCES=$(echo "$TEMPLATE_OUTPUT" | grep -c '"helm.sh/hook": pre-upgrade' || true)
-# Should have: ServiceAccount, ClusterRole, ClusterRoleBinding, Job = 4 resources
-if [ "$HOOK_RESOURCES" -ge 4 ]; then
-    echo -e "${GREEN}✓ PASS${NC}: All pre-upgrade hook resources are present (found $HOOK_RESOURCES references)"
+# Should have: ServiceAccount, ClusterRole, ClusterRoleBinding, Job
+if [ "$HOOK_RESOURCES" -ge "$EXPECTED_HOOK_RESOURCES" ]; then
+    echo -e "${GREEN}✓ PASS${NC}: All pre-upgrade hook resources are present (found $HOOK_RESOURCES references, expected $EXPECTED_HOOK_RESOURCES)"
 else
-    echo -e "${RED}✗ FAIL${NC}: Not all pre-upgrade hook resources are present (found $HOOK_RESOURCES, expected at least 4)"
+    echo -e "${RED}✗ FAIL${NC}: Not all pre-upgrade hook resources are present (found $HOOK_RESOURCES, expected $EXPECTED_HOOK_RESOURCES)"
     exit 1
 fi
 
