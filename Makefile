@@ -373,6 +373,11 @@ i18n:
 .PHONY: helm-template-test
 helm-template-test:
 	charts/headlamp/tests/test.sh
+	charts/headlamp/tests/test-pre-upgrade-hook.sh
+
+.PHONY: helm-test-pre-upgrade-hook
+helm-test-pre-upgrade-hook:
+	charts/headlamp/tests/test-pre-upgrade-hook.sh
 
 .PHONY: helm-update-template-version
 helm-update-template-version:
