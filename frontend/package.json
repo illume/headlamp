@@ -207,7 +207,7 @@
   "prettier": "@headlamp-k8s/eslint-config/prettier-config",
   "devDependencies": {
     "@rsbuild/core": "^1.4.15",
-    "@rsbuild/plugin-node-polyfill": "^1.4.1",
+    "@rsbuild/plugin-node-polyfill": "^1.4.3",
     "@rsbuild/plugin-react": "^1.3.5",
     "@rsbuild/plugin-svgr": "^1.2.2",
     "@storybook/addon-docs": "^9.1.17",
