@@ -21,6 +21,28 @@ metadata:
 type: Opaque
 data:
 ---
+# Source: headlamp/templates/clusterrolebinding.yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: headlamp
+  labels:
+    helm.sh/chart: headlamp-0.39.0
+    app.kubernetes.io/name: headlamp
+    app.kubernetes.io/instance: headlamp
+    app.kubernetes.io/version: "0.39.0"
+    app.kubernetes.io/managed-by: Helm
+  annotations:
+    example.com/annotation: test-value
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: view
+subjects:
+- kind: ServiceAccount
+  name: headlamp
+  namespace: default
+---
 # Source: headlamp/templates/service.yaml
 apiVersion: v1
 kind: Service
@@ -93,8 +115,6 @@ spec:
             - "-in-cluster-context-name=main"
             - "-plugins-dir=/headlamp/plugins"
             # Check if externalSecret is disabled
-            - "-tls-cert-path=/headlamp-cert/headlamp-ca.crt"
-            - "-tls-key-path=/headlamp-cert/headlamp-tls.key"
           ports:
             - name: http
               containerPort: 4466
@@ -109,18 +129,6 @@ spec:
               port: http
           resources:
             {}
-          volumeMounts:
-            - mountPath: /headlamp-cert
-              name: headlamp-cert
-      volumes:
-        - name: headlamp-cert
-          secret:
-            items:
-            - key: tls.crt
-              path: headlamp-ca.crt
-            - key: tls.key
-              path: headlamp-tls.key
-            secretName: headlamp-tls
 ---
 # Source: headlamp/templates/pre-upgrade-cleanup.yaml
 apiVersion: v1

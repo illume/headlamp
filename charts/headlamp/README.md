@@ -53,6 +53,16 @@ $ helm install my-headlamp headlamp/headlamp \
   --set ingress.hosts[0].paths[0].path=/
 ```
 
+## Upgrading
+
+### Security Improvements
+
+Starting from version 0.39.0, the chart implements enhanced security by default:
+
+- **Removed Permissions**: The default ClusterRoleBinding creation has been disabled (`create: false`), removing the previous `cluster-admin` binding.
+
+**Automatic Migration**: A pre-upgrade hook automatically removes the old `headlamp-admin` ClusterRoleBinding during upgrades to help migrate to the new security configuration. The hook only removes ClusterRoleBindings that were created by Helm, preserving any user-created resources with the same name.
+
 ## Configuration
 
 ### Core Parameters
@@ -148,8 +158,8 @@ config:
 | serviceAccount.create | bool | `true` | Create service account |
 | serviceAccount.name | string | `""` | Service account name |
 | serviceAccount.annotations | object | `{}` | Service account annotations |
-| clusterRoleBinding.create | bool | `true` | Create cluster role binding |
-| clusterRoleBinding.clusterRoleName | string | `"cluster-admin"` | Kubernetes ClusterRole name |
+| clusterRoleBinding.create | bool | `false` | Create cluster role binding |
+| clusterRoleBinding.clusterRoleName | string | `""` | Kubernetes ClusterRole name |
 | clusterRoleBinding.annotations | object | `{}` | Cluster role binding annotations |
 | hostUsers | bool | `true` | Run in host uid namespace |
 | podSecurityContext | object | `{}` | Pod security context (e.g., fsGroup: 2000) |

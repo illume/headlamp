@@ -53,7 +53,27 @@ To run the Helm template testing for the Headlamp chart, follow these steps:
     make helm-template-test
     ```
 
-This will execute the `charts/headlamp/tests/test.sh` script, which dynamically renders and compares Helm templates for different test cases against their expected templates.
+This will execute the `charts/headlamp/tests/test.sh` script, which dynamically renders and compares Helm templates for different test cases against their expected templates. It also runs `charts/headlamp/tests/test-pre-upgrade-hook.sh` to verify the pre-upgrade hook configuration.
+
+2. To run only the pre-upgrade hook test:
+
+    ```bash
+    make helm-test-pre-upgrade-hook
+    ```
+
+This verifies that the automatic migration of the old `headlamp-admin` ClusterRoleBinding will occur during upgrades.
+
+## Pre-Upgrade Hook Testing
+
+The `test-pre-upgrade-hook.sh` script verifies the pre-upgrade hook configuration that handles automatic migration of the old ClusterRoleBinding. This test ensures:
+
+- Pre-upgrade hook resources are present in rendered templates (with both `create: true` and `create: false`)
+- Hook has correct Helm annotations for timing and cleanup
+- Job contains the correct cleanup logic to remove the old `headlamp-admin` ClusterRoleBinding
+- RBAC permissions are correctly configured (get, delete on clusterrolebindings)
+- Safety checks are in place to only remove Helm-managed resources
+
+The test runs automatically as part of `make helm-template-test`, or can be run independently with `make helm-test-pre-upgrade-hook`.
 
 ## Updating Template Versions
 

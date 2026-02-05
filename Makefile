@@ -378,6 +378,10 @@ helm-template-test:
 helm-update-template-version:
 	charts/headlamp/tests/update-version.sh
 
+.PHONY: helm-test-pre-upgrade-hook
+helm-test-pre-upgrade-hook:
+	charts/headlamp/tests/test-pre-upgrade-hook.sh
+
 # TODO: add windows compatibility
 .PHONY: run-jaeger
 run-jaeger:

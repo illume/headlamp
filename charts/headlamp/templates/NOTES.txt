@@ -20,13 +20,15 @@
   echo "Visit http://127.0.0.1:8080 to use your application"
   kubectl --namespace {{ include "headlamp.namespace" . }} port-forward $POD_NAME 8080:$CONTAINER_PORT
 {{- end }}
-{{- if .Values.clusterRoleBinding.create }}
   {{- if and ( ge .Capabilities.KubeVersion.Major "1" ) ( ge .Capabilities.KubeVersion.Minor "24" ) }}
-2. Get the token using
-  kubectl create token {{ include "headlamp.serviceAccountName" . }} --namespace {{ include "headlamp.namespace" . }}
+2. Create a service account using
+  kubectl create serviceaccount {{ include "headlamp.serviceAccountName" . }}-admin --namespace {{ include "headlamp.namespace" . }}
+3. Create a clusterrolebinding using
+  kubectl create clusterrolebinding {{ include "headlamp.serviceAccountName" . }}-admin --clusterrole=cluster-admin --serviceaccount={{ include "headlamp.namespace" . }}:{{ include "headlamp.serviceAccountName" . }}-admin
+4. Get the token using
+  kubectl create token {{ include "headlamp.serviceAccountName" . }}-admin --namespace {{ include "headlamp.namespace" . }}
   {{- else }}
-2. Get the clusterrolebinding token using
+5. Get the clusterrolebinding token using
   export SECRET=$(kubectl get secrets --namespace {{ include "headlamp.namespace" . }} -o custom-columns=":metadata.name" | grep "{{ include "headlamp.fullname" . }}-token")
   kubectl get secret $SECRET --namespace {{ include "headlamp.namespace" . }} --template=\{\{.data.token\}\} | base64 --decode
   {{- end }}
-{{- end }}
