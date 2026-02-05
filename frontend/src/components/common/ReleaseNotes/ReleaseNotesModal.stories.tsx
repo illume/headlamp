@@ -47,11 +47,11 @@ export const WithGitHubVideo = {
   args: {
     releaseNotes: `### Release with Videos
 
-Demo: Visualization of NodeClaim (Scaling view) resource metrics
+This video demonstrates the visualization of NodeClaim (Scaling view) resource metrics, showing how the Karpenter plugin displays real-time scaling data with interactive charts and graphs for monitoring cluster autoscaling behavior.
 
 [Demo: Visualization of NodeClaim (Scaling view) resource metrics](https://github.com/user-attachments/assets/972764eb-0445-4bbe-8097-64dc4c3898d8)
 
-Map View for Karpenter Resources Until now the plugin supported viewing resources in data tables. Now people can see the resource relationships in a map view as well. Demo: Seeing relationships between Karpenter and other Kubernetes resources on the map
+This video shows the new Map View for Karpenter Resources. The map view provides a visual representation of relationships between Karpenter resources (NodeClaims, NodePools) and other Kubernetes resources (Pods, Deployments), making it easier to understand resource dependencies and cluster topology at a glance.
 
 https://github.com/user-attachments/assets/8d7d35bd-e014-4824-bfe8-fe245adfdc65`,
     appVersion: '2.0.0',
