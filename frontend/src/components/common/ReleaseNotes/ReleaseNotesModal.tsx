@@ -56,7 +56,11 @@ function ParagraphWithVideo({ children }: { children?: React.ReactNode }) {
             display: 'block',
           }}
         >
-          Your browser does not support the video tag.
+          Video content is not available in your browser. Please{' '}
+          <a href={text} target="_blank" rel="noopener noreferrer">
+            view the video here
+          </a>
+          .
         </video>
       );
     }
