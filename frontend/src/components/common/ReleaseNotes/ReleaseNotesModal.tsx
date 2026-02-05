@@ -36,20 +36,39 @@ function isGitHubVideoUrl(text: string): boolean {
 }
 
 /**
+ * Context to track paragraph relationships for ARIA attributes
+ */
+const ParagraphContext = React.createContext<{
+  lastParagraphId: string | null;
+  setLastParagraphId: (id: string | null) => void;
+  generateId: () => string;
+}>({
+  lastParagraphId: null,
+  setLastParagraphId: () => {},
+  generateId: () => '',
+});
+
+/**
  * Custom component for rendering paragraphs that may contain GitHub video URLs
  */
 function ParagraphWithVideo({ children }: { children?: React.ReactNode }) {
-  // Check if this paragraph contains only a GitHub video URL
+  const context = React.useContext(ParagraphContext);
+  const paragraphId = React.useMemo(() => context.generateId(), [context]);
   const childrenArray = React.Children.toArray(children);
 
+  // Check if this paragraph contains only a GitHub video URL
   if (childrenArray.length === 1 && typeof childrenArray[0] === 'string') {
     const text = childrenArray[0];
     if (isGitHubVideoUrl(text)) {
+      const describedBy = context.lastParagraphId;
+
       return (
+        // GitHub videos are typically silent/muted and should have a descriptive paragraph above them
         // eslint-disable-next-line jsx-a11y/media-has-caption
         <video
           src={text}
           controls
+          aria-describedby={describedBy || undefined}
           style={{
             maxWidth: '100%',
             height: 'auto',
@@ -66,7 +85,12 @@ function ParagraphWithVideo({ children }: { children?: React.ReactNode }) {
     }
   }
 
-  return <p>{children}</p>;
+  // Regular paragraph - track its ID for potential video below
+  React.useEffect(() => {
+    context.setLastParagraphId(paragraphId);
+  }, [paragraphId, context]);
+
+  return <p id={paragraphId}>{children}</p>;
 }
 
 export interface ReleaseNotesModalProps {
@@ -77,7 +101,18 @@ export interface ReleaseNotesModalProps {
 export default function ReleaseNotesModal(props: ReleaseNotesModalProps) {
   const { releaseNotes, appVersion } = props;
   const [showReleaseNotes, setShowReleaseNotes] = React.useState(Boolean(releaseNotes));
+  const [lastParagraphId, setLastParagraphId] = React.useState<string | null>(null);
+  const idCounter = React.useRef(0);
   const { t } = useTranslation();
+
+  const contextValue = React.useMemo(
+    () => ({
+      lastParagraphId,
+      setLastParagraphId,
+      generateId: () => `release-notes-p-${++idCounter.current}`,
+    }),
+    [lastParagraphId]
+  );
 
   return (
     <Dialog open={showReleaseNotes} maxWidth="xl">
@@ -101,20 +136,22 @@ export default function ReleaseNotesModal(props: ReleaseNotesModalProps) {
             },
           }}
         >
-          <ReactMarkdown
-            components={{
-              a: ({ children, href }) => {
-                return (
-                  <Link href={href} target="_blank">
-                    {children}
-                  </Link>
-                );
-              },
-              p: ParagraphWithVideo,
-            }}
-          >
-            {releaseNotes}
-          </ReactMarkdown>
+          <ParagraphContext.Provider value={contextValue}>
+            <ReactMarkdown
+              components={{
+                a: ({ children, href }) => {
+                  return (
+                    <Link href={href} target="_blank">
+                      {children}
+                    </Link>
+                  );
+                },
+                p: ParagraphWithVideo,
+              }}
+            >
+              {releaseNotes}
+            </ReactMarkdown>
+          </ParagraphContext.Provider>
         </Box>
       </DialogContent>
     </Dialog>
