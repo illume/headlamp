@@ -53,7 +53,7 @@ const ParagraphContext = React.createContext<{
  */
 function ParagraphWithVideo({ children }: { children?: React.ReactNode }) {
   const context = React.useContext(ParagraphContext);
-  const paragraphId = React.useMemo(() => context.generateId(), [context]);
+  const paragraphId = React.useMemo(() => context.generateId(), [context.generateId]);
   const childrenArray = React.Children.toArray(children);
 
   // Check if this paragraph contains only a GitHub video URL
@@ -105,17 +105,19 @@ export default function ReleaseNotesModal(props: ReleaseNotesModalProps) {
   const idCounter = React.useRef(0);
   const { t } = useTranslation();
 
+  const generateId = React.useCallback(() => {
+    const id = `release-notes-p-${idCounter.current}`;
+    idCounter.current += 1;
+    return id;
+  }, []);
+
   const contextValue = React.useMemo(
     () => ({
       lastParagraphId,
       setLastParagraphId,
-      generateId: () => {
-        const id = `release-notes-p-${idCounter.current}`;
-        idCounter.current += 1;
-        return id;
-      },
+      generateId,
     }),
-    [lastParagraphId]
+    [lastParagraphId, generateId]
   );
 
   return (
