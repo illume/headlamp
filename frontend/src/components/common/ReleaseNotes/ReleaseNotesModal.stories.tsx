@@ -45,13 +45,15 @@ export const ShowNoNotes = {
 
 export const WithGitHubVideo = {
   args: {
-    releaseNotes: `### Release with Video
+    releaseNotes: `### Release with Videos
 
-This release includes an exciting new feature!
+Demo: Visualization of NodeClaim (Scaling view) resource metrics
 
-https://github.com/user-attachments/assets/46b377f2-a949-4e6e-b82a-bf528e7fd42a
+[Demo: Visualization of NodeClaim (Scaling view) resource metrics](https://github.com/user-attachments/assets/972764eb-0445-4bbe-8097-64dc4c3898d8)
 
-Some more text after the video.`,
+Map View for Karpenter Resources Until now the plugin supported viewing resources in data tables. Now people can see the resource relationships in a map view as well. Demo: Seeing relationships between Karpenter and other Kubernetes resources on the map
+
+https://github.com/user-attachments/assets/8d7d35bd-e014-4824-bfe8-fe245adfdc65`,
     appVersion: '2.0.0',
   },
 };

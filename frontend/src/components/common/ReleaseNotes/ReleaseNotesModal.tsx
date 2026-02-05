@@ -93,6 +93,46 @@ function ParagraphWithVideo({ children }: { children?: React.ReactNode }) {
   return <p id={paragraphId}>{children}</p>;
 }
 
+/**
+ * Custom component for rendering links that may be GitHub video URLs
+ */
+function LinkOrVideo({ children, href }: { children?: React.ReactNode; href?: string }) {
+  const context = React.useContext(ParagraphContext);
+
+  // Check if this link is a GitHub video URL
+  if (href && isGitHubVideoUrl(href)) {
+    const describedBy = context.lastParagraphId;
+
+    return (
+      // GitHub videos are typically silent/muted and should have a descriptive paragraph above them
+      // eslint-disable-next-line jsx-a11y/media-has-caption
+      <video
+        src={href}
+        controls
+        aria-describedby={describedBy || undefined}
+        style={{
+          maxWidth: '100%',
+          height: 'auto',
+          display: 'block',
+        }}
+      >
+        Video content is not available in your browser. Please{' '}
+        <a href={href} target="_blank" rel="noopener noreferrer">
+          view the video here
+        </a>
+        .
+      </video>
+    );
+  }
+
+  // Regular link
+  return (
+    <Link href={href} target="_blank">
+      {children}
+    </Link>
+  );
+}
+
 export interface ReleaseNotesModalProps {
   releaseNotes: string;
   appVersion: string | null;
@@ -145,13 +185,7 @@ export default function ReleaseNotesModal(props: ReleaseNotesModalProps) {
           <ParagraphContext.Provider value={contextValue}>
             <ReactMarkdown
               components={{
-                a: ({ children, href }) => {
-                  return (
-                    <Link href={href} target="_blank">
-                      {children}
-                    </Link>
-                  );
-                },
+                a: LinkOrVideo,
                 p: ParagraphWithVideo,
               }}
             >
