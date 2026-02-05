@@ -4,6 +4,59 @@
 npx playwright install
 ```
 
+## Automated Testing with Minikube
+
+The easiest way to run e2e tests is using the automated Node.js script that handles all setup and works cross-platform (Linux, macOS, Windows):
+
+```bash
+# From the project root
+make e2e-minikube
+
+# Or using npm
+npm run e2e:minikube
+```
+
+This script will:
+1. Check if minikube clusters already exist
+   - **In CI**: Uses the single default `minikube` profile created by GitHub Actions, configured with both `test` and `test2` contexts
+   - **Locally**: Creates TWO minikube profiles named `test` and `test2` (matching the e2e test expectations)
+   - If the local profiles exist, reuse them (skips cluster creation)
+   - If they don't exist locally, create new ones
+2. Build and load the Headlamp Docker images (if not already built)
+3. Deploy Headlamp to the first cluster (test)
+4. Run all Playwright e2e tests (which can test multi-cluster scenarios)
+5. **Keep the clusters running** for faster subsequent test runs (local only)
+
+**Note:** By default, the clusters are NOT deleted after tests complete locally. This allows for:
+- Faster subsequent test runs (cluster reuse)
+- Debugging failed tests
+- Inspecting the cluster state
+
+In CI environments, the GitHub Actions workflow manages the minikube lifecycle automatically.
+
+The scripts are written in JavaScript (Node.js) and work on all platforms including Windows.
+
+To delete the test clusters when you're done:
+
+```bash
+# Using make
+make e2e-minikube-clean
+
+# Or using npm
+npm run e2e:minikube:clean
+```
+
+**Requirements:**
+- Node.js >= 20.11.1
+- `minikube` installed ([installation guide](https://minikube.sigs.k8s.io/docs/start/))
+- `kubectl` installed
+- `docker` installed and running
+- For Windows: If using `make` commands, install [Make for Windows](https://gnuwin32.sourceforge.net/packages/make.htm) or use the npm scripts instead
+
+**Note:** The scripts use `make` to build Docker images. On Windows, if you don't have `make` installed, use the npm scripts (`npm run e2e:minikube`) which will work the same way.
+
+## Manual Testing with Minikube
+
 The instructions below assume Headlamp is running locally in-cluster with minikube.
 
 ```bash
