@@ -88,7 +88,7 @@ function ParagraphWithVideo({ children }: { children?: React.ReactNode }) {
   // Regular paragraph - track its ID for potential video below
   React.useEffect(() => {
     context.setLastParagraphId(paragraphId);
-  }, [paragraphId, context]);
+  }, [paragraphId, context.setLastParagraphId]);
 
   return <p id={paragraphId}>{children}</p>;
 }
@@ -109,7 +109,11 @@ export default function ReleaseNotesModal(props: ReleaseNotesModalProps) {
     () => ({
       lastParagraphId,
       setLastParagraphId,
-      generateId: () => `release-notes-p-${++idCounter.current}`,
+      generateId: () => {
+        const id = `release-notes-p-${idCounter.current}`;
+        idCounter.current += 1;
+        return id;
+      },
     }),
     [lastParagraphId]
   );
