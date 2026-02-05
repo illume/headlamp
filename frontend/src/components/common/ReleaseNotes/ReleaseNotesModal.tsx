@@ -63,7 +63,7 @@ function ParagraphWithVideo({ children }: { children?: React.ReactNode }) {
       const describedBy = context.lastParagraphId;
 
       return (
-        // GitHub videos are typically silent/muted and should have a descriptive paragraph above them
+        // GitHub videos must be silent and should have a descriptive paragraph above them which describes the video
         // eslint-disable-next-line jsx-a11y/media-has-caption
         <video
           src={text}
@@ -104,7 +104,7 @@ function LinkOrVideo({ children, href }: { children?: React.ReactNode; href?: st
     const describedBy = context.lastParagraphId;
 
     return (
-      // GitHub videos are typically silent/muted and should have a descriptive paragraph above them
+      // GitHub videos must be silent and should have a descriptive paragraph above them which describes the video
       // eslint-disable-next-line jsx-a11y/media-has-caption
       <video
         src={href}
