@@ -120,3 +120,10 @@ else
 fi
 
 echo "Template testing completed."
+
+# Run pre-upgrade hook tests
+echo ""
+echo "============================================="
+echo "Running Pre-Upgrade Hook Tests..."
+echo "============================================="
+${CHART_DIR}/tests/test-pre-upgrade-hook.sh
