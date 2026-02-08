@@ -350,11 +350,12 @@ export const LoadingState = () => (
 Provide clear error messages:
 
 ```typescript
+import { Alert } from '@mui/material';
+
 export const ErrorState = () => (
-  <AlertNotification 
-    message="Failed to load cluster configuration. Please check your connection."
-    severity="error"
-  />
+  <Alert severity="error">
+    Failed to load cluster configuration. Please check your connection.
+  </Alert>
 );
 ```
 
@@ -364,11 +365,14 @@ Guide users on what to do:
 
 ```typescript
 export const EmptyState = () => (
-  <EmptyContent
-    icon={mdiCloudOffOutline}
-    message="No clusters configured"
-    actionButton={<Button>Add Cluster</Button>}
-  />
+  <EmptyContent>
+    <div style={{ textAlign: 'center' }}>
+      <p>No clusters configured.</p>
+      <Button variant="contained" color="primary">
+        Add Cluster
+      </Button>
+    </div>
+  </EmptyContent>
 );
 ```
 
@@ -405,8 +409,14 @@ cd frontend && npm test -- --coverage --run
 # Run specific test file
 cd frontend && npm test -- --run src/components/App/Settings/ColorPicker.test.tsx
 
-# View coverage report
+# View coverage report (macOS)
 open frontend/coverage/index.html
+
+# View coverage report (Linux)
+xdg-open frontend/coverage/index.html
+
+# View coverage report (Windows)
+start frontend/coverage/index.html
 ```
 
 ### How to Run Storybook
