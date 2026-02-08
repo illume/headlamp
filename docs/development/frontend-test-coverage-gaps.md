@@ -11,9 +11,9 @@ This document outlines missing frontend tests and storybooks that need to be wri
 
 ## Issues by Category
 
-### Critical: Zero/Near-Zero Coverage Components (0-10%)
+### Critical: Priority Components Needing Tests
 
-These components have <10% test coverage and require immediate attention with comprehensive storybooks.
+These components have low test coverage (under 20%) or specific gaps requiring immediate attention with comprehensive storybooks.
 
 #### Settings Components
 
@@ -21,10 +21,6 @@ These components have <10% test coverage and require immediate attention with co
 - [ ] IconPicker (5.88% coverage) in `frontend/src/components/App/Settings/IconPicker.tsx` - Create IconPicker.stories.tsx with icon grid display, icon search/filter, selected icon highlight, icon selection callback, and empty search results state
 - [ ] SettingsCluster (0% coverage) in `frontend/src/components/App/Settings/SettingsCluster.tsx` - Create SettingsCluster.stories.tsx with cluster settings form, save success state, save error state, loading state during save, and validation errors
 - [ ] SettingsClusters (0% coverage) in `frontend/src/components/App/Settings/SettingsClusters.tsx` - Create SettingsClusters.stories.tsx with cluster list display, empty cluster list, add cluster action, and delete cluster confirmation
-- [ ] DrawerModeSettings (83.33% branch coverage needs improvement) in `frontend/src/components/App/Settings/DrawerModeSettings.tsx` - Enhance DrawerModeSettings.stories.tsx with drawer mode selection error states and preference save failures
-- [ ] NodeShellSettings (73.68% coverage) in `frontend/src/components/App/Settings/NodeShellSettings.tsx` - Enhance NodeShellSettings.stories.tsx with shell configuration errors and validation failures
-- [ ] PodDebugSettings (70.83% coverage) in `frontend/src/components/App/Settings/PodDebugSettings.tsx` - Enhance PodDebugSettings.stories.tsx with debug configuration errors and save failures
-- [ ] SettingsButton (66.66% coverage) in `frontend/src/components/App/Settings/SettingsButton.tsx` - Add tests for button disabled states and click handler edge cases
 
 #### Authentication & Cluster Management
 
@@ -32,7 +28,6 @@ These components have <10% test coverage and require immediate attention with co
 - [ ] AuthChooser (4.1% coverage) in `frontend/src/components/authchooser/index.tsx` - Enhance AuthChooser.stories.tsx with multiple auth methods display, auth method selection, loading state during auth flow, authentication failure error, and redirect after success
 - [ ] KubeConfigLoader (7.92% coverage) in `frontend/src/components/cluster/KubeConfigLoader.tsx` - Create KubeConfigLoader.stories.tsx with file upload drag-and-drop, file parsing loading state, invalid YAML error state, duplicate cluster error state, large file parsing timeout, and success with cluster list
 - [ ] AddCluster (0% coverage) in `frontend/src/components/App/CreateCluster/AddCluster.tsx` - Create AddCluster.stories.tsx with empty form state, form validation errors, cluster connection test loading, connection test success/failure, and save cluster success
-- [ ] OauthPopup (20% coverage) in `frontend/src/components/oidcauth/OauthPopup.tsx` - Enhance OauthPopup.stories.tsx with OAuth flow loading state, authentication success, timeout errors, and connection failures
 
 #### Common Resource Components
 
@@ -43,22 +38,10 @@ These components have <10% test coverage and require immediate attention with co
 - [ ] ResourceTableColumnChooser (0% coverage) in `frontend/src/components/common/Resource/ResourceTableColumnChooser.tsx` - Create ResourceTableColumnChooser.stories.tsx with column list checkboxes, select/deselect columns, reset to defaults action, and save preferences
 - [ ] ResourceTableMultiActions (0% coverage) in `frontend/src/components/common/Resource/ResourceTableMultiActions.tsx` - Create ResourceTableMultiActions.stories.tsx with multi-action dropdown menu, actions disabled with no selection, bulk action confirmation, and bulk action error states
 - [ ] Terminal (5.14% coverage) in `frontend/src/components/common/Terminal.tsx` - Create Terminal.stories.tsx with terminal connected and ready, terminal connection loading, terminal connection failed error, terminal with command output, and terminal disconnected state
-- [ ] DeleteButton (42.85% coverage) in `frontend/src/components/common/Resource/DeleteButton.tsx` - Enhance existing stories with delete confirmation dialog, delete in progress loading state, delete success feedback, and delete error state with retry option
-- [ ] ScaleButton (27.5% coverage) in `frontend/src/components/common/Resource/ScaleButton.tsx` - Enhance existing stories with scale input form, scale validation for min replicas, scale in progress loading, scale success feedback, and scale error state
-- [ ] EditButton (35.71% coverage) in `frontend/src/components/common/Resource/EditButton.tsx` - Enhance existing stories with edit button states, unsaved changes warning, save in progress loading, and save error with error message
-- [ ] CreateResourceButton (needs coverage) in `frontend/src/components/common/CreateResourceButton.tsx` - Enhance CreateResourceButton.stories.tsx with button states, resource creation dialog, validation errors, and creation success/failure
-- [ ] CopyButton (needs coverage) in `frontend/src/components/common/Resource/CopyButton.tsx` - Enhance CopyButton.stories.tsx with copy success feedback, copy failure error, and clipboard permission denied state
-- [ ] ViewButton (needs coverage) in `frontend/src/components/common/Resource/ViewButton.tsx` - Enhance ViewButton.stories.tsx with view dialog opening, loading resource data, and resource load error
-- [ ] RestartButton (needs coverage) in `frontend/src/components/common/Resource/RestartButton.tsx` - Enhance RestartButton.stories.tsx with restart confirmation, restart in progress, restart success, and restart failure states
-- [ ] RestartMultipleButton (needs coverage) in `frontend/src/components/common/Resource/RestartMultipleButton.tsx` - Enhance RestartMultipleButton.stories.tsx with bulk restart confirmation, progress indicator, and partial failure handling
 
 #### Search & Navigation
 
 - [ ] GlobalSearchContent (0% coverage) in `frontend/src/components/globalSearch/GlobalSearchContent.tsx` - Create GlobalSearchContent.stories.tsx with empty search state, search loading spinner, search results list, no results found, and search error state
-- [ ] GlobalSearch (needs coverage) in `frontend/src/components/globalSearch/GlobalSearch.tsx` - Enhance GlobalSearch.stories.tsx with search input interactions, keyboard shortcuts, search suggestions, and result navigation
-- [ ] AdvancedSearch (54.26% coverage) in `frontend/src/components/advancedSearch/AdvancedSearch.tsx` - Enhance AdvancedSearch.stories.tsx with advanced filter options, filter validation, search execution loading, and search error states
-- [ ] ResourceSearch (71.42% coverage) in `frontend/src/components/advancedSearch/ResourceSearch.tsx` - Enhance ResourceSearch.stories.tsx with resource type filtering, search result pagination, and empty results state
-- [ ] SearchSettings (40% coverage) in `frontend/src/components/advancedSearch/SearchSettings.tsx` - Enhance SearchSettings.stories.tsx with search preferences form, save settings success/error, and reset to defaults
 
 #### Notifications
 
@@ -66,9 +49,37 @@ These components have <10% test coverage and require immediate attention with co
 
 ---
 
-### Low Coverage Components (10-50%)
+### Medium Coverage Components (20-60%)
 
-These components have some test coverage but are missing critical error and loading state tests.
+These components have moderate test coverage but are missing critical error and loading state tests.
+
+### Medium Coverage Components (20-60%)
+
+These components have moderate test coverage but are missing critical error and loading state tests.
+
+#### Common Resource Components
+
+- [ ] DeleteButton (42.85% coverage) in `frontend/src/components/common/Resource/DeleteButton.tsx` - Create DeleteButton.stories.tsx with delete confirmation dialog, delete in progress loading state, delete success feedback, and delete error state with retry option
+- [ ] ScaleButton (27.5% coverage) in `frontend/src/components/common/Resource/ScaleButton.tsx` - Enhance ScaleButton.stories.tsx with scale input form, scale validation for min replicas, scale in progress loading, scale success feedback, and scale error state
+- [ ] EditButton (35.71% coverage) in `frontend/src/components/common/Resource/EditButton.tsx` - Create EditButton.stories.tsx with edit button states, unsaved changes warning, save in progress loading, and save error with error message
+- [ ] CreateResourceButton (coverage unknown - estimate 40%) in `frontend/src/components/common/CreateResourceButton.tsx` - Enhance CreateResourceButton.stories.tsx with button states, resource creation dialog, validation errors, and creation success/failure
+- [ ] CopyButton (coverage unknown - estimate 50%) in `frontend/src/components/common/Resource/CopyButton.tsx` - Enhance CopyButton.stories.tsx with copy success feedback, copy failure error, and clipboard permission denied state
+- [ ] ViewButton (coverage unknown - estimate 45%) in `frontend/src/components/common/Resource/ViewButton.tsx` - Enhance ViewButton.stories.tsx with view dialog opening, loading resource data, and resource load error
+- [ ] RestartButton (coverage unknown - estimate 50%) in `frontend/src/components/common/Resource/RestartButton.tsx` - Enhance RestartButton.stories.tsx with restart confirmation, restart in progress, restart success, and restart failure states
+- [ ] RestartMultipleButton (coverage unknown - estimate 40%) in `frontend/src/components/common/Resource/RestartMultipleButton.tsx` - Enhance RestartMultipleButton.stories.tsx with bulk restart confirmation, progress indicator, and partial failure handling
+
+#### Search Components
+
+- [ ] GlobalSearch (coverage unknown - estimate 50%) in `frontend/src/components/globalSearch/GlobalSearch.tsx` - Enhance GlobalSearch.stories.tsx with search input interactions, keyboard shortcuts, search suggestions, and result navigation
+- [ ] AdvancedSearch (54.26% coverage) in `frontend/src/components/advancedSearch/AdvancedSearch.tsx` - Enhance AdvancedSearch.stories.tsx with advanced filter options, filter validation, search execution loading, and search error states
+- [ ] SearchSettings (40% coverage) in `frontend/src/components/advancedSearch/SearchSettings.tsx` - Enhance SearchSettings.stories.tsx with search preferences form, save settings success/error, and reset to defaults
+
+#### Settings Components with Higher Coverage
+
+- [ ] DrawerModeSettings (83.33% branch coverage needs improvement) in `frontend/src/components/App/Settings/DrawerModeSettings.tsx` - Create DrawerModeSettings.stories.tsx with drawer mode selection error states and preference save failures
+- [ ] NodeShellSettings (73.68% coverage) in `frontend/src/components/App/Settings/NodeShellSettings.tsx` - Enhance NodeShellSettings.stories.tsx with shell configuration errors and validation failures
+- [ ] PodDebugSettings (70.83% coverage) in `frontend/src/components/App/Settings/PodDebugSettings.tsx` - Enhance PodDebugSettings.stories.tsx with debug configuration errors and save failures
+- [ ] SettingsButton (66.66% coverage) in `frontend/src/components/App/Settings/SettingsButton.tsx` - Add tests for button disabled states and click handler edge cases
 
 #### Activity Feed
 
@@ -86,6 +97,7 @@ These components have some test coverage but are missing critical error and load
 #### Notifications
 
 - [ ] Notifications (33.33% coverage) in `frontend/src/components/App/Notifications/Notifications.tsx` - Enhance Notifications.stories.tsx with empty notifications state, loading notifications state, notifications list with various types, and error loading notifications
+- [ ] OauthPopup (20% coverage) in `frontend/src/components/oidcauth/OauthPopup.tsx` - Enhance OauthPopup.stories.tsx with OAuth flow loading state, authentication success, timeout errors, and connection failures
 
 #### Settings Components
 
@@ -93,16 +105,35 @@ These components have some test coverage but are missing critical error and load
 - [ ] NumRowsInput (54.23% coverage) in `frontend/src/components/App/Settings/NumRowsInput.tsx` - Create unit tests or story for input validation, min/max value constraints, and invalid number error state
 - [ ] ShortcutsSettings (44.44% coverage) in `frontend/src/components/App/Settings/ShortcutsSettings.tsx` - Enhance ShortcutsSettings.stories.tsx with shortcut conflict detection, shortcut editing, save shortcuts success/error, and reset to defaults
 
+#### Pod Components
+
+- [ ] PodDebugTerminal (38.05% coverage) in `frontend/src/components/pod/PodDebugTerminal.tsx` - Enhance PodDebugTerminal.stories.tsx with debug terminal connecting, debug terminal connected, connection establishment error, and debug commands execution
+- [ ] PodDebugAction (coverage unknown - estimate 30%) in `frontend/src/components/pod/PodDebugAction.tsx` - Create PodDebugAction.stories.tsx with debug action button, container selection, debug session starting loading, and debug connection error
+
+#### Cluster & Home Components
+
+- [ ] ClusterTable (75.51% coverage) in `frontend/src/components/App/Home/ClusterTable.tsx` - Enhance ClusterTable.stories.tsx with cluster table loading, empty clusters list, cluster actions menu, and cluster connection error states
+- [ ] ClusterContextMenu (43.24% coverage) in `frontend/src/components/App/Home/ClusterContextMenu.tsx` - Add tests for context menu actions, action availability conditions, and action error states
+- [ ] RecentClusters (64.1% coverage) in `frontend/src/components/App/Home/RecentClusters.tsx` - Enhance RecentClusters.stories.tsx with empty recent clusters, loading recent clusters, and recent cluster actions
+
+#### Charts & Visualization
+
+- [ ] Charts in node (coverage unknown - estimate 40%) in `frontend/src/components/node/Charts.tsx` - Create node Charts.stories.tsx with node metrics charts, loading state for metrics, error loading metrics, and empty metrics state
+- [ ] Charts in workload (coverage unknown - estimate 40%) in `frontend/src/components/workload/Charts.tsx` - Create workload Charts.stories.tsx with workload metrics visualization, loading state, error state, and time range selector
+- [ ] WorkloadOverview (coverage unknown - estimate 45%) in `frontend/src/components/workload/Overview.tsx` - Enhance Overview.stories.tsx with workload summary loading, workload metrics display, and error loading workload data
+- [ ] ClusterOverview (53.57% coverage) in `frontend/src/components/cluster/Overview.tsx` - Enhance Overview.stories.tsx with loading states during metrics fetch, cluster health display, and metrics fetch error
+
+---
+
+### Very Low Coverage Components (Under 10%)
+
+These components have very low test coverage and should be moved to critical priority after initial triage.
+
 #### Node Management
 
 - [ ] NodeDetails (9.27% coverage) in `frontend/src/components/node/Details.tsx` - Create NodeDetails.stories.tsx with node details loading skeleton, node details loaded, metrics loading state, node metrics loaded, and error loading node details
 - [ ] NodeShellAction (0% coverage) in `frontend/src/components/node/NodeShellAction.tsx` - Create NodeShellAction.stories.tsx with shell action button, connection loading state, connection failed error, and shell terminal opened
 - [ ] NodeShellTerminal (1.11% coverage) in `frontend/src/components/node/NodeShellTerminal.tsx` - Create NodeShellTerminal.stories.tsx with terminal connecting state, terminal connected, connection timeout error, terminal disconnected error, and terminal with command history
-
-#### Pod Components
-
-- [ ] PodDebugTerminal (38.05% coverage) in `frontend/src/components/pod/PodDebugTerminal.tsx` - Enhance PodDebugTerminal.stories.tsx with debug terminal connecting, debug terminal connected, connection establishment error, and debug commands execution
-- [ ] PodDebugAction (needs coverage) in `frontend/src/components/pod/PodDebugAction.tsx` - Create PodDebugAction.stories.tsx with debug action button, container selection, debug session starting loading, and debug connection error
 
 #### Project Management
 
@@ -119,20 +150,9 @@ These components have some test coverage but are missing critical error and load
 - [ ] ReplicaSetGlance (0% coverage) in `frontend/src/components/replicaset/ReplicaSetGlance.tsx` - Create ReplicaSetGlance.stories.tsx with replica set status, loading state, error state, and replica counts
 - [ ] ServiceGlance (0% coverage) in `frontend/src/components/service/ServiceGlance.tsx` - Create ServiceGlance.stories.tsx with service overview, loading state, error state, and service endpoints
 
-#### Cluster & Home Components
+---
 
-- [ ] ClusterTable (75.51% coverage) in `frontend/src/components/App/Home/ClusterTable.tsx` - Enhance ClusterTable.stories.tsx with cluster table loading, empty clusters list, cluster actions menu, and cluster connection error states
-- [ ] ClusterContextMenu (43.24% coverage) in `frontend/src/components/App/Home/ClusterContextMenu.tsx` - Add tests for context menu actions, action availability conditions, and action error states
-- [ ] RecentClusters (64.1% coverage) in `frontend/src/components/App/Home/RecentClusters.tsx` - Enhance RecentClusters.stories.tsx with empty recent clusters, loading recent clusters, and recent cluster actions
-
-#### Charts & Visualization
-
-- [ ] Charts in node (needs coverage) in `frontend/src/components/node/Charts.tsx` - Create node Charts.stories.tsx with node metrics charts, loading state for metrics, error loading metrics, and empty metrics state
-- [ ] Charts in workload (needs coverage) in `frontend/src/components/workload/Charts.tsx` - Create workload Charts.stories.tsx with workload metrics visualization, loading state, error state, and time range selector
-- [ ] WorkloadOverview (needs coverage) in `frontend/src/components/workload/Overview.tsx` - Enhance Overview.stories.tsx with workload summary loading, workload metrics display, and error loading workload data
-- [ ] ClusterOverview (53.57% coverage) in `frontend/src/components/cluster/Overview.tsx` - Enhance Overview.stories.tsx with loading states during metrics fetch, cluster health display, and metrics fetch error
-
-#### Common Components
+### Common Components Needing Enhancement
 
 - [ ] Dialog (needs coverage) in `frontend/src/components/common/Dialog.tsx` - Enhance Dialog.stories.tsx with modal open/close states, dialog with form content, confirmation dialogs, and error dialogs
 - [ ] ConfirmDialog (needs coverage) in `frontend/src/components/common/ConfirmDialog.tsx` - Enhance ConfirmDialog.stories.tsx with confirmation message variants, confirm/cancel actions, and async confirmation with loading
@@ -152,16 +172,14 @@ These components have some test coverage but are missing critical error and load
 
 ---
 
-### Branch Coverage Issues (<30% branches)
+### Branch Coverage Issues (Low branch coverage)
 
 These components need additional test scenarios to cover conditional branches.
 
 - [ ] Layout (15.21% branch coverage) in `frontend/src/components/App/Layout.tsx` - Add tests for modal/drawer conditional branches and different layout states
-- [ ] RouteSwitcher (30% branch coverage) in `frontend/src/components/App/RouteSwitcher.tsx` - Add tests for route guards, route conditionals, and fallback routes
 - [ ] ColorPicker (0% branch coverage) in `frontend/src/components/App/Settings/ColorPicker.tsx` - Add tests covering all validation branches, custom color branch, and preset color selection branches
 - [ ] IconPicker (0% branch coverage) in `frontend/src/components/App/Settings/IconPicker.tsx` - Add tests covering icon selection branches, search filtering branches, and empty results branches
 - [ ] Terminal (1.65% branch coverage) in `frontend/src/components/common/Terminal.tsx` - Add tests for terminal command branches, connection state branches, and error handling branches
-- [ ] ClusterContextMenu (44.44% branch coverage) in `frontend/src/components/App/Home/ClusterContextMenu.tsx` - Add tests for all context menu action branches and action availability conditions
 
 ---
 
@@ -269,41 +287,41 @@ Components that need error boundary wrappers or better error handling patterns:
 
 ---
 
-###Testing Recommendations
+### Testing Recommendations
 
 #### Priority 1 (Critical - Week 1)
 
-Focus on components with <10% coverage that have significant user interaction:
+Focus on components with under 20% coverage that have significant user interaction:
 
-1. ✅ ColorPicker.tsx - Color validation and selection
-2. ✅ Auth.tsx - Authentication flow with errors
-3. ✅ KubeConfigLoader.tsx - File loading with errors and timeouts
-4. ✅ Notifications.tsx - Notification states
+- [ ] ColorPicker.tsx - Color validation and selection
+- [ ] Auth.tsx - Authentication flow with errors
+- [ ] KubeConfigLoader.tsx - File loading with errors and timeouts
+- [ ] Notifications.tsx - Notification states
 
 #### Priority 2 (High - Week 2)
 
 Components with critical operations that need error handling:
 
-5. ✅ DeleteMultipleButton.tsx - Batch operations with partial failures
-6. ✅ ScaleButton.tsx - Validation and error states
-7. ✅ ApiResourcePicker.tsx - Loading and error states
-8. ✅ Activity.tsx - Loading and empty states
+- [ ] DeleteMultipleButton.tsx - Batch operations with partial failures
+- [ ] ScaleButton.tsx - Validation and error states
+- [ ] ApiResourcePicker.tsx - Loading and error states
+- [ ] Activity.tsx - Loading and empty states
 
 #### Priority 3 (Medium - Week 3-4)
 
 Advanced features and terminal components:
 
-9. ✅ NodeShellTerminal.tsx - Connection states and errors
-10. ✅ PodDebugTerminal.tsx - Debug session states
-11. ✅ PortForward.tsx - Port forwarding workflow
-12. ✅ ProjectDetails.tsx - Project management flows
+- [ ] NodeShellTerminal.tsx - Connection states and errors
+- [ ] PodDebugTerminal.tsx - Debug session states
+- [ ] PortForward.tsx - Port forwarding workflow
+- [ ] ProjectDetails.tsx - Project management flows
 
 #### Priority 4 (Low - Ongoing)
 
 Resource glance components and remaining coverage:
 
-13. ✅ All *Glance.tsx components - Quick overview cards
-14. ✅ Branch coverage improvements for Layout, TopBar, RouteSwitcher
+- [ ] All *Glance.tsx components - Quick overview cards
+- [ ] Branch coverage improvements for Layout, TopBar, RouteSwitcher
 
 ---
 
@@ -413,7 +431,7 @@ npm run frontend:build:storybook
 - Each story should represent a meaningful state or use case of the component
 - Focus on error states and loading states, as these are often missed in manual testing
 - Use MSW (Mock Service Worker) to mock API calls in stories when needed
-- Storybook stories serve as both documentation and smoke tests via `storybook.test.tsx`
+- Storybook stories serve as both documentation and smoke tests via `frontend/src/storybook.test.tsx` (run with `cd frontend && npm test`)
 
 ---
 
