@@ -24,7 +24,7 @@ These components have low test coverage (under 20%) or specific gaps requiring i
 
 #### Authentication & Cluster Management
 
-- [ ] Auth (18.18% coverage) in `frontend/src/components/account/Auth.tsx` - Create Auth.stories.tsx with token input form, login loading state, invalid token error state with network error feedback, timeout error state, and success redirect
+- [ ] Auth (18.18% coverage) in `frontend/src/components/account/Auth.tsx` - Enhance existing AuthToken.stories.tsx with token input form, login loading state, invalid token error state with network error feedback, timeout error state, and success redirect
 - [ ] AuthChooser (4.1% coverage) in `frontend/src/components/authchooser/index.tsx` - Enhance AuthChooser.stories.tsx with multiple auth methods display, auth method selection, loading state during auth flow, authentication failure error, and redirect after success
 - [ ] KubeConfigLoader (7.92% coverage) in `frontend/src/components/cluster/KubeConfigLoader.tsx` - Create KubeConfigLoader.stories.tsx with file upload drag-and-drop, file parsing loading state, invalid YAML error state, duplicate cluster error state, large file parsing timeout, and success with cluster list
 - [ ] AddCluster (0% coverage) in `frontend/src/components/App/CreateCluster/AddCluster.tsx` - Create AddCluster.stories.tsx with empty form state, form validation errors, cluster connection test loading, connection test success/failure, and save cluster success
@@ -403,19 +403,19 @@ export const EmptyState = () => (
 ### How to Run Tests
 
 ```bash
-# Run all tests with coverage
-cd frontend && npm test -- --coverage --run
+# Run all tests with coverage (from repo root)
+npm run frontend:test
 
-# Run specific test file
+# Run specific test file (from repo root)
 cd frontend && npm test -- --run src/components/App/Settings/ColorPicker.test.tsx
 
-# View coverage report (macOS)
+# View coverage report (macOS) - from repo root
 open frontend/coverage/index.html
 
-# View coverage report (Linux)
+# View coverage report (Linux) - from repo root
 xdg-open frontend/coverage/index.html
 
-# View coverage report (Windows)
+# View coverage report (Windows) - from repo root
 start frontend/coverage/index.html
 ```
 
