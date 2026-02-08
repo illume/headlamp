@@ -106,15 +106,19 @@ if ($appPath -and (Test-Path $appPath)) {
     $job = Start-Job -ScriptBlock {
       param($exePath, $outFile, $errFile)
       & $exePath list-plugins > $outFile 2> $errFile
-      exit $LASTEXITCODE
+      return $LASTEXITCODE
     } -ArgumentList $appPath, $outputFile, $errorFile
     
     $completed = Wait-Job -Job $job -Timeout 30
     if ($completed) {
-      $process = Receive-Job -Job $job -ErrorAction SilentlyContinue
-      $exitCode = $job.State -eq 'Completed' ? 0 : 1
+      $jobOutput = Receive-Job -Job $job -ErrorAction SilentlyContinue
+      # Get the exit code from the job - if job failed, use 1, otherwise use the returned value
       if ($job.State -eq 'Failed') {
         $exitCode = 1
+      } elseif ($jobOutput -ne $null) {
+        $exitCode = $jobOutput
+      } else {
+        $exitCode = 0
       }
     } else {
       Write-Host "[FAIL] App timed out after 30 seconds" -ForegroundColor Red
