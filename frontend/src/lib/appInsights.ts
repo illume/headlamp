@@ -17,7 +17,7 @@
 import { ReactPlugin } from '@microsoft/applicationinsights-react-js';
 import { ApplicationInsights } from '@microsoft/applicationinsights-web';
 import type { History } from 'history';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useHistory } from 'react-router-dom';
 
 let appInsights: ApplicationInsights | null = null;
@@ -56,6 +56,7 @@ export function isTelemetryEnabled(): boolean {
 
 /**
  * Sets the telemetry enabled setting in localStorage and updates the SDK's disableTelemetry flag.
+ * Same-tab changes are handled immediately here; other-tab changes are handled via storage event.
  * @param enabled - Whether telemetry should be enabled.
  */
 export function setTelemetryEnabled(enabled: boolean): void {
@@ -64,6 +65,9 @@ export function setTelemetryEnabled(enabled: boolean): void {
     // Update SDK telemetry state if already initialized
     if (appInsights) {
       appInsights.config.disableTelemetry = !enabled;
+      if (enabled) {
+        appInsights.trackPageView();
+      }
     }
   } catch {
     // Ignore localStorage errors
@@ -173,29 +177,26 @@ export function trackEvent(name: string, properties?: Record<string, string>): v
 /**
  * React component that initializes Application Insights.
  * Must be rendered inside a Router context to access history.
- * Listens for telemetry setting changes and updates SDK state accordingly.
+ * Listens for telemetry setting changes from other tabs.
+ * Same-tab changes are handled directly in setTelemetryEnabled().
  * Renders nothing (null).
  */
 export function AppInsightsInitializer(): null {
   const history = useHistory();
-  const [telemetryEnabled, setTelemetryEnabledLocal] = useState(isTelemetryEnabled);
 
   // Initialize App Insights on mount (always initialize SDK, but with telemetry disabled if not opted in)
   useEffect(() => {
     initializeAppInsights(history);
   }, [history]);
 
-  // Listen for localStorage changes (when user toggles telemetry in Settings)
+  // Listen for localStorage changes from other tabs
   useEffect(() => {
     const handleStorageChange = (event: StorageEvent) => {
-      if (event.key === APP_INSIGHTS_ENABLED_KEY) {
+      if (event.key === APP_INSIGHTS_ENABLED_KEY && appInsights) {
         const enabled = event.newValue === 'true';
-        setTelemetryEnabledLocal(enabled);
-        if (appInsights) {
-          appInsights.config.disableTelemetry = !enabled;
-          if (enabled) {
-            appInsights.trackPageView();
-          }
+        appInsights.config.disableTelemetry = !enabled;
+        if (enabled) {
+          appInsights.trackPageView();
         }
       }
     };
@@ -203,24 +204,6 @@ export function AppInsightsInitializer(): null {
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
-
-  // Also check for changes within the same tab (storage event doesn't fire for same-tab changes)
-  useEffect(() => {
-    const checkInterval = setInterval(() => {
-      const currentEnabled = isTelemetryEnabled();
-      if (currentEnabled !== telemetryEnabled) {
-        setTelemetryEnabledLocal(currentEnabled);
-        if (appInsights) {
-          appInsights.config.disableTelemetry = !currentEnabled;
-          if (currentEnabled) {
-            appInsights.trackPageView();
-          }
-        }
-      }
-    }, 1000);
-
-    return () => clearInterval(checkInterval);
-  }, [telemetryEnabled]);
 
   return null;
 }
