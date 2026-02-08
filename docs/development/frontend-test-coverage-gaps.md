@@ -70,13 +70,6 @@ These components have moderate test coverage but are missing critical error and 
 - [ ] AdvancedSearch (54.26% coverage) in `frontend/src/components/advancedSearch/AdvancedSearch.tsx` - Enhance AdvancedSearch.stories.tsx with advanced filter options, filter validation, search execution loading, and search error states
 - [ ] SearchSettings (40% coverage) in `frontend/src/components/advancedSearch/SearchSettings.tsx` - Enhance SearchSettings.stories.tsx with search preferences form, save settings success/error, and reset to defaults
 
-#### Settings Components with Higher Coverage
-
-- [ ] DrawerModeSettings (83.33% branch coverage needs improvement) in `frontend/src/components/App/Settings/DrawerModeSettings.tsx` - Create DrawerModeSettings.stories.tsx with drawer mode selection error states and preference save failures
-- [ ] NodeShellSettings (73.68% coverage) in `frontend/src/components/App/Settings/NodeShellSettings.tsx` - Enhance NodeShellSettings.stories.tsx with shell configuration errors and validation failures
-- [ ] PodDebugSettings (70.83% coverage) in `frontend/src/components/App/Settings/PodDebugSettings.tsx` - Enhance PodDebugSettings.stories.tsx with debug configuration errors and save failures
-- [ ] SettingsButton (66.66% coverage) in `frontend/src/components/App/Settings/SettingsButton.tsx` - Add tests for button disabled states and click handler edge cases
-
 #### Activity Feed
 
 - [ ] Activity (30.06% coverage) in `frontend/src/components/activity/Activity.tsx` - Enhance Activity.stories.tsx with different active/inactive activity window states, collapsed vs expanded activity panel, multiple activity views/tabs, and window management interactions
@@ -100,17 +93,12 @@ These components have moderate test coverage but are missing critical error and 
 - [ ] ClusterNameEditor (32.87% coverage) in `frontend/src/components/App/Settings/ClusterNameEditor.tsx` - Enhance ClusterNameEditor.stories.tsx with edit cluster name form, name validation error state, save success feedback, and save error state
 - [ ] NumRowsInput (54.23% coverage) in `frontend/src/components/App/Settings/NumRowsInput.tsx` - Create unit tests or story for input validation, min/max value constraints, and invalid number error state
 - [ ] ShortcutsSettings (44.44% coverage) in `frontend/src/components/App/Settings/ShortcutsSettings.tsx` - Enhance ShortcutsSettings.stories.tsx with shortcut conflict detection, shortcut editing, save shortcuts success/error, and reset to defaults
+- [ ] ClusterContextMenu (43.24% coverage) in `frontend/src/components/App/Home/ClusterContextMenu.tsx` - Add tests for context menu actions, action availability conditions, and action error states
 
 #### Pod Components
 
 - [ ] PodDebugTerminal (38.05% coverage) in `frontend/src/components/pod/PodDebugTerminal.tsx` - Enhance PodDebugTerminal.stories.tsx with debug terminal connecting, debug terminal connected, connection establishment error, and debug commands execution
 - [ ] PodDebugAction (coverage unknown - estimate 30%) in `frontend/src/components/pod/PodDebugAction.tsx` - Create PodDebugAction.stories.tsx with debug action button, container selection, debug session starting loading, and debug connection error
-
-#### Cluster & Home Components
-
-- [ ] ClusterTable (75.51% coverage) in `frontend/src/components/App/Home/ClusterTable.tsx` - Enhance ClusterTable.stories.tsx with cluster table loading, empty clusters list, cluster actions menu, and cluster connection error states
-- [ ] ClusterContextMenu (43.24% coverage) in `frontend/src/components/App/Home/ClusterContextMenu.tsx` - Add tests for context menu actions, action availability conditions, and action error states
-- [ ] RecentClusters (64.1% coverage) in `frontend/src/components/App/Home/RecentClusters.tsx` - Enhance RecentClusters.stories.tsx with empty recent clusters, loading recent clusters, and recent cluster actions
 
 #### Charts & Visualization
 
@@ -118,6 +106,24 @@ These components have moderate test coverage but are missing critical error and 
 - [ ] Charts in workload (coverage unknown - estimate 40%) in `frontend/src/components/workload/Charts.tsx` - Create workload Charts.stories.tsx with workload metrics visualization, loading state, error state, and time range selector
 - [ ] WorkloadOverview (coverage unknown - estimate 45%) in `frontend/src/components/workload/Overview.tsx` - Enhance Overview.stories.tsx with workload summary loading, workload metrics display, and error loading workload data
 - [ ] ClusterOverview (53.57% coverage) in `frontend/src/components/cluster/Overview.tsx` - Enhance Overview.stories.tsx with loading states during metrics fetch, cluster health display, and metrics fetch error
+
+---
+
+### High Coverage Components Needing Branch/Scenario Coverage (60%+)
+
+These components have good statement coverage but need additional test scenarios for branches or edge cases.
+
+#### Settings Components
+
+- [ ] DrawerModeSettings (83.33% branch coverage needs improvement) in `frontend/src/components/App/Settings/DrawerModeSettings.tsx` - Create DrawerModeSettings.stories.tsx with drawer mode selection error states and preference save failures
+- [ ] NodeShellSettings (73.68% coverage) in `frontend/src/components/App/Settings/NodeShellSettings.tsx` - Enhance NodeShellSettings.stories.tsx with shell configuration errors and validation failures
+- [ ] PodDebugSettings (70.83% coverage) in `frontend/src/components/App/Settings/PodDebugSettings.tsx` - Enhance PodDebugSettings.stories.tsx with debug configuration errors and save failures
+- [ ] SettingsButton (66.66% coverage) in `frontend/src/components/App/Settings/SettingsButton.tsx` - Add tests for button disabled states and click handler edge cases
+
+#### Cluster & Home Components
+
+- [ ] ClusterTable (75.51% coverage) in `frontend/src/components/App/Home/ClusterTable.tsx` - Enhance ClusterTable.stories.tsx with cluster table loading, empty clusters list, cluster actions menu, and cluster connection error states
+- [ ] RecentClusters (64.1% coverage) in `frontend/src/components/App/Home/RecentClusters.tsx` - Enhance RecentClusters.stories.tsx with empty recent clusters, loading recent clusters, and recent cluster actions
 
 ---
 
@@ -183,22 +189,22 @@ These components need additional test scenarios to cover conditional branches.
 
 #### Dialog & Modal Components
 
-- [ ] UpdatePopup (needs coverage) in `frontend/src/components/common/ReleaseNotes/UpdatePopup.tsx` - Enhance UpdatePopup.stories.tsx with update available notification, update checking, and update error states
-- [ ] ReleaseNotesModal (needs coverage) in `frontend/src/components/common/ReleaseNotes/ReleaseNotesModal.tsx` - Enhance ReleaseNotesModal.stories.tsx with release notes content, loading release notes, and release notes fetch error
+- [ ] UpdatePopup (coverage unknown - estimate 50%) in `frontend/src/components/common/ReleaseNotes/UpdatePopup.tsx` - Enhance UpdatePopup.stories.tsx with update available notification, update checking, and update error states
+- [ ] ReleaseNotesModal (coverage unknown - estimate 50%) in `frontend/src/components/common/ReleaseNotes/ReleaseNotesModal.tsx` - Enhance ReleaseNotesModal.stories.tsx with release notes content, loading release notes, and release notes fetch error
 - [ ] VersionDialog (85.71% coverage) in `frontend/src/components/App/VersionDialog.tsx` - Enhance VersionDialog.stories.tsx with version information display and update check status
 
 #### Form & Input Components
 
-- [ ] NamespacesAutocomplete (needs coverage) in `frontend/src/components/common/NamespacesAutocomplete.tsx` - Enhance NamespacesAutocomplete.stories.tsx with namespace suggestions, loading namespaces, empty namespaces, and namespace selection
-- [ ] TimezoneSelect (needs coverage) in `frontend/src/components/common/TimezoneSelect/TimezoneSelect.tsx` - Enhance TimezoneSelect.stories.tsx with timezone dropdown, timezone search, and timezone selection
+- [ ] NamespacesAutocomplete (coverage unknown - estimate 50%) in `frontend/src/components/common/NamespacesAutocomplete.tsx` - Enhance NamespacesAutocomplete.stories.tsx with namespace suggestions, loading namespaces, empty namespaces, and namespace selection
+- [ ] TimezoneSelect (coverage unknown - estimate 50%) in `frontend/src/components/common/TimezoneSelect/TimezoneSelect.tsx` - Enhance TimezoneSelect.stories.tsx with timezone dropdown, timezone search, and timezone selection
 
 #### List Components
 
-- [ ] ObjectEventList (needs coverage) in `frontend/src/components/common/ObjectEventList.tsx` - Enhance ObjectEventList.stories.tsx with event list display, loading events, empty events, and event filtering
+- [ ] ObjectEventList (coverage unknown - estimate 50%) in `frontend/src/components/common/ObjectEventList.tsx` - Enhance ObjectEventList.stories.tsx with event list display, loading events, empty events, and event filtering
 
 #### Resource Map
 
-- [ ] SelectionBreadcrumbs (needs coverage) in `frontend/src/components/resourceMap/SelectionBreadcrumbs.tsx` - Create SelectionBreadcrumbs.stories.tsx with breadcrumb navigation, resource hierarchy, and breadcrumb click actions
+- [ ] SelectionBreadcrumbs (coverage unknown - estimate 50%) in `frontend/src/components/resourceMap/SelectionBreadcrumbs.tsx` - Create SelectionBreadcrumbs.stories.tsx with breadcrumb navigation, resource hierarchy, and breadcrumb click actions
 
 ---
 
@@ -231,55 +237,55 @@ Components that need error boundary wrappers or better error handling patterns:
 
 #### Storage Components
 
-- [ ] StorageClassDetails (needs coverage) in `frontend/src/components/storage/ClassDetails.tsx` - Enhance ClassDetails.stories.tsx with storage class parameters, provisioner details, reclaim policy, and volume binding mode
-- [ ] VolumeDetails (needs coverage) in `frontend/src/components/storage/VolumeDetails.tsx` - Enhance VolumeDetails.stories.tsx with volume status, capacity information, access modes, and volume claim binding
+- [ ] StorageClassDetails (coverage unknown - estimate 50%) in `frontend/src/components/storage/ClassDetails.tsx` - Enhance ClassDetails.stories.tsx with storage class parameters, provisioner details, reclaim policy, and volume binding mode
+- [ ] VolumeDetails (coverage unknown - estimate 50%) in `frontend/src/components/storage/VolumeDetails.tsx` - Enhance VolumeDetails.stories.tsx with volume status, capacity information, access modes, and volume claim binding
 
 #### Network Components
 
-- [ ] EndpointDetails (needs coverage) in `frontend/src/components/endpoints/EndpointDetails.tsx` - Enhance EndpointDetails.stories.tsx with endpoint subsets, addresses and ports, loading state, and connection error
-- [ ] EndpointSliceDetails (needs coverage) in `frontend/src/components/endpointSlices/EndpointSliceDetails.tsx` - Enhance EndpointSliceDetails.stories.tsx with endpoint slice information, address types, and port mappings
+- [ ] EndpointDetails (coverage unknown - estimate 50%) in `frontend/src/components/endpoints/EndpointDetails.tsx` - Enhance EndpointDetails.stories.tsx with endpoint subsets, addresses and ports, loading state, and connection error
+- [ ] EndpointSliceDetails (coverage unknown - estimate 50%) in `frontend/src/components/endpointSlices/EndpointSliceDetails.tsx` - Enhance EndpointSliceDetails.stories.tsx with endpoint slice information, address types, and port mappings
 
 #### Workload Components
 
-- [ ] DaemonSetList (needs coverage) in `frontend/src/components/daemonset/List.tsx` - Enhance DaemonSetList.stories.tsx with daemon set table, desired vs current pods, node selector display, and update strategy
-- [ ] DeploymentList (needs coverage) in `frontend/src/components/deployments/List.tsx` - Enhance DeploymentList.stories.tsx with deployment table, replica status, deployment strategies, and rollout status
-- [ ] StatefulSetDetails (needs coverage) in `frontend/src/components/statefulset/Details.tsx` - Enhance StatefulSetDetails.stories.tsx with stateful set configuration, persistent volume claims, update strategy, and pod management
-- [ ] ReplicaSetList (needs coverage) in `frontend/src/components/replicaset/List.tsx` - Enhance ReplicaSetList.stories.tsx with replica set table, owner references, replica counts, and pod template
-- [ ] JobList (needs coverage) in `frontend/src/components/job/JobList.tsx` - Enhance JobList.stories.tsx with job table, completion status, parallelism configuration, and job duration
+- [ ] DaemonSetList (coverage unknown - estimate 50%) in `frontend/src/components/daemonset/List.tsx` - Enhance DaemonSetList.stories.tsx with daemon set table, desired vs current pods, node selector display, and update strategy
+- [ ] DeploymentList (coverage unknown - estimate 50%) in `frontend/src/components/deployments/List.tsx` - Enhance DeploymentList.stories.tsx with deployment table, replica status, deployment strategies, and rollout status
+- [ ] StatefulSetDetails (coverage unknown - estimate 50%) in `frontend/src/components/statefulset/Details.tsx` - Enhance StatefulSetDetails.stories.tsx with stateful set configuration, persistent volume claims, update strategy, and pod management
+- [ ] ReplicaSetList (coverage unknown - estimate 50%) in `frontend/src/components/replicaset/List.tsx` - Enhance ReplicaSetList.stories.tsx with replica set table, owner references, replica counts, and pod template
+- [ ] JobList (coverage unknown - estimate 50%) in `frontend/src/components/job/JobList.tsx` - Enhance JobList.stories.tsx with job table, completion status, parallelism configuration, and job duration
 
 #### Gateway API Components
 
-- [ ] GatewayDetails (needs coverage) in `frontend/src/components/gateway/GatewayDetails.tsx` - Enhance GatewayDetails.stories.tsx with gateway configuration, listeners, addresses, and gateway status
-- [ ] HTTPRouteDetails (needs coverage) in `frontend/src/components/gateway/HTTPRouteDetails.tsx` - Enhance HTTPRouteDetails.stories.tsx with route rules, hostname matches, path matching, and backend references
-- [ ] GRPCRouteDetails (needs coverage) in `frontend/src/components/gateway/GRPCRouteDetails.tsx` - Enhance GRPCRouteDetails.stories.tsx with gRPC route rules, service matching, and backend configuration
+- [ ] GatewayDetails (coverage unknown - estimate 50%) in `frontend/src/components/gateway/GatewayDetails.tsx` - Enhance GatewayDetails.stories.tsx with gateway configuration, listeners, addresses, and gateway status
+- [ ] HTTPRouteDetails (coverage unknown - estimate 50%) in `frontend/src/components/gateway/HTTPRouteDetails.tsx` - Enhance HTTPRouteDetails.stories.tsx with route rules, hostname matches, path matching, and backend references
+- [ ] GRPCRouteDetails (coverage unknown - estimate 50%) in `frontend/src/components/gateway/GRPCRouteDetails.tsx` - Enhance GRPCRouteDetails.stories.tsx with gRPC route rules, service matching, and backend configuration
 
 #### Policy & Configuration
 
-- [ ] NetworkPolicyDetails (needs coverage) in `frontend/src/components/networkpolicy/Details.tsx` - Enhance NetworkPolicyDetails.stories.tsx with policy rules, ingress/egress rules, pod selector, and namespace selector
-- [ ] LimitRangeDetails (needs coverage) in `frontend/src/components/limitRange/Details.tsx` - Enhance LimitRangeDetails.stories.tsx with resource limits, default limits, and limit types
-- [ ] ResourceQuotaDetails (needs coverage) in `frontend/src/components/resourceQuota/resourceQuotaDetails.tsx` - Enhance resourceQuotaDetails.stories.tsx with quota limits, used resources, and quota scope
-- [ ] PodDisruptionBudgetDetails (needs coverage) in `frontend/src/components/podDisruptionBudget/pdbDetails.tsx` - Enhance pdbDetails.stories.tsx with disruption policy, min available, max unavailable, and current status
+- [ ] NetworkPolicyDetails (coverage unknown - estimate 50%) in `frontend/src/components/networkpolicy/Details.tsx` - Enhance NetworkPolicyDetails.stories.tsx with policy rules, ingress/egress rules, pod selector, and namespace selector
+- [ ] LimitRangeDetails (coverage unknown - estimate 50%) in `frontend/src/components/limitRange/Details.tsx` - Enhance LimitRangeDetails.stories.tsx with resource limits, default limits, and limit types
+- [ ] ResourceQuotaDetails (coverage unknown - estimate 50%) in `frontend/src/components/resourceQuota/resourceQuotaDetails.tsx` - Enhance resourceQuotaDetails.stories.tsx with quota limits, used resources, and quota scope
+- [ ] PodDisruptionBudgetDetails (coverage unknown - estimate 50%) in `frontend/src/components/podDisruptionBudget/pdbDetails.tsx` - Enhance pdbDetails.stories.tsx with disruption policy, min available, max unavailable, and current status
 
 #### Security & Admission
 
-- [ ] MutatingWebhookConfigDetails (needs coverage) in `frontend/src/components/webhookconfiguration/MutatingWebhookConfigDetails.tsx` - Enhance MutatingWebhookConfigDetails.stories.tsx with webhook rules, client configuration, admission policy, and failure policy
-- [ ] ValidatingWebhookConfigDetails (needs coverage) in `frontend/src/components/webhookconfiguration/ValidatingWebhookConfigDetails.tsx` - Enhance ValidatingWebhookConfigDetails.stories.tsx with validation rules, webhook configuration, match policy, and timeout configuration
-- [ ] PriorityClassDetails (needs coverage) in `frontend/src/components/priorityClass/priorityClassDetails.tsx` - Enhance priorityClassDetails.stories.tsx with priority value, global default flag, preemption policy, and description
+- [ ] MutatingWebhookConfigDetails (coverage unknown - estimate 50%) in `frontend/src/components/webhookconfiguration/MutatingWebhookConfigDetails.tsx` - Enhance MutatingWebhookConfigDetails.stories.tsx with webhook rules, client configuration, admission policy, and failure policy
+- [ ] ValidatingWebhookConfigDetails (coverage unknown - estimate 50%) in `frontend/src/components/webhookconfiguration/ValidatingWebhookConfigDetails.tsx` - Enhance ValidatingWebhookConfigDetails.stories.tsx with validation rules, webhook configuration, match policy, and timeout configuration
+- [ ] PriorityClassDetails (coverage unknown - estimate 50%) in `frontend/src/components/priorityClass/priorityClassDetails.tsx` - Enhance priorityClassDetails.stories.tsx with priority value, global default flag, preemption policy, and description
 
 #### Autoscaling Components
 
-- [ ] HPADetails (needs coverage) in `frontend/src/components/horizontalPodAutoscaler/HPADetails.tsx` - Enhance HPADetails.stories.tsx with scaling metrics, current/desired replicas, scaling policy, and metric targets
-- [ ] VPADetails (needs coverage) in `frontend/src/components/verticalPodAutoscaler/VPADetails.tsx` - Enhance VPADetails.stories.tsx with resource recommendations, update policy, target reference, and recommendation status
+- [ ] HPADetails (coverage unknown - estimate 50%) in `frontend/src/components/horizontalPodAutoscaler/HPADetails.tsx` - Enhance HPADetails.stories.tsx with scaling metrics, current/desired replicas, scaling policy, and metric targets
+- [ ] VPADetails (coverage unknown - estimate 50%) in `frontend/src/components/verticalPodAutoscaler/VPADetails.tsx` - Enhance VPADetails.stories.tsx with resource recommendations, update policy, target reference, and recommendation status
 
 #### Configuration & Secrets
 
-- [ ] ConfigMapDetails (needs coverage) in `frontend/src/components/configmap/Details.tsx` - Enhance ConfigMapDetails.stories.tsx with config data display, binary data handling, immutable flag, and data size limits
-- [ ] SecretDetails (needs coverage) in `frontend/src/components/secret/Details.tsx` - Enhance SecretDetails.stories.tsx with secret data (masked), secret type, immutable flag, and secret usage in pods
+- [ ] ConfigMapDetails (coverage unknown - estimate 50%) in `frontend/src/components/configmap/Details.tsx` - Enhance ConfigMapDetails.stories.tsx with config data display, binary data handling, immutable flag, and data size limits
+- [ ] SecretDetails (coverage unknown - estimate 50%) in `frontend/src/components/secret/Details.tsx` - Enhance SecretDetails.stories.tsx with secret data (masked), secret type, immutable flag, and secret usage in pods
 
 #### Service & Networking
 
-- [ ] ServiceDetails (needs coverage) in `frontend/src/components/service/ServiceDetails.tsx` - Enhance ServiceDetails.stories.tsx with service type (ClusterIP/NodePort/LoadBalancer), port configuration, selector, and endpoint status
-- [ ] IngressDetails (needs coverage) in `frontend/src/components/ingress/Details.tsx` - Enhance IngressDetails.stories.tsx with ingress rules, TLS configuration, backend services, and ingress class
+- [ ] ServiceDetails (coverage unknown - estimate 50%) in `frontend/src/components/service/ServiceDetails.tsx` - Enhance ServiceDetails.stories.tsx with service type (ClusterIP/NodePort/LoadBalancer), port configuration, selector, and endpoint status
+- [ ] IngressDetails (coverage unknown - estimate 50%) in `frontend/src/components/ingress/Details.tsx` - Enhance IngressDetails.stories.tsx with ingress rules, TLS configuration, backend services, and ingress class
 
 ---
 
