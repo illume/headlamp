@@ -26,6 +26,9 @@ function Test-BackendBinary {
   # Ensure we have a string path (handle both string and FileInfo objects)
   if ($backendPath -is [System.IO.FileInfo]) {
     $backendPath = $backendPath.FullName
+  } elseif ($backendPath -isnot [string]) {
+    Write-Host "[FAIL] Invalid backend path type: expected string or FileInfo, got $($backendPath.GetType().Name)" -ForegroundColor Red
+    exit 1
   }
   
   Write-Host "Found backend at: $backendPath"
