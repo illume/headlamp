@@ -23,6 +23,7 @@ import Link from '@mui/material/Link';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
+import rehypeRaw from 'rehype-raw';
 import { DialogTitle } from '../Dialog';
 
 /**
@@ -184,6 +185,7 @@ export default function ReleaseNotesModal(props: ReleaseNotesModalProps) {
         >
           <ParagraphContext.Provider value={contextValue}>
             <ReactMarkdown
+              rehypePlugins={[rehypeRaw]}
               components={{
                 a: LinkOrVideo,
                 p: ParagraphWithVideo,

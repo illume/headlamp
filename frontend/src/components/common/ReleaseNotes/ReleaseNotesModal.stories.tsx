@@ -70,3 +70,16 @@ The new layout provides better visibility of cluster resources and status.`,
     appVersion: '2.1.0',
   },
 };
+
+export const WithHtmlImage = {
+  args: {
+    releaseNotes: `### Release with HTML Image Tag
+
+This release includes improved branding and UI enhancements. Below is the Headlamp logo:
+
+<img src="https://raw.githubusercontent.com/headlamp-k8s/headlamp/main/docs/images/icon.png" alt="Headlamp Logo" width="150" />
+
+The new branding provides a more polished and professional appearance across the application.`,
+    appVersion: '2.2.0',
+  },
+};
