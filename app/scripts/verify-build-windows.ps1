@@ -45,6 +45,10 @@ Write-Host ""
 
 # Step 1: Verify artifacts exist
 Write-Host "Checking for built artifacts..."
+if (-not (Test-Path $distDir)) {
+  Write-Host "[FAIL] dist directory not found at path: $distDir" -ForegroundColor Red
+  exit 1
+}
 Get-ChildItem $distDir | Format-Table
 
 $installers = Get-ChildItem "$distDir\*.exe" -ErrorAction SilentlyContinue
@@ -76,8 +80,8 @@ if (Test-Path $unpackedDir) {
   $backendPath = Get-ChildItem -Path $distDir -Recurse -Filter "headlamp-server.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
   if ($backendPath) {
     Test-BackendBinary $backendPath.FullName
-    # Try to find the app executable near the backend
-    $appPath = Get-ChildItem -Path (Split-Path $backendPath.FullName) -Recurse -Filter "Headlamp.exe" -ErrorAction SilentlyContinue | Select-Object -First 1 | Select-Object -ExpandProperty FullName
+    # Try to find the app executable in the dist output
+    $appPath = Get-ChildItem -Path $distDir -Recurse -Filter "Headlamp.exe" -ErrorAction SilentlyContinue | Select-Object -First 1 | Select-Object -ExpandProperty FullName
   } else {
     Write-Host "[FAIL] Could not find backend binary to test in dist output" -ForegroundColor Red
     exit 1
@@ -98,14 +102,39 @@ if ($appPath -and (Test-Path $appPath)) {
     $outputFile = Join-Path $tempDir "plugins-output.txt"
     $errorFile = Join-Path $tempDir "plugins-error.txt"
     
-    $process = Start-Process -FilePath $appPath -ArgumentList "list-plugins" -Wait -PassThru -NoNewWindow -RedirectStandardOutput $outputFile -RedirectStandardError $errorFile
-    if ($process.ExitCode -eq 0) {
+    # Run with timeout (30 seconds)
+    $job = Start-Job -ScriptBlock {
+      param($exePath, $outFile, $errFile)
+      & $exePath list-plugins > $outFile 2> $errFile
+      exit $LASTEXITCODE
+    } -ArgumentList $appPath, $outputFile, $errorFile
+    
+    $completed = Wait-Job -Job $job -Timeout 30
+    if ($completed) {
+      $process = Receive-Job -Job $job -ErrorAction SilentlyContinue
+      $exitCode = $job.State -eq 'Completed' ? 0 : 1
+      if ($job.State -eq 'Failed') {
+        $exitCode = 1
+      }
+    } else {
+      Write-Host "[FAIL] App timed out after 30 seconds" -ForegroundColor Red
+      Stop-Job -Job $job
+      Remove-Job -Job $job -Force
+      if (Test-Path $tempDir) {
+        Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+      }
+      exit 1
+    }
+    Remove-Job -Job $job -Force
+    
+    # Check if the app ran successfully
+    if ($exitCode -eq 0) {
       Write-Host "[PASS] App executed successfully" -ForegroundColor Green
       if (Test-Path $outputFile) {
         Get-Content $outputFile
       }
     } else {
-      Write-Host "[FAIL] App failed to run (exit code: $($process.ExitCode))" -ForegroundColor Red
+      Write-Host "[FAIL] App failed to run (exit code: $exitCode)" -ForegroundColor Red
       if (Test-Path $errorFile) {
         Get-Content $errorFile
       }

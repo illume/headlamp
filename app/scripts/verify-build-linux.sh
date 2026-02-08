@@ -87,8 +87,10 @@ if [ ! -z "$TARBALL" ]; then
   
   # Run with list-plugins command (exits immediately, no GUI needed)
   chmod +x "$HEADLAMP_EXEC"
+  set +e
   timeout 30 "$HEADLAMP_EXEC" list-plugins > "$OUTPUT_FILE" 2>&1
   EXIT_CODE=$?
+  set -e
   if [ $EXIT_CODE -eq 0 ]; then
     echo "✓ App executed successfully"
     cat "$OUTPUT_FILE"
