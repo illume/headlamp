@@ -53,10 +53,6 @@ These components have low test coverage (under 20%) or specific gaps requiring i
 
 These components have moderate test coverage but are missing critical error and loading state tests.
 
-### Medium Coverage Components (20-60%)
-
-These components have moderate test coverage but are missing critical error and loading state tests.
-
 #### Common Resource Components
 
 - [ ] DeleteButton (42.85% coverage) in `frontend/src/components/common/Resource/DeleteButton.tsx` - Create DeleteButton.stories.tsx with delete confirmation dialog, delete in progress loading state, delete success feedback, and delete error state with retry option
@@ -83,11 +79,11 @@ These components have moderate test coverage but are missing critical error and 
 
 #### Activity Feed
 
-- [ ] Activity (30.06% coverage) in `frontend/src/components/activity/Activity.tsx` - Enhance Activity.stories.tsx with loading skeleton during data fetch, empty activity feed state, activity feed with various event types, real-time update animation, and error loading activity data
+- [ ] Activity (30.06% coverage) in `frontend/src/components/activity/Activity.tsx` - Enhance Activity.stories.tsx with different active/inactive activity window states, collapsed vs expanded activity panel, multiple activity views/tabs, and window management interactions
 
 #### Advanced Search
 
-- [ ] ApiResourcePicker (30.64% coverage) in `frontend/src/components/advancedSearch/ApiResourcePicker.tsx` - Enhance ApiResourcePicker.stories.tsx with loading skeleton during API fetch, empty API resources list, filtered API resources, API fetch error state, and resource selection callback
+- [ ] ApiResourcePicker (30.64% coverage) in `frontend/src/components/advancedSearch/ApiResourcePicker.tsx` - Enhance ApiResourcePicker.stories.tsx with empty API resources list, search/filter behavior, filtered API resources display, and resource selection interactions/callbacks
 
 #### Plugin Settings
 
@@ -154,13 +150,13 @@ These components have very low test coverage and should be moved to critical pri
 
 ### Common Components Needing Enhancement
 
-- [ ] Dialog (needs coverage) in `frontend/src/components/common/Dialog.tsx` - Enhance Dialog.stories.tsx with modal open/close states, dialog with form content, confirmation dialogs, and error dialogs
-- [ ] ConfirmDialog (needs coverage) in `frontend/src/components/common/ConfirmDialog.tsx` - Enhance ConfirmDialog.stories.tsx with confirmation message variants, confirm/cancel actions, and async confirmation with loading
-- [ ] ErrorPage (needs coverage) in `frontend/src/components/common/ErrorPage/ErrorPage.tsx` - Enhance ErrorPage.stories.tsx with different error types (404/500/403), error messages, and retry actions
-- [ ] LogViewer (needs coverage) in `frontend/src/components/common/LogViewer.tsx` - Enhance LogViewer.stories.tsx with log content display, log filtering, log auto-refresh, and log loading error
-- [ ] InnerTable (needs coverage) in `frontend/src/components/common/InnerTable.tsx` - Enhance InnerTable.stories.tsx with table with data, empty table, loading table, and table pagination
-- [ ] SimpleTable (needs coverage) in `frontend/src/components/common/SimpleTable.tsx` - Enhance SimpleTable.stories.tsx with simple table layout, sorting, filtering, and empty state
-- [ ] NameValueTable (needs coverage) in `frontend/src/components/common/NameValueTable/NameValueTable.tsx` - Enhance NameValueTable.stories.tsx with key-value pairs display, expandable rows, and copy value action
+- [ ] Dialog (coverage unknown - estimate 60%) in `frontend/src/components/common/Dialog.tsx` - Enhance Dialog.stories.tsx with modal open/close states, dialog with form content, confirmation dialogs, and error dialogs
+- [ ] ConfirmDialog (coverage unknown - estimate 55%) in `frontend/src/components/common/ConfirmDialog.tsx` - Enhance ConfirmDialog.stories.tsx with confirmation message variants, confirm/cancel actions, and async confirmation with loading
+- [ ] ErrorPage (coverage unknown - estimate 50%) in `frontend/src/components/common/ErrorPage/ErrorPage.tsx` - Enhance ErrorPage.stories.tsx with different error types (404/500/403), error messages, and retry actions
+- [ ] LogViewer (coverage unknown - estimate 45%) in `frontend/src/components/common/LogViewer.tsx` - Enhance LogViewer.stories.tsx with log content display, log filtering, log auto-refresh, and log loading error
+- [ ] InnerTable (coverage unknown - estimate 50%) in `frontend/src/components/common/InnerTable.tsx` - Enhance InnerTable.stories.tsx with table with data, empty table, loading table, and table pagination
+- [ ] SimpleTable (coverage unknown - estimate 55%) in `frontend/src/components/common/SimpleTable.tsx` - Enhance SimpleTable.stories.tsx with simple table layout, sorting, filtering, and empty state
+- [ ] NameValueTable (coverage unknown - estimate 60%) in `frontend/src/components/common/NameValueTable/NameValueTable.tsx` - Enhance NameValueTable.stories.tsx with key-value pairs display, expandable rows, and copy value action
 
 #### Layout & Navigation
 
@@ -427,7 +423,7 @@ npm run frontend:build:storybook
 
 ### Notes
 
-- Story files should be named `ComponentName.stories.tsx` and placed in the same directory as the component
+- Story files should be named `ComponentName.stories.tsx`. Prefer colocating stories in the same directory as the component, but some components instead use a `ComponentName.stories/` directory (for example, `frontend/src/components/common/Chart.stories/*`).
 - Each story should represent a meaningful state or use case of the component
 - Focus on error states and loading states, as these are often missed in manual testing
 - Use MSW (Mock Service Worker) to mock API calls in stories when needed
