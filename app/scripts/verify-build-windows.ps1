@@ -32,8 +32,11 @@ function Test-BackendBinary {
   }
   
   Write-Host "Found backend at: $backendPath"
-  $versionOutput = & $backendPath --version 2>&1
+  # Temporarily allow stderr output (backend logs to stderr)
+  $ErrorActionPreference = "Continue"
+  $versionOutput = & $backendPath --version 2>&1 | Out-String
   $exitCode = $LASTEXITCODE
+  $ErrorActionPreference = "Stop"
   if ($exitCode -ne 0) {
     Write-Host "[FAIL] Backend version command failed with exit code $exitCode" -ForegroundColor Red
     exit $exitCode
