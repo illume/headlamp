@@ -17,7 +17,7 @@
 import { ReactPlugin } from '@microsoft/applicationinsights-react-js';
 import { ApplicationInsights } from '@microsoft/applicationinsights-web';
 import type { History } from 'history';
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useHistory } from 'react-router-dom';
 
 let appInsights: ApplicationInsights | null = null;
@@ -55,12 +55,16 @@ export function isTelemetryEnabled(): boolean {
 }
 
 /**
- * Sets the telemetry enabled setting in localStorage.
+ * Sets the telemetry enabled setting in localStorage and updates the SDK's disableTelemetry flag.
  * @param enabled - Whether telemetry should be enabled.
  */
 export function setTelemetryEnabled(enabled: boolean): void {
   try {
     localStorage.setItem(APP_INSIGHTS_ENABLED_KEY, enabled ? 'true' : 'false');
+    // Update SDK telemetry state if already initialized
+    if (appInsights) {
+      appInsights.config.disableTelemetry = !enabled;
+    }
   } catch {
     // Ignore localStorage errors
   }
@@ -91,6 +95,8 @@ export function initializeAppInsights(history?: History): ReactPlugin | null {
 
   // Prevent re-initialization
   if (appInsights) {
+    // Update telemetry state based on current setting
+    appInsights.config.disableTelemetry = !isTelemetryEnabled();
     return reactPlugin;
   }
 
@@ -108,13 +114,18 @@ export function initializeAppInsights(history?: History): ReactPlugin | null {
       disableAjaxTracking: false,
       autoTrackPageVisitTime: true,
       enableCorsCorrelation: true,
-      enableRequestHeaderTracking: true,
-      enableResponseHeaderTracking: true,
+      // Disable header tracking to avoid capturing sensitive auth/session headers
+      enableRequestHeaderTracking: false,
+      enableResponseHeaderTracking: false,
+      // Start with telemetry disabled if user hasn't opted in
+      disableTelemetry: !isTelemetryEnabled(),
     },
   });
 
   appInsights.loadAppInsights();
-  appInsights.trackPageView();
+  if (isTelemetryEnabled()) {
+    appInsights.trackPageView();
+  }
 
   return reactPlugin;
 }
@@ -137,22 +148,24 @@ export function getReactPlugin(): ReactPlugin | null {
 
 /**
  * Tracks an exception in Application Insights.
+ * Only sends if telemetry is enabled.
  * @param error - The error to track.
  * @param severityLevel - Optional severity level (0-4, where 0 is Verbose, 4 is Critical).
  */
 export function trackException(error: Error, severityLevel?: number): void {
-  if (appInsights) {
+  if (appInsights && isTelemetryEnabled()) {
     appInsights.trackException({ exception: error, severityLevel });
   }
 }
 
 /**
  * Tracks a custom event in Application Insights.
+ * Only sends if telemetry is enabled.
  * @param name - The name of the event.
  * @param properties - Optional custom properties.
  */
 export function trackEvent(name: string, properties?: Record<string, string>): void {
-  if (appInsights) {
+  if (appInsights && isTelemetryEnabled()) {
     appInsights.trackEvent({ name }, properties);
   }
 }
@@ -160,18 +173,54 @@ export function trackEvent(name: string, properties?: Record<string, string>): v
 /**
  * React component that initializes Application Insights.
  * Must be rendered inside a Router context to access history.
+ * Listens for telemetry setting changes and updates SDK state accordingly.
  * Renders nothing (null).
  */
 export function AppInsightsInitializer(): null {
   const history = useHistory();
-  const initialized = useRef(false);
+  const [telemetryEnabled, setTelemetryEnabledLocal] = useState(isTelemetryEnabled);
 
+  // Initialize App Insights on mount (always initialize SDK, but with telemetry disabled if not opted in)
   useEffect(() => {
-    if (!initialized.current && isAppInsightsEnabled()) {
-      initializeAppInsights(history);
-      initialized.current = true;
-    }
+    initializeAppInsights(history);
   }, [history]);
+
+  // Listen for localStorage changes (when user toggles telemetry in Settings)
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === APP_INSIGHTS_ENABLED_KEY) {
+        const enabled = event.newValue === 'true';
+        setTelemetryEnabledLocal(enabled);
+        if (appInsights) {
+          appInsights.config.disableTelemetry = !enabled;
+          if (enabled) {
+            appInsights.trackPageView();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  // Also check for changes within the same tab (storage event doesn't fire for same-tab changes)
+  useEffect(() => {
+    const checkInterval = setInterval(() => {
+      const currentEnabled = isTelemetryEnabled();
+      if (currentEnabled !== telemetryEnabled) {
+        setTelemetryEnabledLocal(currentEnabled);
+        if (appInsights) {
+          appInsights.config.disableTelemetry = !currentEnabled;
+          if (currentEnabled) {
+            appInsights.trackPageView();
+          }
+        }
+      }
+    }, 1000);
+
+    return () => clearInterval(checkInterval);
+  }, [telemetryEnabled]);
 
   return null;
 }

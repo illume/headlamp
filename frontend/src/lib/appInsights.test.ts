@@ -16,7 +16,11 @@
 
 import {
   getAppInsights,
+  getAppInsightsConnectionString,
   getReactPlugin,
+  initializeAppInsights,
+  isAppInsightsConfigured,
+  isAppInsightsEnabled,
   isTelemetryEnabled,
   setTelemetryEnabled,
   trackEvent,
@@ -31,6 +35,9 @@ vi.mock('@microsoft/applicationinsights-web', () => {
       trackPageView: vi.fn(),
       trackException: vi.fn(),
       trackEvent: vi.fn(),
+      config: {
+        disableTelemetry: false,
+      },
     })),
   };
 });
@@ -44,8 +51,85 @@ vi.mock('@microsoft/applicationinsights-react-js', () => {
 });
 
 describe('appInsights', () => {
-  // Note: Environment variable tests are skipped because import.meta.env is evaluated at compile time
-  // and cannot be easily mocked. The actual functionality is tested manually and by integration tests.
+  let originalEnv: string | undefined;
+
+  beforeEach(() => {
+    localStorage.clear();
+    originalEnv = import.meta.env.REACT_APP_INSIGHTS_CONNECTION;
+  });
+
+  afterEach(() => {
+    if (originalEnv !== undefined) {
+      (import.meta.env as any).REACT_APP_INSIGHTS_CONNECTION = originalEnv;
+    } else {
+      delete (import.meta.env as any).REACT_APP_INSIGHTS_CONNECTION;
+    }
+  });
+
+  describe('getAppInsightsConnectionString', () => {
+    it('should return undefined when env var is not set', () => {
+      delete (import.meta.env as any).REACT_APP_INSIGHTS_CONNECTION;
+      expect(getAppInsightsConnectionString()).toBeUndefined();
+    });
+
+    it('should return the connection string when set', () => {
+      (import.meta.env as any).REACT_APP_INSIGHTS_CONNECTION = 'test-connection-string';
+      expect(getAppInsightsConnectionString()).toBe('test-connection-string');
+    });
+  });
+
+  describe('isAppInsightsConfigured', () => {
+    it('should return false when env var is not set', () => {
+      delete (import.meta.env as any).REACT_APP_INSIGHTS_CONNECTION;
+      expect(isAppInsightsConfigured()).toBe(false);
+    });
+
+    it('should return false when env var is empty', () => {
+      (import.meta.env as any).REACT_APP_INSIGHTS_CONNECTION = '';
+      expect(isAppInsightsConfigured()).toBe(false);
+    });
+
+    it('should return false when env var is whitespace', () => {
+      (import.meta.env as any).REACT_APP_INSIGHTS_CONNECTION = '   ';
+      expect(isAppInsightsConfigured()).toBe(false);
+    });
+
+    it('should return true when env var is set', () => {
+      (import.meta.env as any).REACT_APP_INSIGHTS_CONNECTION = 'test-connection-string';
+      expect(isAppInsightsConfigured()).toBe(true);
+    });
+  });
+
+  describe('isAppInsightsEnabled', () => {
+    it('should return false when not configured', () => {
+      delete (import.meta.env as any).REACT_APP_INSIGHTS_CONNECTION;
+      expect(isAppInsightsEnabled()).toBe(false);
+    });
+
+    it('should return false when configured but telemetry not enabled', () => {
+      (import.meta.env as any).REACT_APP_INSIGHTS_CONNECTION = 'test-connection-string';
+      localStorage.removeItem('headlamp-app-insights-enabled');
+      expect(isAppInsightsEnabled()).toBe(false);
+    });
+
+    it('should return true when configured and telemetry enabled', () => {
+      (import.meta.env as any).REACT_APP_INSIGHTS_CONNECTION = 'test-connection-string';
+      localStorage.setItem('headlamp-app-insights-enabled', 'true');
+      expect(isAppInsightsEnabled()).toBe(true);
+    });
+  });
+
+  describe('initializeAppInsights', () => {
+    it('should return null when connection string is not set', () => {
+      delete (import.meta.env as any).REACT_APP_INSIGHTS_CONNECTION;
+      expect(initializeAppInsights()).toBeNull();
+    });
+
+    it('should return null when connection string is empty', () => {
+      (import.meta.env as any).REACT_APP_INSIGHTS_CONNECTION = '';
+      expect(initializeAppInsights()).toBeNull();
+    });
+  });
 
   describe('getAppInsights', () => {
     it('should return null when App Insights is not initialized', () => {
