@@ -59,6 +59,17 @@ export default function Settings() {
   const themeName = useTypedSelector(state => state.theme.name);
   const appThemes = useAppThemes();
 
+  // Listen for telemetry setting changes from other tabs
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'headlamp-app-insights-enabled') {
+        setTelemetryEnabledState(event.newValue === 'true');
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
   useEffect(() => {
     dispatch(
       setAppSettings({

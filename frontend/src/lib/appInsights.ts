@@ -117,7 +117,8 @@ export function initializeAppInsights(history?: History): ReactPlugin | null {
       disableFetchTracking: false,
       disableAjaxTracking: false,
       autoTrackPageVisitTime: true,
-      enableCorsCorrelation: true,
+      // Disable CORS correlation to avoid adding headers that may not be in backend's CORS allowlist
+      enableCorsCorrelation: false,
       // Disable header tracking to avoid capturing sensitive auth/session headers
       enableRequestHeaderTracking: false,
       enableResponseHeaderTracking: false,
