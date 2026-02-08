@@ -23,6 +23,11 @@ $distDir = Join-Path $appDir "dist"
 function Test-BackendBinary {
   param($backendPath)
   
+  # Ensure we have a string path (handle both string and FileInfo objects)
+  if ($backendPath -is [System.IO.FileInfo]) {
+    $backendPath = $backendPath.FullName
+  }
+  
   Write-Host "Found backend at: $backendPath"
   $versionOutput = & $backendPath --version 2>&1
   $exitCode = $LASTEXITCODE
