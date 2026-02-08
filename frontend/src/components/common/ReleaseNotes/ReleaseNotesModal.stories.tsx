@@ -57,3 +57,16 @@ https://github.com/user-attachments/assets/8d7d35bd-e014-4824-bfe8-fe245adfdc65`
     appVersion: '2.0.0',
   },
 };
+
+export const WithImage = {
+  args: {
+    releaseNotes: `### Release with Image
+
+This screenshot shows the new dashboard layout with improved navigation and cluster overview.
+
+![Headlamp Dashboard](https://raw.githubusercontent.com/headlamp-k8s/headlamp/main/docs/headlamp_light.png)
+
+The new layout provides better visibility of cluster resources and status.`,
+    appVersion: '2.1.0',
+  },
+};
