@@ -28,8 +28,12 @@ namespaceOverride: ""
 # -- An optional list of init containers to be run before the main containers.
 initContainers: []
 
+# -- An optional list of extra containers to be run along side the main containers.
+extraContainers: []
+
 config:
   inCluster: true
+  inClusterContextName: "main"
   # -- base url path at which headlamp should run
   baseURL: ""
   oidc:
@@ -146,6 +150,14 @@ podAnnotations: {}
 # -- Labels to add to the pod
 podLabels: {}
 
+# -- Controls user namespace isolation for the Headlamp pod.
+# When true (default), the pod shares the host user namespace (user namespaces are DISABLED).
+# When false, the pod uses a separate user namespace (user namespaces are ENABLED) for stronger isolation,
+# if supported by the cluster. Set this to false if your cluster supports user namespaces and you want
+# additional isolation; leave as true if user namespaces are not available.
+# See: https://kubernetes.io/docs/concepts/workloads/pods/user-namespaces/
+hostUsers: true
+
 # -- Headlamp pod's Security Context
 podSecurityContext:
   {}
@@ -240,6 +252,39 @@ ingress:
   #    hosts:
   #      - chart-example.local
 
+# HTTPRoute configuration for Gateway API
+# Please refer to https://gateway-api.sigs.k8s.io/reference/spec/#gateway.networking.k8s.io/v1.HTTPRoute
+httpRoute:
+  # -- Enable HTTPRoute resource for Gateway API
+  enabled: false
+  # -- Annotations for HTTPRoute resource
+  annotations: {}
+  # -- Additional labels for HTTPRoute resource
+  labels: {}
+  # -- Parent references (REQUIRED when enabled - HTTPRoute will not work without this)
+  # Example:
+  # parentRefs:
+  #   - name: my-gateway
+  #     namespace: gateway-namespace
+  parentRefs: []
+  # -- Hostnames for the HTTPRoute
+  # Example:
+  # hostnames:
+  #   - headlamp.example.com
+  hostnames: []
+  # -- Custom routing rules (optional, defaults to path prefix /)
+  # If not specified, a default rule routing all traffic to the service is used
+  rules: []
+  # Example custom rules:
+  # rules:
+  #   - matches:
+  #       - path:
+  #           type: PathPrefix
+  #           value: /headlamp
+  #     backendRefs:
+  #       - name: "{{ .Release.Name }}-headlamp"
+  #         port: 80
+
 # -- CPU/Memory resource requests/limits
 resources:
   {}
@@ -278,6 +323,8 @@ pluginsManager:
   baseImage: node:lts-alpine
   # -- Headlamp plugin package version to install
   version: latest
+  # -- Plugin manager containers volume mounts
+  volumeMounts: []
   # -- Plugin manager env variable configuration
   # env:
   # - name: HTTPS_PROXY

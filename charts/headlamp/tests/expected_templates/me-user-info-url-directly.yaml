@@ -94,6 +94,7 @@ spec:
     spec:
       serviceAccountName: headlamp
       automountServiceAccountToken: true
+      hostUsers: true
       securityContext:
         {}
       containers:
@@ -111,6 +112,7 @@ spec:
               value: /oauth2/userinfocustom1
           args:
             - "-in-cluster"
+            - "-in-cluster-context-name=main"
             - "-plugins-dir=/headlamp/plugins"
             # Check if externalSecret is disabled
             - "-me-user-info-url=$(ME_USER_INFO_URL)"

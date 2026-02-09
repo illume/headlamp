@@ -55,6 +55,8 @@ func main() {
 		os.Exit(1)
 	}
 
+	logger.Init(conf.LogLevel)
+
 	if conf.Version {
 		fmt.Printf("%s %s (%s/%s)\n", kubeconfig.AppName, kubeconfig.Version, runtime.GOOS, runtime.GOARCH)
 		return
@@ -79,6 +81,7 @@ func main() {
 func buildHeadlampCFG(conf *config.Config, kubeConfigStore kubeconfig.ContextStore) *headlampconfig.HeadlampCFG {
 	return &headlampconfig.HeadlampCFG{
 		UseInCluster:          conf.InCluster,
+		InClusterContextName:  conf.InClusterContextName,
 		KubeConfigPath:        conf.KubeConfigPath,
 		SkippedKubeContexts:   conf.SkippedKubeContexts,
 		ListenAddr:            conf.ListenAddr,
