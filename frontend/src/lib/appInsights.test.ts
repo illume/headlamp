@@ -164,7 +164,7 @@ describe('appInsights', () => {
     it('setTelemetryEnabled should update localStorage and not throw', () => {
       setTelemetryEnabled(true);
       expect(localStorage.getItem('headlamp-app-insights-enabled')).toBe('true');
-      
+
       setTelemetryEnabled(false);
       expect(localStorage.getItem('headlamp-app-insights-enabled')).toBe('false');
     });
