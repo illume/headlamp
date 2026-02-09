@@ -24,6 +24,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import ReactMarkdown from 'react-markdown';
 import rehypeRaw from 'rehype-raw';
+import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import { DialogTitle } from '../Dialog';
 
 /**
@@ -57,18 +58,21 @@ function ParagraphWithVideo({ children }: { children?: React.ReactNode }) {
   const paragraphId = React.useMemo(() => context.generateId(), [context.generateId]);
   const childrenArray = React.Children.toArray(children);
 
-  // Check if this paragraph contains only a GitHub video URL
+  // Check if this paragraph contains only a GitHub video URL (plain text)
   if (childrenArray.length === 1 && typeof childrenArray[0] === 'string') {
     const text = childrenArray[0];
     if (isGitHubVideoUrl(text)) {
       const describedBy = context.lastParagraphId;
 
+      // Don't update lastParagraphId for video-only paragraphs
       return (
         // GitHub videos must be silent and should have a descriptive paragraph above them which describes the video
         // eslint-disable-next-line jsx-a11y/media-has-caption
         <video
           src={text}
           controls
+          muted
+          playsInline
           aria-describedby={describedBy || undefined}
           style={{
             maxWidth: '100%',
@@ -86,10 +90,20 @@ function ParagraphWithVideo({ children }: { children?: React.ReactNode }) {
     }
   }
 
-  // Regular paragraph - track its ID for potential video below
-  React.useEffect(() => {
-    context.setLastParagraphId(paragraphId);
-  }, [paragraphId, context.setLastParagraphId]);
+  // Check if this paragraph contains a video link (LinkOrVideo component)
+  // If so, don't update the context - let the video use the previous paragraph's ID
+  const containsVideoLink = childrenArray.some(child => {
+    if (React.isValidElement(child) && child.type === LinkOrVideo) {
+      const href = (child.props as { href?: string }).href;
+      return href && isGitHubVideoUrl(href);
+    }
+    return false;
+  });
+
+  // Only update context for regular paragraphs (not video-containing ones)
+  if (!containsVideoLink) {
+    (context as { lastParagraphId: string | null }).lastParagraphId = paragraphId;
+  }
 
   return <p id={paragraphId}>{children}</p>;
 }
@@ -110,6 +124,8 @@ function LinkOrVideo({ children, href }: { children?: React.ReactNode; href?: st
       <video
         src={href}
         controls
+        muted
+        playsInline
         aria-describedby={describedBy || undefined}
         style={{
           maxWidth: '100%',
@@ -128,7 +144,7 @@ function LinkOrVideo({ children, href }: { children?: React.ReactNode; href?: st
 
   // Regular link
   return (
-    <Link href={href} target="_blank">
+    <Link href={href} target="_blank" rel="noopener noreferrer">
       {children}
     </Link>
   );
@@ -161,6 +177,29 @@ export default function ReleaseNotesModal(props: ReleaseNotesModalProps) {
     [lastParagraphId, generateId]
   );
 
+  // Sanitize schema to allow safe HTML tags (img, video) while preventing XSS
+  const sanitizeSchema = React.useMemo(
+    () => ({
+      ...defaultSchema,
+      attributes: {
+        ...defaultSchema.attributes,
+        img: [
+          ...(defaultSchema.attributes?.img || []),
+          'src',
+          'alt',
+          'title',
+          'width',
+          'height',
+          'loading',
+        ],
+        video: ['src', 'controls', 'muted', 'playsinline', 'width', 'height'],
+        a: [...(defaultSchema.attributes?.a || []), 'href', 'target', 'rel'],
+      },
+      tagNames: [...(defaultSchema.tagNames || []), 'video'],
+    }),
+    []
+  );
+
   return (
     <Dialog open={showReleaseNotes} maxWidth="xl">
       <DialogTitle
@@ -185,7 +224,7 @@ export default function ReleaseNotesModal(props: ReleaseNotesModalProps) {
         >
           <ParagraphContext.Provider value={contextValue}>
             <ReactMarkdown
-              rehypePlugins={[rehypeRaw]}
+              rehypePlugins={[rehypeRaw, [rehypeSanitize, sanitizeSchema]]}
               components={{
                 a: LinkOrVideo,
                 p: ParagraphWithVideo,

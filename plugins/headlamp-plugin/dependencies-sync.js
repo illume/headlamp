@@ -73,6 +73,7 @@ const dependenciesToNotCopy = [
   'vitest-canvas-mock',
   '@tanstack/react-query-devtools',
   'rehype-raw',
+  'rehype-sanitize',
 ];
 
 const yargs = require('yargs/yargs');

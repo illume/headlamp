@@ -86,8 +86,9 @@
               id="release-notes-p-1"
             >
               <video
-                aria-describedby="release-notes-p-2"
+                aria-describedby="release-notes-p-0"
                 controls=""
+                playsinline=""
                 src="https://github.com/user-attachments/assets/972764eb-0445-4bbe-8097-64dc4c3898d8"
                 style="max-width: 100%; height: auto; display: block;"
               >
@@ -115,6 +116,7 @@
             <video
               aria-describedby="release-notes-p-2"
               controls=""
+              playsinline=""
               src="https://github.com/user-attachments/assets/8d7d35bd-e014-4824-bfe8-fe245adfdc65"
               style="max-width: 100%; height: auto; display: block;"
             >
