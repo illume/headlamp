@@ -22,6 +22,11 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import LocaleSelect from '../../../i18n/LocaleSelect/LocaleSelect';
+import {
+  isAppInsightsConfigured,
+  isTelemetryEnabled,
+  setTelemetryEnabled,
+} from '../../../lib/appInsights';
 import { setAppSettings } from '../../../redux/configSlice';
 import { defaultTableRowsPerPageOptions } from '../../../redux/configSlice';
 import { useTypedSelector } from '../../../redux/hooks';
@@ -50,9 +55,21 @@ export default function Settings() {
   );
   const [sortSidebar, setSortSidebar] = useState<boolean>(storedSortSidebar);
   const [useEvict, setUseEvict] = useState<boolean>(storedUseEvict);
+  const [telemetryEnabled, setTelemetryEnabledState] = useState<boolean>(isTelemetryEnabled());
   const dispatch = useDispatch();
   const themeName = useTypedSelector(state => state.theme.name);
   const appThemes = useAppThemes();
+
+  // Listen for telemetry setting changes from other tabs
+  useEffect(() => {
+    const handleStorageChange = (event: StorageEvent) => {
+      if (event.key === 'headlamp-app-insights-enabled') {
+        setTelemetryEnabledState(event.newValue === 'true');
+      }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   useEffect(() => {
     dispatch(
@@ -78,10 +95,97 @@ export default function Settings() {
     );
   }, [useEvict]);
 
+  const handleTelemetryChange = (enabled: boolean) => {
+    setTelemetryEnabled(enabled);
+    setTelemetryEnabledState(enabled);
+  };
+
   const sidebarLabelID = 'sort-sidebar-label';
   const evictLabelID = 'use-evict-label';
   const tableRowsLabelID = 'rows-per-page-label';
   const timezoneLabelID = 'timezone-label';
+  const telemetryLabelID = 'enable-telemetry-label';
+
+  // Build rows for the settings table, conditionally including telemetry
+  const settingsRows = [
+    {
+      name: t('translation|Language'),
+      value: <LocaleSelect showFullNames formControlProps={{ className: '' }} />,
+    },
+    {
+      name: t('translation|Resource details view'),
+      value: <DrawerModeSettings />,
+    },
+    {
+      name: t('translation|Number of rows for tables'),
+      value: (
+        <NumRowsInput
+          defaultValue={storedRowsPerPageOptions || defaultTableRowsPerPageOptions}
+          nameLabelID={tableRowsLabelID}
+        />
+      ),
+      nameID: tableRowsLabelID,
+    },
+    {
+      name: t('translation|Timezone to display for dates'),
+      value: (
+        <Box maxWidth="350px">
+          <TimezoneSelect
+            initialTimezone={selectedTimezone}
+            onChange={name => setSelectedTimezone(name)}
+            nameLabelID={timezoneLabelID}
+          />
+        </Box>
+      ),
+      nameID: timezoneLabelID,
+    },
+    {
+      name: t('translation|Sort sidebar items alphabetically'),
+      value: (
+        <Switch
+          color="primary"
+          checked={sortSidebar}
+          onChange={e => setSortSidebar(e.target.checked)}
+          inputProps={{
+            'aria-labelledby': sidebarLabelID,
+          }}
+        />
+      ),
+      nameID: sidebarLabelID,
+    },
+    {
+      name: t('translation|Use evict for pod deletion'),
+      value: (
+        <Switch
+          color="primary"
+          checked={useEvict}
+          onChange={e => setUseEvict(e.target.checked)}
+          inputProps={{
+            'aria-labelledby': evictLabelID,
+          }}
+        />
+      ),
+      nameID: evictLabelID,
+    },
+  ];
+
+  // Only show telemetry setting if App Insights is configured
+  if (isAppInsightsConfigured()) {
+    settingsRows.push({
+      name: t('translation|Enable Telemetry'),
+      value: (
+        <Switch
+          color="primary"
+          checked={telemetryEnabled}
+          onChange={e => handleTelemetryChange(e.target.checked)}
+          inputProps={{
+            'aria-labelledby': telemetryLabelID,
+          }}
+        />
+      ),
+      nameID: telemetryLabelID,
+    });
+  }
 
   return (
     <SectionBox
@@ -100,69 +204,7 @@ export default function Settings() {
       }}
       backLink
     >
-      <NameValueTable
-        rows={[
-          {
-            name: t('translation|Language'),
-            value: <LocaleSelect showFullNames formControlProps={{ className: '' }} />,
-          },
-          {
-            name: t('translation|Resource details view'),
-            value: <DrawerModeSettings />,
-          },
-          {
-            name: t('translation|Number of rows for tables'),
-            value: (
-              <NumRowsInput
-                defaultValue={storedRowsPerPageOptions || defaultTableRowsPerPageOptions}
-                nameLabelID={tableRowsLabelID}
-              />
-            ),
-            nameID: tableRowsLabelID,
-          },
-          {
-            name: t('translation|Timezone to display for dates'),
-            value: (
-              <Box maxWidth="350px">
-                <TimezoneSelect
-                  initialTimezone={selectedTimezone}
-                  onChange={name => setSelectedTimezone(name)}
-                  nameLabelID={timezoneLabelID}
-                />
-              </Box>
-            ),
-            nameID: timezoneLabelID,
-          },
-          {
-            name: t('translation|Sort sidebar items alphabetically'),
-            value: (
-              <Switch
-                color="primary"
-                checked={sortSidebar}
-                onChange={e => setSortSidebar(e.target.checked)}
-                inputProps={{
-                  'aria-labelledby': sidebarLabelID,
-                }}
-              />
-            ),
-            nameID: sidebarLabelID,
-          },
-          {
-            name: t('translation|Use evict for pod deletion'),
-            value: (
-              <Switch
-                color="primary"
-                checked={useEvict}
-                onChange={e => setUseEvict(e.target.checked)}
-                inputProps={{
-                  'aria-labelledby': evictLabelID,
-                }}
-              />
-            ),
-            nameID: evictLabelID,
-          },
-        ]}
-      />
+      <NameValueTable rows={settingsRows} />
       <Box
         sx={{
           mt: '2',

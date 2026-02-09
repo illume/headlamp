@@ -15,6 +15,7 @@
  */
 
 import { Component, ComponentType, isValidElement, ReactElement, ReactNode } from 'react';
+import { trackException } from '../../../lib/appInsights';
 import { eventAction, HeadlampEventType } from '../../../redux/headlampEventSlice';
 import store from '../../../redux/stores/store';
 
@@ -66,6 +67,8 @@ export default class ErrorBoundary extends Component<ErrorBoundaryProps, State> 
       store.dispatch(
         eventAction({ type: HeadlampEventType.ERROR_BOUNDARY, data: this.state.error })
       );
+      // Track exception in Application Insights (if enabled)
+      trackException(this.state.error);
     }
   }
 
