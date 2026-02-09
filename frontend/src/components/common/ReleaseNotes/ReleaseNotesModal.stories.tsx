@@ -42,3 +42,44 @@ export const ShowNoNotes = {
     appVersion: '1.8.8',
   },
 };
+
+export const WithGitHubVideo = {
+  args: {
+    releaseNotes: `### Release with Videos
+
+This video demonstrates the visualization of NodeClaim (Scaling view) resource metrics, showing how the Karpenter plugin displays real-time scaling data with interactive charts and graphs for monitoring cluster autoscaling behavior.
+
+[Demo: Visualization of NodeClaim (Scaling view) resource metrics](https://github.com/user-attachments/assets/972764eb-0445-4bbe-8097-64dc4c3898d8)
+
+This video shows the new Map View for Karpenter Resources. The map view provides a visual representation of relationships between Karpenter resources (NodeClaims, NodePools) and other Kubernetes resources (Pods, Deployments), making it easier to understand resource dependencies and cluster topology at a glance.
+
+https://github.com/user-attachments/assets/8d7d35bd-e014-4824-bfe8-fe245adfdc65`,
+    appVersion: '2.0.0',
+  },
+};
+
+export const WithImage = {
+  args: {
+    releaseNotes: `### Release with Image
+
+This screenshot shows the new dashboard layout with improved navigation and cluster overview.
+
+![Headlamp Dashboard](https://raw.githubusercontent.com/headlamp-k8s/headlamp/main/docs/headlamp_light.png)
+
+The new layout provides better visibility of cluster resources and status.`,
+    appVersion: '2.1.0',
+  },
+};
+
+export const WithHtmlImage = {
+  args: {
+    releaseNotes: `### Release with HTML Image Tag
+
+This release includes improved branding and UI enhancements. Below is the Headlamp logo:
+
+<img src="https://raw.githubusercontent.com/headlamp-k8s/headlamp/main/docs/images/icon.png" alt="Headlamp Logo" width="150" />
+
+The new branding provides a more polished and professional appearance across the application.`,
+    appVersion: '2.2.0',
+  },
+};

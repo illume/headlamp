@@ -41,7 +41,7 @@
                 class="MuiTypography-root MuiTypography-h1 css-1kazmbo-MuiTypography-root"
                 style="font-size: 1.25rem; font-weight: 500; line-height: 1.6;"
               >
-                Release Notes (1.9.9)
+                Release Notes (2.0.0)
               </h1>
             </div>
             <div
@@ -71,15 +71,66 @@
             class="MuiBox-root css-fm9d3m"
           >
             <h3>
-              Hello
+              Release with Videos
             </h3>
             
 
             <p
               id="release-notes-p-0"
             >
-              world
+              This video demonstrates the visualization of NodeClaim (Scaling view) resource metrics, showing how the Karpenter plugin displays real-time scaling data with interactive charts and graphs for monitoring cluster autoscaling behavior.
             </p>
+            
+
+            <p
+              id="release-notes-p-1"
+            >
+              <video
+                aria-describedby="release-notes-p-0"
+                controls=""
+                playsinline=""
+                src="https://github.com/user-attachments/assets/972764eb-0445-4bbe-8097-64dc4c3898d8"
+                style="max-width: 100%; height: auto; display: block;"
+              >
+                Video content is not available in your browser. Please
+                 
+                <a
+                  href="https://github.com/user-attachments/assets/972764eb-0445-4bbe-8097-64dc4c3898d8"
+                  rel="noopener noreferrer"
+                  target="_blank"
+                >
+                  view the video here
+                </a>
+                .
+              </video>
+            </p>
+            
+
+            <p
+              id="release-notes-p-2"
+            >
+              This video shows the new Map View for Karpenter Resources. The map view provides a visual representation of relationships between Karpenter resources (NodeClaims, NodePools) and other Kubernetes resources (Pods, Deployments), making it easier to understand resource dependencies and cluster topology at a glance.
+            </p>
+            
+
+            <video
+              aria-describedby="release-notes-p-2"
+              controls=""
+              playsinline=""
+              src="https://github.com/user-attachments/assets/8d7d35bd-e014-4824-bfe8-fe245adfdc65"
+              style="max-width: 100%; height: auto; display: block;"
+            >
+              Video content is not available in your browser. Please
+               
+              <a
+                href="https://github.com/user-attachments/assets/8d7d35bd-e014-4824-bfe8-fe245adfdc65"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                view the video here
+              </a>
+              .
+            </video>
           </div>
         </div>
       </div>

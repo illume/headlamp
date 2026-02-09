@@ -41,7 +41,7 @@
                 class="MuiTypography-root MuiTypography-h1 css-1kazmbo-MuiTypography-root"
                 style="font-size: 1.25rem; font-weight: 500; line-height: 1.6;"
               >
-                Release Notes (1.9.9)
+                Release Notes (2.2.0)
               </h1>
             </div>
             <div
@@ -71,14 +71,28 @@
             class="MuiBox-root css-fm9d3m"
           >
             <h3>
-              Hello
+              Release with HTML Image Tag
             </h3>
             
 
             <p
               id="release-notes-p-0"
             >
-              world
+              This release includes improved branding and UI enhancements. Below is the Headlamp logo:
+            </p>
+            
+
+            <img
+              alt="Headlamp Logo"
+              src="https://raw.githubusercontent.com/headlamp-k8s/headlamp/main/docs/images/icon.png"
+              width="150"
+            />
+            
+
+            <p
+              id="release-notes-p-1"
+            >
+              The new branding provides a more polished and professional appearance across the application.
             </p>
           </div>
         </div>
