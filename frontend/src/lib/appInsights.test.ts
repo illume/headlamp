@@ -173,7 +173,6 @@ describe('appInsights', () => {
   describe('getAppInsights', () => {
     it('should return the App Insights instance after initialization', () => {
       // After initialization from previous tests, the instance should exist
-      const result = getAppInsights();
       // The module may have been initialized by prior tests, so we just check it doesn't throw
       expect(() => getAppInsights()).not.toThrow();
     });
@@ -182,7 +181,6 @@ describe('appInsights', () => {
   describe('getReactPlugin', () => {
     it('should return the React Plugin instance after initialization', () => {
       // After initialization from previous tests, the instance should exist
-      const result = getReactPlugin();
       // The module may have been initialized by prior tests, so we just check it doesn't throw
       expect(() => getReactPlugin()).not.toThrow();
     });
