@@ -113,9 +113,9 @@ if ($appPath -and (Test-Path $appPath)) {
     $outputFile = Join-Path $tempDir "plugins-output.txt"
     $errorFile = Join-Path $tempDir "plugins-error.txt"
     
-    # Run with timeout (30 seconds) using Start-Process for better process control
+    # Run with timeout (30 seconds) using Start-Process for process control
     try {
-      $process = Start-Process -FilePath $appPath -ArgumentList "list-plugins" -NoNewWindow -PassThru -RedirectStandardOutput $outputFile -RedirectStandardError $errorFile -ErrorAction Stop
+      $process = Start-Process -FilePath $appPath -ArgumentList "list-plugins" -PassThru -RedirectStandardOutput $outputFile -RedirectStandardError $errorFile -ErrorAction Stop
     } catch {
       Write-Host "[FAIL] Failed to start app: $_" -ForegroundColor Red
       if (Test-Path $tempDir) {
