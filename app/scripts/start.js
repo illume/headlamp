@@ -56,13 +56,10 @@ function getLastCommitDateMs(backendDir) {
  */
 function isSameArch(headlampServerPath) {
   if (process.platform === 'win32') {
-    // On Windows, check if the host architecture matches the binary
-    const localArch = process.arch; // 'x64' or 'arm64'
-
-    // For now, we assume the binary is correct if it exists
-    // A more robust check would require a Windows-specific tool like dumpbin
-    // but that adds complexity. Since the build system should create the right binary,
-    // we just verify based on process.arch
+    // On Windows, we assume the binary is correct if it exists.
+    // A more robust check would require a Windows-specific tool like dumpbin,
+    // but that adds complexity. Since the build system should create the right binary
+    // for the target architecture, we trust it.
     return true;
   }
 
