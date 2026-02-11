@@ -53,7 +53,7 @@ test_electron_app() {
     
     echo "Running app with 10 second timeout..."
     # Create unique temporary file for output (macOS mktemp requires template)
-    local OUTPUT_FILE=$(mktemp /tmp/headlamp-output.XXXXXX)
+    local OUTPUT_FILE=$(mktemp -t headlamp-output)
     
     # Use perl-based timeout as timeout command is not available on macOS by default
     set +e  # Temporarily disable exit on error
@@ -132,7 +132,7 @@ else
   if [ ! -z "$DMG_FILE" ]; then
     echo "Mounting DMG: $DMG_FILE"
     # Create unique mount point without spaces to avoid shell quoting issues
-    MOUNT_POINT=$(mktemp -d /tmp/headlamp-dmg.XXXXXX)
+    MOUNT_POINT=$(mktemp -d -t headlamp-dmg)
     if [ -z "$MOUNT_POINT" ]; then
       echo "✗ Failed to create temporary mount point"
       exit 1
