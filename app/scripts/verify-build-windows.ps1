@@ -113,34 +113,25 @@ if ($appPath -and (Test-Path $appPath)) {
     $outputFile = Join-Path $tempDir "plugins-output.txt"
     $errorFile = Join-Path $tempDir "plugins-error.txt"
     
-    # Run with timeout (30 seconds)
-    $job = Start-Job -ScriptBlock {
-      param($exePath, $outFile, $errFile)
-      & $exePath list-plugins > $outFile 2> $errFile
-      return $LASTEXITCODE
-    } -ArgumentList $appPath, $outputFile, $errorFile
+    # Run with timeout (30 seconds) using Start-Process for better process control
+    $process = Start-Process -FilePath $appPath -ArgumentList "list-plugins" -NoNewWindow -PassThru -RedirectStandardOutput $outputFile -RedirectStandardError $errorFile
     
-    $completed = Wait-Job -Job $job -Timeout 30
+    # Wait with timeout
+    $completed = $process.WaitForExit(30000)  # 30 seconds in milliseconds
+    
     if ($completed) {
-      $jobOutput = Receive-Job -Job $job -ErrorAction SilentlyContinue
-      # Get the exit code from the job - if job failed, use 1, otherwise use the returned value
-      if ($job.State -eq 'Failed') {
-        $exitCode = 1
-      } elseif ($jobOutput -ne $null) {
-        $exitCode = $jobOutput
-      } else {
-        $exitCode = 0
-      }
+      $exitCode = $process.ExitCode
     } else {
       Write-Host "[FAIL] App timed out after 30 seconds" -ForegroundColor Red
-      Stop-Job -Job $job
-      Remove-Job -Job $job -Force
+      # Kill the process and any child processes
+      Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+      # Give it a moment to clean up
+      Start-Sleep -Milliseconds 500
       if (Test-Path $tempDir) {
         Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
       }
       exit 1
     }
-    Remove-Job -Job $job -Force
     
     # Check if the app ran successfully
     if ($exitCode -eq 0) {

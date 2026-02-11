@@ -111,7 +111,7 @@ See the generated app files in app/dist/ .
 
 ### Verifying Builds
 
-After building the desktop app, you can verify that the built binaries work correctly by running the appropriate verification command. This is useful to ensure the built binaries run properly, especially when upgrading packages that build binaries or when updating Electron.
+After packaging the desktop app using the appropriate `npm run app:package` command (which creates packaged artifacts in `app/dist/`), you can verify that the built binaries work correctly by running the appropriate verification command. This is useful to ensure the built binaries run properly, especially when upgrading packages that build binaries or when updating Electron.
 
 #### Linux
 ```bash

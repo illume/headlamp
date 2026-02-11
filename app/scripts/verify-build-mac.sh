@@ -52,8 +52,8 @@ test_electron_app() {
     chmod +x "$HEADLAMP_EXEC"
     
     echo "Running app with 10 second timeout..."
-    # Create unique temporary file for output
-    local OUTPUT_FILE=$(mktemp)
+    # Create unique temporary file for output (macOS mktemp requires template)
+    local OUTPUT_FILE=$(mktemp /tmp/headlamp-output.XXXXXX)
     
     # Use perl-based timeout as timeout command is not available on macOS by default
     set +e  # Temporarily disable exit on error
@@ -131,9 +131,15 @@ else
   DMG_FILE=$(ls "$DIST_DIR"/*.dmg | head -n 1)
   if [ ! -z "$DMG_FILE" ]; then
     echo "Mounting DMG: $DMG_FILE"
-    MOUNT_POINT=$(hdiutil attach "$DMG_FILE" 2>&1 | grep Volumes | tail -1 | awk -F'\t' '{print $NF}')
+    # Create unique mount point without spaces to avoid shell quoting issues
+    MOUNT_POINT=$(mktemp -d /tmp/headlamp-dmg.XXXXXX)
     if [ -z "$MOUNT_POINT" ]; then
-      echo "✗ Failed to mount DMG or parse mount point"
+      echo "✗ Failed to create temporary mount point"
+      exit 1
+    fi
+    if ! hdiutil attach "$DMG_FILE" -mountpoint "$MOUNT_POINT" > /dev/null 2>&1; then
+      echo "✗ Failed to mount DMG at temporary mount point"
+      rmdir "$MOUNT_POINT" >/dev/null 2>&1 || true
       exit 1
     fi
     echo "DMG mounted at: $MOUNT_POINT"
@@ -146,6 +152,7 @@ else
       BACKEND_PATH="$APP_BUNDLE/Contents/Resources/headlamp-server"
       if ! test_backend "$BACKEND_PATH"; then
         hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+        rmdir "$MOUNT_POINT" >/dev/null 2>&1 || true
         exit 1
       fi
       echo ""
@@ -155,13 +162,16 @@ else
       HEADLAMP_EXEC="$APP_BUNDLE/Contents/MacOS/Headlamp"
       if ! test_electron_app "$HEADLAMP_EXEC"; then
         hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+        rmdir "$MOUNT_POINT" >/dev/null 2>&1 || true
         exit 1
       fi
       
       hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+      rmdir "$MOUNT_POINT" >/dev/null 2>&1 || true
     else
       echo "✗ App bundle not found in DMG"
       hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+      rmdir "$MOUNT_POINT" >/dev/null 2>&1 || true
       exit 1
     fi
   else
