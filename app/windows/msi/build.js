@@ -6,20 +6,56 @@ const info = require('../../package.json');
 
 // Detect the architecture from the dist directory
 // electron-builder creates win-unpacked for x64 and win-arm64-unpacked for arm64
-let ARCH = 'x64';
-let APP_DIR = path.resolve(__dirname, '../../dist/win-unpacked');
-
-// Check if ARM64 build exists
+const x64Dir = path.resolve(__dirname, '../../dist/win-unpacked');
 const arm64Dir = path.resolve(__dirname, '../../dist/win-arm64-unpacked');
-if (fs.existsSync(arm64Dir)) {
-  ARCH = 'arm64';
-  APP_DIR = arm64Dir;
-  console.log('Detected ARM64 build');
-} else if (fs.existsSync(APP_DIR)) {
-  console.log('Detected x64 build');
+let ARCH = 'x64';
+let APP_DIR = x64Dir;
+
+// Allow explicit arch selection via environment variables
+const EXPLICIT_ARCH =
+  process.env.MSI_ARCH || process.env.ARCH || process.env.npm_config_arch || '';
+
+if (EXPLICIT_ARCH) {
+  const normalizedArch = EXPLICIT_ARCH.toLowerCase();
+  if (normalizedArch !== 'x64' && normalizedArch !== 'arm64') {
+    console.error(`Unsupported architecture "${EXPLICIT_ARCH}". Expected "x64" or "arm64".`);
+    process.exit(1);
+  }
+
+  ARCH = normalizedArch;
+  APP_DIR = ARCH === 'arm64' ? arm64Dir : x64Dir;
+
+  if (!fs.existsSync(APP_DIR)) {
+    console.error(
+      `Explicit architecture "${ARCH}" selected, but directory "${APP_DIR}" does not exist. ` +
+        'Please run electron-builder for this architecture first.'
+    );
+    process.exit(1);
+  }
+
+  console.log(`Using explicitly selected architecture: ${ARCH}`);
 } else {
-  console.error('No unpacked Windows build found. Please run electron-builder first.');
-  process.exit(1);
+  const hasX64 = fs.existsSync(x64Dir);
+  const hasArm64 = fs.existsSync(arm64Dir);
+
+  if (hasX64 && hasArm64) {
+    console.error(
+      'Both x64 and ARM64 builds were found. ' +
+        'Please specify which architecture to package by setting MSI_ARCH (x64 or arm64).'
+    );
+    process.exit(1);
+  } else if (hasArm64) {
+    ARCH = 'arm64';
+    APP_DIR = arm64Dir;
+    console.log('Detected ARM64 build');
+  } else if (hasX64) {
+    ARCH = 'x64';
+    APP_DIR = x64Dir;
+    console.log('Detected x64 build');
+  } else {
+    console.error('No unpacked Windows build found. Please run electron-builder first.');
+    process.exit(1);
+  }
 }
 
 const OUT_DIR = path.resolve(__dirname, '../../dist');
