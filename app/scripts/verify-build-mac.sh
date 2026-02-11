@@ -131,7 +131,7 @@ else
   DMG_FILE=$(ls "$DIST_DIR"/*.dmg | head -n 1)
   if [ ! -z "$DMG_FILE" ]; then
     echo "Mounting DMG: $DMG_FILE"
-    # Create unique mount point without spaces to avoid shell quoting issues
+    # Create unique mount point using system temp directory
     MOUNT_POINT=$(mktemp -d -t headlamp-dmg)
     if [ -z "$MOUNT_POINT" ]; then
       echo "✗ Failed to create temporary mount point"
@@ -139,7 +139,7 @@ else
     fi
     if ! hdiutil attach "$DMG_FILE" -mountpoint "$MOUNT_POINT" > /dev/null 2>&1; then
       echo "✗ Failed to mount DMG at temporary mount point"
-      rmdir "$MOUNT_POINT" >/dev/null 2>&1 || true
+      rm -rf "$MOUNT_POINT" || true
       exit 1
     fi
     echo "DMG mounted at: $MOUNT_POINT"
@@ -152,7 +152,7 @@ else
       BACKEND_PATH="$APP_BUNDLE/Contents/Resources/headlamp-server"
       if ! test_backend "$BACKEND_PATH"; then
         hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-        rmdir "$MOUNT_POINT" >/dev/null 2>&1 || true
+        rm -rf "$MOUNT_POINT" || true
         exit 1
       fi
       echo ""
@@ -162,16 +162,16 @@ else
       HEADLAMP_EXEC="$APP_BUNDLE/Contents/MacOS/Headlamp"
       if ! test_electron_app "$HEADLAMP_EXEC"; then
         hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-        rmdir "$MOUNT_POINT" >/dev/null 2>&1 || true
+        rm -rf "$MOUNT_POINT" || true
         exit 1
       fi
       
       hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-      rmdir "$MOUNT_POINT" >/dev/null 2>&1 || true
+      rm -rf "$MOUNT_POINT" || true
     else
       echo "✗ App bundle not found in DMG"
       hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-      rmdir "$MOUNT_POINT" >/dev/null 2>&1 || true
+      rm -rf "$MOUNT_POINT" || true
       exit 1
     fi
   else

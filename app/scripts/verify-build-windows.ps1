@@ -131,7 +131,7 @@ if ($appPath -and (Test-Path $appPath)) {
       $exitCode = $process.ExitCode
     } else {
       Write-Host "[FAIL] App timed out after 30 seconds" -ForegroundColor Red
-      # Kill the process and any child processes
+      # Kill the process
       Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
       # Give it a moment to clean up
       Start-Sleep -Milliseconds 500
