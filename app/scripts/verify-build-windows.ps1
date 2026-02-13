@@ -40,8 +40,11 @@ function Test-BackendBinary {
     $proc = Start-Process -FilePath $backendPath -ArgumentList "--version" -NoNewWindow -Wait -PassThru -RedirectStandardOutput $tempOutput -RedirectStandardError $tempError -ErrorAction Stop
     $exitCode = $proc.ExitCode
     $versionOutput = Get-Content $tempOutput -Raw
+    if (-not $versionOutput) {
+      $versionOutput = ""
+    }
   } catch {
-    Write-Host "[FAIL] Failed to execute backend: $_" -ForegroundColor Red
+    Write-Host "[FAIL] Failed to execute backend at ${backendPath}: $_" -ForegroundColor Red
     exit 1
   } finally {
     if (Test-Path $tempOutput) { Remove-Item $tempOutput -Force -ErrorAction SilentlyContinue }
@@ -52,13 +55,16 @@ function Test-BackendBinary {
     exit $exitCode
   }
   Write-Host "Backend version: $versionOutput"
-  if ($versionOutput -match "Headlamp") {
-    Write-Host "[PASS] Backend binary is working" -ForegroundColor Green
-    return $true
-  } else {
-    Write-Host "[FAIL] Backend version check failed" -ForegroundColor Red
+  if (-not $versionOutput -or -not ($versionOutput -match "Headlamp")) {
+    if (-not $versionOutput) {
+      Write-Host "[FAIL] Backend produced no version output" -ForegroundColor Red
+    } else {
+      Write-Host "[FAIL] Backend version check failed - output does not contain 'Headlamp'" -ForegroundColor Red
+    }
     exit 1
   }
+  Write-Host "[PASS] Backend binary is working" -ForegroundColor Green
+  return $true
 }
 
 Write-Host "=== Verifying Windows Build Artifacts ===" -ForegroundColor Cyan
