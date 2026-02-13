@@ -196,34 +196,9 @@ docker run --network="host" -p 127.0.0.1:4466:4466/tcp --mount type=bind,source=
 
 #### Enabling experimental WebSocket multiplexer
 
-The WebSocket multiplexer is an **experimental feature** that improves performance by reusing WebSocket connections for multiple Kubernetes API watch requests. By default, this feature is **disabled**.
+The WebSocket multiplexer is an **experimental feature** that improves performance by reusing WebSocket connections for multiple Kubernetes API watch requests. 
 
-To enable it at runtime, you can use either a command-line flag or an environment variable:
-
-Using the `--enable-websocket-multiplexer` flag:
-
-```bash
-docker run --network="host" -p 127.0.0.1:4466:4466/tcp \
-  --mount type=bind,source="/home/rene/.minikube",target=$HOME/.minikube \
-  --mount type=bind,source="$HOME/.kube",target=/root/.kube \
-  ghcr.io/headlamp-k8s/headlamp:latest \
-  /headlamp/headlamp-server -html-static-dir /headlamp/frontend \
-  -plugins-dir=/headlamp/plugins --enable-websocket-multiplexer
-```
-
-Using the `HEADLAMP_CONFIG_ENABLE_WEBSOCKET_MULTIPLEXER` environment variable:
-
-```bash
-docker run --network="host" -p 127.0.0.1:4466:4466/tcp \
-  -e HEADLAMP_CONFIG_ENABLE_WEBSOCKET_MULTIPLEXER=true \
-  --mount type=bind,source="/home/rene/.minikube",target=$HOME/.minikube \
-  --mount type=bind,source="$HOME/.kube",target=/root/.kube \
-  ghcr.io/headlamp-k8s/headlamp:latest \
-  /headlamp/headlamp-server -html-static-dir /headlamp/frontend \
-  -plugins-dir=/headlamp/plugins
-```
-
-**Note:** This setting is configured at runtime when starting the container and can be changed without rebuilding the image.
+To enable it when running the container, use the `--enable-websocket-multiplexer` flag or set the `HEADLAMP_CONFIG_ENABLE_WEBSOCKET_MULTIPLEXER=true` environment variable. This can be configured at runtime without rebuilding the image.
 
 If you want to make a new container image called `headlamp-k8s/headlamp:development`
 you can run it like this:
