@@ -118,26 +118,6 @@ The typical development workflow for the desktop app:
 4. Test your changes: `npm run app:test`
 5. Build and run: `npm run app:start`
 
-## Enabling experimental WebSocket multiplexer
-
-The WebSocket multiplexer is an **experimental feature** that improves performance by reusing WebSocket connections for multiple Kubernetes API watch requests.
-
-To enable it when running the desktop app, set the `HEADLAMP_CONFIG_ENABLE_WEBSOCKET_MULTIPLEXER` environment variable:
-
-```bash
-HEADLAMP_CONFIG_ENABLE_WEBSOCKET_MULTIPLEXER=true npm run app:start
-```
-
-This can also be used with other app commands:
-
-```bash
-# For development mode
-HEADLAMP_CONFIG_ENABLE_WEBSOCKET_MULTIPLEXER=true npm run start:with-app
-
-# Or when running everything together
-HEADLAMP_CONFIG_ENABLE_WEBSOCKET_MULTIPLEXER=true npm run start
-```
-
 ## Notes
 
 - The app code in `app/electron/` is written in TypeScript (`.ts` files)

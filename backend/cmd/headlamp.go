@@ -1751,9 +1751,9 @@ func (c *HeadlampConfig) getConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	clientConfig := clientConfig{
-		Clusters:                      c.getClusters(),
-		IsDynamicClusterEnabled:       c.EnableDynamicClusters,
-		IsWebsocketMultiplexerEnabled: c.EnableWebsocketMultiplexer,
+		c.getClusters(),
+		c.EnableDynamicClusters,
+		c.EnableWebsocketMultiplexer,
 	}
 
 	if err := json.NewEncoder(w).Encode(&clientConfig); err != nil {

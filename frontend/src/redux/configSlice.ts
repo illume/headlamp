@@ -62,11 +62,6 @@ export interface ConfigState {
    * Null indicates that the config has not been loaded yet.
    */
   isWebsocketMultiplexerEnabled: boolean | null;
-  /**
-   * isDynamicClusterEnabled indicates whether dynamic clusters are enabled.
-   * Null indicates that the config has not been loaded yet.
-   */
-  isDynamicClusterEnabled: boolean | null;
 }
 
 export const defaultTableRowsPerPageOptions = [15, 25, 50];
@@ -89,7 +84,6 @@ export const initialState: ConfigState = {
     useEvict: storedSettings.useEvict || true,
   },
   isWebsocketMultiplexerEnabled: null,
-  isDynamicClusterEnabled: null,
 };
 
 const configSlice = createSlice({
@@ -106,15 +100,11 @@ const configSlice = createSlice({
       action: PayloadAction<{
         clusters: ConfigState['clusters'];
         isWebsocketMultiplexerEnabled?: boolean;
-        isDynamicClusterEnabled?: boolean;
       }>
     ) {
       state.clusters = action.payload.clusters;
       if (action.payload.isWebsocketMultiplexerEnabled !== undefined) {
         state.isWebsocketMultiplexerEnabled = action.payload.isWebsocketMultiplexerEnabled;
-      }
-      if (action.payload.isDynamicClusterEnabled !== undefined) {
-        state.isDynamicClusterEnabled = action.payload.isDynamicClusterEnabled;
       }
     },
     /**

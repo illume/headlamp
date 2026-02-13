@@ -150,7 +150,6 @@ const fetchConfig = (dispatch: Dispatch<UnknownAction>) => {
       ...config,
       clusters: clustersToConfig,
       isWebsocketMultiplexerEnabled: config?.isWebsocketMultiplexerEnabled ?? false,
-      isDynamicClusterEnabled: config?.isDynamicClusterEnabled ?? false,
     };
 
     if (clusters === null) {
@@ -170,16 +169,14 @@ const fetchConfig = (dispatch: Dispatch<UnknownAction>) => {
           setConfig({
             clusters: mergedClusters,
             isWebsocketMultiplexerEnabled: configToStore.isWebsocketMultiplexerEnabled,
-            isDynamicClusterEnabled: configToStore.isDynamicClusterEnabled,
           })
         );
       } else {
-        // Even if clusters didn't change, update the feature flags
+        // Even if clusters didn't change, update the feature flag
         dispatch(
           setConfig({
             clusters: clusters,
             isWebsocketMultiplexerEnabled: configToStore.isWebsocketMultiplexerEnabled,
-            isDynamicClusterEnabled: configToStore.isDynamicClusterEnabled,
           })
         );
       }
