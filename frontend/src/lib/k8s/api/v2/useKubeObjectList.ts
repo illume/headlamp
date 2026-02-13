@@ -17,6 +17,7 @@
 import type { QueryObserverOptions } from '@tanstack/react-query';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import store from '../../../../redux/stores/store';
 import type { KubeObject, KubeObjectClass } from '../../KubeObject';
 import type { QueryParameters } from '../v1/queryParameters';
 import { ApiError } from './ApiError';
@@ -32,10 +33,12 @@ import { BASE_WS_URL, useWebSockets } from './webSocket';
 
 /**
  * @returns true if the websocket multiplexer is enabled.
- * defaults to true. This is a feature flag to enable the websocket multiplexer.
+ * This is determined by the backend configuration at runtime.
  */
 export function getWebsocketMultiplexerEnabled(): boolean {
-  return import.meta.env.REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER === 'true';
+  const state = store.getState();
+  // Return the backend-provided config value, defaulting to false if not yet loaded
+  return state.config.isWebsocketMultiplexerEnabled ?? false;
 }
 
 /**

@@ -57,6 +57,16 @@ export interface ConfigState {
     useEvict: boolean;
     [key: string]: any;
   };
+  /**
+   * isWebsocketMultiplexerEnabled indicates whether the WebSocket multiplexer is enabled.
+   * Null indicates that the config has not been loaded yet.
+   */
+  isWebsocketMultiplexerEnabled: boolean | null;
+  /**
+   * isDynamicClusterEnabled indicates whether dynamic clusters are enabled.
+   * Null indicates that the config has not been loaded yet.
+   */
+  isDynamicClusterEnabled: boolean | null;
 }
 
 export const defaultTableRowsPerPageOptions = [15, 25, 50];
@@ -78,6 +88,8 @@ export const initialState: ConfigState = {
     sidebarSortAlphabetically: storedSettings.sidebarSortAlphabetically || false,
     useEvict: storedSettings.useEvict || true,
   },
+  isWebsocketMultiplexerEnabled: null,
+  isDynamicClusterEnabled: null,
 };
 
 const configSlice = createSlice({
@@ -89,8 +101,21 @@ const configSlice = createSlice({
      * @param state - The current state.
      * @param action - The payload action containing the config.
      */
-    setConfig(state, action: PayloadAction<{ clusters: ConfigState['clusters'] }>) {
+    setConfig(
+      state,
+      action: PayloadAction<{
+        clusters: ConfigState['clusters'];
+        isWebsocketMultiplexerEnabled?: boolean;
+        isDynamicClusterEnabled?: boolean;
+      }>
+    ) {
       state.clusters = action.payload.clusters;
+      if (action.payload.isWebsocketMultiplexerEnabled !== undefined) {
+        state.isWebsocketMultiplexerEnabled = action.payload.isWebsocketMultiplexerEnabled;
+      }
+      if (action.payload.isDynamicClusterEnabled !== undefined) {
+        state.isDynamicClusterEnabled = action.payload.isDynamicClusterEnabled;
+      }
     },
     /**
      * Save the config. To both the store, and localStorage.
