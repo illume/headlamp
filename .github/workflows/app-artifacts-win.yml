@@ -75,7 +75,23 @@ jobs:
         nuget.exe sources add -name esrp -source ${{ secrets.ESRP_NUGET_INDEX_URL }} -username headlamp -password ${{ secrets.AZ_DEVOPS_TOKEN }}
         nuget.exe install Microsoft.EsrpClient -Version 1.2.80 -source  ${{ secrets.ESRP_NUGET_INDEX_URL }} | out-null
 
-    - name: App Windows x64
+    - name: Build Frontend
+      shell: pwsh
+      working-directory: headlamp
+      run: |
+        cd frontend
+        npm ci
+        npm run build
+
+    - name: Install App Dependencies and Setup Plugins
+      shell: pwsh
+      working-directory: headlamp
+      run: |
+        cd app
+        npm ci
+        node scripts/setup-plugins.js
+
+    - name: Build Windows x64 App
       shell: pwsh
       working-directory: headlamp
       run: |
@@ -96,7 +112,7 @@ jobs:
         MSI_ARCH: x64
       run: |
         cd app
-        npm run package-msi
+        node windows/msi/build.js
 
     - name: Upload artifact
       uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
@@ -165,7 +181,23 @@ jobs:
         nuget.exe sources add -name esrp -source ${{ secrets.ESRP_NUGET_INDEX_URL }} -username headlamp -password ${{ secrets.AZ_DEVOPS_TOKEN }}
         nuget.exe install Microsoft.EsrpClient -Version 1.2.80 -source  ${{ secrets.ESRP_NUGET_INDEX_URL }} | out-null
 
-    - name: App Windows ARM64
+    - name: Build Frontend
+      shell: pwsh
+      working-directory: headlamp
+      run: |
+        cd frontend
+        npm ci
+        npm run build
+
+    - name: Install App Dependencies and Setup Plugins
+      shell: pwsh
+      working-directory: headlamp
+      run: |
+        cd app
+        npm ci
+        node scripts/setup-plugins.js
+
+    - name: Build Windows ARM64 App
       shell: pwsh
       working-directory: headlamp
       run: |
@@ -186,7 +218,7 @@ jobs:
         MSI_ARCH: arm64
       run: |
         cd app
-        npm run package-msi
+        node windows/msi/build.js
 
     - name: Upload artifact
       uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
