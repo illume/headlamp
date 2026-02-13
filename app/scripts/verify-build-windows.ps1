@@ -144,6 +144,7 @@ if ($appPath -and (Test-Path $appPath)) {
     $completed = $process.WaitForExit(30000)  # 30 seconds in milliseconds
     
     if ($completed) {
+      # Process completed within timeout - check exit code
       $exitCode = $process.ExitCode
       
       # Check if the app ran successfully
@@ -154,7 +155,12 @@ if ($appPath -and (Test-Path $appPath)) {
         }
       } else {
         Write-Host "[FAIL] App failed to run (exit code: $exitCode)" -ForegroundColor Red
+        if (Test-Path $outputFile) {
+          Write-Host "Standard output:"
+          Get-Content $outputFile
+        }
         if (Test-Path $errorFile) {
+          Write-Host "Standard error:"
           Get-Content $errorFile
         }
         exit 1

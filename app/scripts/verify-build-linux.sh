@@ -119,6 +119,6 @@ if [ ! -z "$TARBALL" ]; then
   echo ""
   echo "✓ All Linux verification checks passed"
 else
-  echo "✗ No x64 tar.gz found for verification"
+  echo "✗ No Linux tar.gz found for verification"
   exit 1
 fi
