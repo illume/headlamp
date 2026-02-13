@@ -122,6 +122,9 @@ if ($appPath -and (Test-Path $appPath)) {
   Write-Host "Testing Electron app..."
   Write-Host "Found Headlamp at: $appPath"
   
+  # Initialize tempDir outside try block so it's accessible in catch/finally
+  $tempDir = $null
+  
   try {
     # Create a unique temp directory for this run
     $tempDir = Join-Path ([System.IO.Path]::GetTempPath()) ([System.Guid]::NewGuid().ToString())
@@ -130,62 +133,43 @@ if ($appPath -and (Test-Path $appPath)) {
     $errorFile = Join-Path $tempDir "plugins-error.txt"
     
     # Run with timeout (30 seconds) using Start-Process for process control
-    try {
-      $process = Start-Process -FilePath $appPath -ArgumentList "list-plugins" -PassThru -RedirectStandardOutput $outputFile -RedirectStandardError $errorFile -ErrorAction Stop
-    } catch {
-      Write-Host "[FAIL] Failed to start app: $_" -ForegroundColor Red
-      if (Test-Path $tempDir) {
-        Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
-      }
-      exit 1
-    }
+    $process = Start-Process -FilePath $appPath -ArgumentList "list-plugins" -PassThru -RedirectStandardOutput $outputFile -RedirectStandardError $errorFile -ErrorAction Stop
     
     # Wait with timeout
     $completed = $process.WaitForExit(30000)  # 30 seconds in milliseconds
     
     if ($completed) {
       $exitCode = $process.ExitCode
+      
+      # Check if the app ran successfully
+      if ($exitCode -eq 0) {
+        Write-Host "[PASS] App executed successfully" -ForegroundColor Green
+        if (Test-Path $outputFile) {
+          Get-Content $outputFile
+        }
+      } else {
+        Write-Host "[FAIL] App failed to run (exit code: $exitCode)" -ForegroundColor Red
+        if (Test-Path $errorFile) {
+          Get-Content $errorFile
+        }
+        exit 1
+      }
     } else {
       Write-Host "[FAIL] App timed out after 30 seconds" -ForegroundColor Red
       # Kill the process
       Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
       # Give it a moment to clean up
       Start-Sleep -Milliseconds 500
-      if (Test-Path $tempDir) {
-        Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
-      }
       exit 1
-    }
-    
-    # Check if the app ran successfully
-    if ($exitCode -eq 0) {
-      Write-Host "[PASS] App executed successfully" -ForegroundColor Green
-      if (Test-Path $outputFile) {
-        Get-Content $outputFile
-      }
-    } else {
-      Write-Host "[FAIL] App failed to run (exit code: $exitCode)" -ForegroundColor Red
-      if (Test-Path $errorFile) {
-        Get-Content $errorFile
-      }
-      # Cleanup temp directory before exiting
-      if (Test-Path $tempDir) {
-        Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
-      }
-      exit 1
-    }
-    
-    # Cleanup temp directory
-    if (Test-Path $tempDir) {
-      Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
     }
   } catch {
     Write-Host "[FAIL] Error running app: $_" -ForegroundColor Red
-    # Cleanup temp directory before exiting
-    if (Test-Path $tempDir) {
+    exit 1
+  } finally {
+    # Cleanup temp directory in all cases
+    if ($tempDir -and (Test-Path $tempDir)) {
       Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
     }
-    exit 1
   }
 } else {
   Write-Host "[FAIL] Could not find Headlamp.exe for app verification" -ForegroundColor Red

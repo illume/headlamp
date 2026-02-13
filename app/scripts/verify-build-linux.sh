@@ -37,7 +37,12 @@ echo ""
 
 # Step 2: Extract and verify backend binary
 echo "=== Verifying Backend Binary ==="
+# Try to find any Linux tarball (x64, arm64, armv7l, etc.)
+# Prefer x64 if available, otherwise use the first one found
 TARBALL=$(ls "$DIST_DIR"/*-linux-x64.tar.gz 2>/dev/null | head -n 1)
+if [ -z "$TARBALL" ]; then
+  TARBALL=$(ls "$DIST_DIR"/*-linux-*.tar.gz 2>/dev/null | head -n 1)
+fi
 if [ ! -z "$TARBALL" ]; then
   echo "Extracting tar.gz: $TARBALL"
   EXTRACT_DIR=$(mktemp -d)
