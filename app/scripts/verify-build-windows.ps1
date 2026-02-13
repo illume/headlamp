@@ -32,11 +32,20 @@ function Test-BackendBinary {
   }
   
   Write-Host "Found backend at: $backendPath"
-  # Temporarily allow stderr output (backend logs to stderr)
-  $ErrorActionPreference = "Continue"
-  $versionOutput = & $backendPath --version 2>&1 | Out-String
-  $exitCode = $LASTEXITCODE
-  $ErrorActionPreference = "Stop"
+  # Backend logs to stderr, so we need to handle that gracefully
+  # Use Start-Process to isolate stderr handling and get clean exit code
+  $tempOutput = [System.IO.Path]::GetTempFileName()
+  try {
+    $proc = Start-Process -FilePath $backendPath -ArgumentList "--version" -NoNewWindow -Wait -PassThru -RedirectStandardOutput $tempOutput -RedirectStandardError ([System.IO.Path]::GetTempFileName()) -ErrorAction Stop
+    $exitCode = $proc.ExitCode
+    $versionOutput = Get-Content $tempOutput -Raw
+  } catch {
+    Write-Host "[FAIL] Failed to execute backend: $_" -ForegroundColor Red
+    if (Test-Path $tempOutput) { Remove-Item $tempOutput -Force -ErrorAction SilentlyContinue }
+    exit 1
+  } finally {
+    if (Test-Path $tempOutput) { Remove-Item $tempOutput -Force -ErrorAction SilentlyContinue }
+  }
   if ($exitCode -ne 0) {
     Write-Host "[FAIL] Backend version command failed with exit code $exitCode" -ForegroundColor Red
     exit $exitCode
