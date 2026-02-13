@@ -41,7 +41,7 @@ if (EXPLICIT_ARCH) {
   if (hasX64 && hasArm64) {
     console.error(
       'Both x64 and ARM64 builds were found. ' +
-        'Please specify which architecture to package by setting MSI_ARCH (x64 or arm64).'
+        'Please specify which architecture to package by setting one of MSI_ARCH, ARCH, or npm_config_arch (x64 or arm64).'
     );
     process.exit(1);
   } else if (hasArm64) {

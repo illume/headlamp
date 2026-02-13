@@ -110,13 +110,7 @@
     },
     "win": {
       "target": [
-        {
-          "target": "nsis",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
+        "nsis"
       ],
       "signtoolOptions": {
         "sign": "windows/sign.js"
