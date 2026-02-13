@@ -45,10 +45,6 @@ COPY ./frontend /headlamp/frontend
 
 WORKDIR /headlamp
 
-# Build argument for enabling WebSocket multiplexer (defaults to false/disabled)
-ARG REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER=false
-ENV REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER=${REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER}
-
 RUN cd ./frontend && npm run build
 
 RUN echo "*** Built Headlamp with version: ***"

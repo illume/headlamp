@@ -30,25 +30,23 @@ a development server for the frontend (by default at `localhost:3000`).
 We use [react-query](https://tanstack.com/query/latest/docs/framework/react/overview) 
 for network request, if you need the devtools for react-query, you can simply set `REACT_APP_ENABLE_REACT_QUERY_DEVTOOLS=true` in the `.env` file.
 
-## Frontend Build-Time Configuration
+## WebSocket Multiplexer
 
-The frontend supports several environment variables that control features at build time:
+The WebSocket multiplexer is an **experimental feature** that improves performance by reusing a single WebSocket connection for multiple Kubernetes API watch operations.
 
-### WebSocket Multiplexer
-
-The `REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER` environment variable controls whether the frontend uses a multiplexed WebSocket connection for Kubernetes API watch requests. This is an **experimental feature** that improves performance by reusing a single WebSocket connection for multiple watch operations.
-
-For local development:
+This feature is configured at runtime on the backend, not at build time. When running Headlamp locally for development:
 
 ```bash
-# Enable multiplexer (you need to explicitly set this to 'true')
-REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER=true npm run frontend:start
+# With backend (enables multiplexer)
+./backend/headlamp-server --enable-websocket-multiplexer
 
-# Disable multiplexer (default when not set, or use the convenience script)
-npm run start-without-multiplexer
+# Or using environment variable
+HEADLAMP_CONFIG_ENABLE_WEBSOCKET_MULTIPLEXER=true ./backend/headlamp-server
 ```
 
-For container builds, see the [container build documentation](./index.md#frontend-build-time-environment-variables) for how to set this using Docker build arguments.
+The frontend automatically detects whether the multiplexer is enabled by fetching the configuration from the backend's `/config` endpoint.
+
+For container deployments, see the [container build documentation](./index.md#enabling-experimental-websocket-multiplexer) for runtime configuration options.
 
 ## API documentation
 
