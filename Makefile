@@ -317,11 +317,16 @@ plugins-test:
 
 # IMAGE_BASE can be used to specify a base final image.
 #   IMAGE_BASE=debian:latest make image
+# REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER can be used to enable/disable WebSocket multiplexer.
+#   REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER=true make image
 image:
 	@if [ -n "${IMAGE_BASE}" ]; then \
 		BUILD_ARG="--build-arg IMAGE_BASE=${IMAGE_BASE}"; \
 	else \
 		BUILD_ARG=""; \
+	fi; \
+	if [ -n "${REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER}" ]; then \
+		BUILD_ARG="$$BUILD_ARG --build-arg REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER=${REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER}"; \
 	fi; \
 	$(DOCKER_CMD) $(DOCKER_BUILDX_CMD) build \
 	--pull \

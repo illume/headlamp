@@ -175,7 +175,19 @@ The frontend build process supports several environment variables that configure
 
 The WebSocket multiplexer feature improves performance by reusing WebSocket connections for multiple Kubernetes API watch requests. By default, this feature is **enabled** in container builds.
 
-To build a container image with the WebSocket multiplexer explicitly enabled:
+To build a container image with the WebSocket multiplexer explicitly enabled using the Makefile:
+
+```bash
+REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER=true make image
+```
+
+To disable the WebSocket multiplexer:
+
+```bash
+REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER=false make image
+```
+
+Alternatively, to build directly with Docker:
 
 ```bash
 docker buildx build --pull --platform=local \
@@ -184,16 +196,7 @@ docker buildx build --pull --platform=local \
   -f Dockerfile .
 ```
 
-To disable the WebSocket multiplexer:
-
-```bash
-docker buildx build --pull --platform=local \
-  --build-arg REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER=false \
-  -t headlamp:custom \
-  -f Dockerfile .
-```
-
-**Note:** These settings are baked into the frontend JavaScript bundle at build time and cannot be changed at runtime. The default `npm run image:build` command enables the multiplexer by default.
+**Note:** These settings are baked into the frontend JavaScript bundle at build time and cannot be changed at runtime. When not specified, the multiplexer is enabled by default.
 
 ### Custom container base images
 
