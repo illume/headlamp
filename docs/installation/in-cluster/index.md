@@ -45,7 +45,7 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes-sigs/headlamp/main
 
 ### Enabling experimental WebSocket multiplexer
 
-The WebSocket multiplexer is an **experimental feature** that improves performance. To enable it in your YAML deployment, add the `--enable-websocket-multiplexer` flag to the container args or set the `HEADLAMP_CONFIG_ENABLE_WEBSOCKET_MULTIPLEXER` environment variable:
+The WebSocket multiplexer is an **experimental feature** that improves performance. To enable it in your YAML deployment, add the `-enable-websocket-multiplexer` flag to the container args or set the `HEADLAMP_CONFIG_ENABLE_WEBSOCKET_MULTIPLEXER` environment variable:
 
 **Using args:**
 
@@ -57,7 +57,7 @@ spec:
       args:
         - "-in-cluster"
         - "-plugins-dir=/headlamp/plugins"
-        - "--enable-websocket-multiplexer"
+        - "-enable-websocket-multiplexer"
 ```
 
 **Using environment variable:**
