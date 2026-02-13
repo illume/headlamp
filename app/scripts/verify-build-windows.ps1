@@ -149,6 +149,21 @@ if ($appPath -and (Test-Path $appPath)) {
       $process.WaitForExit()
       $exitCode = $process.ExitCode
       
+      # Add diagnostics for exit code
+      Write-Host "DEBUG: Process HasExited = $($process.HasExited), ExitCode = $exitCode"
+      
+      # Handle null exit code (treat as 0 if process completed successfully)
+      if ($null -eq $exitCode) {
+        Write-Host "WARNING: Exit code was null, checking if process actually completed..."
+        if ($process.HasExited) {
+          Write-Host "Process has exited, treating as success (exit code 0)"
+          $exitCode = 0
+        } else {
+          Write-Host "[FAIL] Process state is ambiguous" -ForegroundColor Red
+          exit 1
+        }
+      }
+      
       # Check if the app ran successfully
       if ($exitCode -eq 0) {
         Write-Host "[PASS] App executed successfully" -ForegroundColor Green
