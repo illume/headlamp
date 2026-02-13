@@ -95,9 +95,9 @@ const (
 )
 
 type clientConfig struct {
-	Clusters                       []Cluster `json:"clusters"`
-	IsDynamicClusterEnabled        bool      `json:"isDynamicClusterEnabled"`
-	IsWebsocketMultiplexerEnabled  bool      `json:"isWebsocketMultiplexerEnabled"`
+	Clusters                      []Cluster `json:"clusters"`
+	IsDynamicClusterEnabled       bool      `json:"isDynamicClusterEnabled"`
+	IsWebsocketMultiplexerEnabled bool      `json:"isWebsocketMultiplexerEnabled"`
 }
 
 type OauthConfig struct {

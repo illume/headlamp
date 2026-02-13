@@ -168,8 +168,9 @@ const fetchConfig = (dispatch: Dispatch<UnknownAction>) => {
         );
         dispatch(
           setConfig({
-            ...configToStore,
             clusters: mergedClusters,
+            isWebsocketMultiplexerEnabled: configToStore.isWebsocketMultiplexerEnabled,
+            isDynamicClusterEnabled: configToStore.isDynamicClusterEnabled,
           })
         );
       } else {
