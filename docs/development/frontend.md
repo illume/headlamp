@@ -30,6 +30,26 @@ a development server for the frontend (by default at `localhost:3000`).
 We use [react-query](https://tanstack.com/query/latest/docs/framework/react/overview) 
 for network request, if you need the devtools for react-query, you can simply set `REACT_APP_ENABLE_REACT_QUERY_DEVTOOLS=true` in the `.env` file.
 
+## Frontend Build-Time Configuration
+
+The frontend supports several environment variables that control features at build time:
+
+### WebSocket Multiplexer
+
+The `REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER` environment variable controls whether the frontend uses a multiplexed WebSocket connection for Kubernetes API watch requests. This improves performance by reusing a single WebSocket connection for multiple watch operations.
+
+For local development:
+
+```bash
+# Enable multiplexer (you need to explicitly set this to 'true')
+REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER=true npm run frontend:start
+
+# Disable multiplexer (default when not set, or use the convenience script)
+npm run start-without-multiplexer
+```
+
+For container builds, see the [container build documentation](./index.md#frontend-build-time-environment-variables) for how to set this using Docker build arguments.
+
 ## API documentation
 
 API documentation for TypeScript is done with [typedoc](https://typedoc.org/) and [typedoc-plugin-markdown](https://github.com/tgreyuk/typedoc-plugin-markdown), and is configured in tsconfig.json
