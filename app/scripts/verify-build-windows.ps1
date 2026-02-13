@@ -35,16 +35,19 @@ function Test-BackendBinary {
   # Backend logs to stderr, so we need to handle that gracefully
   # Use Start-Process to isolate stderr handling and get clean exit code
   $tempOutput = [System.IO.Path]::GetTempFileName()
+  $tempError = [System.IO.Path]::GetTempFileName()
   try {
-    $proc = Start-Process -FilePath $backendPath -ArgumentList "--version" -NoNewWindow -Wait -PassThru -RedirectStandardOutput $tempOutput -RedirectStandardError ([System.IO.Path]::GetTempFileName()) -ErrorAction Stop
+    $proc = Start-Process -FilePath $backendPath -ArgumentList "--version" -NoNewWindow -Wait -PassThru -RedirectStandardOutput $tempOutput -RedirectStandardError $tempError -ErrorAction Stop
     $exitCode = $proc.ExitCode
     $versionOutput = Get-Content $tempOutput -Raw
   } catch {
     Write-Host "[FAIL] Failed to execute backend: $_" -ForegroundColor Red
     if (Test-Path $tempOutput) { Remove-Item $tempOutput -Force -ErrorAction SilentlyContinue }
+    if (Test-Path $tempError) { Remove-Item $tempError -Force -ErrorAction SilentlyContinue }
     exit 1
   } finally {
     if (Test-Path $tempOutput) { Remove-Item $tempOutput -Force -ErrorAction SilentlyContinue }
+    if (Test-Path $tempError) { Remove-Item $tempError -Force -ErrorAction SilentlyContinue }
   }
   if ($exitCode -ne 0) {
     Write-Host "[FAIL] Backend version command failed with exit code $exitCode" -ForegroundColor Red
