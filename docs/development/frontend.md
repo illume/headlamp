@@ -30,24 +30,6 @@ a development server for the frontend (by default at `localhost:3000`).
 We use [react-query](https://tanstack.com/query/latest/docs/framework/react/overview) 
 for network request, if you need the devtools for react-query, you can simply set `REACT_APP_ENABLE_REACT_QUERY_DEVTOOLS=true` in the `.env` file.
 
-## WebSocket Multiplexer
-
-The WebSocket multiplexer is an **experimental feature** that improves performance by reusing a single WebSocket connection for multiple Kubernetes API watch operations.
-
-This feature is configured at runtime on the backend, not at build time. When running Headlamp locally for development:
-
-```bash
-# With backend (enables multiplexer)
-./backend/headlamp-server --enable-websocket-multiplexer
-
-# Or using environment variable
-HEADLAMP_CONFIG_ENABLE_WEBSOCKET_MULTIPLEXER=true ./backend/headlamp-server
-```
-
-The frontend automatically detects whether the multiplexer is enabled by fetching the configuration from the backend's `/config` endpoint.
-
-For container deployments, see the [container build documentation](./index.md#enabling-experimental-websocket-multiplexer) for runtime configuration options.
-
 ## API documentation
 
 API documentation for TypeScript is done with [typedoc](https://typedoc.org/) and [typedoc-plugin-markdown](https://github.com/tgreyuk/typedoc-plugin-markdown), and is configured in tsconfig.json

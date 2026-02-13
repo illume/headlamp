@@ -198,7 +198,11 @@ docker run --network="host" -p 127.0.0.1:4466:4466/tcp --mount type=bind,source=
 
 The WebSocket multiplexer is an **experimental feature** that improves performance by reusing WebSocket connections for multiple Kubernetes API watch requests. 
 
-To enable it when running the container, use the `--enable-websocket-multiplexer` flag or set the `HEADLAMP_CONFIG_ENABLE_WEBSOCKET_MULTIPLEXER=true` environment variable. This can be configured at runtime without rebuilding the image.
+This can be configured at runtime without rebuilding (image or app).
+
+```bash
+HEADLAMP_CONFIG_ENABLE_WEBSOCKET_MULTIPLEXER=true npm run start
+```
 
 If you want to make a new container image called `headlamp-k8s/headlamp:development`
 you can run it like this:
