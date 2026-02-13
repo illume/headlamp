@@ -42,8 +42,6 @@ function Test-BackendBinary {
     $versionOutput = Get-Content $tempOutput -Raw
   } catch {
     Write-Host "[FAIL] Failed to execute backend: $_" -ForegroundColor Red
-    if (Test-Path $tempOutput) { Remove-Item $tempOutput -Force -ErrorAction SilentlyContinue }
-    if (Test-Path $tempError) { Remove-Item $tempError -Force -ErrorAction SilentlyContinue }
     exit 1
   } finally {
     if (Test-Path $tempOutput) { Remove-Item $tempOutput -Force -ErrorAction SilentlyContinue }
