@@ -20,6 +20,7 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - `autoscaling.spec.ts` - Autoscaling pages (new)
 - `crds.spec.ts` - Custom Resources pages (new)
 - `rbac-other.spec.ts` - RBAC and other resources pages (new)
+- `gateway-api.spec.ts` - Gateway API resources pages (new)
 
 ### App Mode Tests (`/app/e2e-tests/tests/`)
 - `namespaces.spec.ts` - Namespace operations in app mode
@@ -86,13 +87,13 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [ ] e2e-tests: network-policy-details: Add test for network policy details page
 
 ### Gateway API
-- [ ] e2e-tests: gateways-list: Add test for gateways list page
+- [x] e2e-tests: gateways-list: Add test for gateways list page (tested in `gateway-api.spec.ts`)
 - [ ] e2e-tests: gateway-details: Add test for gateway details page
-- [ ] e2e-tests: httproutes-list: Add test for HTTP routes list page
+- [x] e2e-tests: httproutes-list: Add test for HTTP routes list page (tested in `gateway-api.spec.ts`)
 - [ ] e2e-tests: httproute-details: Add test for HTTP route details page
-- [ ] e2e-tests: grpcroutes-list: Add test for gRPC routes list page
+- [x] e2e-tests: grpcroutes-list: Add test for gRPC routes list page (tested in `gateway-api.spec.ts`)
 - [ ] e2e-tests: grpcroute-details: Add test for gRPC route details page
-- [ ] e2e-tests: gateway-classes-list: Add test for gateway classes list page
+- [x] e2e-tests: gateway-classes-list: Add test for gateway classes list page (tested in `gateway-api.spec.ts`)
 - [ ] e2e-tests: gateway-class-details: Add test for gateway class details page
 - [ ] e2e-tests: reference-grants-list: Add test for reference grants list page
 - [ ] e2e-tests: reference-grant-details: Add test for reference grant details page
@@ -141,7 +142,7 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [ ] e2e-tests: lease-details: Add test for lease details page
 - [x] e2e-tests: mutating-webhook-configs-list: Add test for mutating webhook configurations list page (tested in `rbac-other.spec.ts`)
 - [ ] e2e-tests: mutating-webhook-config-details: Add test for mutating webhook configuration details page
-- [ ] e2e-tests: validating-webhook-configs-list: Add test for validating webhook configurations list page
+- [x] e2e-tests: validating-webhook-configs-list: Add test for validating webhook configurations list page (tested in `gateway-api.spec.ts`)
 - [ ] e2e-tests: validating-webhook-config-details: Add test for validating webhook configuration details page
 
 ### Custom Resources
