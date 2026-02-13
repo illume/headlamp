@@ -137,12 +137,11 @@ if ($appPath -and (Test-Path $appPath)) {
       $process = Start-Process -FilePath $appPath -ArgumentList "list-plugins" -PassThru -RedirectStandardOutput $outputFile -RedirectStandardError $errorFile -ErrorAction Stop
     } catch {
       Write-Host "[FAIL] Failed to start app: $_" -ForegroundColor Red
-      throw  # Re-throw to be handled by outer catch
+      throw $_  # Re-throw with original context
     }
     
     # Wait with timeout
     $completed = $process.WaitForExit(30000)  # 30 seconds in milliseconds
-    $exitCode = $null
     
     if ($completed) {
       $exitCode = $process.ExitCode
