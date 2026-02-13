@@ -47,6 +47,7 @@ type HeadlampCFG struct {
 	Insecure              bool
 	EnableHelm            bool
 	EnableDynamicClusters bool
+	EnableWebsocketMultiplexer bool
 	WatchPluginsChanges   bool
 	Port                  uint
 	KubeConfigPath        string
