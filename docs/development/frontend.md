@@ -36,7 +36,7 @@ The frontend supports several environment variables that control features at bui
 
 ### WebSocket Multiplexer
 
-The `REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER` environment variable controls whether the frontend uses a multiplexed WebSocket connection for Kubernetes API watch requests. This improves performance by reusing a single WebSocket connection for multiple watch operations.
+The `REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER` environment variable controls whether the frontend uses a multiplexed WebSocket connection for Kubernetes API watch requests. This is an **experimental feature** that improves performance by reusing a single WebSocket connection for multiple watch operations.
 
 For local development:
 

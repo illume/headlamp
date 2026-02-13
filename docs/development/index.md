@@ -173,12 +173,18 @@ The frontend build process supports several environment variables that configure
 
 #### WebSocket Multiplexer
 
-The WebSocket multiplexer feature improves performance by reusing WebSocket connections for multiple Kubernetes API watch requests. By default, this feature is **disabled** in container builds.
+The WebSocket multiplexer is an **experimental feature** that improves performance by reusing WebSocket connections for multiple Kubernetes API watch requests. By default, this feature is **disabled** in container builds.
 
 To build a container image with the WebSocket multiplexer enabled using the Makefile:
 
 ```bash
 REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER=true make image
+```
+
+Or using npm:
+
+```bash
+REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER=true npm run image:build
 ```
 
 To explicitly disable the WebSocket multiplexer (or use default behavior):
@@ -187,6 +193,8 @@ To explicitly disable the WebSocket multiplexer (or use default behavior):
 REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER=false make image
 # or simply
 make image
+# or with npm
+npm run image:build
 ```
 
 Alternatively, to build directly with Docker:
