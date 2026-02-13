@@ -19,6 +19,7 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - `network.spec.ts` - Network pages (new)
 - `autoscaling.spec.ts` - Autoscaling pages (new)
 - `crds.spec.ts` - Custom Resources pages (new)
+- `rbac-other.spec.ts` - RBAC and other resources pages (new)
 
 ### App Mode Tests (`/app/e2e-tests/tests/`)
 - `namespaces.spec.ts` - Namespace operations in app mode
@@ -119,7 +120,7 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [x] e2e-tests: roles-list: Add test for roles list page (partially tested in `headlamp.spec.ts`)
 - [ ] e2e-tests: role-details: Add test for role details page
 - [ ] e2e-tests: cluster-role-details: Add test for cluster role details page
-- [ ] e2e-tests: role-bindings-list: Add test for role bindings list page
+- [x] e2e-tests: role-bindings-list: Add test for role bindings list page (tested in `rbac-other.spec.ts`)
 - [ ] e2e-tests: role-binding-details: Add test for role binding details page
 - [ ] e2e-tests: cluster-role-binding-details: Add test for cluster role binding details page
 
@@ -132,13 +133,13 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [ ] e2e-tests: pod-disruption-budget-details: Add test for PDB details page
 
 ### Other Resources
-- [ ] e2e-tests: priority-classes-list: Add test for priority classes list page
+- [x] e2e-tests: priority-classes-list: Add test for priority classes list page (tested in `rbac-other.spec.ts`)
 - [ ] e2e-tests: priority-class-details: Add test for priority class details page
-- [ ] e2e-tests: runtime-classes-list: Add test for runtime classes list page
+- [x] e2e-tests: runtime-classes-list: Add test for runtime classes list page (tested in `rbac-other.spec.ts`)
 - [ ] e2e-tests: runtime-class-details: Add test for runtime class details page
-- [ ] e2e-tests: leases-list: Add test for leases list page
+- [x] e2e-tests: leases-list: Add test for leases list page (tested in `rbac-other.spec.ts`)
 - [ ] e2e-tests: lease-details: Add test for lease details page
-- [ ] e2e-tests: mutating-webhook-configs-list: Add test for mutating webhook configurations list page
+- [x] e2e-tests: mutating-webhook-configs-list: Add test for mutating webhook configurations list page (tested in `rbac-other.spec.ts`)
 - [ ] e2e-tests: mutating-webhook-config-details: Add test for mutating webhook configuration details page
 - [ ] e2e-tests: validating-webhook-configs-list: Add test for validating webhook configurations list page
 - [ ] e2e-tests: validating-webhook-config-details: Add test for validating webhook configuration details page
