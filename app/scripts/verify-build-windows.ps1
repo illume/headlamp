@@ -133,10 +133,16 @@ if ($appPath -and (Test-Path $appPath)) {
     $errorFile = Join-Path $tempDir "plugins-error.txt"
     
     # Run with timeout (30 seconds) using Start-Process for process control
-    $process = Start-Process -FilePath $appPath -ArgumentList "list-plugins" -PassThru -RedirectStandardOutput $outputFile -RedirectStandardError $errorFile -ErrorAction Stop
+    try {
+      $process = Start-Process -FilePath $appPath -ArgumentList "list-plugins" -PassThru -RedirectStandardOutput $outputFile -RedirectStandardError $errorFile -ErrorAction Stop
+    } catch {
+      Write-Host "[FAIL] Failed to start app: $_" -ForegroundColor Red
+      throw  # Re-throw to be handled by outer catch
+    }
     
     # Wait with timeout
     $completed = $process.WaitForExit(30000)  # 30 seconds in milliseconds
+    $exitCode = $null
     
     if ($completed) {
       $exitCode = $process.ExitCode
