@@ -33,11 +33,17 @@ import { BASE_WS_URL, useWebSockets } from './webSocket';
 
 /**
  * @returns true if the websocket multiplexer is enabled.
- * This is determined by the backend configuration at runtime.
+ * Checks build-time environment variable first (for backwards compatibility and testing),
+ * then falls back to runtime configuration from backend.
  */
 export function getWebsocketMultiplexerEnabled(): boolean {
+  // Check build-time environment variable first (supports testing and build-time config)
+  if (import.meta.env.REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER === 'true') {
+    return true;
+  }
+  
+  // Fall back to runtime configuration from backend
   const state = store.getState();
-  // Return the backend-provided config value, defaulting to false if not yet loaded
   return state.config.isWebsocketMultiplexerEnabled ?? false;
 }
 

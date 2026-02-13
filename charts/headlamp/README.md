@@ -73,6 +73,7 @@ $ helm install my-headlamp headlamp/headlamp \
 | config.baseURL     | string | `""`                  | Base URL path for Headlamp UI                                             |
 | config.pluginsDir  | string | `"/headlamp/plugins"` | Directory to load Headlamp plugins from                                   |
 | config.enableHelm  | bool   | `false`               | Enable Helm operations like install, upgrade and uninstall of Helm charts |
+| config.enableWebsocketMultiplexer | bool | `false` | Enable experimental WebSocket multiplexer for improved performance |
 | config.extraArgs   | array  | `[]`                  | Additional arguments for Headlamp server                                  |
 | config.tlsCertPath | string | `""`                  | Certificate for serving TLS                                               |
 | config.tlsKeyPath  | string | `""`                  | Key for serving TLS                                                       |
