@@ -41,7 +41,7 @@ export function getWebsocketMultiplexerEnabled(): boolean {
   if (import.meta.env.REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER === 'true') {
     return true;
   }
-  
+
   // Fall back to runtime configuration from backend
   const state = store.getState();
   return state.config.isWebsocketMultiplexerEnabled ?? false;
