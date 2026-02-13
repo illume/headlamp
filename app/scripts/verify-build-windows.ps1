@@ -145,6 +145,8 @@ if ($appPath -and (Test-Path $appPath)) {
     
     if ($completed) {
       # Process completed within timeout - check exit code
+      # Ensure process has fully exited before reading ExitCode
+      $process.WaitForExit()
       $exitCode = $process.ExitCode
       
       # Check if the app ran successfully
