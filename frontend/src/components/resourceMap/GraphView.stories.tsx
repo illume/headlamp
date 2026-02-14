@@ -16,7 +16,7 @@
 
 import { Icon } from '@iconify/react';
 import { http, HttpResponse } from 'msw';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { KubeObject } from '../../lib/k8s/cluster';
 import Deployment from '../../lib/k8s/deployment';
 import Pod from '../../lib/k8s/pod';
@@ -116,7 +116,7 @@ const mockSource: GraphSource = {
 
 export const BasicExample = () => (
   <TestContext>
-    <GraphView height="600px" defaultSources={[mockSource]} />;
+    <GraphView height="600px" defaultSources={[mockSource]} />
   </TestContext>
 );
 BasicExample.args = {};
@@ -250,13 +250,21 @@ export const PerformanceTest2000Pods = () => {
   const [updateInterval, setUpdateInterval] = useState(2000);
 
   // Generate pods on initial load and when updateCounter changes
-  const pods = generateMockPods(2000, updateCounter);
-  const edges = generateMockEdges(pods);
+  // Use useMemo to avoid regenerating on unrelated re-renders
+  const { pods, edges } = useMemo(() => {
+    const pods = generateMockPods(2000, updateCounter);
+    const edges = generateMockEdges(pods);
+    return { pods, edges };
+  }, [updateCounter]);
 
-  const nodes: GraphNode[] = pods.map(pod => ({
-    id: pod.metadata.uid,
-    kubeObject: pod,
-  }));
+  const nodes: GraphNode[] = useMemo(
+    () =>
+      pods.map(pod => ({
+        id: pod.metadata.uid,
+        kubeObject: pod,
+      })),
+    [pods]
+  );
 
   const data = { nodes, edges };
 
@@ -342,13 +350,21 @@ export const PerformanceTest2000Pods = () => {
 export const PerformanceTest500Pods = () => {
   const [updateCounter, setUpdateCounter] = useState(0);
 
-  const pods = generateMockPods(500, updateCounter);
-  const edges = generateMockEdges(pods);
+  // Use useMemo to avoid regenerating on unrelated re-renders
+  const { pods, edges } = useMemo(() => {
+    const pods = generateMockPods(500, updateCounter);
+    const edges = generateMockEdges(pods);
+    return { pods, edges };
+  }, [updateCounter]);
 
-  const nodes: GraphNode[] = pods.map(pod => ({
-    id: pod.metadata.uid,
-    kubeObject: pod,
-  }));
+  const nodes: GraphNode[] = useMemo(
+    () =>
+      pods.map(pod => ({
+        id: pod.metadata.uid,
+        kubeObject: pod,
+      })),
+    [pods]
+  );
 
   const data = { nodes, edges };
 
@@ -620,8 +636,7 @@ function generateMockPodsForDeployments(
               ready: status === 'Running',
               restartCount: Math.floor(Math.random() * 3),
               state: {
-                running:
-                  status === 'Running' ? { startedAt: new Date().toISOString() } : undefined,
+                running: status === 'Running' ? { startedAt: new Date().toISOString() } : undefined,
                 terminated: hasError
                   ? {
                       exitCode: 1,
@@ -681,24 +696,33 @@ function generateResourceEdges(
   });
 
   // Service -> Pod edges (via label selectors)
+  // Use an index for efficient lookup
+  const podsByNamespaceAndLabel = new Map<string, Pod[]>();
+  pods.forEach(pod => {
+    const ns = pod.metadata.namespace || '';
+    const appLabel = pod.metadata.labels?.['app'] || '';
+    const key = `${ns}:${appLabel}`;
+    if (!podsByNamespaceAndLabel.has(key)) {
+      podsByNamespaceAndLabel.set(key, []);
+    }
+    podsByNamespaceAndLabel.get(key)!.push(pod);
+  });
+
   services.forEach(service => {
     const serviceSelector = service.spec.selector;
-    if (serviceSelector) {
-      pods.forEach(pod => {
-        // Check if pod labels match service selector
-        const podLabels = pod.metadata.labels || {};
-        const matches = Object.entries(serviceSelector).every(
-          ([key, value]) => podLabels[key] === value
-        );
+    if (serviceSelector && serviceSelector['app']) {
+      const ns = service.metadata.namespace || '';
+      const appLabel = serviceSelector['app'];
+      const key = `${ns}:${appLabel}`;
+      const matchingPods = podsByNamespaceAndLabel.get(key) || [];
 
-        if (matches && pod.metadata.namespace === service.metadata.namespace) {
-          edges.push({
-            id: `${service.metadata.uid}-${pod.metadata.uid}`,
-            source: service.metadata.uid,
-            target: pod.metadata.uid,
-            label: 'routes to',
-          });
-        }
+      matchingPods.forEach(pod => {
+        edges.push({
+          id: `${service.metadata.uid}-${pod.metadata.uid}`,
+          source: service.metadata.uid,
+          target: pod.metadata.uid,
+          label: 'routes to',
+        });
       });
     }
   });
@@ -723,22 +747,35 @@ export const PerformanceTest5000Pods = () => {
   const deploymentsPerNamespace = 334; // 334 * 5 = 1670 deployments
   const servicesPerNamespace = 100; // 100 * 5 = 500 services
 
-  const deployments: Deployment[] = [];
-  namespaces.forEach(ns => {
-    deployments.push(...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter));
-  });
+  // Use useMemo to avoid regenerating on unrelated re-renders
+  const { pods, replicaSets, deployments, services, edges } = useMemo(() => {
+    const deployments: Deployment[] = [];
+    namespaces.forEach(ns => {
+      deployments.push(...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter));
+    });
 
-  const replicaSets = generateMockReplicaSets(deployments, updateCounter);
-  const pods = generateMockPodsForDeployments(replicaSets, updateCounter);
-  const services = generateMockServices(namespaces, servicesPerNamespace, updateCounter);
+    const replicaSets = generateMockReplicaSets(deployments, updateCounter);
+    const pods = generateMockPodsForDeployments(replicaSets, updateCounter);
+    const services = generateMockServices(namespaces, servicesPerNamespace, updateCounter);
 
-  const allResources: KubeObject[] = [...pods, ...replicaSets, ...deployments, ...services];
-  const edges = generateResourceEdges(pods, replicaSets, deployments, services);
+    const edges = generateResourceEdges(pods, replicaSets, deployments, services);
 
-  const nodes: GraphNode[] = allResources.map(resource => ({
-    id: resource.metadata.uid,
-    kubeObject: resource,
-  }));
+    return { pods, replicaSets, deployments, services, edges };
+  }, [updateCounter, namespaces, deploymentsPerNamespace, servicesPerNamespace]);
+
+  const allResources: KubeObject[] = useMemo(
+    () => [...pods, ...replicaSets, ...deployments, ...services],
+    [pods, replicaSets, deployments, services]
+  );
+
+  const nodes: GraphNode[] = useMemo(
+    () =>
+      allResources.map(resource => ({
+        id: resource.metadata.uid,
+        kubeObject: resource,
+      })),
+    [allResources]
+  );
 
   const data = { nodes, edges };
 

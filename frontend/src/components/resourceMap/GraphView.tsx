@@ -193,7 +193,12 @@ function GraphViewContent({
     }
     const result = filterGraph(nodes, edges, filters);
     const totalTime = performance.now() - perfStart;
-    console.log(`[ResourceMap Performance] filteredGraph useMemo: ${totalTime.toFixed(2)}ms`);
+
+    // Only log to console if debug flag is set
+    if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
+      console.log(`[ResourceMap Performance] filteredGraph useMemo: ${totalTime.toFixed(2)}ms`);
+    }
+
     return result;
   }, [nodes, edges, hasErrorsFilter, namespaces, defaultFilters]);
 
@@ -213,14 +218,18 @@ function GraphViewContent({
     const collapseTime = performance.now() - collapseStart;
 
     const totalTime = performance.now() - perfStart;
-    console.log(
-      `[ResourceMap Performance] grouping useMemo: ${totalTime.toFixed(
-        2
-      )}ms (collapse: ${collapseTime.toFixed(2)}ms)`
-    );
+
+    // Only log to console if debug flag is set
+    if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
+      console.log(
+        `[ResourceMap Performance] grouping useMemo: ${totalTime.toFixed(
+          2
+        )}ms (collapse: ${collapseTime.toFixed(2)}ms)`
+      );
+    }
 
     return { visibleGraph, fullGraph: graph };
-  }, [filteredGraph, groupBy, selectedNodeId, expandAll, allNamespaces]);
+  }, [filteredGraph, groupBy, selectedNodeId, expandAll, allNamespaces, allNodes]);
 
   const viewport = useGraphViewport();
 
@@ -284,11 +293,15 @@ function GraphViewContent({
     const lookupTime = performance.now() - lookupStart;
 
     const totalTime = performance.now() - perfStart;
-    console.log(
-      `[ResourceMap Performance] fullGraphContext useMemo: ${totalTime.toFixed(
-        2
-      )}ms (lookup: ${lookupTime.toFixed(2)}ms, nodes: ${nodes.length}, edges: ${edges.length})`
-    );
+
+    // Only log to console if debug flag is set
+    if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
+      console.log(
+        `[ResourceMap Performance] fullGraphContext useMemo: ${totalTime.toFixed(
+          2
+        )}ms (lookup: ${lookupTime.toFixed(2)}ms, nodes: ${nodes.length}, edges: ${edges.length})`
+      );
+    }
 
     return {
       visibleGraph,
@@ -417,10 +430,12 @@ function GraphViewContent({
             </Box>
           </CustomThemeProvider>
 
-          <PerformanceStats
-            visible={showPerformanceStats}
-            onToggle={() => setShowPerformanceStats(false)}
-          />
+          {showPerformanceStats && (
+            <PerformanceStats
+              visible={showPerformanceStats}
+              onToggle={() => setShowPerformanceStats(false)}
+            />
+          )}
         </Box>
       </FullGraphContext.Provider>
     </GraphViewContext.Provider>

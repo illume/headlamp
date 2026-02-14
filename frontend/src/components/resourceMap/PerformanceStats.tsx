@@ -18,6 +18,7 @@ import { Icon } from '@iconify/react';
 import Box from '@mui/material/Box';
 import Chip from '@mui/material/Chip';
 import Collapse from '@mui/material/Collapse';
+import IconButton from '@mui/material/IconButton';
 import Paper from '@mui/material/Paper';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -65,7 +66,9 @@ export function addPerformanceMetric(metric: PerformanceMetric) {
   }
 
   // Trigger re-render for any listening components
-  window.dispatchEvent(new CustomEvent('performance-metric-added'));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('performance-metric-added'));
+  }
 }
 
 /**
@@ -170,21 +173,24 @@ export function PerformanceStats({ visible = false, onToggle }: PerformanceStats
           <Chip label={`${metrics.length} ${t('operations')}`} size="small" />
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <Icon
-            icon={expanded ? 'mdi:chevron-down' : 'mdi:chevron-up'}
-            width="24"
-            style={{ cursor: 'pointer' }}
-          />
+          <IconButton
+            size="small"
+            aria-label={expanded ? t('Collapse') : t('Expand')}
+            onClick={() => setExpanded(!expanded)}
+          >
+            <Icon icon={expanded ? 'mdi:chevron-down' : 'mdi:chevron-up'} width="24" />
+          </IconButton>
           {onToggle && (
-            <Icon
-              icon="mdi:close"
-              width="24"
-              style={{ cursor: 'pointer' }}
+            <IconButton
+              size="small"
+              aria-label={t('Close')}
               onClick={e => {
                 e.stopPropagation();
                 onToggle();
               }}
-            />
+            >
+              <Icon icon="mdi:close" width="24" />
+            </IconButton>
           )}
         </Box>
       </Box>

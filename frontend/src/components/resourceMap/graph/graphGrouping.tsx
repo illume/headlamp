@@ -62,6 +62,7 @@ const getConnectedComponents = (nodes: GraphNode[], edges: GraphEdge[]): GraphNo
    * Iteratively finds all nodes in the connected component of a given node
    * This function performs a breadth-first search (BFS) to traverse and collect all nodes
    * that are part of the same connected component as the provided node
+   * Uses index-based queue to avoid O(n) shift() operations
    *
    * @param startNode - The starting node for the connected component search
    * @param componentNodes - An array to store the nodes that are part of the connected component
@@ -72,11 +73,12 @@ const getConnectedComponents = (nodes: GraphNode[], edges: GraphEdge[]): GraphNo
     componentEdges: GraphEdge[]
   ) => {
     const queue: GraphNode[] = [startNode];
+    let queueIndex = 0;
     visitedNodes.add(startNode.id);
     componentNodes.push(startNode);
 
-    while (queue.length > 0) {
-      const node = queue.shift()!;
+    while (queueIndex < queue.length) {
+      const node = queue[queueIndex++];
 
       // Outgoing edges
       const outgoing = graphLookup.getOutgoingEdges(node.id);
@@ -144,13 +146,17 @@ const getConnectedComponents = (nodes: GraphNode[], edges: GraphEdge[]): GraphNo
   const componentTime = performance.now() - componentStart;
 
   const totalTime = performance.now() - perfStart;
-  console.log(
-    `[ResourceMap Performance] getConnectedComponents: ${totalTime.toFixed(
-      2
-    )}ms (lookup: ${lookupTime.toFixed(2)}ms, component detection: ${componentTime.toFixed(
-      2
-    )}ms, nodes: ${nodes.length}, components: ${components.length})`
-  );
+
+  // Only log to console if debug flag is set
+  if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
+    console.log(
+      `[ResourceMap Performance] getConnectedComponents: ${totalTime.toFixed(
+        2
+      )}ms (lookup: ${lookupTime.toFixed(2)}ms, component detection: ${componentTime.toFixed(
+        2
+      )}ms, nodes: ${nodes.length}, components: ${components.length})`
+    );
+  }
 
   addPerformanceMetric({
     operation: 'getConnectedComponents',
@@ -380,13 +386,17 @@ export function groupGraph(
   const sortTime = performance.now() - sortStart;
 
   const totalTime = performance.now() - perfStart;
-  console.log(
-    `[ResourceMap Performance] groupGraph: ${totalTime.toFixed(
-      2
-    )}ms (grouping: ${groupingTime.toFixed(2)}ms, sorting: ${sortTime.toFixed(2)}ms, groupBy: ${
-      groupBy || 'none'
-    })`
-  );
+
+  // Only log to console if debug flag is set
+  if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
+    console.log(
+      `[ResourceMap Performance] groupGraph: ${totalTime.toFixed(
+        2
+      )}ms (grouping: ${groupingTime.toFixed(2)}ms, sorting: ${sortTime.toFixed(2)}ms, groupBy: ${
+        groupBy || 'none'
+      })`
+    );
+  }
 
   addPerformanceMetric({
     operation: 'groupGraph',

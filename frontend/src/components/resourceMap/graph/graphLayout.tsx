@@ -233,6 +233,9 @@ function convertToReactFlowGraph(elkGraph: ElkNodeWithData) {
  * @returns
  */
 export const applyGraphLayout = (graph: GraphNode, aspectRatio: number) => {
+  // Guard against missing ELK instance early
+  if (!elk) return Promise.resolve({ nodes: [], edges: [] });
+
   const perfStart = performance.now();
 
   const conversionStart = performance.now();
@@ -242,8 +245,6 @@ export const applyGraphLayout = (graph: GraphNode, aspectRatio: number) => {
   // Count nodes for performance logging
   let nodeCount = 0;
   forEachNode(graph, () => nodeCount++);
-
-  if (!elk) return Promise.resolve({ nodes: [], edges: [] });
 
   const layoutStart = performance.now();
   return elk
@@ -260,13 +261,17 @@ export const applyGraphLayout = (graph: GraphNode, aspectRatio: number) => {
       const conversionBackTime = performance.now() - conversionBackStart;
 
       const totalTime = performance.now() - perfStart;
-      console.log(
-        `[ResourceMap Performance] applyGraphLayout: ${totalTime.toFixed(
-          2
-        )}ms (conversion: ${conversionTime.toFixed(2)}ms, ELK layout: ${layoutTime.toFixed(
-          2
-        )}ms, conversion back: ${conversionBackTime.toFixed(2)}ms, nodes: ${nodeCount})`
-      );
+
+      // Only log to console if debug flag is set
+      if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
+        console.log(
+          `[ResourceMap Performance] applyGraphLayout: ${totalTime.toFixed(
+            2
+          )}ms (conversion: ${conversionTime.toFixed(2)}ms, ELK layout: ${layoutTime.toFixed(
+            2
+          )}ms, conversion back: ${conversionBackTime.toFixed(2)}ms, nodes: ${nodeCount})`
+        );
+      }
 
       addPerformanceMetric({
         operation: 'applyGraphLayout',

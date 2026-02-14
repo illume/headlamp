@@ -6,7 +6,7 @@ This document provides detailed performance data comparing the ResourceMap compo
 
 **Test Environment:**
 - Browser: Chrome (latest)
-- Node.js: v24.13.0
+- Node.js: >=20.11.1 (tested on v24.13.0)
 - Dataset: 2000 pods across 5 namespaces
 
 **Test Scenarios:**

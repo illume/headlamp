@@ -72,7 +72,10 @@ function pushRelatedNodes(startNode: GraphNode) {
     if (outgoing) {
       for (const edge of outgoing) {
         if (!visitedNodes.has(edge.target)) {
-          queue.push(targetNode);
+          const targetNode = graphLookup.getNode(edge.target);
+          if (targetNode) {
+            queue.push(targetNode);
+          }
         }
       }
     }

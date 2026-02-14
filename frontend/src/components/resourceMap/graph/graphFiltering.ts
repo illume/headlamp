@@ -63,13 +63,15 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
   /**
    * Add all the nodes that are related to the given node using iterative approach
    * Related means connected by an edge
+   * Uses index-based queue to avoid O(n) shift() operations
    * @param node - Given node
    */
   function pushRelatedNodes(startNode: GraphNode) {
     const queue: GraphNode[] = [startNode];
+    let queueIndex = 0;
 
-    while (queue.length > 0) {
-      const node = queue.shift()!;
+    while (queueIndex < queue.length) {
+      const node = queue[queueIndex++];
 
       if (visitedNodes.has(node.id)) continue;
       visitedNodes.add(node.id);
@@ -138,13 +140,17 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
   const filterTime = performance.now() - filterStart;
 
   const totalTime = performance.now() - perfStart;
-  console.log(
-    `[ResourceMap Performance] filterGraph: ${totalTime.toFixed(2)}ms (lookup: ${lookupTime.toFixed(
-      2
-    )}ms, filter: ${filterTime.toFixed(2)}ms, nodes: ${nodes.length} -> ${
-      filteredNodes.length
-    }, edges: ${edges.length} -> ${filteredEdges.length})`
-  );
+
+  // Only log to console if debug flag is set
+  if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
+    console.log(
+      `[ResourceMap Performance] filterGraph: ${totalTime.toFixed(
+        2
+      )}ms (lookup: ${lookupTime.toFixed(2)}ms, filter: ${filterTime.toFixed(2)}ms, nodes: ${
+        nodes.length
+      } -> ${filteredNodes.length}, edges: ${edges.length} -> ${filteredEdges.length})`
+    );
+  }
 
   addPerformanceMetric({
     operation: 'filterGraph',
