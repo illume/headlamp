@@ -6,13 +6,14 @@ import { HeadlampPage } from './headlampPage';
 // See: https://dequeuniversity.com/rules/axe/4.10/link-in-text-block
 const ENABLE_A11Y_CHECKS = false;
 
-test.describe('Additional Resources', () => {
-  let headlampPage: HeadlampPage;
+let headlampPage: HeadlampPage;
 
-  test.beforeEach(async ({ page }) => {
-    headlampPage = new HeadlampPage(page);
-    await headlampPage.authenticate();
-  });
+test.beforeEach(async ({ page }) => {
+  headlampPage = new HeadlampPage(page);
+  await headlampPage.navigateToCluster('test', process.env.HEADLAMP_TEST_TOKEN);
+});
+
+test.describe('Additional Resources', () => {
 
   test('roles list page should load', async ({ page }) => {
     await headlampPage.navigateTopage('/c/test/roles');
