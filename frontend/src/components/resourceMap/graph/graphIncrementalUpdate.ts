@@ -114,7 +114,11 @@ export function detectGraphChanges(
   // Only log to console if debug flag is set
   if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
     console.log(
-      `[ResourceMap Performance] detectGraphChanges: ${totalTime.toFixed(2)}ms (${changePercentage.toFixed(1)}% changed: +${addedNodes.size} ~${modifiedNodes.size} -${deletedNodes.size})`
+      `[ResourceMap Performance] detectGraphChanges: ${totalTime.toFixed(
+        2
+      )}ms (${changePercentage.toFixed(1)}% changed: +${addedNodes.size} ~${modifiedNodes.size} -${
+        deletedNodes.size
+      })`
     );
   }
 

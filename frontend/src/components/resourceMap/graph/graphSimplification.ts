@@ -124,7 +124,9 @@ export function simplifyGraph(
   // Only log to console if debug flag is set
   if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
     console.log(
-      `[ResourceMap Performance] simplifyGraph: ${totalTime.toFixed(2)}ms (nodes: ${nodes.length} -> ${topNodes.length}, edges: ${edges.length} -> ${simplifiedEdges.length})`
+      `[ResourceMap Performance] simplifyGraph: ${totalTime.toFixed(2)}ms (nodes: ${
+        nodes.length
+      } -> ${topNodes.length}, edges: ${edges.length} -> ${simplifiedEdges.length})`
     );
   }
 

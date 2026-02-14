@@ -54,10 +54,10 @@ import { applyGraphLayout } from './graph/graphLayout';
 import { GraphLookup, makeGraphLookup } from './graph/graphLookup';
 import { forEachNode, GraphEdge, GraphNode, GraphSource, Relation } from './graph/graphModel';
 import {
-  EXTREME_SIMPLIFIED_NODE_LIMIT,
   EXTREME_SIMPLIFICATION_THRESHOLD,
-  SIMPLIFIED_NODE_LIMIT,
+  EXTREME_SIMPLIFIED_NODE_LIMIT,
   SIMPLIFICATION_THRESHOLD,
+  SIMPLIFIED_NODE_LIMIT,
   simplifyGraph,
 } from './graph/graphSimplification';
 import { GraphControlButton } from './GraphControls';
