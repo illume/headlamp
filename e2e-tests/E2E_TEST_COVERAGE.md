@@ -23,6 +23,7 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - `gateway-api.spec.ts` - Gateway API resources pages (new)
 - `details-settings.spec.ts` - Settings pages and general navigation (new)
 - `resource-details.spec.ts` - Additional resource list pages (new)
+- `additional-resources.spec.ts` - Additional resources and table header validation (new)
 
 ### App Mode Tests (`/app/e2e-tests/tests/`)
 - `namespaces.spec.ts` - Namespace operations in app mode
@@ -123,7 +124,7 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 ### Security & Access Control (RBAC)
 - [ ] e2e-tests: service-accounts-list: Add test for service accounts list page (**SKIPPED** in `details-settings.spec.ts` - CI failures)
 - [ ] e2e-tests: service-account-details: Add test for service account details page
-- [x] e2e-tests: roles-list: Add test for roles list page (partially tested in `headlamp.spec.ts`)
+- [x] e2e-tests: roles-list: Add test for roles list page (tested in `additional-resources.spec.ts`)
 - [ ] e2e-tests: role-details: Add test for role details page
 - [ ] e2e-tests: cluster-roles-list: Add test for cluster roles list page (**SKIPPED** in `resource-details.spec.ts` - CI failures)
 - [ ] e2e-tests: cluster-role-details: Add test for cluster role details page
@@ -178,6 +179,20 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [ ] e2e-tests: load-kubeconfig: Add test for loading kubeconfig (app mode only)
 - [ ] e2e-tests: add-cluster: Add test for adding cluster (app mode only)
 - [x] e2e-tests: cluster-rename: Add test for renaming cluster (tested in `clusterRename.spec.ts` app mode)
+
+### Additional Resources & Validation
+- [x] e2e-tests: api-services-list: Add test for API services list page (tested in `additional-resources.spec.ts`)
+- [ ] e2e-tests: api-service-details: Add test for API service details page
+- [x] e2e-tests: pod-security-policies-list: Add test for pod security policies list page (tested in `additional-resources.spec.ts`)
+- [ ] e2e-tests: pod-security-policy-details: Add test for pod security policy details page
+- [x] e2e-tests: certificate-signing-requests-list: Add test for certificate signing requests list page (tested in `additional-resources.spec.ts`)
+- [ ] e2e-tests: certificate-signing-request-details: Add test for CSR details page
+- [x] e2e-tests: replica-sets-table-headers: Add test for replica sets table headers validation (tested in `additional-resources.spec.ts`)
+- [x] e2e-tests: daemon-sets-table-headers: Add test for daemon sets table headers validation (tested in `additional-resources.spec.ts`)
+- [x] e2e-tests: stateful-sets-table-headers: Add test for stateful sets table headers validation (tested in `additional-resources.spec.ts`)
+- [x] e2e-tests: jobs-table-headers: Add test for jobs table headers validation (tested in `additional-resources.spec.ts`)
+- [x] e2e-tests: cron-jobs-table-headers: Add test for cron jobs table headers validation (tested in `additional-resources.spec.ts`)
+- [x] e2e-tests: deployments-table-headers: Add test for deployments table headers validation (tested in `additional-resources.spec.ts`)
 
 ### Major Features
 
@@ -240,12 +255,12 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 
 ## Summary Statistics
 
-**Total Test Items:** 175+
+**Total Test Items:** 187
 
-**Completed Tests:** 56
-**Remaining Tests:** 119+
+**Completed Tests:** 66
+**Remaining Tests:** 121
 
-**Test Coverage:** ~32% (56/175)
+**Test Coverage:** ~35% (66/187)
 
 ## Testing Guidelines
 
