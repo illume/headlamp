@@ -131,9 +131,7 @@ describe('graphIncrementalUpdate', () => {
       ];
 
       const prevEdges: GraphEdge[] = [];
-      const currentEdges: GraphEdge[] = [
-        { id: 'edge-1', source: 'node-1', target: 'node-2' },
-      ];
+      const currentEdges: GraphEdge[] = [{ id: 'edge-1', source: 'node-1', target: 'node-2' }];
 
       const result = detectGraphChanges(nodes, prevEdges, nodes, currentEdges);
 

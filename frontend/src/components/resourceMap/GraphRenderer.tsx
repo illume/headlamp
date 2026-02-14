@@ -88,6 +88,9 @@ export function GraphRenderer({
       edgeTypes={edgeTypes}
       nodeTypes={nodeTypes}
       nodesFocusable={false}
+      nodesDraggable={false}
+      nodesConnectable={false}
+      elementsSelectable
       onNodeClick={onNodeClick}
       onEdgeClick={onEdgeClick}
       onMove={onMoveStart}
@@ -98,6 +101,12 @@ export function GraphRenderer({
       }}
       minZoom={minZoom}
       maxZoom={maxZoom}
+      fitViewOptions={{
+        duration: 0,
+        padding: 0.1,
+        minZoom,
+        maxZoom,
+      }}
       connectionMode={ConnectionMode.Loose}
     >
       <Background variant={BackgroundVariant.Dots} color={theme.palette.divider} size={2} />
