@@ -15,6 +15,7 @@
  */
 
 import { getStatus } from '../nodes/KubeObjectStatus';
+import { addPerformanceMetric } from '../PerformanceStats';
 import { makeGraphLookup } from './graphLookup';
 import { GraphEdge, GraphNode } from './graphModel';
 
@@ -138,6 +139,20 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
 
   const totalTime = performance.now() - perfStart;
   console.log(`[ResourceMap Performance] filterGraph: ${totalTime.toFixed(2)}ms (lookup: ${lookupTime.toFixed(2)}ms, filter: ${filterTime.toFixed(2)}ms, nodes: ${nodes.length} -> ${filteredNodes.length}, edges: ${edges.length} -> ${filteredEdges.length})`);
+
+  addPerformanceMetric({
+    operation: 'filterGraph',
+    duration: totalTime,
+    timestamp: Date.now(),
+    details: {
+      lookupMs: lookupTime.toFixed(1),
+      filterMs: filterTime.toFixed(1),
+      nodesIn: nodes.length,
+      nodesOut: filteredNodes.length,
+      edgesIn: edges.length,
+      edgesOut: filteredEdges.length,
+    },
+  });
 
   return {
     edges: filteredEdges,

@@ -17,7 +17,6 @@
 import { Icon } from '@iconify/react';
 import { http, HttpResponse } from 'msw';
 import { useEffect, useState } from 'react';
-import { KubeObject } from '../../lib/k8s/cluster';
 import Pod from '../../lib/k8s/pod';
 import { TestContext } from '../../test';
 import { podList } from '../pod/storyHelper';

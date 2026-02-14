@@ -18,6 +18,7 @@ import { Edge, EdgeMarker, Node } from '@xyflow/react';
 import { ElkExtendedEdge, ElkNode } from 'elkjs';
 import ELK, { type ELK as ELKInterface } from 'elkjs/lib/elk-api';
 import elkWorker from 'elkjs/lib/elk-worker.min.js?url';
+import { addPerformanceMetric } from '../PerformanceStats';
 import { forEachNode, getNodeWeight, GraphNode } from './graphModel';
 
 type ElkNodeWithData = Omit<ElkNode, 'edges'> & {
@@ -260,6 +261,20 @@ export const applyGraphLayout = (graph: GraphNode, aspectRatio: number) => {
       
       const totalTime = performance.now() - perfStart;
       console.log(`[ResourceMap Performance] applyGraphLayout: ${totalTime.toFixed(2)}ms (conversion: ${conversionTime.toFixed(2)}ms, ELK layout: ${layoutTime.toFixed(2)}ms, conversion back: ${conversionBackTime.toFixed(2)}ms, nodes: ${nodeCount})`);
+      
+      addPerformanceMetric({
+        operation: 'applyGraphLayout',
+        duration: totalTime,
+        timestamp: Date.now(),
+        details: {
+          conversionMs: conversionTime.toFixed(1),
+          elkLayoutMs: layoutTime.toFixed(1),
+          conversionBackMs: conversionBackTime.toFixed(1),
+          nodes: nodeCount,
+          resultNodes: result.nodes.length,
+          resultEdges: result.edges.length,
+        },
+      });
       
       return result;
     });

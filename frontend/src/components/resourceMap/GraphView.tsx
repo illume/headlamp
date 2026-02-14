@@ -55,6 +55,7 @@ import { GraphLookup, makeGraphLookup } from './graph/graphLookup';
 import { forEachNode, GraphEdge, GraphNode, GraphSource, Relation } from './graph/graphModel';
 import { GraphControlButton } from './GraphControls';
 import { GraphRenderer } from './GraphRenderer';
+import { PerformanceStats } from './PerformanceStats';
 import { SelectionBreadcrumbs } from './SelectionBreadcrumbs';
 import { useGetAllRelations } from './sources/definitions/relations';
 import { useGetAllSources } from './sources/definitions/sources';
@@ -167,6 +168,9 @@ function GraphViewContent({
 
   // Expand all groups state
   const [expandAll, setExpandAll] = useState(false);
+
+  // Performance stats visibility
+  const [showPerformanceStats, setShowPerformanceStats] = useState(false);
 
   // Load source data
   const { nodes, edges, selectedSources, sourceData, isLoading, toggleSelection } = useSources();
@@ -357,6 +361,12 @@ function GraphViewContent({
                     onClick={() => setExpandAll(it => !it)}
                   />
                 )}
+                
+                <ChipToggleButton
+                  label={t('Performance Stats')}
+                  isActive={showPerformanceStats}
+                  onClick={() => setShowPerformanceStats(!showPerformanceStats)}
+                />
               </Box>
 
               <div style={{ flexGrow: 1 }}>
@@ -398,6 +408,11 @@ function GraphViewContent({
               </div>
             </Box>
           </CustomThemeProvider>
+          
+          <PerformanceStats 
+            visible={showPerformanceStats} 
+            onToggle={() => setShowPerformanceStats(false)} 
+          />
         </Box>
       </FullGraphContext.Provider>
     </GraphViewContext.Provider>

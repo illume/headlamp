@@ -18,6 +18,7 @@ import { groupBy } from 'lodash';
 import Namespace from '../../../lib/k8s/namespace';
 import Node from '../../../lib/k8s/node';
 import Pod from '../../../lib/k8s/pod';
+import { addPerformanceMetric } from '../PerformanceStats';
 import { makeGraphLookup } from './graphLookup';
 import { forEachNode, getNodeWeight, GraphEdge, GraphNode } from './graphModel';
 
@@ -144,6 +145,18 @@ const getConnectedComponents = (nodes: GraphNode[], edges: GraphEdge[]): GraphNo
 
   const totalTime = performance.now() - perfStart;
   console.log(`[ResourceMap Performance] getConnectedComponents: ${totalTime.toFixed(2)}ms (lookup: ${lookupTime.toFixed(2)}ms, component detection: ${componentTime.toFixed(2)}ms, nodes: ${nodes.length}, components: ${components.length})`);
+
+  addPerformanceMetric({
+    operation: 'getConnectedComponents',
+    duration: totalTime,
+    timestamp: Date.now(),
+    details: {
+      lookupMs: lookupTime.toFixed(1),
+      componentMs: componentTime.toFixed(1),
+      nodes: nodes.length,
+      components: components.length,
+    },
+  });
 
   return components.map(it => (it.nodes?.length === 1 ? it.nodes[0] : it));
 };
@@ -362,6 +375,19 @@ export function groupGraph(
 
   const totalTime = performance.now() - perfStart;
   console.log(`[ResourceMap Performance] groupGraph: ${totalTime.toFixed(2)}ms (grouping: ${groupingTime.toFixed(2)}ms, sorting: ${sortTime.toFixed(2)}ms, groupBy: ${groupBy || 'none'})`);
+
+  addPerformanceMetric({
+    operation: 'groupGraph',
+    duration: totalTime,
+    timestamp: Date.now(),
+    details: {
+      groupingMs: groupingTime.toFixed(1),
+      sortingMs: sortTime.toFixed(1),
+      groupBy: groupBy || 'none',
+      nodes: nodes.length,
+      edges: edges.length,
+    },
+  });
 
   return root;
 }
