@@ -46,24 +46,39 @@ const CACHE_TTL = 60000; // 1 minute
  * Generate a cache key for the graph
  */
 function getGraphCacheKey(graph: GraphNode, aspectRatio: number): string {
-  // Create a simple hash of the graph structure
+  // Create a comprehensive hash of the graph structure
   let nodeCount = 0;
   let edgeCount = 0;
   const nodeIds: string[] = [];
+  const edgeHashes: string[] = [];
 
   forEachNode(graph, node => {
     nodeCount++;
     nodeIds.push(node.id);
     if (node.edges) {
       edgeCount += node.edges.length;
+      // Include edge structure in hash (source->target pairs)
+      node.edges.forEach(edge => {
+        edgeHashes.push(`${edge.source}->${edge.target}`);
+      });
     }
   });
 
-  // Sort node IDs for consistent hashing
+  // Sort for consistent hashing
   nodeIds.sort();
+  edgeHashes.sort();
 
-  // Create cache key from graph structure and aspect ratio
-  return `${nodeCount}-${edgeCount}-${nodeIds.slice(0, 10).join(',')}-${aspectRatio.toFixed(2)}`;
+  // Use all node IDs and a sample of edges for the hash
+  // For large graphs, use first 50 and last 50 node IDs + first 100 edges
+  const nodeIdSample =
+    nodeIds.length > 100
+      ? [...nodeIds.slice(0, 50), ...nodeIds.slice(-50)].join(',')
+      : nodeIds.join(',');
+  const edgeSample =
+    edgeHashes.length > 100 ? edgeHashes.slice(0, 100).join('|') : edgeHashes.join('|');
+
+  // Create cache key from counts, structure samples, and aspect ratio
+  return `${nodeCount}-${edgeCount}-${nodeIdSample}-${edgeSample}-${aspectRatio.toFixed(2)}`;
 }
 
 /**
@@ -71,18 +86,19 @@ function getGraphCacheKey(graph: GraphNode, aspectRatio: number): string {
  */
 function cleanLayoutCache() {
   const now = Date.now();
-  const entries = Array.from(layoutCache.entries());
 
   // Remove expired entries
-  entries.forEach(([key, value]) => {
+  Array.from(layoutCache.entries()).forEach(([key, value]) => {
     if (now - value.timestamp > CACHE_TTL) {
       layoutCache.delete(key);
     }
   });
 
   // If still too large, remove oldest entries
+  // Re-query entries after expiry cleanup
   if (layoutCache.size > MAX_CACHE_SIZE) {
-    const sortedEntries = entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+    const currentEntries = Array.from(layoutCache.entries());
+    const sortedEntries = currentEntries.sort((a, b) => a[1].timestamp - b[1].timestamp);
     const toRemove = sortedEntries.slice(0, layoutCache.size - MAX_CACHE_SIZE);
     toRemove.forEach(([key]) => layoutCache.delete(key));
   }

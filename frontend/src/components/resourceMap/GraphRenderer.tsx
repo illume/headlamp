@@ -85,11 +85,24 @@ export function GraphRenderer({
   const translateExtent = React.useMemo(() => {
     if (nodes.length === 0) return undefined;
 
-    const minX = Math.min(...nodes.map(n => n.position.x));
-    const minY = Math.min(...nodes.map(n => n.position.y));
-    // Use measured dimensions or fallback to defaults (200x100 is typical node size)
-    const maxX = Math.max(...nodes.map(n => n.position.x + ((n as any).measured?.width || 200)));
-    const maxY = Math.max(...nodes.map(n => n.position.y + ((n as any).measured?.height || 100)));
+    // Use single-pass loop instead of Math.min/max with spread to avoid "too many arguments" error
+    let minX = Infinity;
+    let minY = Infinity;
+    let maxX = -Infinity;
+    let maxY = -Infinity;
+
+    for (const node of nodes) {
+      const x = node.position.x;
+      const y = node.position.y;
+      // Use measured dimensions or fallback to defaults (200x100 is typical node size)
+      const width = (node as any).measured?.width || 200;
+      const height = (node as any).measured?.height || 100;
+
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x + width);
+      maxY = Math.max(maxY, y + height);
+    }
 
     const padding = 500;
     return [

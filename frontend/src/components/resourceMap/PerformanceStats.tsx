@@ -83,7 +83,9 @@ export function getLatestMetrics(count: number = 10): PerformanceMetric[] {
  */
 export function clearPerformanceMetrics() {
   performanceMetrics.length = 0;
-  window.dispatchEvent(new CustomEvent('performance-metric-added'));
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('performance-metric-added'));
+  }
 }
 
 /**

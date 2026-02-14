@@ -403,7 +403,10 @@ function GraphViewContent({
                 {filteredGraph.nodes.length > SIMPLIFICATION_THRESHOLD && (
                   <ChipToggleButton
                     label={t('Simplify ({{count}} most important)', {
-                      count: SIMPLIFIED_NODE_LIMIT,
+                      count:
+                        filteredGraph.nodes.length > EXTREME_SIMPLIFICATION_THRESHOLD
+                          ? EXTREME_SIMPLIFIED_NODE_LIMIT
+                          : SIMPLIFIED_NODE_LIMIT,
                     })}
                     isActive={simplificationEnabled}
                     onClick={() => setSimplificationEnabled(!simplificationEnabled)}

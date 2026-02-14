@@ -1211,8 +1211,8 @@ export const PerformanceTest100000Pods = () => {
           >
             🚨 ULTIMATE STRESS TEST: {allResources.length} resources (~{edges.length} edges).
             <br />
-            Realistic 100k pod cluster: 50 namespaces, 20k Deployments (avg 5 replicas), 3k
-            Services (1 per 33 pods).
+            Realistic 100k pod cluster: 50 namespaces, 20k Deployments (avg 5 replicas), 3k Services
+            (1 per 33 pods).
             <br />
             Extreme simplification reduces to 200 most critical nodes for visualization.
             <br />

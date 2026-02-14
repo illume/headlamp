@@ -68,7 +68,7 @@ export function detectGraphChanges(
     }
   });
 
-  // Find modified nodes (same ID but different resourceVersion or status)
+  // Find modified nodes (same ID but different resourceVersion)
   const modifiedNodes = new Set<string>();
   const prevNodeMap = new Map(prevNodes.map(n => [n.id, n]));
   const currentNodeMap = new Map(currentNodes.map(n => [n.id, n]));
