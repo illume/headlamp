@@ -42,6 +42,7 @@ import K8sNode from '../../lib/k8s/node';
 import { setNamespaceFilter } from '../../redux/filterSlice';
 import { useTypedSelector } from '../../redux/hooks';
 import { NamespacesAutocomplete } from '../common/NamespacesAutocomplete';
+import { PerformanceStats } from './PerformanceStats';
 import { filterGraph, GraphFilter } from './graph/graphFiltering';
 import {
   collapseGraph,
@@ -55,7 +56,11 @@ import { GraphLookup, makeGraphLookup } from './graph/graphLookup';
 import { forEachNode, GraphEdge, GraphNode, GraphSource, Relation } from './graph/graphModel';
 import { GraphControlButton } from './GraphControls';
 import { GraphRenderer } from './GraphRenderer';
-import { PerformanceStats } from './PerformanceStats';
+import {
+  SIMPLIFIED_NODE_LIMIT,
+  SIMPLIFICATION_THRESHOLD,
+  simplifyGraph,
+} from './graph/graphSimplification';
 import { SelectionBreadcrumbs } from './SelectionBreadcrumbs';
 import { useGetAllRelations } from './sources/definitions/relations';
 import { useGetAllSources } from './sources/definitions/sources';
@@ -144,6 +149,9 @@ function GraphViewContent({
   // Filters
   const [hasErrorsFilter, setHasErrorsFilter] = useState(false);
 
+  // Graph simplification state
+  const [simplificationEnabled, setSimplificationEnabled] = useState(true);
+
   // Grouping state
   const [groupBy, setGroupBy] = useQueryParamsState<GroupBy | undefined>('group', 'namespace');
 
@@ -202,12 +210,22 @@ function GraphViewContent({
     return result;
   }, [nodes, edges, hasErrorsFilter, namespaces, defaultFilters]);
 
+  // Simplify graph if it's too large
+  const simplifiedGraph = useMemo(() => {
+    const shouldSimplify =
+      simplificationEnabled && filteredGraph.nodes.length > SIMPLIFICATION_THRESHOLD;
+    return simplifyGraph(filteredGraph.nodes, filteredGraph.edges, {
+      enabled: shouldSimplify,
+      maxNodes: SIMPLIFIED_NODE_LIMIT,
+    });
+  }, [filteredGraph, simplificationEnabled]);
+
   // Group the graph
   const [allNamespaces] = Namespace.useList();
   const [allNodes] = K8sNode.useList();
   const { visibleGraph, fullGraph } = useMemo(() => {
     const perfStart = performance.now();
-    const graph = groupGraph(filteredGraph.nodes, filteredGraph.edges, {
+    const graph = groupGraph(simplifiedGraph.nodes, simplifiedGraph.edges, {
       groupBy,
       namespaces: allNamespaces ?? [],
       k8sNodes: allNodes ?? [],
@@ -229,7 +247,7 @@ function GraphViewContent({
     }
 
     return { visibleGraph, fullGraph: graph };
-  }, [filteredGraph, groupBy, selectedNodeId, expandAll, allNamespaces, allNodes]);
+  }, [simplifiedGraph, groupBy, selectedNodeId, expandAll, allNamespaces, allNodes]);
 
   const viewport = useGraphViewport();
 
@@ -374,6 +392,28 @@ function GraphViewContent({
                   isActive={hasErrorsFilter}
                   onClick={() => setHasErrorsFilter(!hasErrorsFilter)}
                 />
+
+                {filteredGraph.nodes.length > SIMPLIFICATION_THRESHOLD && (
+                  <ChipToggleButton
+                    label={t('Simplify ({{count}} most important)', {
+                      count: SIMPLIFIED_NODE_LIMIT,
+                    })}
+                    isActive={simplificationEnabled}
+                    onClick={() => setSimplificationEnabled(!simplificationEnabled)}
+                  />
+                )}
+
+                {simplifiedGraph.simplified && (
+                  <Chip
+                    label={t('Showing {{shown}} of {{total}} nodes', {
+                      shown: simplifiedGraph.nodes.length,
+                      total: filteredGraph.nodes.length,
+                    })}
+                    size="small"
+                    color="warning"
+                    variant="outlined"
+                  />
+                )}
 
                 {graphSize < 50 && (
                   <ChipToggleButton

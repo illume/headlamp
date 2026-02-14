@@ -32,6 +32,62 @@ type ElkEdgeWithData = ElkExtendedEdge & {
   data: any;
 };
 
+/**
+ * Simple LRU cache for layout results
+ */
+const layoutCache = new Map<
+  string,
+  { result: { nodes: Node[]; edges: Edge[] }; timestamp: number }
+>();
+const MAX_CACHE_SIZE = 10;
+const CACHE_TTL = 60000; // 1 minute
+
+/**
+ * Generate a cache key for the graph
+ */
+function getGraphCacheKey(graph: GraphNode, aspectRatio: number): string {
+  // Create a simple hash of the graph structure
+  let nodeCount = 0;
+  let edgeCount = 0;
+  const nodeIds: string[] = [];
+
+  forEachNode(graph, node => {
+    nodeCount++;
+    nodeIds.push(node.id);
+    if (node.edges) {
+      edgeCount += node.edges.length;
+    }
+  });
+
+  // Sort node IDs for consistent hashing
+  nodeIds.sort();
+
+  // Create cache key from graph structure and aspect ratio
+  return `${nodeCount}-${edgeCount}-${nodeIds.slice(0, 10).join(',')}-${aspectRatio.toFixed(2)}`;
+}
+
+/**
+ * Clean up old cache entries
+ */
+function cleanLayoutCache() {
+  const now = Date.now();
+  const entries = Array.from(layoutCache.entries());
+
+  // Remove expired entries
+  entries.forEach(([key, value]) => {
+    if (now - value.timestamp > CACHE_TTL) {
+      layoutCache.delete(key);
+    }
+  });
+
+  // If still too large, remove oldest entries
+  if (layoutCache.size > MAX_CACHE_SIZE) {
+    const sortedEntries = entries.sort((a, b) => a[1].timestamp - b[1].timestamp);
+    const toRemove = sortedEntries.slice(0, layoutCache.size - MAX_CACHE_SIZE);
+    toRemove.forEach(([key]) => layoutCache.delete(key));
+  }
+}
+
 let elk: ELKInterface | undefined;
 try {
   elk = new ELK({
@@ -226,7 +282,8 @@ function convertToReactFlowGraph(elkGraph: ElkNodeWithData) {
 
 /**
  * Takes a graph and returns a graph with layout applied
- * Layout will set size and poisiton for all the elements
+ * Layout will set size and position for all the elements
+ * Results are cached to avoid re-computing expensive layouts
  *
  * @param graph - root node of the graph
  * @param aspectRatio - aspect ratio of the container
@@ -235,6 +292,32 @@ function convertToReactFlowGraph(elkGraph: ElkNodeWithData) {
 export const applyGraphLayout = (graph: GraphNode, aspectRatio: number) => {
   // Guard against missing ELK instance early
   if (!elk) return Promise.resolve({ nodes: [], edges: [] });
+
+  // Check cache first
+  const cacheKey = getGraphCacheKey(graph, aspectRatio);
+  const cached = layoutCache.get(cacheKey);
+  const now = Date.now();
+
+  if (cached && now - cached.timestamp < CACHE_TTL) {
+    // Only log cache hit if debug flag is set
+    if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
+      console.log(`[ResourceMap Performance] applyGraphLayout: CACHE HIT (key: ${cacheKey})`);
+    }
+
+    addPerformanceMetric({
+      operation: 'applyGraphLayout',
+      duration: 0,
+      timestamp: Date.now(),
+      details: {
+        cacheHit: true,
+        cacheKey: cacheKey.substring(0, 50),
+        resultNodes: cached.result.nodes.length,
+        resultEdges: cached.result.edges.length,
+      },
+    });
+
+    return Promise.resolve(cached.result);
+  }
 
   const perfStart = performance.now();
 
@@ -284,8 +367,14 @@ export const applyGraphLayout = (graph: GraphNode, aspectRatio: number) => {
           nodes: nodeCount,
           resultNodes: result.nodes.length,
           resultEdges: result.edges.length,
+          cacheHit: false,
+          cacheKey: cacheKey.substring(0, 50),
         },
       });
+
+      // Store in cache
+      layoutCache.set(cacheKey, { result, timestamp: now });
+      cleanLayoutCache();
 
       return result;
     });
