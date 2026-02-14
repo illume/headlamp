@@ -25,8 +25,15 @@ export const SIMPLIFICATION_THRESHOLD = 1000;
 
 /**
  * Maximum number of nodes to show when simplifying
+ * Can be adjusted based on graph size
  */
 export const SIMPLIFIED_NODE_LIMIT = 500;
+
+/**
+ * For extreme graphs (>10000 nodes), use even more aggressive simplification
+ */
+export const EXTREME_SIMPLIFICATION_THRESHOLD = 10000;
+export const EXTREME_SIMPLIFIED_NODE_LIMIT = 300;
 
 /**
  * Simplifies a large graph by keeping only the most important nodes
@@ -48,7 +55,13 @@ export function simplifyGraph(
     enabled?: boolean;
   } = {}
 ): { nodes: GraphNode[]; edges: GraphEdge[]; simplified: boolean } {
-  const { maxNodes = SIMPLIFIED_NODE_LIMIT, enabled = true } = options;
+  // Auto-adjust maxNodes for extreme graphs
+  const defaultMaxNodes =
+    nodes.length > EXTREME_SIMPLIFICATION_THRESHOLD
+      ? EXTREME_SIMPLIFIED_NODE_LIMIT
+      : SIMPLIFIED_NODE_LIMIT;
+
+  const { maxNodes = defaultMaxNodes, enabled = true } = options;
 
   // Don't simplify if disabled or graph is small enough
   if (!enabled || nodes.length <= maxNodes) {

@@ -859,3 +859,161 @@ export const PerformanceTest5000Pods = () => {
     </TestContext>
   );
 };
+
+/**
+ * Extreme stress test with 20000 pods and associated resources
+ * Tests incremental update optimization with small data changes
+ */
+export const PerformanceTest20000Pods = () => {
+  const [updateCounter, setUpdateCounter] = useState(0);
+  const [autoUpdate, setAutoUpdate] = useState(false);
+  const [updateInterval, setUpdateInterval] = useState(10000);
+  const [incrementalMode, setIncrementalMode] = useState(true);
+
+  const namespaces = [
+    'default',
+    'kube-system',
+    'monitoring',
+    'production',
+    'staging',
+    'development',
+    'testing',
+    'dataprocessing',
+    'analytics',
+    'frontend-apps',
+  ];
+
+  // Generate an extreme scale cluster with 20000 pods
+  // ~6667 deployments (3 pods each)
+  // ~6667 replicasets (one per deployment)
+  // ~1000 services (100 services per namespace)
+  const deploymentsPerNamespace = 667; // 667 * 10 = 6670 deployments -> ~20010 pods
+  const servicesPerNamespace = 100; // 100 * 10 = 1000 services
+
+  // Use useMemo to avoid regenerating on unrelated re-renders
+  const { pods, replicaSets, deployments, services, edges } = useMemo(() => {
+    const deployments: Deployment[] = [];
+    namespaces.forEach(ns => {
+      deployments.push(...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter));
+    });
+
+    const replicaSets = generateMockReplicaSets(deployments, updateCounter);
+    const pods = generateMockPodsForDeployments(replicaSets, updateCounter);
+    const services = generateMockServices(namespaces, servicesPerNamespace, updateCounter);
+
+    // Note: In incremental mode, the updateCounter in generateMockPodsForDeployments
+    // already simulates incremental changes by updating resource versions.
+    // The 1% change is inherent in the update counter incrementing.
+
+    const edges = generateResourceEdges(pods, replicaSets, deployments, services);
+
+    return { pods, replicaSets, deployments, services, edges };
+  }, [updateCounter, namespaces, deploymentsPerNamespace, servicesPerNamespace, incrementalMode]);
+
+  const allResources: KubeObject[] = useMemo(
+    () => [...pods, ...replicaSets, ...deployments, ...services],
+    [pods, replicaSets, deployments, services]
+  );
+
+  const nodes: GraphNode[] = useMemo(
+    () =>
+      allResources.map(resource => ({
+        id: resource.metadata.uid,
+        kubeObject: resource,
+      })),
+    [allResources]
+  );
+
+  const data = { nodes, edges };
+
+  const extremeScaleSource: GraphSource = {
+    id: 'extreme-scale-cluster',
+    label: `Resources (${allResources.length})`,
+    useData() {
+      return data;
+    },
+  };
+
+  // Auto-update simulation
+  useEffect(() => {
+    if (!autoUpdate) return;
+
+    const interval = setInterval(() => {
+      setUpdateCounter(prev => prev + 1);
+    }, updateInterval);
+
+    return () => clearInterval(interval);
+  }, [autoUpdate, updateInterval]);
+
+  return (
+    <TestContext>
+      <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
+        <div
+          style={{
+            padding: '16px',
+            background: '#f5f5f5',
+            borderBottom: '1px solid #ddd',
+            display: 'flex',
+            gap: '16px',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          <h3 style={{ margin: 0, color: '#d32f2f' }}>
+            ⚠️ Extreme Stress Test: 20000 Pods + Full Cluster
+          </h3>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              onClick={() => setUpdateCounter(prev => prev + 1)}
+              style={{ padding: '8px 16px', cursor: 'pointer' }}
+            >
+              Trigger Update (#{updateCounter})
+            </button>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input
+                type="checkbox"
+                checked={autoUpdate}
+                onChange={e => setAutoUpdate(e.target.checked)}
+              />
+              Auto-update
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Interval:
+              <select
+                value={updateInterval}
+                onChange={e => setUpdateInterval(Number(e.target.value))}
+                disabled={autoUpdate}
+              >
+                <option value={5000}>5s</option>
+                <option value={10000}>10s</option>
+                <option value={30000}>30s</option>
+                <option value={60000}>60s</option>
+              </select>
+            </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <input
+                type="checkbox"
+                checked={incrementalMode}
+                onChange={e => setIncrementalMode(e.target.checked)}
+              />
+              Incremental (1% change per update)
+            </label>
+          </div>
+          <div style={{ fontSize: '14px', color: '#666' }}>
+            Pods: {pods.length} | Deployments: {deployments.length} | ReplicaSets:{' '}
+            {replicaSets.length} | Services: {services.length} | Total Nodes: {nodes.length} |
+            Edges: {edges.length}
+          </div>
+          <div style={{ fontSize: '12px', color: '#d32f2f', fontWeight: 'bold' }}>
+            ⚠️ EXTREME STRESS TEST with {allResources.length} resources (~35k edges). May take
+            30-60s to render initially. Graph simplification will auto-enable. Open Performance
+            Stats to monitor.
+          </div>
+        </div>
+        <div style={{ flex: 1 }}>
+          <GraphView height="100%" defaultSources={[extremeScaleSource]} />
+        </div>
+      </div>
+    </TestContext>
+  );
+};

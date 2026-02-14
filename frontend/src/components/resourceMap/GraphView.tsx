@@ -42,7 +42,6 @@ import K8sNode from '../../lib/k8s/node';
 import { setNamespaceFilter } from '../../redux/filterSlice';
 import { useTypedSelector } from '../../redux/hooks';
 import { NamespacesAutocomplete } from '../common/NamespacesAutocomplete';
-import { PerformanceStats } from './PerformanceStats';
 import { filterGraph, GraphFilter } from './graph/graphFiltering';
 import {
   collapseGraph,
@@ -54,13 +53,16 @@ import {
 import { applyGraphLayout } from './graph/graphLayout';
 import { GraphLookup, makeGraphLookup } from './graph/graphLookup';
 import { forEachNode, GraphEdge, GraphNode, GraphSource, Relation } from './graph/graphModel';
-import { GraphControlButton } from './GraphControls';
-import { GraphRenderer } from './GraphRenderer';
 import {
+  EXTREME_SIMPLIFIED_NODE_LIMIT,
+  EXTREME_SIMPLIFICATION_THRESHOLD,
   SIMPLIFIED_NODE_LIMIT,
   SIMPLIFICATION_THRESHOLD,
   simplifyGraph,
 } from './graph/graphSimplification';
+import { GraphControlButton } from './GraphControls';
+import { GraphRenderer } from './GraphRenderer';
+import { PerformanceStats } from './PerformanceStats';
 import { SelectionBreadcrumbs } from './SelectionBreadcrumbs';
 import { useGetAllRelations } from './sources/definitions/relations';
 import { useGetAllSources } from './sources/definitions/sources';
@@ -214,9 +216,14 @@ function GraphViewContent({
   const simplifiedGraph = useMemo(() => {
     const shouldSimplify =
       simplificationEnabled && filteredGraph.nodes.length > SIMPLIFICATION_THRESHOLD;
+
+    // Use more aggressive simplification for extreme graphs
+    const isExtremeGraph = filteredGraph.nodes.length > EXTREME_SIMPLIFICATION_THRESHOLD;
+    const maxNodes = isExtremeGraph ? EXTREME_SIMPLIFIED_NODE_LIMIT : SIMPLIFIED_NODE_LIMIT;
+
     return simplifyGraph(filteredGraph.nodes, filteredGraph.edges, {
       enabled: shouldSimplify,
-      maxNodes: SIMPLIFIED_NODE_LIMIT,
+      maxNodes,
     });
   }, [filteredGraph, simplificationEnabled]);
 
