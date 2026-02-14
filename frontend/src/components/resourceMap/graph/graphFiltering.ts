@@ -43,6 +43,8 @@ export type GraphFilter =
  * @param filters - List of fitlers to apply
  */
 export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: GraphFilter[]) {
+  const perfStart = performance.now();
+  
   if (filters.length === 0) {
     return { nodes, edges };
   }
@@ -53,41 +55,62 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
   const visitedNodes = new Set();
   const visitedEdges = new Set();
 
+  const lookupStart = performance.now();
   const graphLookup = makeGraphLookup(nodes, edges);
+  const lookupTime = performance.now() - lookupStart;
 
   /**
-   * Add all the nodes that are related to the given node
+   * Add all the nodes that are related to the given node using iterative approach
    * Related means connected by an edge
    * @param node - Given node
    */
-  function pushRelatedNodes(node: GraphNode) {
-    if (visitedNodes.has(node.id)) return;
-    visitedNodes.add(node.id);
-    filteredNodes.push(node);
+  function pushRelatedNodes(startNode: GraphNode) {
+    const queue: GraphNode[] = [startNode];
+    
+    while (queue.length > 0) {
+      const node = queue.shift()!;
+      
+      if (visitedNodes.has(node.id)) continue;
+      visitedNodes.add(node.id);
+      filteredNodes.push(node);
 
-    graphLookup.getOutgoingEdges(node.id)?.forEach(edge => {
-      const targetNode = graphLookup.getNode(edge.target);
-      if (targetNode && !visitedNodes.has(targetNode.id)) {
-        if (!visitedEdges.has(edge.id)) {
-          visitedEdges.add(edge.id);
-          filteredEdges.push(edge);
+      // Process outgoing edges
+      const outgoing = graphLookup.getOutgoingEdges(node.id);
+      if (outgoing) {
+        for (const edge of outgoing) {
+          if (!visitedEdges.has(edge.id)) {
+            visitedEdges.add(edge.id);
+            filteredEdges.push(edge);
+          }
+          if (!visitedNodes.has(edge.target)) {
+            const targetNode = graphLookup.getNode(edge.target);
+            if (targetNode) {
+              queue.push(targetNode);
+            }
+          }
         }
-        pushRelatedNodes(targetNode);
       }
-    });
 
-    graphLookup.getIncomingEdges(node.id)?.forEach(edge => {
-      const sourceNode = graphLookup.getNode(edge.source);
-      if (sourceNode && !visitedNodes.has(sourceNode.id)) {
-        if (!visitedEdges.has(edge.id)) {
-          visitedEdges.add(edge.id);
-          filteredEdges.push(edge);
+      // Process incoming edges
+      const incoming = graphLookup.getIncomingEdges(node.id);
+      if (incoming) {
+        for (const edge of incoming) {
+          if (!visitedEdges.has(edge.id)) {
+            visitedEdges.add(edge.id);
+            filteredEdges.push(edge);
+          }
+          if (!visitedNodes.has(edge.source)) {
+            const sourceNode = graphLookup.getNode(edge.source);
+            if (sourceNode) {
+              queue.push(sourceNode);
+            }
+          }
         }
-        pushRelatedNodes(sourceNode);
       }
-    });
+    }
   }
 
+  const filterStart = performance.now();
   nodes.forEach(node => {
     let keep = true;
 
@@ -111,6 +134,10 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
       pushRelatedNodes(node);
     }
   });
+  const filterTime = performance.now() - filterStart;
+
+  const totalTime = performance.now() - perfStart;
+  console.log(`[ResourceMap Performance] filterGraph: ${totalTime.toFixed(2)}ms (lookup: ${lookupTime.toFixed(2)}ms, filter: ${filterTime.toFixed(2)}ms, nodes: ${nodes.length} -> ${filteredNodes.length}, edges: ${edges.length} -> ${filteredEdges.length})`);
 
   return {
     edges: filteredEdges,

@@ -232,15 +232,35 @@ function convertToReactFlowGraph(elkGraph: ElkNodeWithData) {
  * @returns
  */
 export const applyGraphLayout = (graph: GraphNode, aspectRatio: number) => {
+  const perfStart = performance.now();
+  
+  const conversionStart = performance.now();
   const elkGraph = convertToElkNode(graph, aspectRatio);
+  const conversionTime = performance.now() - conversionStart;
+  
+  // Count nodes for performance logging
+  let nodeCount = 0;
+  forEachNode(graph, () => nodeCount++);
 
   if (!elk) return Promise.resolve({ nodes: [], edges: [] });
 
+  const layoutStart = performance.now();
   return elk
     .layout(elkGraph, {
       layoutOptions: {
         'elk.aspectRatio': String(aspectRatio),
       },
     })
-    .then(elkGraph => convertToReactFlowGraph(elkGraph as ElkNodeWithData));
+    .then(elkGraph => {
+      const layoutTime = performance.now() - layoutStart;
+      
+      const conversionBackStart = performance.now();
+      const result = convertToReactFlowGraph(elkGraph as ElkNodeWithData);
+      const conversionBackTime = performance.now() - conversionBackStart;
+      
+      const totalTime = performance.now() - perfStart;
+      console.log(`[ResourceMap Performance] applyGraphLayout: ${totalTime.toFixed(2)}ms (conversion: ${conversionTime.toFixed(2)}ms, ELK layout: ${layoutTime.toFixed(2)}ms, conversion back: ${conversionBackTime.toFixed(2)}ms, nodes: ${nodeCount})`);
+      
+      return result;
+    });
 };

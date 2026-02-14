@@ -179,6 +179,7 @@ function GraphViewContent({
 
   // Apply filters
   const filteredGraph = useMemo(() => {
+    const perfStart = performance.now();
     const filters = [...defaultFilters];
     if (hasErrorsFilter) {
       filters.push({ type: 'hasErrors' });
@@ -186,20 +187,29 @@ function GraphViewContent({
     if (namespaces?.size > 0) {
       filters.push({ type: 'namespace', namespaces });
     }
-    return filterGraph(nodes, edges, filters);
+    const result = filterGraph(nodes, edges, filters);
+    const totalTime = performance.now() - perfStart;
+    console.log(`[ResourceMap Performance] filteredGraph useMemo: ${totalTime.toFixed(2)}ms`);
+    return result;
   }, [nodes, edges, hasErrorsFilter, namespaces, defaultFilters]);
 
   // Group the graph
   const [allNamespaces] = Namespace.useList();
   const [allNodes] = K8sNode.useList();
   const { visibleGraph, fullGraph } = useMemo(() => {
+    const perfStart = performance.now();
     const graph = groupGraph(filteredGraph.nodes, filteredGraph.edges, {
       groupBy,
       namespaces: allNamespaces ?? [],
       k8sNodes: allNodes ?? [],
     });
 
+    const collapseStart = performance.now();
     const visibleGraph = collapseGraph(graph, { selectedNodeId, expandAll });
+    const collapseTime = performance.now() - collapseStart;
+
+    const totalTime = performance.now() - perfStart;
+    console.log(`[ResourceMap Performance] grouping useMemo: ${totalTime.toFixed(2)}ms (collapse: ${collapseTime.toFixed(2)}ms)`);
 
     return { visibleGraph, fullGraph: graph };
   }, [filteredGraph, groupBy, selectedNodeId, expandAll, allNamespaces]);
@@ -248,6 +258,7 @@ function GraphViewContent({
   );
 
   const fullGraphContext = useMemo(() => {
+    const perfStart = performance.now();
     let nodes: GraphNode[] = [];
     let edges: GraphEdge[] = [];
 
@@ -260,9 +271,16 @@ function GraphViewContent({
       }
     });
 
+    const lookupStart = performance.now();
+    const lookup = makeGraphLookup(nodes, edges);
+    const lookupTime = performance.now() - lookupStart;
+
+    const totalTime = performance.now() - perfStart;
+    console.log(`[ResourceMap Performance] fullGraphContext useMemo: ${totalTime.toFixed(2)}ms (lookup: ${lookupTime.toFixed(2)}ms, nodes: ${nodes.length}, edges: ${edges.length})`);
+
     return {
       visibleGraph,
-      lookup: makeGraphLookup(nodes, edges),
+      lookup,
     };
   }, [visibleGraph]);
 
