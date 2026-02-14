@@ -44,13 +44,9 @@ test.describe('Resource Details Pages', () => {
   test('persistent volume claims list has correct table headers', async ({ page }) => {
     await headlampPage.navigateTopage('/c/test/storage/persistentvolumeclaims');
     
-    const content = await page.content();
-    
     // Check for table headers
-    if (content.includes('Name') && content.includes('Namespace')) {
-      await headlampPage.checkPageContent('Name');
-      await headlampPage.checkPageContent('Namespace');
-    }
+    await headlampPage.checkPageContent('Name');
+    await headlampPage.checkPageContent('Namespace');
 
     if (ENABLE_A11Y_CHECKS) {
       await headlampPage.a11y();
