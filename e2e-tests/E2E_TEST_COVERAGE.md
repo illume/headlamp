@@ -23,7 +23,6 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - `gateway-api.spec.ts` - Gateway API resources pages (new)
 - `details-settings.spec.ts` - Settings pages and general navigation (new)
 - `resource-details.spec.ts` - Additional resource list pages (new)
-- `resource-detail-pages.spec.ts` - Resource detail pages for various workloads and resources (new)
 
 ### App Mode Tests (`/app/e2e-tests/tests/`)
 - `namespaces.spec.ts` - Namespace operations in app mode
@@ -65,18 +64,18 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [x] e2e-tests: pod-logs: Add test for pod logs view with search hotkey (tested in `podsPage.spec.ts`)
 - [ ] e2e-tests: pod-shell: Add test for pod shell/exec functionality
 - [x] e2e-tests: deployments-list: Add test for deployments list page (tested in `workloads.spec.ts`)
-- [x] e2e-tests: deployment-details: Add test for deployment details page (tested in `resource-detail-pages.spec.ts`)
+- [ ] e2e-tests: deployment-details: Add test for deployment details page
 - [ ] e2e-tests: deployment-scale: Add test for deployment scaling
 - [x] e2e-tests: daemonsets-list: Add test for daemonsets list page (tested in `workloads.spec.ts`)
-- [x] e2e-tests: daemonset-details: Add test for daemonset details page (tested in `resource-detail-pages.spec.ts`)
+- [ ] e2e-tests: daemonset-details: Add test for daemonset details page
 - [x] e2e-tests: statefulsets-list: Add test for statefulsets list page (tested in `workloads.spec.ts`)
-- [x] e2e-tests: statefulset-details: Add test for statefulset details page (tested in `resource-detail-pages.spec.ts`)
+- [ ] e2e-tests: statefulset-details: Add test for statefulset details page
 - [x] e2e-tests: replicasets-list: Add test for replicasets list page (tested in `workloads.spec.ts`)
-- [x] e2e-tests: replicaset-details: Add test for replicaset details page (tested in `resource-detail-pages.spec.ts`)
+- [ ] e2e-tests: replicaset-details: Add test for replicaset details page
 - [x] e2e-tests: jobs-list: Add test for jobs list page (tested in `workloads.spec.ts`)
-- [x] e2e-tests: job-details: Add test for job details page (tested in `resource-detail-pages.spec.ts`)
+- [ ] e2e-tests: job-details: Add test for job details page
 - [x] e2e-tests: cronjobs-list: Add test for cronjobs list page (tested in `workloads.spec.ts`)
-- [x] e2e-tests: cronjob-details: Add test for cronjob details page (tested in `resource-detail-pages.spec.ts`)
+- [ ] e2e-tests: cronjob-details: Add test for cronjob details page
 
 ### Network
 - [x] e2e-tests: services-list: Add test for services list page (tested in `headlamp.spec.ts`)
@@ -86,11 +85,11 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [ ] e2e-tests: endpointslices-list: Add test for endpoint slices list page (**SKIPPED** in `network.spec.ts` - CI timeout issues)
 - [ ] e2e-tests: endpointslice-details: Add test for endpoint slice details page
 - [x] e2e-tests: ingresses-list: Add test for ingresses list page (tested in `network.spec.ts`)
-- [x] e2e-tests: ingress-details: Add test for ingress details page (tested in `resource-detail-pages.spec.ts`)
+- [ ] e2e-tests: ingress-details: Add test for ingress details page
 - [ ] e2e-tests: ingress-classes-list: Add test for ingress classes list page (**SKIPPED** in `network.spec.ts` - CI timeout issues)
 - [ ] e2e-tests: ingress-class-details: Add test for ingress class details page
 - [x] e2e-tests: network-policies-list: Add test for network policies list page (tested in `network.spec.ts`)
-- [x] e2e-tests: network-policy-details: Add test for network policy details page (tested in `resource-detail-pages.spec.ts`)
+- [ ] e2e-tests: network-policy-details: Add test for network policy details page
 
 ### Gateway API
 - [ ] e2e-tests: gateways-list: Add test for gateways list page (**SKIPPED** in `gateway-api.spec.ts` - CI failures)
@@ -135,9 +134,9 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 
 ### Autoscaling
 - [x] e2e-tests: horizontal-pod-autoscalers-list: Add test for HPAs list page (tested in `autoscaling.spec.ts`)
-- [x] e2e-tests: horizontal-pod-autoscaler-details: Add test for HPA details page (tested in `resource-detail-pages.spec.ts`)
+- [ ] e2e-tests: horizontal-pod-autoscaler-details: Add test for HPA details page
 - [x] e2e-tests: vertical-pod-autoscalers-list: Add test for VPAs list page (tested in `autoscaling.spec.ts`)
-- [x] e2e-tests: vertical-pod-autoscaler-details: Add test for VPA details page (tested in `resource-detail-pages.spec.ts`)
+- [ ] e2e-tests: vertical-pod-autoscaler-details: Add test for VPA details page
 - [x] e2e-tests: pod-disruption-budgets-list: Add test for PDBs list page (tested in `autoscaling.spec.ts`)
 - [ ] e2e-tests: pod-disruption-budget-details: Add test for PDB details page
 
