@@ -21,6 +21,8 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - `crds.spec.ts` - Custom Resources pages (new)
 - `rbac-other.spec.ts` - RBAC and other resources pages (new)
 - `gateway-api.spec.ts` - Gateway API resources pages (new)
+- `details-settings.spec.ts` - Settings pages and general navigation (new)
+- `resource-details.spec.ts` - Additional resource list pages (new)
 
 ### App Mode Tests (`/app/e2e-tests/tests/`)
 - `namespaces.spec.ts` - Namespace operations in app mode
@@ -32,9 +34,9 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [x] e2e-tests: home-page: Add test for cluster chooser (tested in `multiCluster.spec.ts`)
 - [x] e2e-tests: cluster-overview: Add test for cluster overview page (tested in `headlamp.spec.ts`)
 - [x] e2e-tests: 404-page: Add test for 404 not found page (tested in `headlamp.spec.ts`)
-- [ ] e2e-tests: advanced-search: Add test for advanced search functionality
+- [x] e2e-tests: advanced-search: Add test for advanced search functionality (tested in `details-settings.spec.ts`)
 - [ ] e2e-tests: global-search: Add test for global search with hotkey (partially tested in `headlamp.spec.ts`)
-- [ ] e2e-tests: activity-view: Add test for activity/events view panel
+- [x] e2e-tests: events-list: Add test for events list page (tested in `resource-details.spec.ts`)
 
 ### Cluster Resources
 - [x] e2e-tests: namespaces-list: Add test for namespaces list page (tested in `namespaces.spec.ts`)
@@ -116,13 +118,15 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [ ] e2e-tests: limit-range-details: Add test for limit range details page
 
 ### Security & Access Control (RBAC)
-- [x] e2e-tests: service-accounts-list: Add test for service accounts list page (partially tested in `headlamp.spec.ts`)
+- [x] e2e-tests: service-accounts-list: Add test for service accounts list page (tested in `details-settings.spec.ts`)
 - [ ] e2e-tests: service-account-details: Add test for service account details page
 - [x] e2e-tests: roles-list: Add test for roles list page (partially tested in `headlamp.spec.ts`)
 - [ ] e2e-tests: role-details: Add test for role details page
+- [x] e2e-tests: cluster-roles-list: Add test for cluster roles list page (tested in `resource-details.spec.ts`)
 - [ ] e2e-tests: cluster-role-details: Add test for cluster role details page
 - [x] e2e-tests: role-bindings-list: Add test for role bindings list page (tested in `rbac-other.spec.ts`)
 - [ ] e2e-tests: role-binding-details: Add test for role binding details page
+- [x] e2e-tests: cluster-role-bindings-list: Add test for cluster role bindings list page (tested in `resource-details.spec.ts`)
 - [ ] e2e-tests: cluster-role-binding-details: Add test for cluster role binding details page
 
 ### Autoscaling
@@ -153,9 +157,9 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [ ] e2e-tests: cr-instances-list: Add test for CR instances list page (**SKIPPED** in `crds.spec.ts` - CI timeout issues)
 
 ### Settings & Configuration
-- [ ] e2e-tests: settings-general: Add test for general settings page
+- [x] e2e-tests: settings-general: Add test for general settings page (tested in `details-settings.spec.ts`)
 - [x] e2e-tests: settings-cluster: Add test for cluster settings page (tested in `clusterRename.spec.ts` app mode)
-- [ ] e2e-tests: settings-clusters: Add test for clusters settings page
+- [x] e2e-tests: settings-clusters: Add test for clusters settings page (tested in `details-settings.spec.ts`)
 - [x] e2e-tests: settings-plugins: Add test for plugin settings page (tested in `pluginSetting.spec.ts`)
 - [x] e2e-tests: settings-plugin-details: Add test for plugin details page (tested in `pluginSetting.spec.ts`)
 
@@ -175,7 +179,7 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 ### Major Features
 
 #### Resource Map / Visualization
-- [ ] e2e-tests: resource-map-view: Add test for resource map/graph visualization page
+- [x] e2e-tests: resource-map-view: Add test for resource map/graph visualization page (tested in `details-settings.spec.ts`)
 - [ ] e2e-tests: resource-map-navigation: Add test for navigating resources in map view
 - [ ] e2e-tests: resource-map-filters: Add test for filtering resources in map view
 - [ ] e2e-tests: resource-map-zoom: Add test for zoom and pan controls in map view
@@ -193,7 +197,7 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [ ] e2e-tests: activity-details: Add test for viewing event details
 
 #### Notifications
-- [ ] e2e-tests: notifications-list: Add test for notifications list page
+- [x] e2e-tests: notifications-list: Add test for notifications list page (tested in `details-settings.spec.ts`)
 - [ ] e2e-tests: notifications-read: Add test for marking notifications as read
 - [ ] e2e-tests: notifications-clear: Add test for clearing notifications
 
@@ -235,10 +239,10 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 
 **Total Test Items:** 175+
 
-**Completed Tests:** 45
-**Remaining Tests:** 130+
+**Completed Tests:** 56
+**Remaining Tests:** 119+
 
-**Test Coverage:** ~26% (45/175)
+**Test Coverage:** ~32% (56/175)
 
 ## Testing Guidelines
 
