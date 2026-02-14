@@ -166,7 +166,13 @@ Expected performance with optimizations:
 
 ## Console Logging
 
-All performance operations log to the browser console with the format:
+All performance operations can log to the browser console with detailed metrics. To enable console logging, set the debug flag in the browser console:
+
+```javascript
+window.__HEADLAMP_DEBUG_PERFORMANCE__ = true;
+```
+
+With the debug flag enabled, you'll see output like:
 
 ```
 [ResourceMap Performance] filterGraph: 45.23ms (lookup: 12.34ms, filter: 32.89ms, nodes: 2000 -> 1500, edges: 3000 -> 2200)
@@ -174,6 +180,8 @@ All performance operations log to the browser console with the format:
 [ResourceMap Performance] groupGraph: 134.56ms (grouping: 98.23ms, sorting: 36.33ms, groupBy: namespace)
 [ResourceMap Performance] applyGraphLayout: 876.54ms (conversion: 45.23ms, ELK layout: 789.12ms, conversion back: 42.19ms, nodes: 150)
 ```
+
+**Note:** Console logging is disabled by default in production to avoid performance overhead and console spam. The Performance Stats UI panel is always available and doesn't require the debug flag.
 
 ## API for Performance Tracking
 
