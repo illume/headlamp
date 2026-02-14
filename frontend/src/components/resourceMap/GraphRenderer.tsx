@@ -81,6 +81,23 @@ export function GraphRenderer({
   const { t } = useTranslation();
   const theme = useTheme();
 
+  // Calculate bounds to prevent infinite panning (prevents rendering glitches)
+  const translateExtent = React.useMemo(() => {
+    if (nodes.length === 0) return undefined;
+
+    const minX = Math.min(...nodes.map(n => n.position.x));
+    const minY = Math.min(...nodes.map(n => n.position.y));
+    // Use measured dimensions or fallback to defaults (200x100 is typical node size)
+    const maxX = Math.max(...nodes.map(n => n.position.x + ((n as any).measured?.width || 200)));
+    const maxY = Math.max(...nodes.map(n => n.position.y + ((n as any).measured?.height || 100)));
+
+    const padding = 500;
+    return [
+      [minX - padding, minY - padding],
+      [maxX + padding, maxY + padding],
+    ] as [[number, number], [number, number]];
+  }, [nodes]);
+
   return (
     <ReactFlow
       nodes={isLoading ? emptyArray : nodes}
@@ -107,6 +124,10 @@ export function GraphRenderer({
         minZoom,
         maxZoom,
       }}
+      translateExtent={translateExtent}
+      deleteKeyCode={null}
+      selectionKeyCode={null}
+      multiSelectionKeyCode={null}
       connectionMode={ConnectionMode.Loose}
     >
       <Background variant={BackgroundVariant.Dots} color={theme.palette.divider} size={2} />
