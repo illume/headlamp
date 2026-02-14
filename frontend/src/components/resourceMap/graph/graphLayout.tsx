@@ -234,11 +234,11 @@ function convertToReactFlowGraph(elkGraph: ElkNodeWithData) {
  */
 export const applyGraphLayout = (graph: GraphNode, aspectRatio: number) => {
   const perfStart = performance.now();
-  
+
   const conversionStart = performance.now();
   const elkGraph = convertToElkNode(graph, aspectRatio);
   const conversionTime = performance.now() - conversionStart;
-  
+
   // Count nodes for performance logging
   let nodeCount = 0;
   forEachNode(graph, () => nodeCount++);
@@ -254,14 +254,20 @@ export const applyGraphLayout = (graph: GraphNode, aspectRatio: number) => {
     })
     .then(elkGraph => {
       const layoutTime = performance.now() - layoutStart;
-      
+
       const conversionBackStart = performance.now();
       const result = convertToReactFlowGraph(elkGraph as ElkNodeWithData);
       const conversionBackTime = performance.now() - conversionBackStart;
-      
+
       const totalTime = performance.now() - perfStart;
-      console.log(`[ResourceMap Performance] applyGraphLayout: ${totalTime.toFixed(2)}ms (conversion: ${conversionTime.toFixed(2)}ms, ELK layout: ${layoutTime.toFixed(2)}ms, conversion back: ${conversionBackTime.toFixed(2)}ms, nodes: ${nodeCount})`);
-      
+      console.log(
+        `[ResourceMap Performance] applyGraphLayout: ${totalTime.toFixed(
+          2
+        )}ms (conversion: ${conversionTime.toFixed(2)}ms, ELK layout: ${layoutTime.toFixed(
+          2
+        )}ms, conversion back: ${conversionBackTime.toFixed(2)}ms, nodes: ${nodeCount})`
+      );
+
       addPerformanceMetric({
         operation: 'applyGraphLayout',
         duration: totalTime,
@@ -275,7 +281,7 @@ export const applyGraphLayout = (graph: GraphNode, aspectRatio: number) => {
           resultEdges: result.edges.length,
         },
       });
-      
+
       return result;
     });
 };

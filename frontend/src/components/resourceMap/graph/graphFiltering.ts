@@ -45,7 +45,7 @@ export type GraphFilter =
  */
 export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: GraphFilter[]) {
   const perfStart = performance.now();
-  
+
   if (filters.length === 0) {
     return { nodes, edges };
   }
@@ -67,10 +67,10 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
    */
   function pushRelatedNodes(startNode: GraphNode) {
     const queue: GraphNode[] = [startNode];
-    
+
     while (queue.length > 0) {
       const node = queue.shift()!;
-      
+
       if (visitedNodes.has(node.id)) continue;
       visitedNodes.add(node.id);
       filteredNodes.push(node);
@@ -138,7 +138,13 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
   const filterTime = performance.now() - filterStart;
 
   const totalTime = performance.now() - perfStart;
-  console.log(`[ResourceMap Performance] filterGraph: ${totalTime.toFixed(2)}ms (lookup: ${lookupTime.toFixed(2)}ms, filter: ${filterTime.toFixed(2)}ms, nodes: ${nodes.length} -> ${filteredNodes.length}, edges: ${edges.length} -> ${filteredEdges.length})`);
+  console.log(
+    `[ResourceMap Performance] filterGraph: ${totalTime.toFixed(2)}ms (lookup: ${lookupTime.toFixed(
+      2
+    )}ms, filter: ${filterTime.toFixed(2)}ms, nodes: ${nodes.length} -> ${
+      filteredNodes.length
+    }, edges: ${edges.length} -> ${filteredEdges.length})`
+  );
 
   addPerformanceMetric({
     operation: 'filterGraph',

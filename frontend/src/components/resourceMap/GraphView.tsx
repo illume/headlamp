@@ -213,7 +213,11 @@ function GraphViewContent({
     const collapseTime = performance.now() - collapseStart;
 
     const totalTime = performance.now() - perfStart;
-    console.log(`[ResourceMap Performance] grouping useMemo: ${totalTime.toFixed(2)}ms (collapse: ${collapseTime.toFixed(2)}ms)`);
+    console.log(
+      `[ResourceMap Performance] grouping useMemo: ${totalTime.toFixed(
+        2
+      )}ms (collapse: ${collapseTime.toFixed(2)}ms)`
+    );
 
     return { visibleGraph, fullGraph: graph };
   }, [filteredGraph, groupBy, selectedNodeId, expandAll, allNamespaces]);
@@ -280,7 +284,11 @@ function GraphViewContent({
     const lookupTime = performance.now() - lookupStart;
 
     const totalTime = performance.now() - perfStart;
-    console.log(`[ResourceMap Performance] fullGraphContext useMemo: ${totalTime.toFixed(2)}ms (lookup: ${lookupTime.toFixed(2)}ms, nodes: ${nodes.length}, edges: ${edges.length})`);
+    console.log(
+      `[ResourceMap Performance] fullGraphContext useMemo: ${totalTime.toFixed(
+        2
+      )}ms (lookup: ${lookupTime.toFixed(2)}ms, nodes: ${nodes.length}, edges: ${edges.length})`
+    );
 
     return {
       visibleGraph,
@@ -361,7 +369,7 @@ function GraphViewContent({
                     onClick={() => setExpandAll(it => !it)}
                   />
                 )}
-                
+
                 <ChipToggleButton
                   label={t('Performance Stats')}
                   isActive={showPerformanceStats}
@@ -408,10 +416,10 @@ function GraphViewContent({
               </div>
             </Box>
           </CustomThemeProvider>
-          
-          <PerformanceStats 
-            visible={showPerformanceStats} 
-            onToggle={() => setShowPerformanceStats(false)} 
+
+          <PerformanceStats
+            visible={showPerformanceStats}
+            onToggle={() => setShowPerformanceStats(false)}
           />
         </Box>
       </FullGraphContext.Provider>

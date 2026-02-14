@@ -44,22 +44,26 @@ interface PerformanceStatsProps {
 }
 
 /**
+ * Maximum number of performance metrics to keep in memory
+ */
+const MAX_METRICS = 100;
+
+/**
  * Global performance metrics store
  */
 const performanceMetrics: PerformanceMetric[] = [];
-const maxMetrics = 100; // Keep last 100 metrics
 
 /**
  * Add a performance metric to the global store
  */
 export function addPerformanceMetric(metric: PerformanceMetric) {
   performanceMetrics.push(metric);
-  
-  // Keep only the last maxMetrics
-  if (performanceMetrics.length > maxMetrics) {
+
+  // Keep only the last MAX_METRICS entries
+  if (performanceMetrics.length > MAX_METRICS) {
     performanceMetrics.shift();
   }
-  
+
   // Trigger re-render for any listening components
   window.dispatchEvent(new CustomEvent('performance-metric-added'));
 }
@@ -105,21 +109,18 @@ export function PerformanceStats({ visible = false, onToggle }: PerformanceStats
   }
 
   // Calculate summary statistics
-  const summary = metrics.reduce(
-    (acc, metric) => {
-      if (!acc[metric.operation]) {
-        acc[metric.operation] = { total: 0, count: 0, avg: 0, min: Infinity, max: 0 };
-      }
-      const stats = acc[metric.operation];
-      stats.total += metric.duration;
-      stats.count += 1;
-      stats.avg = stats.total / stats.count;
-      stats.min = Math.min(stats.min, metric.duration);
-      stats.max = Math.max(stats.max, metric.duration);
-      return acc;
-    },
-    {} as Record<string, { total: number; count: number; avg: number; min: number; max: number }>
-  );
+  const summary = metrics.reduce((acc, metric) => {
+    if (!acc[metric.operation]) {
+      acc[metric.operation] = { total: 0, count: 0, avg: 0, min: Infinity, max: 0 };
+    }
+    const stats = acc[metric.operation];
+    stats.total += metric.duration;
+    stats.count += 1;
+    stats.avg = stats.total / stats.count;
+    stats.min = Math.min(stats.min, metric.duration);
+    stats.max = Math.max(stats.max, metric.duration);
+    return acc;
+  }, {} as Record<string, { total: number; count: number; avg: number; min: number; max: number }>);
 
   const getPerformanceColor = (duration: number, operation: string) => {
     // Thresholds vary by operation
@@ -233,7 +234,9 @@ export function PerformanceStats({ visible = false, onToggle }: PerformanceStats
 
           {/* Recent Operations */}
           <Box sx={{ p: 2 }}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+            <Box
+              sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}
+            >
               <Typography variant="subtitle2">{t('Recent Operations')}</Typography>
               <Chip
                 label={t('Clear')}
@@ -257,16 +260,16 @@ export function PerformanceStats({ visible = false, onToggle }: PerformanceStats
                     <TableRow>
                       <TableCell colSpan={4} align="center">
                         <Typography variant="body2" color="text.secondary">
-                          {t('No performance data available. Interact with the graph to see metrics.')}
+                          {t(
+                            'No performance data available. Interact with the graph to see metrics.'
+                          )}
                         </Typography>
                       </TableCell>
                     </TableRow>
                   ) : (
                     metrics.map((metric, index) => (
                       <TableRow key={`${metric.timestamp}-${index}`}>
-                        <TableCell>
-                          {new Date(metric.timestamp).toLocaleTimeString()}
-                        </TableCell>
+                        <TableCell>{new Date(metric.timestamp).toLocaleTimeString()}</TableCell>
                         <TableCell>{metric.operation}</TableCell>
                         <TableCell align="right">
                           <Chip

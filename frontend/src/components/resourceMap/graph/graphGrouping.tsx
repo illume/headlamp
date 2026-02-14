@@ -144,7 +144,13 @@ const getConnectedComponents = (nodes: GraphNode[], edges: GraphEdge[]): GraphNo
   const componentTime = performance.now() - componentStart;
 
   const totalTime = performance.now() - perfStart;
-  console.log(`[ResourceMap Performance] getConnectedComponents: ${totalTime.toFixed(2)}ms (lookup: ${lookupTime.toFixed(2)}ms, component detection: ${componentTime.toFixed(2)}ms, nodes: ${nodes.length}, components: ${components.length})`);
+  console.log(
+    `[ResourceMap Performance] getConnectedComponents: ${totalTime.toFixed(
+      2
+    )}ms (lookup: ${lookupTime.toFixed(2)}ms, component detection: ${componentTime.toFixed(
+      2
+    )}ms, nodes: ${nodes.length}, components: ${components.length})`
+  );
 
   addPerformanceMetric({
     operation: 'getConnectedComponents',
@@ -258,7 +264,7 @@ export function groupGraph(
   }: { groupBy?: GroupBy; namespaces: Namespace[]; k8sNodes: Node[] }
 ): GraphNode {
   const perfStart = performance.now();
-  
+
   const root: GraphNode = {
     id: 'root',
     label: 'root',
@@ -374,7 +380,13 @@ export function groupGraph(
   const sortTime = performance.now() - sortStart;
 
   const totalTime = performance.now() - perfStart;
-  console.log(`[ResourceMap Performance] groupGraph: ${totalTime.toFixed(2)}ms (grouping: ${groupingTime.toFixed(2)}ms, sorting: ${sortTime.toFixed(2)}ms, groupBy: ${groupBy || 'none'})`);
+  console.log(
+    `[ResourceMap Performance] groupGraph: ${totalTime.toFixed(
+      2
+    )}ms (grouping: ${groupingTime.toFixed(2)}ms, sorting: ${sortTime.toFixed(2)}ms, groupBy: ${
+      groupBy || 'none'
+    })`
+  );
 
   addPerformanceMetric({
     operation: 'groupGraph',
