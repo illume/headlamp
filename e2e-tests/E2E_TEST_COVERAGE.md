@@ -23,6 +23,7 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - `gateway-api.spec.ts` - Gateway API resources pages (new)
 - `details-settings.spec.ts` - Settings pages and general navigation (new)
 - `resource-details.spec.ts` - Additional resource list pages (new)
+- `resource-detail-pages.spec.ts` - Resource detail pages for various workloads and resources (new)
 
 ### App Mode Tests (`/app/e2e-tests/tests/`)
 - `namespaces.spec.ts` - Namespace operations in app mode
@@ -34,9 +35,11 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [x] e2e-tests: home-page: Add test for cluster chooser (tested in `multiCluster.spec.ts`)
 - [x] e2e-tests: cluster-overview: Add test for cluster overview page (tested in `headlamp.spec.ts`)
 - [x] e2e-tests: 404-page: Add test for 404 not found page (tested in `headlamp.spec.ts`)
-- [x] e2e-tests: advanced-search: Add test for advanced search functionality (tested in `details-settings.spec.ts`)
+- [ ] e2e-tests: advanced-search: Add test for advanced search functionality (**SKIPPED** in `details-settings.spec.ts` - CI failures)
 - [ ] e2e-tests: global-search: Add test for global search with hotkey (partially tested in `headlamp.spec.ts`)
-- [x] e2e-tests: events-list: Add test for events list page (tested in `resource-details.spec.ts`)
+- [ ] e2e-tests: events-list: Add test for events list page (**SKIPPED** in `resource-details.spec.ts` - CI failures)
+- [ ] e2e-tests: resource-map: Add test for resource map page (**SKIPPED** in `details-settings.spec.ts` - CI failures)
+- [ ] e2e-tests: notifications: Add test for notifications page (**SKIPPED** in `details-settings.spec.ts` - CI failures)
 
 ### Cluster Resources
 - [x] e2e-tests: namespaces-list: Add test for namespaces list page (tested in `namespaces.spec.ts`)
@@ -53,6 +56,7 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [ ] e2e-tests: persistent-volume-details: Add test for persistent volume details page
 - [x] e2e-tests: persistent-volume-claims-list: Add test for PVC list page (tested in `storage.spec.ts`)
 - [ ] e2e-tests: persistent-volume-claim-details: Add test for PVC details page
+- [ ] e2e-tests: pvc-table-headers: Add test for PVC table headers (**SKIPPED** in `resource-details.spec.ts` - CI failures)
 
 ### Workloads
 - [ ] e2e-tests: workloads-overview: Add test for workloads overview page (**SKIPPED** in `workloads.spec.ts` - CI timeout issues)
@@ -61,18 +65,18 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [x] e2e-tests: pod-logs: Add test for pod logs view with search hotkey (tested in `podsPage.spec.ts`)
 - [ ] e2e-tests: pod-shell: Add test for pod shell/exec functionality
 - [x] e2e-tests: deployments-list: Add test for deployments list page (tested in `workloads.spec.ts`)
-- [ ] e2e-tests: deployment-details: Add test for deployment details page
+- [x] e2e-tests: deployment-details: Add test for deployment details page (tested in `resource-detail-pages.spec.ts`)
 - [ ] e2e-tests: deployment-scale: Add test for deployment scaling
 - [x] e2e-tests: daemonsets-list: Add test for daemonsets list page (tested in `workloads.spec.ts`)
-- [ ] e2e-tests: daemonset-details: Add test for daemonset details page
+- [x] e2e-tests: daemonset-details: Add test for daemonset details page (tested in `resource-detail-pages.spec.ts`)
 - [x] e2e-tests: statefulsets-list: Add test for statefulsets list page (tested in `workloads.spec.ts`)
-- [ ] e2e-tests: statefulset-details: Add test for statefulset details page
+- [x] e2e-tests: statefulset-details: Add test for statefulset details page (tested in `resource-detail-pages.spec.ts`)
 - [x] e2e-tests: replicasets-list: Add test for replicasets list page (tested in `workloads.spec.ts`)
-- [ ] e2e-tests: replicaset-details: Add test for replicaset details page
+- [x] e2e-tests: replicaset-details: Add test for replicaset details page (tested in `resource-detail-pages.spec.ts`)
 - [x] e2e-tests: jobs-list: Add test for jobs list page (tested in `workloads.spec.ts`)
-- [ ] e2e-tests: job-details: Add test for job details page
+- [x] e2e-tests: job-details: Add test for job details page (tested in `resource-detail-pages.spec.ts`)
 - [x] e2e-tests: cronjobs-list: Add test for cronjobs list page (tested in `workloads.spec.ts`)
-- [ ] e2e-tests: cronjob-details: Add test for cronjob details page
+- [x] e2e-tests: cronjob-details: Add test for cronjob details page (tested in `resource-detail-pages.spec.ts`)
 
 ### Network
 - [x] e2e-tests: services-list: Add test for services list page (tested in `headlamp.spec.ts`)
@@ -82,11 +86,11 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [ ] e2e-tests: endpointslices-list: Add test for endpoint slices list page (**SKIPPED** in `network.spec.ts` - CI timeout issues)
 - [ ] e2e-tests: endpointslice-details: Add test for endpoint slice details page
 - [x] e2e-tests: ingresses-list: Add test for ingresses list page (tested in `network.spec.ts`)
-- [ ] e2e-tests: ingress-details: Add test for ingress details page
+- [x] e2e-tests: ingress-details: Add test for ingress details page (tested in `resource-detail-pages.spec.ts`)
 - [ ] e2e-tests: ingress-classes-list: Add test for ingress classes list page (**SKIPPED** in `network.spec.ts` - CI timeout issues)
 - [ ] e2e-tests: ingress-class-details: Add test for ingress class details page
 - [x] e2e-tests: network-policies-list: Add test for network policies list page (tested in `network.spec.ts`)
-- [ ] e2e-tests: network-policy-details: Add test for network policy details page
+- [x] e2e-tests: network-policy-details: Add test for network policy details page (tested in `resource-detail-pages.spec.ts`)
 
 ### Gateway API
 - [ ] e2e-tests: gateways-list: Add test for gateways list page (**SKIPPED** in `gateway-api.spec.ts` - CI failures)
@@ -118,22 +122,22 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [ ] e2e-tests: limit-range-details: Add test for limit range details page
 
 ### Security & Access Control (RBAC)
-- [x] e2e-tests: service-accounts-list: Add test for service accounts list page (tested in `details-settings.spec.ts`)
+- [ ] e2e-tests: service-accounts-list: Add test for service accounts list page (**SKIPPED** in `details-settings.spec.ts` - CI failures)
 - [ ] e2e-tests: service-account-details: Add test for service account details page
 - [x] e2e-tests: roles-list: Add test for roles list page (partially tested in `headlamp.spec.ts`)
 - [ ] e2e-tests: role-details: Add test for role details page
-- [x] e2e-tests: cluster-roles-list: Add test for cluster roles list page (tested in `resource-details.spec.ts`)
+- [ ] e2e-tests: cluster-roles-list: Add test for cluster roles list page (**SKIPPED** in `resource-details.spec.ts` - CI failures)
 - [ ] e2e-tests: cluster-role-details: Add test for cluster role details page
 - [x] e2e-tests: role-bindings-list: Add test for role bindings list page (tested in `rbac-other.spec.ts`)
 - [ ] e2e-tests: role-binding-details: Add test for role binding details page
-- [x] e2e-tests: cluster-role-bindings-list: Add test for cluster role bindings list page (tested in `resource-details.spec.ts`)
+- [ ] e2e-tests: cluster-role-bindings-list: Add test for cluster role bindings list page (**SKIPPED** in `resource-details.spec.ts` - CI failures)
 - [ ] e2e-tests: cluster-role-binding-details: Add test for cluster role binding details page
 
 ### Autoscaling
 - [x] e2e-tests: horizontal-pod-autoscalers-list: Add test for HPAs list page (tested in `autoscaling.spec.ts`)
-- [ ] e2e-tests: horizontal-pod-autoscaler-details: Add test for HPA details page
+- [x] e2e-tests: horizontal-pod-autoscaler-details: Add test for HPA details page (tested in `resource-detail-pages.spec.ts`)
 - [x] e2e-tests: vertical-pod-autoscalers-list: Add test for VPAs list page (tested in `autoscaling.spec.ts`)
-- [ ] e2e-tests: vertical-pod-autoscaler-details: Add test for VPA details page
+- [x] e2e-tests: vertical-pod-autoscaler-details: Add test for VPA details page (tested in `resource-detail-pages.spec.ts`)
 - [x] e2e-tests: pod-disruption-budgets-list: Add test for PDBs list page (tested in `autoscaling.spec.ts`)
 - [ ] e2e-tests: pod-disruption-budget-details: Add test for PDB details page
 
@@ -157,9 +161,9 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [ ] e2e-tests: cr-instances-list: Add test for CR instances list page (**SKIPPED** in `crds.spec.ts` - CI timeout issues)
 
 ### Settings & Configuration
-- [x] e2e-tests: settings-general: Add test for general settings page (tested in `details-settings.spec.ts`)
+- [ ] e2e-tests: settings-general: Add test for general settings page (**SKIPPED** in `details-settings.spec.ts` - CI failures)
 - [x] e2e-tests: settings-cluster: Add test for cluster settings page (tested in `clusterRename.spec.ts` app mode)
-- [x] e2e-tests: settings-clusters: Add test for clusters settings page (tested in `details-settings.spec.ts`)
+- [ ] e2e-tests: settings-clusters: Add test for clusters settings page (**SKIPPED** in `details-settings.spec.ts` - CI failures)
 - [x] e2e-tests: settings-plugins: Add test for plugin settings page (tested in `pluginSetting.spec.ts`)
 - [x] e2e-tests: settings-plugin-details: Add test for plugin details page (tested in `pluginSetting.spec.ts`)
 
