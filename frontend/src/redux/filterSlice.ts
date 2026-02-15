@@ -21,7 +21,12 @@ import { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import type { KubeEvent } from '../lib/k8s/event';
 import type { KubeObjectInterface } from '../lib/k8s/KubeObject';
-import { getSavedNamespaces, saveNamespaces, getSavedLabelSelector, saveLabelSelector } from '../lib/storage';
+import {
+  getSavedLabelSelector,
+  getSavedNamespaces,
+  saveLabelSelector,
+  saveNamespaces,
+} from '../lib/storage';
 
 export interface FilterState {
   /** The namespaces to filter on. */

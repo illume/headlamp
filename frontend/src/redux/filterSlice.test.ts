@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import { getSavedNamespaces, getSavedLabelSelector } from '../lib/storage';
+import { getSavedLabelSelector,getSavedNamespaces } from '../lib/storage';
 import filterReducer, {
   FilterState,
   initialState,
   resetFilter,
-  setNamespaceFilter,
   setLabelSelectorFilter,
+  setNamespaceFilter,
 } from './filterSlice';
 
 // Mock getCluster to ensure a consistent key for localStorage tests
@@ -78,7 +78,7 @@ describe('filterSlice', () => {
     // First set a label selector
     state = filterReducer(state, setLabelSelectorFilter('app=nginx'));
     expect(state.labelSelector).toBe('app=nginx');
-    
+
     // Verify it was stored
     let stored = localStorage.getItem(LABEL_SELECTOR_STORAGE_KEY);
     expect(stored).toBe('app=nginx');

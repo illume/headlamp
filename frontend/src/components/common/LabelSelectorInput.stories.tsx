@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
+import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
-import { LabelSelectorInput } from './LabelSelectorInput';
 import filterReducer from '../../redux/filterSlice';
+import { LabelSelectorInput } from './LabelSelectorInput';
 
 const createStore = (initialLabelSelector = '') => {
   return configureStore({
@@ -28,7 +28,7 @@ const createStore = (initialLabelSelector = '') => {
     },
     preloadedState: {
       filter: {
-        namespaces: new Set(),
+        namespaces: new Set<string>(),
         labelSelector: initialLabelSelector,
       },
     },
@@ -78,6 +78,5 @@ ComplexSelector.args = {
 
 export const LongValue = Template.bind({});
 LongValue.args = {
-  initialValue:
-    'app=nginx,environment=production,tier=frontend,version=v1.0.0,region=us-west-2',
+  initialValue: 'app=nginx,environment=production,tier=frontend,version=v1.0.0,region=us-west-2',
 };

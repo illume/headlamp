@@ -21,7 +21,7 @@
           id="label-selector-input"
           placeholder="e.g. app=nginx"
           type="text"
-          value="app=nginx"
+          value="app=nginx,env in (prod,staging),tier!=backend"
         />
         <div
           class="MuiInputAdornment-root MuiInputAdornment-positionEnd MuiInputAdornment-outlined MuiInputAdornment-sizeSmall css-1laqsz7-MuiInputAdornment-root"

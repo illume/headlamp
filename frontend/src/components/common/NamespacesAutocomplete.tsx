@@ -30,7 +30,7 @@ import { useHistory, useLocation } from 'react-router-dom';
 import { loadClusterSettings } from '../../helpers/clusterSettings';
 import { useCluster, useClustersConf } from '../../lib/k8s';
 import Namespace from '../../lib/k8s/namespace';
-import { addQueryParams, getFilterValuesFromURL } from '../../lib/urlUtils';
+import { addQueryParams } from '../../lib/urlUtils';
 import { setNamespaceFilter } from '../../redux/filterSlice';
 import { useTypedSelector } from '../../redux/hooks';
 

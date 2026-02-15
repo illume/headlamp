@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
+import { configureStore } from '@reduxjs/toolkit';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
-import { configureStore } from '@reduxjs/toolkit';
-import { LabelSelectorInput } from './LabelSelectorInput';
 import filterReducer, { setLabelSelectorFilter } from '../../redux/filterSlice';
+import { LabelSelectorInput } from './LabelSelectorInput';
 
 // Mock getCluster
 vi.mock('../../lib/cluster', () => ({
@@ -110,7 +110,7 @@ describe('LabelSelectorInput', () => {
 
     const input = screen.getByLabelText(/Label Selector/i) as HTMLInputElement;
     await user.type(input, 'app=nginx');
-    
+
     const clearButton = screen.getByLabelText(/Clear/i);
     // Use mouseDown instead of click since the button uses onMouseDown
     await user.pointer({ keys: '[MouseLeft>]', target: clearButton });
