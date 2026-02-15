@@ -321,11 +321,11 @@ func TestCreateWebSocketURLEdgeCases(t *testing.T) {
 		expected string
 	}{
 		{
-			name:     "WS scheme defaults to WSS",
+			name:     "WS scheme preserved",
 			host:     "ws://localhost:8080",
 			path:     "/api/v1/pods",
 			query:    "",
-			expected: "wss://localhost:8080/api/v1/pods",
+			expected: "ws://localhost:8080/api/v1/pods",
 		},
 		{
 			name:     "WSS scheme preserved",
@@ -1559,11 +1559,11 @@ func TestSendDataMessage(t *testing.T) {
 	assert.NoError(t, err) // Should return nil even for closed connection
 }
 
-// TestPodLogsHTTPScheme tests HTTP cluster should use ws:// scheme.
+// TestPodLogsHTTPClusterScheme verifies that an HTTP cluster uses the ws:// WebSocket scheme.
 // This reproduces the issue: "Logs with websocket multiplexer enabled" where
 // logs from pods fail because createWebSocketURL always used "wss" regardless
 // of the cluster's actual HTTP/HTTPS configuration.
-func TestPodLogsHTTPScheme(t *testing.T) {
+func TestPodLogsHTTPClusterScheme(t *testing.T) {
 	const podLogPath = "/api/v1/namespaces/default/pods/test-pod/log"
 
 	// Create a mock Kubernetes API server that only supports HTTP (not HTTPS)
@@ -1584,8 +1584,8 @@ func TestPodLogsHTTPScheme(t *testing.T) {
 	assert.Contains(t, wsURL, query, "WebSocket URL should contain the query")
 }
 
-// TestPodLogsHTTPSScheme tests HTTPS cluster should use wss:// scheme.
-func TestPodLogsHTTPSScheme(t *testing.T) {
+// TestPodLogsHTTPSClusterScheme verifies that an HTTPS cluster uses the wss:// WebSocket scheme.
+func TestPodLogsHTTPSClusterScheme(t *testing.T) {
 	const podLogPath = "/api/v1/namespaces/default/pods/test-pod/log"
 
 	// Create a mock HTTPS server

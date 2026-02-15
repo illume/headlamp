@@ -880,14 +880,16 @@ func createWebSocketURL(host, path, query string) string {
 		return "wss://invalid-url" + path
 	}
 
-	// Convert HTTP/HTTPS scheme to WebSocket scheme
+	// Convert HTTP/HTTPS scheme to WebSocket scheme and preserve existing ws/wss schemes.
 	switch u.Scheme {
 	case "https":
 		u.Scheme = "wss"
 	case "http":
 		u.Scheme = "ws"
+	case "ws", "wss":
+		// Preserve existing WebSocket scheme
 	default:
-		// If scheme is already ws/wss or unknown, use wss as default
+		// For unknown schemes, default to secure WebSocket.
 		u.Scheme = "wss"
 	}
 

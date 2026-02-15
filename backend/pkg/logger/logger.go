@@ -122,9 +122,10 @@ func log(level uint, str map[string]string, err interface{}, msg string) {
 	}
 }
 
-// SetLogFunc sets the logging function.
+// SetLogFunc sets the logging function and returns the previous one.
 func SetLogFunc(lf LogFunc) LogFunc {
+	oldFunc := logFunc
 	logFunc = lf
 
-	return logFunc
+	return oldFunc
 }
