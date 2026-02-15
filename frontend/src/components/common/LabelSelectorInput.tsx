@@ -77,6 +77,8 @@ export function LabelSelectorInput() {
       dispatch(setLabelSelectorFilter(labelSelectorFromURL));
       setInputValue(labelSelectorFromURL);
     }
+    // Only run on mount to initialize from URL
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
