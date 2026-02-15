@@ -299,6 +299,53 @@ func TestCreateWebSocketURL(t *testing.T) {
 	}
 }
 
+// TestCreateWebSocketURLEdgeCases tests edge cases for WebSocket URL creation.
+func TestCreateWebSocketURLEdgeCases(t *testing.T) {
+	tests := []struct {
+		name     string
+		host     string
+		path     string
+		query    string
+		expected string
+	}{
+		{
+			name:     "WS scheme defaults to WSS",
+			host:     "ws://localhost:8080",
+			path:     "/api/v1/pods",
+			query:    "",
+			expected: "wss://localhost:8080/api/v1/pods",
+		},
+		{
+			name:     "WSS scheme preserved",
+			host:     "wss://kubernetes.default.svc:443",
+			path:     "/api/v1/pods",
+			query:    "",
+			expected: "wss://kubernetes.default.svc:443/api/v1/pods",
+		},
+		{
+			name:     "Empty scheme defaults to WSS",
+			host:     "kubernetes.default.svc:443",
+			path:     "/api/v1/pods",
+			query:    "",
+			expected: "wss://kubernetes.default.svc:443/api/v1/pods",
+		},
+		{
+			name:     "Unknown scheme defaults to WSS",
+			host:     "custom://kubernetes.default.svc:443",
+			path:     "/api/v1/pods",
+			query:    "",
+			expected: "wss://kubernetes.default.svc:443/api/v1/pods",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := createWebSocketURL(tt.host, tt.path, tt.query)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func TestMonitorConnection(t *testing.T) {
 	m := NewMultiplexer(kubeconfig.NewContextStore())
 	clientConn, clientServer := createTestWebSocketConnection()
