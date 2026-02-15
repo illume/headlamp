@@ -23,6 +23,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"sync"
 	"time"
 
@@ -863,10 +864,14 @@ func (m *Multiplexer) createConnectionKey(clusterID, path, userID string) string
 
 // createWebSocketURL creates a WebSocket URL from the given parameters.
 // It converts HTTP schemes to WebSocket schemes: https:// -> wss://, http:// -> ws://.
-// The error from url.Parse is intentionally ignored because the host parameter comes from
-// Kubernetes REST config which is expected to always contain valid URLs. If the URL is
-// malformed, the WebSocket connection will fail later with a more descriptive error.
+// If url.Parse fails, a warning is logged and a fallback invalid WebSocket URL is returned,
+// which will cause the connection attempt to fail with a clear error.
 func createWebSocketURL(host, path, query string) string {
+	// If host doesn't have a scheme, prepend https:// for proper parsing
+	if !strings.Contains(host, "://") {
+		host = "https://" + host
+	}
+
 	u, err := url.Parse(host)
 	if err != nil {
 		// Log a warning but continue with best effort - the connection will fail anyway
