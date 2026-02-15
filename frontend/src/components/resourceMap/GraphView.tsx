@@ -243,9 +243,7 @@ function GraphViewContent({
     // If filters change, incremental update would give wrong results
     const namespaceFilter = filters.find(f => f.type === 'namespace');
     const currentFilterSig = JSON.stringify({
-      namespaces: namespaceFilter
-        ? Array.from(namespaceFilter.namespaces).sort()
-        : [],
+      namespaces: namespaceFilter ? Array.from(namespaceFilter.namespaces).sort() : [],
       hasErrors: filters.some(f => f.type === 'hasErrors'),
     });
 
