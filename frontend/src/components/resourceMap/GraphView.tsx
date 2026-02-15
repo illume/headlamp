@@ -241,9 +241,12 @@ function GraphViewContent({
 
     // Create filter signature to detect filter changes (forces full recompute)
     // If filters change, incremental update would give wrong results
+    const namespaceFilter = filters.find(f => f.type === 'namespace');
     const currentFilterSig = JSON.stringify({
-      namespaces: filters.find(f => f.type === 'namespace')?.namespaces?.sort(),
-      hasErrors: filters.find(f => f.type === 'hasErrors')?.hasErrors,
+      namespaces: namespaceFilter
+        ? Array.from(namespaceFilter.namespaces).sort()
+        : [],
+      hasErrors: filters.some(f => f.type === 'hasErrors'),
     });
 
     // Try incremental update if enabled and we have previous data and filters unchanged

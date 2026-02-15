@@ -35,7 +35,7 @@ describe('graphSimplification', () => {
         kubeObject: new Pod({
           kind: 'Pod',
           metadata: { name: `pod-${i}`, namespace: 'default', uid: `uid-${i}` },
-          status: {},
+          status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
         } as any),
       }));
 
@@ -54,7 +54,7 @@ describe('graphSimplification', () => {
         kubeObject: new Pod({
           kind: 'Pod',
           metadata: { name: `pod-${i}`, namespace: 'default', uid: `uid-${i}` },
-          status: {},
+          status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
         } as any),
       }));
 
@@ -72,7 +72,7 @@ describe('graphSimplification', () => {
         kubeObject: new Pod({
           kind: 'Pod',
           metadata: { name: `pod-${i}`, namespace: 'default', uid: `uid-${i}` },
-          status: {},
+          status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
         } as any),
       }));
 
@@ -97,7 +97,7 @@ describe('graphSimplification', () => {
         kubeObject: new Pod({
           kind: 'Pod',
           metadata: { name: `pod-${i}`, namespace: 'default', uid: `uid-${i}` },
-          status: {},
+          status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
         } as any),
       }));
 
@@ -118,7 +118,10 @@ describe('graphSimplification', () => {
           kubeObject: new Pod({
             kind: 'Pod',
             metadata: { name: `pod-${i}`, namespace: 'default', uid: `uid-${i}` },
-            status: { phase: 'Running' },
+            status: {
+              phase: 'Running',
+              conditions: [{ type: 'Ready', status: 'True' }],
+            },
           } as any),
         })),
         // Error nodes
@@ -127,7 +130,7 @@ describe('graphSimplification', () => {
           kubeObject: new Pod({
             kind: 'Pod',
             metadata: { name: 'error-pod-1', namespace: 'default', uid: 'error-uid-1' },
-            status: { phase: 'Failed' },
+            status: { phase: 'Failed', conditions: [] },
           } as any),
         },
         {
@@ -135,7 +138,10 @@ describe('graphSimplification', () => {
           kubeObject: new Pod({
             kind: 'Pod',
             metadata: { name: 'error-pod-2', namespace: 'default', uid: 'error-uid-2' },
-            status: { phase: 'Unknown' },
+            status: {
+              phase: 'Running',
+              conditions: [{ type: 'Ready', status: 'False' }], // Warning status
+            },
           } as any),
         },
       ];
@@ -156,7 +162,7 @@ describe('graphSimplification', () => {
         kubeObject: new Pod({
           kind: 'Pod',
           metadata: { name: 'hub-pod', namespace: 'default', uid: 'hub-uid' },
-          status: {},
+          status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
         } as any),
       };
 
@@ -167,7 +173,7 @@ describe('graphSimplification', () => {
           kubeObject: new Pod({
             kind: 'Pod',
             metadata: { name: `pod-${i}`, namespace: 'default', uid: `uid-${i}` },
-            status: {},
+            status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
           } as any),
         })),
       ];
@@ -192,7 +198,7 @@ describe('graphSimplification', () => {
         kubeObject: new Pod({
           kind: 'Pod',
           metadata: { name: `pod-${i}`, namespace: 'default', uid: `uid-${i}` },
-          status: {},
+          status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
         } as any),
       }));
 
@@ -210,7 +216,7 @@ describe('graphSimplification', () => {
         kubeObject: new Pod({
           kind: 'Pod',
           metadata: { name: `pod-${i}`, namespace: 'default', uid: `uid-${i}` },
-          status: {},
+          status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
         } as any),
       }));
 
@@ -238,7 +244,7 @@ describe('graphSimplification', () => {
         kubeObject: new Pod({
           kind: 'Pod',
           metadata: { name: `pod-${i}`, namespace: 'default', uid: `uid-${i}` },
-          status: {},
+          status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
         } as any),
       }));
 
@@ -253,7 +259,7 @@ describe('graphSimplification', () => {
           kubeObject: new Pod({
             kind: 'Pod',
             metadata: { name: `pod-${i}`, namespace: 'default', uid: `uid-${i}` },
-            status: {},
+            status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
           } as any),
         })
       );

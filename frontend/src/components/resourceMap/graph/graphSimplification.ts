@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { addPerformanceMetric } from '../PerformanceStats';
 import { getStatus } from '../nodes/KubeObjectStatus';
+import { addPerformanceMetric } from '../PerformanceStats';
 import { makeGraphLookup } from './graphLookup';
 import { getNodeWeight, GraphEdge, GraphNode } from './graphModel';
 
