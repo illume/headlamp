@@ -81,18 +81,19 @@ export function LabelSelectorInput() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Keep local inputValue in sync with Redux labelSelector
+  React.useEffect(() => {
+    setInputValue(labelSelector);
+  }, [labelSelector]);
+
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);
   };
 
-  const handleKeyPress = (event: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
       applyFilter();
-    }
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Escape') {
+    } else if (event.key === 'Escape') {
       handleClear();
     }
   };
@@ -103,7 +104,10 @@ export function LabelSelectorInput() {
     addQuery({ labelSelector: trimmedValue }, { labelSelector: '' }, history, location);
   };
 
-  const handleClear = () => {
+  const handleClear = (event?: React.MouseEvent) => {
+    if (event) {
+      event.preventDefault();
+    }
     setInputValue('');
     dispatch(setLabelSelectorFilter(''));
     addQuery({ labelSelector: '' }, { labelSelector: '' }, history, location);
@@ -118,21 +122,17 @@ export function LabelSelectorInput() {
       placeholder={t('translation|e.g. app=nginx')}
       value={inputValue}
       onChange={handleChange}
-      onKeyPress={handleKeyPress}
       onKeyDown={handleKeyDown}
       onBlur={applyFilter}
       style={{ width: '15rem' }}
       InputLabelProps={{ shrink: true }}
-      inputProps={{
-        'aria-describedby': 'label-selector-description',
-      }}
       InputProps={{
         endAdornment: inputValue ? (
           <InputAdornment position="end">
             <Tooltip title={t('translation|Clear') as string}>
               <IconButton
                 size="small"
-                onClick={handleClear}
+                onMouseDown={handleClear}
                 edge="end"
                 aria-label={t('translation|Clear') as string}
               >

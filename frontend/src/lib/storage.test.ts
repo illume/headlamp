@@ -29,7 +29,7 @@ vi.mock('./cluster', () => ({
 describe('storage', () => {
   beforeEach(() => {
     localStorage.clear();
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   describe('namespace persistence', () => {

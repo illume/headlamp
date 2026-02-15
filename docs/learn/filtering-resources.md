@@ -20,8 +20,6 @@ Labels are the standard way to organize and identify Kubernetes resources. By fi
 
 In any resource list view (such as Pods, Deployments, or Services), you'll see a **Label Selector** input field in the header, next to the namespace filter.
 
-![Label Selector Input](../images/label-selector-filter.png)
-
 ### Basic Filtering
 
 Simply type your label selector and press **Enter** or click outside the field to apply the filter.
@@ -104,7 +102,8 @@ This lets you narrow down to exactly what you need.
 
 - Press **Enter** after typing to apply the filter immediately
 - The filter is applied automatically when you click outside the input field
-- Invalid syntax will be ignored - check the Kubernetes label selector documentation if a filter isn't working as expected
+- If a filter has invalid syntax, the Kubernetes API may return an error and no results will be shown
+- Check the Kubernetes label selector documentation if a filter isn't working as expected
 - Use the namespace filter first to reduce the number of resources, then apply label filters for precision
 
 ## Learn More

@@ -36,7 +36,7 @@ describe('filterSlice', () => {
   beforeEach(() => {
     state = { ...initialState, namespaces: new Set(), labelSelector: '' };
     localStorage.clear();
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
   });
 
   it('should handle setNamespaceFilter and persist to localStorage', () => {

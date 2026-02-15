@@ -20,7 +20,7 @@ import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { configureStore } from '@reduxjs/toolkit';
 import { LabelSelectorInput } from './LabelSelectorInput';
-import filterReducer from '../../redux/filterSlice';
+import filterReducer, { setLabelSelectorFilter } from '../../redux/filterSlice';
 
 // Mock getCluster
 vi.mock('../../lib/cluster', () => ({
@@ -112,7 +112,8 @@ describe('LabelSelectorInput', () => {
     await user.type(input, 'app=nginx');
     
     const clearButton = screen.getByLabelText(/Clear/i);
-    await user.click(clearButton);
+    // Use mouseDown instead of click since the button uses onMouseDown
+    await user.pointer({ keys: '[MouseLeft>]', target: clearButton });
 
     expect(input.value).toBe('');
     await waitFor(() => {
@@ -176,6 +177,20 @@ describe('LabelSelectorInput', () => {
 
     await waitFor(() => {
       expect(store.getState().filter.labelSelector).toBe(complexSelector);
+    });
+  });
+
+  it('should sync local input with Redux state when labelSelector changes externally', async () => {
+    renderComponent();
+
+    const input = screen.getByLabelText(/Label Selector/i) as HTMLInputElement;
+    expect(input.value).toBe('');
+
+    // Simulate external Redux update (e.g., via resetFilter action)
+    store.dispatch(setLabelSelectorFilter('external=value'));
+
+    await waitFor(() => {
+      expect(input.value).toBe('external=value');
     });
   });
 });
