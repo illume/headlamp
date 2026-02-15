@@ -133,7 +133,7 @@ describe('LabelSelectorInput', () => {
     });
   });
 
-  it('should initialize from URL query parameter', () => {
+  it('should initialize from URL query parameter', async () => {
     const storeWithUrlParam = configureStore({
       reducer: {
         filter: filterReducer,
@@ -149,7 +149,7 @@ describe('LabelSelectorInput', () => {
     );
 
     const input = screen.getByLabelText(/Label Selector/i) as HTMLInputElement;
-    waitFor(() => {
+    await waitFor(() => {
       expect(input.value).toBe('app=nginx');
     });
   });
