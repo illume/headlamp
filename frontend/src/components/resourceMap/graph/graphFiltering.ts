@@ -215,7 +215,7 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
  */
 export function filterGraphIncremental(
   prevFilteredNodes: GraphNode[],
-  prevFilteredEdges: GraphEdge[],
+  _prevFilteredEdges: GraphEdge[], // Unused: edges rebuilt from scratch for correctness
   addedNodeIds: Set<string>,
   modifiedNodeIds: Set<string>,
   deletedNodeIds: Set<string>,

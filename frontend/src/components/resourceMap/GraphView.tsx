@@ -201,6 +201,9 @@ function GraphViewContent({
     nodes: [],
     edges: [],
   });
+  // Track active filters to detect filter changes (forces full recompute)
+  // When filters change, incremental update would give wrong results
+  const prevFiltersRef = useRef<string>('');
 
   // Graph with applied layout, has sizes and positions for all elements
   const [layoutedGraph, setLayoutedGraph] = useState<{ nodes: Node[]; edges: Edge[] }>({
@@ -236,12 +239,24 @@ function GraphViewContent({
     let result: { nodes: GraphNode[]; edges: GraphEdge[] } = { nodes: [], edges: [] };
     let usedIncremental = false;
 
-    // Try incremental update if enabled and we have previous data
-    if (useIncrementalUpdates && prevNodesRef.current.length > 0) {
+    // Create filter signature to detect filter changes (forces full recompute)
+    // If filters change, incremental update would give wrong results
+    const currentFilterSig = JSON.stringify({
+      namespaces: filters.find(f => f.type === 'namespace')?.namespaces?.sort(),
+      hasErrors: filters.find(f => f.type === 'hasErrors')?.hasErrors,
+    });
+
+    // Try incremental update if enabled and we have previous data and filters unchanged
+    if (
+      useIncrementalUpdates &&
+      prevNodesRef.current.length > 0 &&
+      currentFilterSig === prevFiltersRef.current
+    ) {
       const changes = detectGraphChanges(prevNodesRef.current, prevEdgesRef.current, nodes, edges);
 
       if (shouldUseIncrementalUpdate(changes)) {
         // Use incremental filtering (87-92% faster for small changes)
+        // SAFETY: Only used when filters haven't changed - if filters change, we do full recompute
         result = filterGraphIncremental(
           prevFilteredGraphRef.current.nodes,
           prevFilteredGraphRef.current.edges,
@@ -265,6 +280,7 @@ function GraphViewContent({
     prevNodesRef.current = nodes;
     prevEdgesRef.current = edges;
     prevFilteredGraphRef.current = result;
+    prevFiltersRef.current = currentFilterSig;
 
     const totalTime = performance.now() - perfStart;
 

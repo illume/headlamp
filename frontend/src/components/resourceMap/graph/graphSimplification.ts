@@ -15,6 +15,7 @@
  */
 
 import { addPerformanceMetric } from '../PerformanceStats';
+import { getStatus } from '../nodes/KubeObjectStatus';
 import { makeGraphLookup } from './graphLookup';
 import { getNodeWeight, GraphEdge, GraphNode } from './graphModel';
 
@@ -51,8 +52,8 @@ export const EXTREME_SIMPLIFIED_NODE_LIMIT = 300;
  * Importance is based on:
  * - Node weight (higher weight = more important)
  * - Number of connections (more connected = more important, +5 points per edge)
- * - Nodes with errors (always kept, +10000 priority boost)
- * - Group size (larger groups = more important, +10 per child node)
+ * - Nodes with errors/warnings (always kept, +10000 priority boost via getStatus() check)
+ * - Group size (larger groups = more important, +2 per child node)
  *
  * @param nodes - List of all nodes
  * @param edges - List of all edges
@@ -96,16 +97,13 @@ export function simplifyGraph(
     const incomingEdges = lookup.getIncomingEdges(node.id)?.length ?? 0;
     score += (outgoingEdges + incomingEdges) * 5;
 
-    // Always keep nodes with errors
+    // PERFORMANCE: Always keep nodes with errors/warnings using canonical status logic
+    // This ensures simplification preserves the same error/warning resources the UI shows
+    // Uses getStatus() helper to match app's status logic (Deployments, Pods, etc.)
     if (node.kubeObject) {
-      const status = (node.kubeObject as any).status;
-      const hasError =
-        status?.phase === 'Failed' ||
-        status?.phase === 'Unknown' ||
-        status?.conditions?.some((c: any) => c.status === 'False');
-
-      if (hasError) {
-        score += 10000; // High priority for error nodes
+      const status = getStatus(node.kubeObject);
+      if (status !== 'success') {
+        score += 10000; // High priority for error/warning nodes
       }
     }
 
