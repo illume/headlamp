@@ -54,13 +54,18 @@ function useRealisticWebSocketUpdates(
 
     const timers: NodeJS.Timeout[] = [];
 
-    // Calculate how many resources will change
-    const numResourcesToUpdate = Math.ceil((totalResources * changePercentage) / 100);
+    // Calculate how many resources will change in total
+    const totalChangedResources = Math.ceil((totalResources * changePercentage) / 100);
     
     // Spread updates across multiple events within the interval
     // Simulate 1-10 individual WebSocket events arriving at random times
     // More changes = more events, but cap at reasonable number
-    const numUpdateEvents = Math.max(1, Math.min(Math.ceil(numResourcesToUpdate / 10), 10));
+    const RESOURCES_PER_EVENT = 10; // Average resources changed per WebSocket event
+    const MAX_WEBSOCKET_EVENTS = 10; // Cap to avoid too many tiny updates
+    const numUpdateEvents = Math.max(
+      1,
+      Math.min(Math.ceil(totalChangedResources / RESOURCES_PER_EVENT), MAX_WEBSOCKET_EVENTS)
+    );
 
     // Schedule updates at random times throughout the interval
     for (let i = 0; i < numUpdateEvents; i++) {
