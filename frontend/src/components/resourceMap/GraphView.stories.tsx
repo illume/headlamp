@@ -423,16 +423,18 @@ export const PerformanceTest2000Pods = () => {
 
 /**
  * Performance test with 500 pods (moderate scale)
+ * Basic test - for more advanced incremental testing, see 2000/5000 pods tests
  */
 export const PerformanceTest500Pods = () => {
   const [updateCounter, setUpdateCounter] = useState(0);
+  const [changePercentage, setChangePercentage] = useState(5); // Default 5% for testing
 
   // Use useMemo to avoid regenerating on unrelated re-renders
   const { pods, edges } = useMemo(() => {
-    const pods = generateMockPods(500, updateCounter);
+    const pods = generateMockPods(500, updateCounter, changePercentage);
     const edges = generateMockEdges(pods);
     return { pods, edges };
-  }, [updateCounter]);
+  }, [updateCounter, changePercentage]);
 
   const nodes: GraphNode[] = useMemo(
     () =>
@@ -464,17 +466,39 @@ export const PerformanceTest500Pods = () => {
             display: 'flex',
             gap: '16px',
             alignItems: 'center',
+            flexWrap: 'wrap',
           }}
         >
           <h3 style={{ margin: 0 }}>Performance Test: 500 Pods</h3>
-          <button
-            onClick={() => setUpdateCounter(prev => prev + 1)}
-            style={{ padding: '8px 16px', cursor: 'pointer' }}
-          >
-            Trigger Update (#{updateCounter})
-          </button>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <button
+              onClick={() => setUpdateCounter(prev => prev + 1)}
+              style={{ padding: '8px 16px', cursor: 'pointer' }}
+            >
+              Trigger Update (#{updateCounter})
+            </button>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Change %:
+              <select
+                value={changePercentage}
+                onChange={e => setChangePercentage(Number(e.target.value))}
+                style={{
+                  backgroundColor: changePercentage > 20 ? '#ffebee' : '#e8f5e9',
+                  padding: '4px',
+                }}
+              >
+                <option value={1}>1% (5 pods)</option>
+                <option value={5}>5% (25 pods)</option>
+                <option value={10}>10% (50 pods)</option>
+                <option value={20}>20% (100 pods)</option>
+                <option value={50}>50% (250 pods)</option>
+                <option value={100}>100% (all)</option>
+              </select>
+            </label>
+          </div>
           <div style={{ fontSize: '14px', color: '#666' }}>
-            Nodes: {nodes.length} | Edges: {edges.length} | Check console for timing
+            Nodes: {nodes.length} | Edges: {edges.length} | Update #{updateCounter} (
+            {changePercentage}% = {Math.floor((nodes.length * changePercentage) / 100)} pods)
           </div>
         </div>
         <div style={{ flex: 1 }}>
@@ -487,27 +511,36 @@ export const PerformanceTest500Pods = () => {
 
 /**
  * Generate mock Deployments
+ * 
+ * @param changePercentage - Percentage of deployments to update (0-100)
  */
 function generateMockDeployments(
   count: number,
   namespace: string,
-  updateCounter: number = 0
+  updateCounter: number = 0,
+  changePercentage: number = 100
 ): Deployment[] {
   const deployments: Deployment[] = [];
 
   for (let i = 0; i < count; i++) {
+    // Only update specified percentage of resources
+    const shouldUpdate = (i / count) * 100 < changePercentage;
+    const effectiveUpdateCounter = shouldUpdate ? updateCounter : 0;
+
     const deploymentData = {
       apiVersion: 'apps/v1',
       kind: 'Deployment',
       metadata: {
         name: `deployment-${i}`,
         namespace: namespace,
-        uid: `deployment-uid-${namespace}-${i}-${updateCounter}`,
+        // Keep UID stable (same resource, just updated)
+        uid: `deployment-uid-${namespace}-${i}`,
         labels: {
           app: `app-${Math.floor(i / 10)}`,
           'app.kubernetes.io/instance': `instance-${Math.floor(i / 5)}`,
         },
-        resourceVersion: String(1000 + updateCounter),
+        // Only increment resourceVersion for updated resources
+        resourceVersion: String(1000 + effectiveUpdateCounter),
         creationTimestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
       },
       spec: {
@@ -551,21 +584,28 @@ function generateMockDeployments(
 
 /**
  * Generate mock ReplicaSets
+ * 
+ * @param changePercentage - Inherited from parent deployments. RS gets same update as its deployment.
  */
 function generateMockReplicaSets(
   deployments: Deployment[],
-  updateCounter: number = 0
+  updateCounter: number = 0,
+  changePercentage: number = 100
 ): ReplicaSet[] {
   const replicaSets: ReplicaSet[] = [];
 
   deployments.forEach((deployment, idx) => {
+    // Inherit update status from deployment (RS follows deployment resourceVersion)
+    const deploymentResourceVersion = deployment.metadata.resourceVersion;
+    
     const replicaSetData = {
       apiVersion: 'apps/v1',
       kind: 'ReplicaSet',
       metadata: {
         name: `${deployment.metadata.name}-rs`,
         namespace: deployment.metadata.namespace,
-        uid: `replicaset-uid-${deployment.metadata.namespace}-${idx}-${updateCounter}`,
+        // Keep UID stable (same RS, just updated)
+        uid: `replicaset-uid-${deployment.metadata.namespace}-${idx}`,
         labels: deployment.spec.selector.matchLabels,
         ownerReferences: [
           {
@@ -575,7 +615,8 @@ function generateMockReplicaSets(
             uid: deployment.metadata.uid,
           },
         ],
-        resourceVersion: String(1000 + updateCounter),
+        // Match deployment's resourceVersion (updated together)
+        resourceVersion: deploymentResourceVersion,
         creationTimestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
       },
       spec: {
@@ -600,27 +641,37 @@ function generateMockReplicaSets(
 
 /**
  * Generate mock Services
+ * 
+ * @param changePercentage - Percentage of services to update (0-100)
  */
 function generateMockServices(
   namespaces: string[],
   servicesPerNamespace: number,
-  updateCounter: number = 0
+  updateCounter: number = 0,
+  changePercentage: number = 100
 ): Service[] {
   const services: Service[] = [];
 
+  let globalIndex = 0;
   namespaces.forEach(namespace => {
     for (let i = 0; i < servicesPerNamespace; i++) {
+      // Only update specified percentage of services
+      const shouldUpdate = (globalIndex / (namespaces.length * servicesPerNamespace)) * 100 < changePercentage;
+      const effectiveUpdateCounter = shouldUpdate ? updateCounter : 0;
+
       const serviceData = {
         apiVersion: 'v1',
         kind: 'Service',
         metadata: {
           name: `service-${i}`,
           namespace: namespace,
-          uid: `service-uid-${namespace}-${i}-${updateCounter}`,
+          // Keep UID stable (same service, just updated)
+          uid: `service-uid-${namespace}-${i}`,
           labels: {
             app: `app-${Math.floor(i / 10)}`,
           },
-          resourceVersion: String(1000 + updateCounter),
+          // Only increment resourceVersion for updated services
+          resourceVersion: String(1000 + effectiveUpdateCounter),
           creationTimestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
         },
         spec: {
@@ -640,6 +691,7 @@ function generateMockServices(
       };
 
       services.push(new Service(serviceData as any));
+      globalIndex++;
     }
   });
 
@@ -648,14 +700,18 @@ function generateMockServices(
 
 /**
  * Generate pods that connect to deployments via ReplicaSets
+ * 
+ * Pods inherit update status from their parent ReplicaSet (which follows Deployment)
  */
 function generateMockPodsForDeployments(
   replicaSets: ReplicaSet[],
-  updateCounter: number = 0
+  updateCounter: number = 0,
+  changePercentage: number = 100
 ): Pod[] {
   const pods: Pod[] = [];
   const statuses = ['Running', 'Pending', 'Failed', 'Succeeded'];
 
+  let globalIndex = 0;
   replicaSets.forEach((replicaSet, rsIdx) => {
     // Each ReplicaSet gets 3 pods
     for (let podIdx = 0; podIdx < 3; podIdx++) {
@@ -664,13 +720,17 @@ function generateMockPodsForDeployments(
         ? 'Failed'
         : statuses[Math.floor(Math.random() * (statuses.length - 1))];
 
+      // Inherit resourceVersion from parent RS (pods updated with their RS)
+      const rsResourceVersion = replicaSet.metadata.resourceVersion;
+
       const podData = {
         apiVersion: 'v1',
         kind: 'Pod',
         metadata: {
           name: `${replicaSet.metadata.name}-pod-${podIdx}`,
           namespace: replicaSet.metadata.namespace,
-          uid: `pod-uid-${replicaSet.metadata.namespace}-${rsIdx}-${podIdx}-${updateCounter}`,
+          // Keep UID stable (same pod, just updated)
+          uid: `pod-uid-${replicaSet.metadata.namespace}-${rsIdx}-${podIdx}`,
           labels: replicaSet.spec.selector.matchLabels,
           ownerReferences: [
             {
@@ -680,7 +740,8 @@ function generateMockPodsForDeployments(
               uid: replicaSet.metadata.uid,
             },
           ],
-          resourceVersion: String(1000 + updateCounter),
+          // Match RS resourceVersion (updated together)
+          resourceVersion: rsResourceVersion,
           creationTimestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
         },
         spec: {
@@ -688,7 +749,8 @@ function generateMockPodsForDeployments(
           containers: [
             {
               name: 'main',
-              image: `myapp:v${Math.floor(updateCounter / 10) + 1}`,
+              // Image version based on RS resourceVersion to simulate updates
+              image: `myapp:v${Math.floor(Number(rsResourceVersion) / 10 - 100) + 1}`,
               resources: {
                 requests: {
                   cpu: '100m',
@@ -729,6 +791,7 @@ function generateMockPodsForDeployments(
       };
 
       pods.push(new Pod(podData as any));
+      globalIndex++;
     }
   });
 
@@ -809,11 +872,14 @@ function generateResourceEdges(
 
 /**
  * Performance test with 5000 pods and associated resources
+ * 
+ * Features incremental update testing with configurable change percentage
  */
 export const PerformanceTest5000Pods = () => {
   const [updateCounter, setUpdateCounter] = useState(0);
   const [autoUpdate, setAutoUpdate] = useState(false);
   const [updateInterval, setUpdateInterval] = useState(5000);
+  const [changePercentage, setChangePercentage] = useState(2); // Default 2% for typical WebSocket
 
   const namespaces = ['default', 'kube-system', 'monitoring', 'production', 'staging'];
 
@@ -828,17 +894,17 @@ export const PerformanceTest5000Pods = () => {
   const { pods, replicaSets, deployments, services, edges } = useMemo(() => {
     const deployments: Deployment[] = [];
     namespaces.forEach(ns => {
-      deployments.push(...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter));
+      deployments.push(...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter, changePercentage));
     });
 
-    const replicaSets = generateMockReplicaSets(deployments, updateCounter);
-    const pods = generateMockPodsForDeployments(replicaSets, updateCounter);
-    const services = generateMockServices(namespaces, servicesPerNamespace, updateCounter);
+    const replicaSets = generateMockReplicaSets(deployments, updateCounter, changePercentage);
+    const pods = generateMockPodsForDeployments(replicaSets, updateCounter, changePercentage);
+    const services = generateMockServices(namespaces, servicesPerNamespace, updateCounter, changePercentage);
 
     const edges = generateResourceEdges(pods, replicaSets, deployments, services);
 
     return { pods, replicaSets, deployments, services, edges };
-  }, [updateCounter, namespaces, deploymentsPerNamespace, servicesPerNamespace]);
+  }, [updateCounter, changePercentage, namespaces, deploymentsPerNamespace, servicesPerNamespace]);
 
   const allResources: KubeObject[] = useMemo(
     () => [...pods, ...replicaSets, ...deployments, ...services],
@@ -918,14 +984,49 @@ export const PerformanceTest5000Pods = () => {
                 <option value={30000}>30s</option>
               </select>
             </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Change %:
+              <select
+                value={changePercentage}
+                onChange={e => setChangePercentage(Number(e.target.value))}
+                style={{
+                  backgroundColor: changePercentage > 20 ? '#ffebee' : '#e8f5e9',
+                  padding: '4px',
+                }}
+                title={
+                  changePercentage > 20
+                    ? 'Large change - triggers full processing fallback'
+                    : 'Small change - uses incremental optimization'
+                }
+              >
+                <option value={1}>1% (~167 resources) - Incremental</option>
+                <option value={2}>2% (~334 resources) - Incremental</option>
+                <option value={5}>5% (~835 resources) - Incremental</option>
+                <option value={10}>10% (~1670 resources) - Incremental</option>
+                <option value={20}>20% (~3340 resources) - Threshold</option>
+                <option value={25}>25% (~4175 resources) - Full</option>
+                <option value={50}>50% (~8350 resources) - Full</option>
+                <option value={100}>100% (all resources) - Full</option>
+              </select>
+            </label>
           </div>
           <div style={{ fontSize: '14px', color: '#666' }}>
             Pods: {pods.length} | Deployments: {deployments.length} | ReplicaSets:{' '}
-            {replicaSets.length} | Services: {services.length} | Total Nodes: {nodes.length} |
-            Edges: {edges.length}
+            {replicaSets.length} | Services: {services.length} | Total: {nodes.length} nodes |
+            Update #{updateCounter} ({changePercentage}% = ~
+            {Math.floor((allResources.length * changePercentage) / 100)} resources)
           </div>
-          <div style={{ fontSize: '12px', color: '#999', fontStyle: 'italic' }}>
-            ⚠️ This is a stress test with {allResources.length} resources. Open browser console and
+          <div
+            style={{
+              fontSize: '12px',
+              color: changePercentage > 20 ? '#d32f2f' : '#2e7d32',
+              fontStyle: 'italic',
+              padding: '8px',
+              backgroundColor: changePercentage > 20 ? '#ffebee' : '#e8f5e9',
+              borderRadius: '4px',
+            }}
+          >
+            💡 {changePercentage > 20 ? 'Full Processing' : 'Incremental Optimization'} mode. Open
             Performance Stats to see metrics.
           </div>
         </div>
@@ -939,13 +1040,13 @@ export const PerformanceTest5000Pods = () => {
 
 /**
  * Extreme stress test with 20000 pods and associated resources
- * Tests incremental update optimization with small data changes
+ * Tests incremental update optimization with configurable change percentage
  */
 export const PerformanceTest20000Pods = () => {
   const [updateCounter, setUpdateCounter] = useState(0);
   const [autoUpdate, setAutoUpdate] = useState(false);
   const [updateInterval, setUpdateInterval] = useState(10000);
-  const [incrementalMode, setIncrementalMode] = useState(true);
+  const [changePercentage, setChangePercentage] = useState(1); // Default 1% for WebSocket
 
   const namespaces = [
     'default',
@@ -971,21 +1072,17 @@ export const PerformanceTest20000Pods = () => {
   const { pods, replicaSets, deployments, services, edges } = useMemo(() => {
     const deployments: Deployment[] = [];
     namespaces.forEach(ns => {
-      deployments.push(...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter));
+      deployments.push(...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter, changePercentage));
     });
 
-    const replicaSets = generateMockReplicaSets(deployments, updateCounter);
-    const pods = generateMockPodsForDeployments(replicaSets, updateCounter);
-    const services = generateMockServices(namespaces, servicesPerNamespace, updateCounter);
-
-    // Note: In incremental mode, the updateCounter in generateMockPodsForDeployments
-    // already simulates incremental changes by updating resource versions.
-    // The 1% change is inherent in the update counter incrementing.
+    const replicaSets = generateMockReplicaSets(deployments, updateCounter, changePercentage);
+    const pods = generateMockPodsForDeployments(replicaSets, updateCounter, changePercentage);
+    const services = generateMockServices(namespaces, servicesPerNamespace, updateCounter, changePercentage);
 
     const edges = generateResourceEdges(pods, replicaSets, deployments, services);
 
     return { pods, replicaSets, deployments, services, edges };
-  }, [updateCounter, namespaces, deploymentsPerNamespace, servicesPerNamespace, incrementalMode]);
+  }, [updateCounter, changePercentage, namespaces, deploymentsPerNamespace, servicesPerNamespace]);
 
   const allResources: KubeObject[] = useMemo(
     () => [...pods, ...replicaSets, ...deployments, ...services],
@@ -1068,23 +1165,50 @@ export const PerformanceTest20000Pods = () => {
               </select>
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input
-                type="checkbox"
-                checked={incrementalMode}
-                onChange={e => setIncrementalMode(e.target.checked)}
-              />
-              Incremental (1% change per update)
+              Change %:
+              <select
+                value={changePercentage}
+                onChange={e => setChangePercentage(Number(e.target.value))}
+                style={{
+                  backgroundColor: changePercentage > 20 ? '#ffebee' : '#e8f5e9',
+                  padding: '4px',
+                }}
+                title={
+                  changePercentage > 20
+                    ? 'Large change - triggers full processing fallback'
+                    : 'Small change - uses incremental optimization'
+                }
+              >
+                <option value={0.5}>0.5% (~175 resources) - Incremental</option>
+                <option value={1}>1% (~350 resources) - Incremental</option>
+                <option value={2}>2% (~700 resources) - Incremental</option>
+                <option value={5}>5% (~1750 resources) - Incremental</option>
+                <option value={10}>10% (~3500 resources) - Incremental</option>
+                <option value={20}>20% (~7000 resources) - Threshold</option>
+                <option value={25}>25% (~8750 resources) - Full</option>
+                <option value={50}>50% (~17500 resources) - Full</option>
+              </select>
             </label>
           </div>
           <div style={{ fontSize: '14px', color: '#666' }}>
             Pods: {pods.length} | Deployments: {deployments.length} | ReplicaSets:{' '}
-            {replicaSets.length} | Services: {services.length} | Total Nodes: {nodes.length} |
-            Edges: {edges.length}
+            {replicaSets.length} | Services: {services.length} | Total: {nodes.length} nodes |
+            Update #{updateCounter} ({changePercentage}% = ~
+            {Math.floor((allResources.length * changePercentage) / 100)} resources)
           </div>
-          <div style={{ fontSize: '12px', color: '#d32f2f', fontWeight: 'bold' }}>
-            ⚠️ EXTREME STRESS TEST with {allResources.length} resources (~35k edges). May take
-            30-60s to render initially. Graph simplification will auto-enable. Open Performance
-            Stats to monitor.
+          <div
+            style={{
+              fontSize: '12px',
+              color: '#d32f2f',
+              fontWeight: 'bold',
+              padding: '8px',
+              backgroundColor: '#ffebee',
+              borderRadius: '4px',
+            }}
+          >
+            ⚠️ EXTREME STRESS TEST with {allResources.length} resources (~60k edges). Initial
+            render may take 30-60s. Graph simplification will auto-enable to 300 nodes. Change % at{' '}
+            {changePercentage > 20 ? 'Full Processing' : 'Incremental'} mode.
           </div>
         </div>
         <div style={{ flex: 1 }}>
@@ -1099,7 +1223,7 @@ export const PerformanceTest100000Pods = () => {
   const [updateCounter, setUpdateCounter] = useState(0);
   const [autoUpdate, setAutoUpdate] = useState(false);
   const [updateInterval, setUpdateInterval] = useState(30000);
-  const [incrementalMode, setIncrementalMode] = useState(true);
+  const [changePercentage, setChangePercentage] = useState(0.5); // Default 0.5% for WebSocket
 
   // Realistic 100k pod cluster would have 50-100 namespaces for proper organization
   const namespaces = [
@@ -1169,17 +1293,17 @@ export const PerformanceTest100000Pods = () => {
   const { pods, replicaSets, deployments, services, edges } = useMemo(() => {
     const deployments: Deployment[] = [];
     namespaces.forEach(ns => {
-      deployments.push(...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter));
+      deployments.push(...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter, changePercentage));
     });
 
-    const replicaSets = generateMockReplicaSets(deployments, updateCounter);
-    const pods = generateMockPodsForDeployments(replicaSets, updateCounter);
-    const services = generateMockServices(namespaces, servicesPerNamespace, updateCounter);
+    const replicaSets = generateMockReplicaSets(deployments, updateCounter, changePercentage);
+    const pods = generateMockPodsForDeployments(replicaSets, updateCounter, changePercentage);
+    const services = generateMockServices(namespaces, servicesPerNamespace, updateCounter, changePercentage);
 
     const edges = generateResourceEdges(pods, replicaSets, deployments, services);
 
     return { pods, replicaSets, deployments, services, edges };
-  }, [updateCounter, namespaces, deploymentsPerNamespace, servicesPerNamespace, incrementalMode]);
+  }, [updateCounter, changePercentage, namespaces, deploymentsPerNamespace, servicesPerNamespace]);
 
   const allResources: KubeObject[] = useMemo(
     () => [...pods, ...replicaSets, ...deployments, ...services],
@@ -1262,18 +1386,35 @@ export const PerformanceTest100000Pods = () => {
               </select>
             </label>
             <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <input
-                type="checkbox"
-                checked={incrementalMode}
-                onChange={e => setIncrementalMode(e.target.checked)}
-              />
-              Incremental (1% change per update)
+              Change %:
+              <select
+                value={changePercentage}
+                onChange={e => setChangePercentage(Number(e.target.value))}
+                style={{
+                  backgroundColor: changePercentage > 20 ? '#ffebee' : '#e8f5e9',
+                  padding: '4px',
+                }}
+                title={
+                  changePercentage > 20
+                    ? 'Large change - full processing'
+                    : 'Small change - incremental'
+                }
+              >
+                <option value={0.5}>0.5% (~715 resources) - Incremental</option>
+                <option value={1}>1% (~1430 resources) - Incremental</option>
+                <option value={2}>2% (~2860 resources) - Incremental</option>
+                <option value={5}>5% (~7150 resources) - Incremental</option>
+                <option value={10}>10% (~14300 resources) - Incremental</option>
+                <option value={20}>20% (~28600 resources) - Threshold</option>
+                <option value={25}>25% (~35750 resources) - Full</option>
+              </select>
             </label>
           </div>
           <div style={{ fontSize: '14px', color: '#666' }}>
             Pods: {pods.length} | Deployments: {deployments.length} | ReplicaSets:{' '}
-            {replicaSets.length} | Services: {services.length} | Total Nodes: {nodes.length} |
-            Edges: {edges.length}
+            {replicaSets.length} | Services: {services.length} | Total: {nodes.length} nodes |
+            Update #{updateCounter} ({changePercentage}% = ~
+            {Math.floor((allResources.length * changePercentage) / 100)} resources)
           </div>
           <div
             style={{
