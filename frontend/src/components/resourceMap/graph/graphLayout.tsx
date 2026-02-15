@@ -33,7 +33,8 @@ type ElkEdgeWithData = ElkExtendedEdge & {
 };
 
 /**
- * PERFORMANCE: LRU cache for expensive ELK layout results (60s TTL, 10 entry limit)
+ * PERFORMANCE: Time-based cache for expensive ELK layout results (60s TTL, 10 entry limit)
+ * - Eviction policy: Oldest insertion time (not LRU - timestamps not updated on hits)
  * - ELK layout is the most expensive operation (~500-1500ms for simplified graphs)
  * - Cache hit = instant re-render (0ms vs 500-1500ms) = 100% faster
  * - Typical hit rate: 60-70% when navigating between views

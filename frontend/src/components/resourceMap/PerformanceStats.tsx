@@ -113,6 +113,11 @@ export function PerformanceStats({ visible = false, onToggle }: PerformanceStats
   const [expanded, setExpanded] = useState(true);
 
   useEffect(() => {
+    // SSR-safe: Only add event listeners in browser context
+    if (typeof window === 'undefined') {
+      return;
+    }
+
     const updateMetrics = () => {
       setMetrics(getLatestMetrics(20));
     };

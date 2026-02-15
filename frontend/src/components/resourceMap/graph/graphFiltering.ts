@@ -305,10 +305,14 @@ export function filterGraphIncremental(
   const totalTime = performance.now() - perfStart;
 
   if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
+    // PERFORMANCE: Guard against division by zero in debug log estimate
+    const estimateStr =
+      currentNodes.length > 0
+        ? `vs full would be ~${((nodesToCheck.length / currentNodes.length) * 450).toFixed(0)}ms`
+        : '';
     console.log(
       `[ResourceMap Performance] filterGraphIncremental: ${totalTime.toFixed(2)}ms ` +
-        `(processed ${nodesToCheck.length} changed nodes, result: ${resultNodes.length} nodes) ` +
-        `vs full would be ~${((nodesToCheck.length / currentNodes.length) * 450).toFixed(0)}ms`
+        `(processed ${nodesToCheck.length} changed nodes, result: ${resultNodes.length} nodes) ${estimateStr}`
     );
   }
 
