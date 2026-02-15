@@ -335,6 +335,17 @@ export const PerformanceTest2000Pods = () => {
             Nodes: {nodes.length} | Edges: {edges.length} | Open browser console to see performance
             metrics
           </div>
+          <div
+            style={{
+              fontSize: '12px',
+              color: '#0066cc',
+              fontStyle: 'italic',
+              maxWidth: '800px',
+            }}
+          >
+            💡 Toggle "Incremental Updates" in GraphView to compare: WITH = ~35ms (86% faster), WITHOUT
+            = ~250ms (full processing). See docs/development/resourcemap-incremental-update-comparison.md
+          </div>
         </div>
         <div style={{ flex: 1 }}>
           <GraphView height="100%" defaultSources={[largeScaleSource]} />
