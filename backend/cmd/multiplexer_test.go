@@ -230,6 +230,34 @@ func TestDialWebSocket_Errors(t *testing.T) {
 	assert.Nil(t, ws)
 }
 
+// TestDialWebSocket_BadHandshakeLogging verifies that when a WebSocket dial fails
+// due to a bad handshake (e.g., connecting to an HTTP server instead of a WebSocket),
+// the error logging doesn't cause JSON marshaling errors from function fields in the response.
+func TestDialWebSocket_BadHandshakeLogging(t *testing.T) {
+	// Create an HTTP server that returns a non-WebSocket response
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Return a normal HTTP response instead of upgrading to WebSocket
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("Not a WebSocket server"))
+	}))
+	defer server.Close()
+
+	contextStore := kubeconfig.NewContextStore()
+	m := NewMultiplexer(contextStore)
+
+	// Convert HTTP URL to WebSocket URL
+	wsURL := "ws" + strings.TrimPrefix(server.URL, "http")
+
+	tlsConfig := &tls.Config{InsecureSkipVerify: true} //nolint:gosec
+
+	// This should fail with a "bad handshake" error and log the response
+	// The test verifies that the logging doesn't panic or cause marshaling errors
+	ws, err := m.dialWebSocket(wsURL, tlsConfig, "", nil)
+	assert.Error(t, err)
+	assert.Nil(t, ws)
+	assert.Contains(t, err.Error(), "bad handshake")
+}
+
 func TestMonitorConnection(t *testing.T) {
 	m := NewMultiplexer(kubeconfig.NewContextStore())
 	clientConn, clientServer := createTestWebSocketConnection()

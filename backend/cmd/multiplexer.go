@@ -372,11 +372,10 @@ func (m *Multiplexer) dialWebSocket(
 	)
 	if err != nil {
 		logger.Log(logger.LevelError, nil, err, "dialing WebSocket")
-		logger.Log(logger.LevelError, nil, resp, "WebSocket response")
-		// We only attempt to close the response body if there was an error and resp is not nil.
-		// In the successful case (when err is nil), the resp will actually be nil for WebSocket connections,
-		// so we don't need to close anything.
+		// Log only serializable fields from the response to avoid JSON marshaling errors
 		if resp != nil {
+			respInfo := fmt.Sprintf("status: %s, statusCode: %d", resp.Status, resp.StatusCode)
+			logger.Log(logger.LevelError, nil, respInfo, "WebSocket response")
 			defer resp.Body.Close()
 		}
 
