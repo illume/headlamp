@@ -98,7 +98,7 @@ export function getLatestMetrics(count: number = 10): PerformanceMetric[] {
  */
 export function clearPerformanceMetrics() {
   performanceMetrics.length = 0;
-  // PERFORMANCE: SSR-safe guard added (see code review fix 99221dd)
+  // PERFORMANCE: SSR-safe guard prevents crashes in server-side rendering or test environments
   if (typeof window !== 'undefined') {
     window.dispatchEvent(new CustomEvent('performance-metric-added'));
   }
