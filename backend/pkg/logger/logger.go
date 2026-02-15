@@ -19,6 +19,7 @@ package logger
 import (
 	"runtime"
 	"strings"
+	"sync"
 
 	"github.com/rs/zerolog"
 	zlog "github.com/rs/zerolog/log"
@@ -41,6 +42,9 @@ type LogFunc func(level uint, str map[string]string, err interface{}, msg string
 
 // logFunc holds the actual logging function.
 var logFunc LogFunc = log
+
+// logFuncMutex protects access to logFunc for concurrent reads/writes.
+var logFuncMutex sync.RWMutex
 
 // Init configures the global zerolog log level from environment variables.
 // The HEADLAMP_CONFIG_LOG_LEVEL environment variable controls the global log level.
@@ -73,7 +77,11 @@ func Init(loglevel string) {
 
 // Log logs the message, source file, and line number at the specified level.
 func Log(level uint, str map[string]string, err interface{}, msg string) {
-	logFunc(level, str, err, msg)
+	logFuncMutex.RLock()
+	fn := logFunc
+	logFuncMutex.RUnlock()
+
+	fn(level, str, err, msg)
 }
 
 // Log is a wrapper function for logging. It uses zlog package and logs to stdout.
@@ -123,7 +131,14 @@ func log(level uint, str map[string]string, err interface{}, msg string) {
 }
 
 // SetLogFunc sets the logging function and returns the previous one.
+// This function is primarily intended for testing purposes.
+// Note: While this function is now thread-safe with mutex protection,
+// changing the log function during concurrent logging may still lead to
+// inconsistent behavior. It's recommended to only call this in test setup/teardown.
 func SetLogFunc(lf LogFunc) LogFunc {
+	logFuncMutex.Lock()
+	defer logFuncMutex.Unlock()
+
 	oldFunc := logFunc
 	logFunc = lf
 

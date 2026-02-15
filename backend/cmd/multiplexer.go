@@ -375,8 +375,15 @@ func (m *Multiplexer) dialWebSocket(
 		logger.Log(logger.LevelError, nil, err, "dialing WebSocket")
 		// Log only serializable fields from the response to avoid JSON marshaling errors
 		if resp != nil {
-			respInfo := fmt.Sprintf("status: %s, statusCode: %d", resp.Status, resp.StatusCode)
-			logger.Log(logger.LevelError, nil, respInfo, "WebSocket response")
+			logger.Log(
+				logger.LevelError,
+				map[string]string{
+					"status":     resp.Status,
+					"statusCode": fmt.Sprintf("%d", resp.StatusCode),
+				},
+				nil,
+				"WebSocket response",
+			)
 			defer resp.Body.Close()
 		}
 
