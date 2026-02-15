@@ -243,19 +243,18 @@ export function filterGraphIncremental(
 
   for (const nodeId of nodesToCheck) {
     const node = currentNodeMap.get(nodeId);
-    if (!node) continue;
+    if (!node || !node.kubeObject) continue;
 
     // Check if node matches any filter
     const matchesFilter =
       filters.length === 0 ||
       filters.some(filter => {
         if (filter.type === 'hasErrors') {
-          if (!node.kubeObject) return false;
-          const status = getStatus(node.kubeObject);
+          const status = getStatus(node.kubeObject!); // Already checked above
           return status === 'error' || status === 'warning';
         }
         if (filter.type === 'namespace') {
-          const ns = node.kubeObject?.metadata?.namespace;
+          const ns = node.kubeObject!.metadata?.namespace; // Already checked above
           return ns && filter.namespaces.has(ns);
         }
         return false;
