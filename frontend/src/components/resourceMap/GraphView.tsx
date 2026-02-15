@@ -190,7 +190,7 @@ function GraphViewContent({
   const { nodes, edges, selectedSources, sourceData, isLoading, toggleSelection } = useSources();
 
   // PERFORMANCE: Track previous graph state for incremental update detection
-  // - Store previous nodes/edges to detect what changed on websocket updates
+  // - Store previous nodes/edges to detect what changed on WebSocket updates
   // - Enables 87-92% faster processing for small changes (<20% of resources)
   // - Example: 100k pods, 1% change = 1000 pods changed
   //   - Full reprocess: ~1150ms (processes all 100k)
@@ -216,11 +216,11 @@ function GraphViewContent({
   //   then simplification reduces remaining 99,950 pods to most important
   // - Cost: ~450ms on 100k pods (unavoidable for correctness)
   //
-  // INCREMENTAL UPDATE OPTIMIZATION (for websocket updates):
+  // INCREMENTAL UPDATE OPTIMIZATION (for WebSocket updates):
   // - Detects what changed between previous and current data
   // - If <20% changed AND incremental enabled: Use incremental processing (87-92% faster)
   // - If >20% changed OR incremental disabled: Full reprocessing
-  // - Typical websocket updates: 1-5% changes (perfect for incremental)
+  // - Typical WebSocket updates: 1-5% changes (perfect for incremental)
   const filteredGraph = useMemo(() => {
     const perfStart = performance.now();
 

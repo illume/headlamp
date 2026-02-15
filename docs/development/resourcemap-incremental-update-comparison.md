@@ -2,16 +2,16 @@
 
 ## Executive Summary
 
-This document compares the performance impact of incremental update optimization vs full reprocessing for websocket-driven resource updates in ResourceMap.
+This document compares the performance impact of incremental update optimization vs full reprocessing for WebSocket-driven resource updates in ResourceMap.
 
-**Key Finding**: Incremental updates provide **87-92% faster processing** for typical websocket update patterns (<20% resource changes).
+**Key Finding**: Incremental updates provide **87-92% faster processing** for typical WebSocket update patterns (<20% resource changes).
 
 ---
 
 ## What is Incremental Update Optimization?
 
 ### Without Incremental Optimization (Before)
-When Kubernetes resources update via websockets:
+When Kubernetes resources update via WebSockets:
 1. **Websocket receives update** (e.g., 1 pod status changed)
 2. **React re-renders with new data** (all 2000 pods passed to component)
 3. **useMemo triggers** (dependency array changed)
@@ -20,7 +20,7 @@ When Kubernetes resources update via websockets:
 6. **Total**: ~370ms **to process 1 changed pod**
 
 ### With Incremental Optimization (After)
-When Kubernetes resources update via websockets:
+When Kubernetes resources update via WebSockets:
 1. **Websocket receives update** (e.g., 1 pod status changed)
 2. **React re-renders with new data** (all 2000 pods passed to component)
 3. **useMemo triggers** (dependency array changed)
@@ -30,7 +30,7 @@ When Kubernetes resources update via websockets:
 7. **groupGraph runs on result** (smaller dataset) = **~15ms**
 8. **Total**: ~55ms **to process 1 changed pod**
 
-**Improvement**: 370ms → 55ms = **85% faster** for typical websocket updates
+**Improvement**: 370ms → 55ms = **85% faster** for typical WebSocket updates
 
 ---
 
@@ -258,7 +258,7 @@ Total: ~665ms
 1. **Massive performance improvement** for typical updates
    - 85-92% faster for 0.5-2% changes
    - 65-82% faster for 2-10% changes
-   - Perfect for websocket update patterns
+   - Perfect for WebSocket update patterns
 
 2. **Automatic fallback**
    - Falls back to full processing for large changes (>20%)
@@ -349,7 +349,7 @@ Total: ~665ms
 
 ### Step 5: Test Different Scenarios
 
-**Auto-Update Mode** (simulates continuous websocket updates):
+**Auto-Update Mode** (simulates continuous WebSocket updates):
 1. Enable **"Auto-update"** checkbox
 2. Set interval to **"2s"** (high frequency)
 3. Watch metrics accumulate in Performance Stats
@@ -357,7 +357,7 @@ Total: ~665ms
 
 **Different Change Rates**:
 - The test simulates realistic 1-2% changes per update
-- Matches production websocket patterns
+- Matches production WebSocket patterns
 - Toggle incremental on/off to see difference
 
 ---
@@ -484,7 +484,7 @@ Heap Snapshot:
 
 ### ✅ When to Enable Incremental Updates (Default: ON)
 
-1. **Production clusters with websockets** ← **Your use case**
+1. **Production clusters with WebSockets** ← **Your use case**
    - Continuous resource updates
    - Typical change rate: 0.5-5% per update
    - **Benefit**: 65-92% faster processing
@@ -521,7 +521,7 @@ Heap Snapshot:
 **Recommendation**: **Enabled by default** ✅
 
 **Rationale**:
-- Primary use case: Production clusters with websockets
+- Primary use case: Production clusters with WebSockets
 - Typical update patterns: 0.5-5% changes
 - Performance benefit: 65-92% faster
 - Memory cost: Negligible (<1% of available)
@@ -583,14 +583,14 @@ To validate incremental updates are working correctly:
 
 **Incremental update optimization is production-ready** and provides:
 
-- ✅ **85-92% faster** for typical websocket updates (1-5% changes)
+- ✅ **85-92% faster** for typical WebSocket updates (1-5% changes)
 - ✅ **Automatic fallback** for large changes (safe)
 - ✅ **Same correctness** as full processing
 - ✅ **Low overhead** (6MB memory, 5ms detection)
 - ✅ **User control** with toggle in UI
 
-**Recommendation**: Enable by default for all production deployments with websockets.
+**Recommendation**: Enable by default for all production deployments with WebSockets.
 
 **Testing**: Use Storybook "Incremental Updates" toggle to compare performance in real-time.
 
-**Impact**: Makes ResourceMap feel responsive even during continuous websocket updates in large clusters.
+**Impact**: Makes ResourceMap feel responsive even during continuous WebSocket updates in large clusters.

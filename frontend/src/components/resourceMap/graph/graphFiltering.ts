@@ -186,7 +186,7 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
 
 /**
  * Incremental filter update - only processes changed nodes
- * PERFORMANCE: 87-92% faster when <20% of resources change (typical for websocket updates)
+ * PERFORMANCE: 87-92% faster when <20% of resources change (typical for WebSocket updates)
  * 
  * Example: 100k pods, 1% change = 1000 pods modified
  * - Full filterGraph: ~450ms (processes all 100k)
@@ -200,7 +200,7 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
  * - Result: Same correctness as full filter, but much faster for small changes
  * 
  * Trade-off: 8ms overhead for change detection
- * - Worth it when <20% changed (typical websocket pattern: 1-5% per update)
+ * - Worth it when <20% changed (typical WebSocket pattern: 1-5% per update)
  * - Auto-falls back to full processing for large changes (>20%)
  * 
  * @param prevFilteredNodes - Previously filtered nodes
