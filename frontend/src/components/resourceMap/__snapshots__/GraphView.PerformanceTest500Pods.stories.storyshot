@@ -4,20 +4,63 @@
       style="display: flex; flex-direction: column; height: 100vh;"
     >
       <div
-        style="padding: 16px; background: rgb(245, 245, 245); border-bottom: 1px solid #ddd; display: flex; gap: 16px; align-items: center;"
+        style="padding: 16px; background: rgb(245, 245, 245); border-bottom: 1px solid #ddd; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;"
       >
         <h3
           style="margin: 0px;"
         >
           Performance Test: 500 Pods
         </h3>
-        <button
-          style="padding: 8px 16px; cursor: pointer;"
+        <div
+          style="display: flex; gap: 8px; align-items: center;"
         >
-          Trigger Update (#
-          0
-          )
-        </button>
+          <button
+            style="padding: 8px 16px; cursor: pointer;"
+          >
+            Trigger Update (#
+            0
+            )
+          </button>
+          <label
+            style="display: flex; align-items: center; gap: 4px;"
+          >
+            Change %:
+            <select
+              style="background-color: rgb(232, 245, 233); padding: 4px;"
+            >
+              <option
+                value="1"
+              >
+                1% (5 pods)
+              </option>
+              <option
+                value="5"
+              >
+                5% (25 pods)
+              </option>
+              <option
+                value="10"
+              >
+                10% (50 pods)
+              </option>
+              <option
+                value="20"
+              >
+                20% (100 pods)
+              </option>
+              <option
+                value="50"
+              >
+                50% (250 pods)
+              </option>
+              <option
+                value="100"
+              >
+                100% (all)
+              </option>
+            </select>
+          </label>
+        </div>
         <div
           style="font-size: 14px; color: rgb(102, 102, 102);"
         >
@@ -25,7 +68,13 @@
           500
            | Edges: 
           500
-           | Check console for timing
+           | Update #
+          0
+           (
+          5
+          % = 
+          25
+           pods)
         </div>
       </div>
       <div
@@ -197,6 +246,20 @@
                   class="MuiChip-label MuiChip-labelMedium css-1jzq0dw-MuiChip-label"
                 >
                   Status: Error or Warning
+                </span>
+                <span
+                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                />
+              </div>
+              <div
+                class="MuiButtonBase-root MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorPrimary MuiChip-clickable MuiChip-clickableColorPrimary MuiChip-filledPrimary css-661vdt-MuiButtonBase-root-MuiChip-root"
+                role="button"
+                tabindex="0"
+              >
+                <span
+                  class="MuiChip-label MuiChip-labelMedium css-6od3lo-MuiChip-label"
+                >
+                  Incremental Updates
                 </span>
                 <span
                   class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"

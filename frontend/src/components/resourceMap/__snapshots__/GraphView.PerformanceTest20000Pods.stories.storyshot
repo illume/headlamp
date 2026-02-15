@@ -59,11 +59,52 @@
           <label
             style="display: flex; align-items: center; gap: 4px;"
           >
-            <input
-              checked=""
-              type="checkbox"
-            />
-            Incremental (1% change per update)
+            Change %:
+            <select
+              style="background-color: rgb(232, 245, 233); padding: 4px;"
+              title="Small change - uses incremental optimization"
+            >
+              <option
+                value="0.5"
+              >
+                0.5% (~175 resources) - Incremental
+              </option>
+              <option
+                value="1"
+              >
+                1% (~350 resources) - Incremental
+              </option>
+              <option
+                value="2"
+              >
+                2% (~700 resources) - Incremental
+              </option>
+              <option
+                value="5"
+              >
+                5% (~1750 resources) - Incremental
+              </option>
+              <option
+                value="10"
+              >
+                10% (~3500 resources) - Incremental
+              </option>
+              <option
+                value="20"
+              >
+                20% (~7000 resources) - Threshold
+              </option>
+              <option
+                value="25"
+              >
+                25% (~8750 resources) - Full
+              </option>
+              <option
+                value="50"
+              >
+                50% (~17500 resources) - Full
+              </option>
+            </select>
           </label>
         </div>
         <div
@@ -78,17 +119,25 @@
           6670
            | Services: 
           1000
-           | Total Nodes: 
+           | Total: 
           34350
-           | Edges: 
-          56680
+           nodes | Update #
+          0
+           (
+          1
+          % = ~
+          343
+           resources)
         </div>
         <div
-          style="font-size: 12px; color: rgb(211, 47, 47); font-weight: bold;"
+          style="font-size: 12px; color: rgb(211, 47, 47); font-weight: bold; padding: 8px; background-color: rgb(255, 235, 238); border-radius: 4px;"
         >
           ⚠️ EXTREME STRESS TEST with 
           34350
-           resources (~35k edges). May take 30-60s to render initially. Graph simplification will auto-enable. Open Performance Stats to monitor.
+           resources (~60k edges). Initial render may take 30-60s. Graph simplification will auto-enable to 300 nodes. Change % at
+           
+          Incremental
+           mode.
         </div>
       </div>
       <div
@@ -273,7 +322,7 @@
                 <span
                   class="MuiChip-label MuiChip-labelMedium css-6od3lo-MuiChip-label"
                 >
-                  Simplify (500 most important)
+                  Simplify (300 most important)
                 </span>
                 <span
                   class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
@@ -287,6 +336,20 @@
                 >
                   Showing 300 of 34350 nodes
                 </span>
+              </div>
+              <div
+                class="MuiButtonBase-root MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorPrimary MuiChip-clickable MuiChip-clickableColorPrimary MuiChip-filledPrimary css-661vdt-MuiButtonBase-root-MuiChip-root"
+                role="button"
+                tabindex="0"
+              >
+                <span
+                  class="MuiChip-label MuiChip-labelMedium css-6od3lo-MuiChip-label"
+                >
+                  Incremental Updates
+                </span>
+                <span
+                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                />
               </div>
               <div
                 class="MuiButtonBase-root MuiChip-root MuiChip-outlined MuiChip-sizeMedium MuiChip-colorDefault MuiChip-clickable MuiChip-clickableColorDefault MuiChip-outlinedDefault css-1b73nf-MuiButtonBase-root-MuiChip-root"

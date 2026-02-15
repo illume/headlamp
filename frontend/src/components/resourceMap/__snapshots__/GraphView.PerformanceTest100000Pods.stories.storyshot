@@ -7,9 +7,9 @@
         style="padding: 16px; background: rgb(245, 245, 245); border-bottom: 1px solid #ddd; display: flex; gap: 16px; align-items: center; flex-wrap: wrap;"
       >
         <h3
-          style="margin: 0px;"
+          style="margin: 0px; color: rgb(211, 47, 47); font-weight: bold;"
         >
-          Performance Test: 5000 Pods + Full Cluster
+          🚨 ULTIMATE STRESS TEST: 100,000 Pods + Full Cluster 🚨
         </h3>
         <div
           style="display: flex; gap: 8px; align-items: center;"
@@ -35,24 +35,24 @@
             Interval:
             <select>
               <option
-                value="2000"
-              >
-                2s
-              </option>
-              <option
-                value="5000"
-              >
-                5s
-              </option>
-              <option
-                value="10000"
-              >
-                10s
-              </option>
-              <option
                 value="30000"
               >
                 30s
+              </option>
+              <option
+                value="60000"
+              >
+                60s
+              </option>
+              <option
+                value="120000"
+              >
+                2min
+              </option>
+              <option
+                value="300000"
+              >
+                5min
               </option>
             </select>
           </label>
@@ -62,47 +62,42 @@
             Change %:
             <select
               style="background-color: rgb(232, 245, 233); padding: 4px;"
-              title="Small change - uses incremental optimization"
+              title="Small change - incremental"
             >
+              <option
+                value="0.5"
+              >
+                0.5% (~715 resources) - Incremental
+              </option>
               <option
                 value="1"
               >
-                1% (~167 resources) - Incremental
+                1% (~1430 resources) - Incremental
               </option>
               <option
                 value="2"
               >
-                2% (~334 resources) - Incremental
+                2% (~2860 resources) - Incremental
               </option>
               <option
                 value="5"
               >
-                5% (~835 resources) - Incremental
+                5% (~7150 resources) - Incremental
               </option>
               <option
                 value="10"
               >
-                10% (~1670 resources) - Incremental
+                10% (~14300 resources) - Incremental
               </option>
               <option
                 value="20"
               >
-                20% (~3340 resources) - Threshold
+                20% (~28600 resources) - Threshold
               </option>
               <option
                 value="25"
               >
-                25% (~4175 resources) - Full
-              </option>
-              <option
-                value="50"
-              >
-                50% (~8350 resources) - Full
-              </option>
-              <option
-                value="100"
-              >
-                100% (all resources) - Full
+                25% (~35750 resources) - Full
               </option>
             </select>
           </label>
@@ -111,30 +106,40 @@
           style="font-size: 14px; color: rgb(102, 102, 102);"
         >
           Pods: 
-          5010
+          61200
            | Deployments: 
-          1670
+          20400
            | ReplicaSets:
            
-          1670
+          20400
            | Services: 
-          500
+          3060
            | Total: 
-          8850
+          105060
            nodes | Update #
           0
            (
-          2
+          0.5
           % = ~
-          177
+          525
            resources)
         </div>
         <div
-          style="font-size: 12px; color: rgb(46, 125, 50); font-style: italic; padding: 8px; background-color: rgb(232, 245, 233); border-radius: 4px;"
+          style="font-size: 13px; color: rgb(211, 47, 47); font-weight: bold; border: 2px solid #d32f2f; padding: 8px; border-radius: 4px; background-color: rgb(255, 235, 238);"
         >
-          💡 
-          Incremental Optimization
-           mode. Open Performance Stats to see metrics.
+          🚨 ULTIMATE STRESS TEST: 
+          105060
+           resources (~
+          173400
+           edges).
+          <br />
+          Realistic 100k pod cluster: 50 namespaces, 20k Deployments (avg 5 replicas), 3k Services (1 per 33 pods).
+          <br />
+          Extreme simplification reduces to 200 most critical nodes for visualization.
+          <br />
+          Initial data generation: 60-120s. Performance Stats shows actual render timings.
+          <br />
+          ✅ Validates architecture scales to largest real-world clusters!
         </div>
       </div>
       <div
@@ -238,7 +243,7 @@
                     class="MuiStack-root css-1qxw92a-MuiStack-root"
                   >
                      
-                    Resources (8850)
+                    Resources (105060)
                      
                   </div>
                 </span>
@@ -319,7 +324,7 @@
                 <span
                   class="MuiChip-label MuiChip-labelMedium css-6od3lo-MuiChip-label"
                 >
-                  Simplify (500 most important)
+                  Simplify (300 most important)
                 </span>
                 <span
                   class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
@@ -331,7 +336,7 @@
                 <span
                   class="MuiChip-label MuiChip-labelSmall css-rrn746-MuiChip-label"
                 >
-                  Showing 500 of 8850 nodes
+                  Showing 300 of 105060 nodes
                 </span>
               </div>
               <div

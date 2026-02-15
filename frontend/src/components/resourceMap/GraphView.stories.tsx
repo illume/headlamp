@@ -128,10 +128,10 @@ const POD_ERROR_RATE = 0.05; // 5% of pods will have error status
 
 /**
  * Generate mock pod data for performance testing
- * 
+ *
  * @param count - Total number of pods to generate
  * @param updateCounter - Update iteration counter
- * @param changePercentage - Percentage of pods to update (0-100). 
+ * @param changePercentage - Percentage of pods to update (0-100).
  *                           For realistic WebSocket simulation, use low values (1-10%).
  *                           Values >20% trigger fallback to full processing.
  */
@@ -261,11 +261,11 @@ function generateMockEdges(pods: Pod[]): GraphEdge[] {
 
 /**
  * Performance test with 2000 pods
- * 
+ *
  * Features incremental update testing with configurable change percentage:
  * - <20% changes: Uses filterGraphIncremental (85-92% faster)
  * - >20% changes: Falls back to full filterGraph (safe)
- * 
+ *
  * Enable "Incremental Updates" toggle in GraphView and try different change percentages
  * to see the performance difference in the Performance Stats panel.
  */
@@ -385,7 +385,8 @@ export const PerformanceTest2000Pods = () => {
           </div>
           <div style={{ fontSize: '14px', color: '#666' }}>
             Nodes: {nodes.length} | Edges: {edges.length} | Update #{updateCounter} (
-            {changePercentage}% changed = {Math.floor((nodes.length * changePercentage) / 100)} pods)
+            {changePercentage}% changed = {Math.floor((nodes.length * changePercentage) / 100)}{' '}
+            pods)
           </div>
           <div
             style={{
@@ -406,8 +407,8 @@ export const PerformanceTest2000Pods = () => {
               </>
             ) : (
               <>
-                <strong>Incremental Optimization</strong> - Typical time ~35-70ms (85-92% faster than
-                250ms full processing). Toggle "Incremental Updates" in GraphView to compare
+                <strong>Incremental Optimization</strong> - Typical time ~35-70ms (85-92% faster
+                than 250ms full processing). Toggle "Incremental Updates" in GraphView to compare
                 performance.
               </>
             )}
@@ -511,7 +512,7 @@ export const PerformanceTest500Pods = () => {
 
 /**
  * Generate mock Deployments
- * 
+ *
  * @param changePercentage - Percentage of deployments to update (0-100)
  */
 function generateMockDeployments(
@@ -584,12 +585,15 @@ function generateMockDeployments(
 
 /**
  * Generate mock ReplicaSets
- * 
- * @param changePercentage - Inherited from parent deployments. RS gets same update as its deployment.
+ *
+ * Note: updateCounter and changePercentage are unused because RS inherits
+ * resourceVersion from parent deployment. Parameters kept for API consistency.
  */
 function generateMockReplicaSets(
   deployments: Deployment[],
+  // eslint-disable-next-line no-unused-vars
   updateCounter: number = 0,
+  // eslint-disable-next-line no-unused-vars
   changePercentage: number = 100
 ): ReplicaSet[] {
   const replicaSets: ReplicaSet[] = [];
@@ -597,7 +601,7 @@ function generateMockReplicaSets(
   deployments.forEach((deployment, idx) => {
     // Inherit update status from deployment (RS follows deployment resourceVersion)
     const deploymentResourceVersion = deployment.metadata.resourceVersion;
-    
+
     const replicaSetData = {
       apiVersion: 'apps/v1',
       kind: 'ReplicaSet',
@@ -641,7 +645,7 @@ function generateMockReplicaSets(
 
 /**
  * Generate mock Services
- * 
+ *
  * @param changePercentage - Percentage of services to update (0-100)
  */
 function generateMockServices(
@@ -656,7 +660,8 @@ function generateMockServices(
   namespaces.forEach(namespace => {
     for (let i = 0; i < servicesPerNamespace; i++) {
       // Only update specified percentage of services
-      const shouldUpdate = (globalIndex / (namespaces.length * servicesPerNamespace)) * 100 < changePercentage;
+      const shouldUpdate =
+        (globalIndex / (namespaces.length * servicesPerNamespace)) * 100 < changePercentage;
       const effectiveUpdateCounter = shouldUpdate ? updateCounter : 0;
 
       const serviceData = {
@@ -700,18 +705,20 @@ function generateMockServices(
 
 /**
  * Generate pods that connect to deployments via ReplicaSets
- * 
- * Pods inherit update status from their parent ReplicaSet (which follows Deployment)
+ *
+ * Note: updateCounter and changePercentage are unused because Pods inherit
+ * resourceVersion from parent ReplicaSet. Parameters kept for API consistency.
  */
 function generateMockPodsForDeployments(
   replicaSets: ReplicaSet[],
+  // eslint-disable-next-line no-unused-vars
   updateCounter: number = 0,
+  // eslint-disable-next-line no-unused-vars
   changePercentage: number = 100
 ): Pod[] {
   const pods: Pod[] = [];
   const statuses = ['Running', 'Pending', 'Failed', 'Succeeded'];
 
-  let globalIndex = 0;
   replicaSets.forEach((replicaSet, rsIdx) => {
     // Each ReplicaSet gets 3 pods
     for (let podIdx = 0; podIdx < 3; podIdx++) {
@@ -791,7 +798,6 @@ function generateMockPodsForDeployments(
       };
 
       pods.push(new Pod(podData as any));
-      globalIndex++;
     }
   });
 
@@ -872,7 +878,7 @@ function generateResourceEdges(
 
 /**
  * Performance test with 5000 pods and associated resources
- * 
+ *
  * Features incremental update testing with configurable change percentage
  */
 export const PerformanceTest5000Pods = () => {
@@ -894,12 +900,19 @@ export const PerformanceTest5000Pods = () => {
   const { pods, replicaSets, deployments, services, edges } = useMemo(() => {
     const deployments: Deployment[] = [];
     namespaces.forEach(ns => {
-      deployments.push(...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter, changePercentage));
+      deployments.push(
+        ...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter, changePercentage)
+      );
     });
 
     const replicaSets = generateMockReplicaSets(deployments, updateCounter, changePercentage);
     const pods = generateMockPodsForDeployments(replicaSets, updateCounter, changePercentage);
-    const services = generateMockServices(namespaces, servicesPerNamespace, updateCounter, changePercentage);
+    const services = generateMockServices(
+      namespaces,
+      servicesPerNamespace,
+      updateCounter,
+      changePercentage
+    );
 
     const edges = generateResourceEdges(pods, replicaSets, deployments, services);
 
@@ -1072,12 +1085,19 @@ export const PerformanceTest20000Pods = () => {
   const { pods, replicaSets, deployments, services, edges } = useMemo(() => {
     const deployments: Deployment[] = [];
     namespaces.forEach(ns => {
-      deployments.push(...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter, changePercentage));
+      deployments.push(
+        ...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter, changePercentage)
+      );
     });
 
     const replicaSets = generateMockReplicaSets(deployments, updateCounter, changePercentage);
     const pods = generateMockPodsForDeployments(replicaSets, updateCounter, changePercentage);
-    const services = generateMockServices(namespaces, servicesPerNamespace, updateCounter, changePercentage);
+    const services = generateMockServices(
+      namespaces,
+      servicesPerNamespace,
+      updateCounter,
+      changePercentage
+    );
 
     const edges = generateResourceEdges(pods, replicaSets, deployments, services);
 
@@ -1206,8 +1226,8 @@ export const PerformanceTest20000Pods = () => {
               borderRadius: '4px',
             }}
           >
-            ⚠️ EXTREME STRESS TEST with {allResources.length} resources (~60k edges). Initial
-            render may take 30-60s. Graph simplification will auto-enable to 300 nodes. Change % at{' '}
+            ⚠️ EXTREME STRESS TEST with {allResources.length} resources (~60k edges). Initial render
+            may take 30-60s. Graph simplification will auto-enable to 300 nodes. Change % at{' '}
             {changePercentage > 20 ? 'Full Processing' : 'Incremental'} mode.
           </div>
         </div>
@@ -1293,12 +1313,19 @@ export const PerformanceTest100000Pods = () => {
   const { pods, replicaSets, deployments, services, edges } = useMemo(() => {
     const deployments: Deployment[] = [];
     namespaces.forEach(ns => {
-      deployments.push(...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter, changePercentage));
+      deployments.push(
+        ...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter, changePercentage)
+      );
     });
 
     const replicaSets = generateMockReplicaSets(deployments, updateCounter, changePercentage);
     const pods = generateMockPodsForDeployments(replicaSets, updateCounter, changePercentage);
-    const services = generateMockServices(namespaces, servicesPerNamespace, updateCounter, changePercentage);
+    const services = generateMockServices(
+      namespaces,
+      servicesPerNamespace,
+      updateCounter,
+      changePercentage
+    );
 
     const edges = generateResourceEdges(pods, replicaSets, deployments, services);
 

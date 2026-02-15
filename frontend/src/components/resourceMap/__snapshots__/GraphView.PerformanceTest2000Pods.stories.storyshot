@@ -56,6 +56,56 @@
               </option>
             </select>
           </label>
+          <label
+            style="display: flex; align-items: center; gap: 4px;"
+          >
+            Change %:
+            <select
+              style="background-color: rgb(232, 245, 233); padding: 4px;"
+              title="Small change - uses incremental optimization (85-92% faster)"
+            >
+              <option
+                value="1"
+              >
+                1% (20 pods) - Incremental
+              </option>
+              <option
+                value="2"
+              >
+                2% (40 pods) - Incremental
+              </option>
+              <option
+                value="5"
+              >
+                5% (100 pods) - Incremental
+              </option>
+              <option
+                value="10"
+              >
+                10% (200 pods) - Incremental
+              </option>
+              <option
+                value="20"
+              >
+                20% (400 pods) - Threshold
+              </option>
+              <option
+                value="25"
+              >
+                25% (500 pods) - Full Processing
+              </option>
+              <option
+                value="50"
+              >
+                50% (1000 pods) - Full Processing
+              </option>
+              <option
+                value="100"
+              >
+                100% (2000 pods) - Full Processing
+              </option>
+            </select>
+          </label>
         </div>
         <div
           style="font-size: 14px; color: rgb(102, 102, 102);"
@@ -64,7 +114,30 @@
           2000
            | Edges: 
           2000
-           | Open browser console to see performance metrics
+           | Update #
+          0
+           (
+          1
+          % changed = 
+          20
+           
+          pods)
+        </div>
+        <div
+          style="font-size: 12px; color: rgb(46, 125, 50); font-style: italic; max-width: 900px; padding: 8px; background-color: rgb(232, 245, 233); border-radius: 4px;"
+        >
+          💡 
+          <strong>
+            Change 
+            1
+            %
+          </strong>
+          :
+           
+          <strong>
+            Incremental Optimization
+          </strong>
+           - Typical time ~35-70ms (85-92% faster than 250ms full processing). Toggle "Incremental Updates" in GraphView to compare performance.
         </div>
       </div>
       <div
@@ -263,6 +336,20 @@
                 >
                   Showing 500 of 2000 nodes
                 </span>
+              </div>
+              <div
+                class="MuiButtonBase-root MuiChip-root MuiChip-filled MuiChip-sizeMedium MuiChip-colorPrimary MuiChip-clickable MuiChip-clickableColorPrimary MuiChip-filledPrimary css-661vdt-MuiButtonBase-root-MuiChip-root"
+                role="button"
+                tabindex="0"
+              >
+                <span
+                  class="MuiChip-label MuiChip-labelMedium css-6od3lo-MuiChip-label"
+                >
+                  Incremental Updates
+                </span>
+                <span
+                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                />
               </div>
               <div
                 class="MuiButtonBase-root MuiChip-root MuiChip-outlined MuiChip-sizeMedium MuiChip-colorDefault MuiChip-clickable MuiChip-clickableColorDefault MuiChip-outlinedDefault css-1b73nf-MuiButtonBase-root-MuiChip-root"
