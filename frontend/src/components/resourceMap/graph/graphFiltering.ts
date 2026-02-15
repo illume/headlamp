@@ -312,6 +312,12 @@ export function filterGraphIncremental(
     );
   }
 
+  // PERFORMANCE: Calculate savings vs full processing (avoid division by zero)
+  const estimatedFull =
+    currentNodes.length > 0 ? (nodesToCheck.length / currentNodes.length) * 450 : 0;
+  const savingsPercent =
+    estimatedFull > 0 ? (((estimatedFull - totalTime) / estimatedFull) * 100).toFixed(0) : '0';
+
   addPerformanceMetric({
     operation: 'filterGraphIncremental',
     duration: totalTime,
@@ -319,13 +325,8 @@ export function filterGraphIncremental(
     details: {
       changedNodes: nodesToCheck.length,
       resultNodes: resultNodes.length,
-      estimatedFullTime: ((nodesToCheck.length / currentNodes.length) * 450).toFixed(0),
-      savings:
-        (
-          (((nodesToCheck.length / currentNodes.length) * 450 - totalTime) /
-            ((nodesToCheck.length / currentNodes.length) * 450)) *
-          100
-        ).toFixed(0) + '%',
+      estimatedFullTime: estimatedFull.toFixed(0),
+      savings: savingsPercent + '%',
     },
   });
 

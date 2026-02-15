@@ -1,5 +1,7 @@
 <body>
-  <div>
+  <div
+    aria-hidden="true"
+  >
     <div
       class="MuiSnackbar-root MuiSnackbar-anchorOriginBottomRight css-1mdvdtb-MuiSnackbar-root"
       role="presentation"
@@ -14,9 +16,10 @@
         <div
           class="MuiSnackbarContent-message css-1exqwzz-MuiSnackbarContent-message"
         >
-          Failed to fetch release information
+          An update is available
         </div>
-      </div>
-    </div>
-  </div>
-</body>
+        <div
+          class="MuiSnackbarContent-action css-1kr9x0n-MuiSnackbarContent-action"
+        >
+          <div
+            class="MuiBox-root css-70qvj9"

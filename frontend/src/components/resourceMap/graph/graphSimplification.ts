@@ -45,9 +45,11 @@ export const EXTREME_SIMPLIFIED_NODE_LIMIT = 300;
  * - Result: 85-90% faster rendering, enables 100k+ pod clusters
  *
  * PERFORMANCE: Auto-adjusts simplification level based on graph size.
- * - <1000 nodes: No simplification needed (fast enough)
- * - 1000-10000 nodes: Reduce to 500 most important (85% faster)
- * - >10000 nodes: Reduce to 300 most important (90% faster, prevents crash)
+ * - Simplification check: Compare nodes.length against maxNodes parameter (default 500)
+ * - If nodes.length <= maxNodes: Skip simplification (already small enough)
+ * - If nodes.length > maxNodes: Reduce to maxNodes most important nodes
+ * - GraphView.tsx uses SIMPLIFICATION_THRESHOLD (1000) to decide when to enable
+ *   simplification, then passes maxNodes=500 (or 300 for extreme graphs >10000)
  *
  * Importance is based on:
  * - Node weight (higher weight = more important)

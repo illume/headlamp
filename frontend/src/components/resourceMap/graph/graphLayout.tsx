@@ -89,8 +89,11 @@ function getGraphCacheKey(graph: GraphNode, aspectRatio: number): string {
   const edgeSample =
     edgeHashes.length > 100 ? edgeHashes.slice(0, 100).join('|') : edgeHashes.join('|');
 
-  // Create cache key from counts, structure samples, and aspect ratio
-  return `${nodeCount}-${edgeCount}-${nodeIdSample}-${edgeSample}-${aspectRatio.toFixed(2)}`;
+  // PERFORMANCE: Cache key must include aspect ratio to prevent false cache hits
+  // - We include full precision (not rounded) since ELK layout depends on exact aspect ratio
+  // - Rounding would cause stale layouts when container size changes slightly
+  // - Example: 1.23 vs 1.24 would round to same key but need different layouts
+  return `${nodeCount}-${edgeCount}-${nodeIdSample}-${edgeSample}-${aspectRatio}`;
 }
 
 /**
