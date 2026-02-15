@@ -21,6 +21,7 @@ import { useDispatch } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { setNamespaceFilter } from '../../redux/filterSlice';
 import { useTypedSelector } from '../../redux/hooks';
+import { LabelSelectorInput } from './LabelSelectorInput';
 import { NamespacesAutocomplete } from './NamespacesAutocomplete';
 import SectionHeader, { SectionHeaderProps } from './SectionHeader';
 
@@ -43,6 +44,7 @@ function getFilterValueByNameFromURL(key: string, location: any): string[] {
 
 export interface SectionFilterHeaderProps extends SectionHeaderProps {
   noNamespaceFilter?: boolean;
+  noLabelFilter?: boolean;
   /**
    * @deprecated
    * This prop has no effect, search has moved inside the Table component.
@@ -55,6 +57,7 @@ export interface SectionFilterHeaderProps extends SectionHeaderProps {
 export default function SectionFilterHeader(props: SectionFilterHeaderProps) {
   const {
     noNamespaceFilter = false,
+    noLabelFilter = false,
     actions: propsActions = [],
     preRenderFromFilterActions,
     ...headerProps
@@ -93,6 +96,10 @@ export default function SectionFilterHeader(props: SectionFilterHeaderProps) {
 
   if (!noNamespaceFilter) {
     actions.push(<NamespacesAutocomplete />);
+  }
+
+  if (!noLabelFilter) {
+    actions.push(<LabelSelectorInput />);
   }
 
   return (

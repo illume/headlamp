@@ -26,10 +26,13 @@ import { getSavedNamespaces, saveNamespaces } from '../lib/storage';
 export interface FilterState {
   /** The namespaces to filter on. */
   namespaces: Set<string>;
+  /** The label selector to filter on. */
+  labelSelector: string;
 }
 
 export const initialState: FilterState = {
   namespaces: new Set(getSavedNamespaces()),
+  labelSelector: '',
 };
 
 /**
@@ -150,16 +153,23 @@ const filterSlice = createSlice({
       saveNamespaces([...namespacesSet]);
     },
     /**
+     * Sets the label selector filter.
+     */
+    setLabelSelectorFilter(state, action: PayloadAction<string>) {
+      state.labelSelector = action.payload;
+    },
+    /**
      * Resets the filter state.
      */
     resetFilter(state) {
       state.namespaces = new Set();
+      state.labelSelector = '';
       saveNamespaces([]);
     },
   },
 });
 
-export const { setNamespaceFilter, resetFilter } = filterSlice.actions;
+export const { setNamespaceFilter, setLabelSelectorFilter, resetFilter } = filterSlice.actions;
 
 export default filterSlice.reducer;
 
@@ -171,4 +181,13 @@ export default filterSlice.reducer;
 export const useNamespaces = () => {
   const namespacesSet = useSelector(({ filter }: { filter: FilterState }) => filter.namespaces);
   return useMemo(() => [...namespacesSet], [namespacesSet]);
+};
+
+/**
+ * Get the label selector filter
+ *
+ * @returns The label selector string
+ */
+export const useLabelSelector = () => {
+  return useSelector(({ filter }: { filter: FilterState }) => filter.labelSelector);
 };
