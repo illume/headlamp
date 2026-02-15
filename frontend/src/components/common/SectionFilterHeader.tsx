@@ -19,28 +19,12 @@ import Grid from '@mui/material/Grid';
 import React from 'react';
 import { useDispatch } from 'react-redux';
 import { useLocation } from 'react-router-dom';
+import { getFilterValuesFromURL } from '../../lib/urlUtils';
 import { setNamespaceFilter } from '../../redux/filterSlice';
 import { useTypedSelector } from '../../redux/hooks';
 import { LabelSelectorInput } from './LabelSelectorInput';
 import { NamespacesAutocomplete } from './NamespacesAutocomplete';
 import SectionHeader, { SectionHeaderProps } from './SectionHeader';
-
-/**
- * Get the filter value by name from the URL
- *
- * @param key - the name of the filter
- * @param location - the location object from react-router
- * @returns the filter value as an array of strings
- */
-function getFilterValueByNameFromURL(key: string, location: any): string[] {
-  const searchParams = new URLSearchParams(location.search);
-
-  const filterValue = searchParams.get(key);
-  if (!filterValue) {
-    return [];
-  }
-  return filterValue.split(' ');
-}
 
 export interface SectionFilterHeaderProps extends SectionHeaderProps {
   noNamespaceFilter?: boolean;
@@ -68,7 +52,7 @@ export default function SectionFilterHeader(props: SectionFilterHeaderProps) {
 
   React.useEffect(
     () => {
-      const namespace = getFilterValueByNameFromURL('namespace', location);
+      const namespace = getFilterValuesFromURL('namespace', location);
       if (namespace.length > 0) {
         const namespaceFromStore = [...filter.namespaces].sort();
         if (
@@ -95,11 +79,11 @@ export default function SectionFilterHeader(props: SectionFilterHeaderProps) {
   }
 
   if (!noNamespaceFilter) {
-    actions.push(<NamespacesAutocomplete />);
+    actions.push(<NamespacesAutocomplete key="namespace-filter" />);
   }
 
   if (!noLabelFilter) {
-    actions.push(<LabelSelectorInput />);
+    actions.push(<LabelSelectorInput key="label-filter" />);
   }
 
   return (

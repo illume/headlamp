@@ -193,4 +193,20 @@ describe('LabelSelectorInput', () => {
       expect(input.value).toBe('external=value');
     });
   });
+
+  it('should clear input when Escape key is pressed', async () => {
+    const user = userEvent.setup();
+    renderComponent();
+
+    const input = screen.getByLabelText(/Label Selector/i) as HTMLInputElement;
+    await user.type(input, 'app=nginx');
+    expect(input.value).toBe('app=nginx');
+
+    await user.keyboard('{Escape}');
+
+    await waitFor(() => {
+      expect(input.value).toBe('');
+      expect(store.getState().filter.labelSelector).toBe('');
+    });
+  });
 });

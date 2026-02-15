@@ -23,44 +23,9 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { useHistory, useLocation } from 'react-router-dom';
+import { addQueryParams, getFilterValueFromURL } from '../../lib/urlUtils';
 import { setLabelSelectorFilter } from '../../redux/filterSlice';
 import { useTypedSelector } from '../../redux/hooks';
-
-/**
- * addQuery will add a query parameter to the URL using history API.
- */
-function addQuery(
-  queryObj: { [key: string]: string },
-  queryParamDefaultObj: { [key: string]: string } = {},
-  history: any,
-  location: any
-) {
-  const pathname = location.pathname;
-  const searchParams = new URLSearchParams(location.search);
-
-  // Ensure that default values will not show up in the URL
-  for (const key in queryObj) {
-    const value = queryObj[key];
-    if (value !== queryParamDefaultObj[key]) {
-      searchParams.set(key, value);
-    } else {
-      searchParams.delete(key);
-    }
-  }
-
-  history.push({
-    pathname: pathname,
-    search: searchParams.toString(),
-  });
-}
-
-/**
- * Get the filter value by name from the URL
- */
-function getFilterValueByNameFromURL(key: string, location: any): string {
-  const searchParams = new URLSearchParams(location.search);
-  return searchParams.get(key) || '';
-}
 
 export function LabelSelectorInput() {
   const { t } = useTranslation(['glossary', 'translation']);
@@ -72,7 +37,7 @@ export function LabelSelectorInput() {
 
   // Initialize from URL on mount
   React.useEffect(() => {
-    const labelSelectorFromURL = getFilterValueByNameFromURL('labelSelector', location);
+    const labelSelectorFromURL = getFilterValueFromURL('labelSelector', location);
     if (labelSelectorFromURL && labelSelectorFromURL !== labelSelector) {
       dispatch(setLabelSelectorFilter(labelSelectorFromURL));
       setInputValue(labelSelectorFromURL);
@@ -101,7 +66,7 @@ export function LabelSelectorInput() {
   const applyFilter = () => {
     const trimmedValue = inputValue.trim();
     dispatch(setLabelSelectorFilter(trimmedValue));
-    addQuery({ labelSelector: trimmedValue }, { labelSelector: '' }, history, location);
+    addQueryParams({ labelSelector: trimmedValue }, { labelSelector: '' }, history, location);
   };
 
   const handleClear = (event?: React.MouseEvent) => {
@@ -110,7 +75,7 @@ export function LabelSelectorInput() {
     }
     setInputValue('');
     dispatch(setLabelSelectorFilter(''));
-    addQuery({ labelSelector: '' }, { labelSelector: '' }, history, location);
+    addQueryParams({ labelSelector: '' }, { labelSelector: '' }, history, location);
   };
 
   return (
