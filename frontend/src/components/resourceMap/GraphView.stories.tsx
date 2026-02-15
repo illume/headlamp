@@ -128,8 +128,18 @@ const POD_ERROR_RATE = 0.05; // 5% of pods will have error status
 
 /**
  * Generate mock pod data for performance testing
+ * 
+ * @param count - Total number of pods to generate
+ * @param updateCounter - Update iteration counter
+ * @param changePercentage - Percentage of pods to update (0-100). 
+ *                           For realistic WebSocket simulation, use low values (1-10%).
+ *                           Values >20% trigger fallback to full processing.
  */
-function generateMockPods(count: number, updateCounter: number = 0): Pod[] {
+function generateMockPods(
+  count: number,
+  updateCounter: number = 0,
+  changePercentage: number = 100
+): Pod[] {
   const pods: Pod[] = [];
   const namespaces = ['default', 'kube-system', 'monitoring', 'production', 'staging'];
   const statuses = ['Running', 'Pending', 'Failed', 'Succeeded', 'Unknown'];
@@ -138,6 +148,11 @@ function generateMockPods(count: number, updateCounter: number = 0): Pod[] {
     const namespace = namespaces[i % namespaces.length];
     const deploymentIndex = Math.floor(i / 5);
     const podIndex = i % 5;
+
+    // Determine if this pod should be updated based on changePercentage
+    // For WebSocket simulation: only update specified percentage of pods
+    const shouldUpdate = (i / count) * 100 < changePercentage;
+    const effectiveUpdateCounter = shouldUpdate ? updateCounter : 0;
 
     // Simulate some pods with errors
     const hasError = Math.random() < POD_ERROR_RATE;
@@ -149,9 +164,11 @@ function generateMockPods(count: number, updateCounter: number = 0): Pod[] {
       apiVersion: 'v1',
       kind: 'Pod',
       metadata: {
-        name: `app-deployment-${deploymentIndex}-pod-${podIndex}-${updateCounter}`,
+        // Keep name stable (no updateCounter) to simulate real pods
+        name: `app-deployment-${deploymentIndex}-pod-${podIndex}`,
         namespace: namespace,
-        uid: `pod-uid-${i}-${updateCounter}`,
+        // Keep UID stable (simulates same pod) - only resourceVersion changes
+        uid: `pod-uid-${i}`,
         labels: {
           app: `app-${Math.floor(deploymentIndex / 10)}`,
           'app.kubernetes.io/instance': `instance-${Math.floor(deploymentIndex / 5)}`,
@@ -165,7 +182,8 @@ function generateMockPods(count: number, updateCounter: number = 0): Pod[] {
             uid: `replicaset-uid-${deploymentIndex}`,
           },
         ],
-        resourceVersion: String(1000 + updateCounter),
+        // Only increment resourceVersion for updated pods (simulates WebSocket updates)
+        resourceVersion: String(1000 + effectiveUpdateCounter),
         creationTimestamp: new Date(Date.now() - Math.random() * 86400000).toISOString(),
       },
       spec: {
@@ -173,7 +191,7 @@ function generateMockPods(count: number, updateCounter: number = 0): Pod[] {
         containers: [
           {
             name: 'main',
-            image: `myapp:v${Math.floor(updateCounter / 10) + 1}`,
+            image: `myapp:v${Math.floor(effectiveUpdateCounter / 10) + 1}`,
             resources: {
               requests: {
                 cpu: '100m',
@@ -243,19 +261,28 @@ function generateMockEdges(pods: Pod[]): GraphEdge[] {
 
 /**
  * Performance test with 2000 pods
+ * 
+ * Features incremental update testing with configurable change percentage:
+ * - <20% changes: Uses filterGraphIncremental (85-92% faster)
+ * - >20% changes: Falls back to full filterGraph (safe)
+ * 
+ * Enable "Incremental Updates" toggle in GraphView and try different change percentages
+ * to see the performance difference in the Performance Stats panel.
  */
 export const PerformanceTest2000Pods = () => {
   const [updateCounter, setUpdateCounter] = useState(0);
   const [autoUpdate, setAutoUpdate] = useState(false);
   const [updateInterval, setUpdateInterval] = useState(2000);
+  const [changePercentage, setChangePercentage] = useState(1); // Default 1% for typical WebSocket updates
 
   // Generate pods on initial load and when updateCounter changes
   // Use useMemo to avoid regenerating on unrelated re-renders
+  // changePercentage controls what % of pods get updated (resourceVersion incremented)
   const { pods, edges } = useMemo(() => {
-    const pods = generateMockPods(2000, updateCounter);
+    const pods = generateMockPods(2000, updateCounter, changePercentage);
     const edges = generateMockEdges(pods);
     return { pods, edges };
-  }, [updateCounter]);
+  }, [updateCounter, changePercentage]);
 
   const nodes: GraphNode[] = useMemo(
     () =>
@@ -330,22 +357,60 @@ export const PerformanceTest2000Pods = () => {
                 <option value={10000}>10s</option>
               </select>
             </label>
+            <label style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+              Change %:
+              <select
+                value={changePercentage}
+                onChange={e => setChangePercentage(Number(e.target.value))}
+                style={{
+                  backgroundColor: changePercentage > 20 ? '#ffebee' : '#e8f5e9',
+                  padding: '4px',
+                }}
+                title={
+                  changePercentage > 20
+                    ? 'Large change - triggers full processing fallback'
+                    : 'Small change - uses incremental optimization (85-92% faster)'
+                }
+              >
+                <option value={1}>1% (20 pods) - Incremental</option>
+                <option value={2}>2% (40 pods) - Incremental</option>
+                <option value={5}>5% (100 pods) - Incremental</option>
+                <option value={10}>10% (200 pods) - Incremental</option>
+                <option value={20}>20% (400 pods) - Threshold</option>
+                <option value={25}>25% (500 pods) - Full Processing</option>
+                <option value={50}>50% (1000 pods) - Full Processing</option>
+                <option value={100}>100% (2000 pods) - Full Processing</option>
+              </select>
+            </label>
           </div>
           <div style={{ fontSize: '14px', color: '#666' }}>
-            Nodes: {nodes.length} | Edges: {edges.length} | Open browser console to see performance
-            metrics
+            Nodes: {nodes.length} | Edges: {edges.length} | Update #{updateCounter} (
+            {changePercentage}% changed = {Math.floor((nodes.length * changePercentage) / 100)} pods)
           </div>
           <div
             style={{
               fontSize: '12px',
-              color: '#0066cc',
+              color: changePercentage > 20 ? '#d32f2f' : '#2e7d32',
               fontStyle: 'italic',
-              maxWidth: '800px',
+              maxWidth: '900px',
+              padding: '8px',
+              backgroundColor: changePercentage > 20 ? '#ffebee' : '#e8f5e9',
+              borderRadius: '4px',
             }}
           >
-            💡 Toggle "Incremental Updates" in GraphView to compare: WITH = ~35ms (86% faster),
-            WITHOUT = ~250ms (full processing). See
-            docs/development/resourcemap-incremental-update-comparison.md
+            💡 <strong>Change {changePercentage}%</strong>:{' '}
+            {changePercentage > 20 ? (
+              <>
+                <strong>Full Processing</strong> (fallback) - Typical time ~250ms. Large changes
+                require full graph reprocessing for correctness.
+              </>
+            ) : (
+              <>
+                <strong>Incremental Optimization</strong> - Typical time ~35-70ms (85-92% faster than
+                250ms full processing). Toggle "Incremental Updates" in GraphView to compare
+                performance.
+              </>
+            )}
           </div>
         </div>
         <div style={{ flex: 1 }}>
