@@ -21,7 +21,7 @@ import { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import type { KubeEvent } from '../lib/k8s/event';
 import type { KubeObjectInterface } from '../lib/k8s/KubeObject';
-import { getSavedNamespaces, saveNamespaces } from '../lib/storage';
+import { getSavedNamespaces, saveNamespaces, getSavedLabelSelector, saveLabelSelector } from '../lib/storage';
 
 export interface FilterState {
   /** The namespaces to filter on. */
@@ -32,7 +32,7 @@ export interface FilterState {
 
 export const initialState: FilterState = {
   namespaces: new Set(getSavedNamespaces()),
-  labelSelector: '',
+  labelSelector: getSavedLabelSelector(),
 };
 
 /**
@@ -157,6 +157,7 @@ const filterSlice = createSlice({
      */
     setLabelSelectorFilter(state, action: PayloadAction<string>) {
       state.labelSelector = action.payload;
+      saveLabelSelector(action.payload);
     },
     /**
      * Resets the filter state.
@@ -165,6 +166,7 @@ const filterSlice = createSlice({
       state.namespaces = new Set();
       state.labelSelector = '';
       saveNamespaces([]);
+      saveLabelSelector('');
     },
   },
 });

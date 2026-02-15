@@ -117,7 +117,7 @@ export function LabelSelectorInput() {
         endAdornment: inputValue ? (
           <InputAdornment position="end">
             <Tooltip title={t('translation|Clear') as string}>
-              <IconButton size="small" onClick={handleClear} edge="end">
+              <IconButton size="small" onClick={handleClear} edge="end" aria-label={t('translation|Clear') as string}>
                 <Icon icon="mdi:close" width="1.2rem" height="1.2rem" />
               </IconButton>
             </Tooltip>
