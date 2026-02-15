@@ -91,6 +91,12 @@ export function LabelSelectorInput() {
     }
   };
 
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    if (event.key === 'Escape') {
+      handleClear();
+    }
+  };
+
   const applyFilter = () => {
     const trimmedValue = inputValue.trim();
     dispatch(setLabelSelectorFilter(trimmedValue));
@@ -105,6 +111,7 @@ export function LabelSelectorInput() {
 
   return (
     <TextField
+      id="label-selector-input"
       variant="outlined"
       size="small"
       label={t('translation|Label Selector')}
@@ -112,14 +119,23 @@ export function LabelSelectorInput() {
       value={inputValue}
       onChange={handleChange}
       onKeyPress={handleKeyPress}
+      onKeyDown={handleKeyDown}
       onBlur={applyFilter}
       style={{ width: '15rem' }}
       InputLabelProps={{ shrink: true }}
+      inputProps={{
+        'aria-describedby': 'label-selector-description',
+      }}
       InputProps={{
         endAdornment: inputValue ? (
           <InputAdornment position="end">
             <Tooltip title={t('translation|Clear') as string}>
-              <IconButton size="small" onClick={handleClear} edge="end" aria-label={t('translation|Clear') as string}>
+              <IconButton
+                size="small"
+                onClick={handleClear}
+                edge="end"
+                aria-label={t('translation|Clear') as string}
+              >
                 <Icon icon="mdi:close" width="1.2rem" height="1.2rem" />
               </IconButton>
             </Tooltip>
