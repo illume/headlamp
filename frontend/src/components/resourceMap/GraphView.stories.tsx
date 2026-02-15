@@ -343,8 +343,9 @@ export const PerformanceTest2000Pods = () => {
               maxWidth: '800px',
             }}
           >
-            💡 Toggle "Incremental Updates" in GraphView to compare: WITH = ~35ms (86% faster), WITHOUT
-            = ~250ms (full processing). See docs/development/resourcemap-incremental-update-comparison.md
+            💡 Toggle "Incremental Updates" in GraphView to compare: WITH = ~35ms (86% faster),
+            WITHOUT = ~250ms (full processing). See
+            docs/development/resourcemap-incremental-update-comparison.md
           </div>
         </div>
         <div style={{ flex: 1 }}>

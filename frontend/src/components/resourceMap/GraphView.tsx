@@ -233,17 +233,12 @@ function GraphViewContent({
       filters.push({ type: 'namespace', namespaces });
     }
 
-    let result;
+    let result: { nodes: GraphNode[]; edges: GraphEdge[] } = { nodes: [], edges: [] };
     let usedIncremental = false;
 
     // Try incremental update if enabled and we have previous data
     if (useIncrementalUpdates && prevNodesRef.current.length > 0) {
-      const changes = detectGraphChanges(
-        prevNodesRef.current,
-        prevEdgesRef.current,
-        nodes,
-        edges
-      );
+      const changes = detectGraphChanges(prevNodesRef.current, prevEdgesRef.current, nodes, edges);
 
       if (shouldUseIncrementalUpdate(changes)) {
         // Use incremental filtering (87-92% faster for small changes)

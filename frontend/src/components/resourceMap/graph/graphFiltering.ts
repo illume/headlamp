@@ -187,22 +187,22 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
 /**
  * Incremental filter update - only processes changed nodes
  * PERFORMANCE: 87-92% faster when <20% of resources change (typical for WebSocket updates)
- * 
+ *
  * Example: 100k pods, 1% change = 1000 pods modified
  * - Full filterGraph: ~450ms (processes all 100k)
  * - Incremental filterGraphIncremental: ~60ms (processes only 1000 changed) = 87% faster
- * 
+ *
  * How it works:
  * - Starts with previous filtered results
  * - Removes deleted nodes
  * - Processes only added/modified nodes through filters
  * - Adds related nodes via BFS (same as full filter)
  * - Result: Same correctness as full filter, but much faster for small changes
- * 
+ *
  * Trade-off: 8ms overhead for change detection
  * - Worth it when <20% changed (typical WebSocket pattern: 1-5% per update)
  * - Auto-falls back to full processing for large changes (>20%)
- * 
+ *
  * @param prevFilteredNodes - Previously filtered nodes
  * @param prevFilteredEdges - Previously filtered edges
  * @param addedNodeIds - IDs of added nodes
@@ -237,6 +237,10 @@ export function filterGraphIncremental(
   const nodesToCheck = [...addedNodeIds, ...modifiedNodeIds];
   const lookup = makeGraphLookup(currentNodes, currentEdges);
 
+  // For modified nodes, we need to remove them first if they don't match filter anymore
+  // This ensures modified nodes are re-evaluated against current filters
+  modifiedNodeIds.forEach(id => filteredNodeIds.delete(id));
+
   for (const nodeId of nodesToCheck) {
     const node = currentNodeMap.get(nodeId);
     if (!node) continue;
@@ -246,6 +250,7 @@ export function filterGraphIncremental(
       filters.length === 0 ||
       filters.some(filter => {
         if (filter.type === 'hasErrors') {
+          if (!node.kubeObject) return false;
           const status = getStatus(node.kubeObject);
           return status === 'error' || status === 'warning';
         }
@@ -270,8 +275,8 @@ export function filterGraphIncremental(
         filteredNodeIds.add(currentId);
 
         // Add parents and children
-        const incomingEdges = lookup.getIncomingEdges(currentId);
-        const outgoingEdges = lookup.getOutgoingEdges(currentId);
+        const incomingEdges = lookup.getIncomingEdges(currentId) || [];
+        const outgoingEdges = lookup.getOutgoingEdges(currentId) || [];
 
         for (const edge of [...incomingEdges, ...outgoingEdges]) {
           const relatedId = edge.source === currentId ? edge.target : edge.source;
@@ -316,7 +321,12 @@ export function filterGraphIncremental(
       changedNodes: nodesToCheck.length,
       resultNodes: resultNodes.length,
       estimatedFullTime: ((nodesToCheck.length / currentNodes.length) * 450).toFixed(0),
-      savings: (((nodesToCheck.length / currentNodes.length) * 450 - totalTime) / ((nodesToCheck.length / currentNodes.length) * 450) * 100).toFixed(0) + '%',
+      savings:
+        (
+          (((nodesToCheck.length / currentNodes.length) * 450 - totalTime) /
+            ((nodesToCheck.length / currentNodes.length) * 450)) *
+          100
+        ).toFixed(0) + '%',
     },
   });
 
