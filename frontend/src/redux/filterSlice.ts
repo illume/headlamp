@@ -161,8 +161,9 @@ const filterSlice = createSlice({
      * Sets the label selector filter.
      */
     setLabelSelectorFilter(state, action: PayloadAction<string>) {
-      state.labelSelector = action.payload;
-      saveLabelSelector(action.payload);
+      const labelSelector = (action.payload || '').trim();
+      state.labelSelector = labelSelector;
+      saveLabelSelector(labelSelector);
     },
     /**
      * Resets the filter state.
