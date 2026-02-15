@@ -862,9 +862,21 @@ func (m *Multiplexer) createConnectionKey(clusterID, path, userID string) string
 }
 
 // createWebSocketURL creates a WebSocket URL from the given parameters.
+// It converts HTTP schemes to WebSocket schemes: https:// -> wss://, http:// -> ws://.
 func createWebSocketURL(host, path, query string) string {
 	u, _ := url.Parse(host)
-	u.Scheme = "wss"
+
+	// Convert HTTP/HTTPS scheme to WebSocket scheme
+	switch u.Scheme {
+	case "https":
+		u.Scheme = "wss"
+	case "http":
+		u.Scheme = "ws"
+	default:
+		// If scheme is already ws/wss or unknown, use wss as default
+		u.Scheme = "wss"
+	}
+
 	u.Path = path
 	u.RawQuery = query
 

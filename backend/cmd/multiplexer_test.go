@@ -258,6 +258,47 @@ func TestDialWebSocket_BadHandshakeLogging(t *testing.T) {
 	assert.Contains(t, err.Error(), "bad handshake")
 }
 
+// TestCreateWebSocketURL verifies that the createWebSocketURL function correctly converts
+// HTTP/HTTPS schemes to WebSocket schemes (ws/wss).
+func TestCreateWebSocketURL(t *testing.T) {
+	tests := []struct {
+		name     string
+		host     string
+		path     string
+		query    string
+		expected string
+	}{
+		{
+			name:     "HTTPS to WSS",
+			host:     "https://kubernetes.default.svc:443",
+			path:     "/api/v1/namespaces/default/pods/test-pod/log",
+			query:    "follow=true&container=test",
+			expected: "wss://kubernetes.default.svc:443/api/v1/namespaces/default/pods/test-pod/log?follow=true&container=test",
+		},
+		{
+			name:     "HTTP to WS",
+			host:     "http://localhost:8080",
+			path:     "/api/v1/pods",
+			query:    "",
+			expected: "ws://localhost:8080/api/v1/pods",
+		},
+		{
+			name:     "HTTPS with path in host",
+			host:     "https://example.com/k8s",
+			path:     "/api/v1/pods",
+			query:    "watch=true",
+			expected: "wss://example.com/api/v1/pods?watch=true",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := createWebSocketURL(tt.host, tt.path, tt.query)
+			assert.Equal(t, tt.expected, result)
+		})
+	}
+}
+
 func TestMonitorConnection(t *testing.T) {
 	m := NewMultiplexer(kubeconfig.NewContextStore())
 	clientConn, clientServer := createTestWebSocketConnection()
@@ -1457,4 +1498,91 @@ func TestSendDataMessage(t *testing.T) {
 	conn.closed = true
 	err = m.sendDataMessage(conn, clientConn, websocket.TextMessage, textMsg)
 	assert.NoError(t, err) // Should return nil even for closed connection
+}
+
+// TestPodLogsWebSocketSchemeIssue tests the specific issue where pod logs fail
+// with "bad handshake" error when the WebSocket scheme is incorrectly set.
+// This reproduces the issue: "Logs with websocket multiplexer enabled" where
+// logs from pods fail because createWebSocketURL always used "wss" regardless
+// of the cluster's actual HTTP/HTTPS configuration.
+func TestPodLogsWebSocketSchemeIssue(t *testing.T) {
+	const podLogPath = "/api/v1/namespaces/default/pods/test-pod/log"
+
+	t.Run("HTTP cluster should use ws scheme", func(t *testing.T) {
+		// Create a mock Kubernetes API server that only supports HTTP (not HTTPS)
+		server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// Return error to simulate what happens when wrong scheme is used
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("Bad handshake"))
+		}))
+		defer server.Close()
+
+		// Test that the URL is correctly converted from HTTP to WS
+		query := "follow=true&container=main"
+		wsURL := createWebSocketURL(server.URL, podLogPath, query)
+
+		// Verify the scheme is "ws" for HTTP server
+		assert.True(t, strings.HasPrefix(wsURL, "ws://"),
+			"WebSocket URL should use ws:// scheme for HTTP server, got: %s", wsURL)
+		assert.Contains(t, wsURL, podLogPath, "WebSocket URL should contain the path")
+		assert.Contains(t, wsURL, query, "WebSocket URL should contain the query")
+	})
+
+	t.Run("HTTPS cluster should use wss scheme", func(t *testing.T) {
+		// Create a mock HTTPS server
+		server := httptest.NewTLSServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusBadRequest)
+			_, _ = w.Write([]byte("Bad handshake"))
+		}))
+		defer server.Close()
+
+		// Test that the URL is correctly converted from HTTPS to WSS
+		query := "follow=true"
+		wsURL := createWebSocketURL(server.URL, podLogPath, query)
+
+		// Verify the scheme is "wss" for HTTPS server
+		assert.True(t, strings.HasPrefix(wsURL, "wss://"),
+			"WebSocket URL should use wss:// scheme for HTTPS server, got: %s", wsURL)
+		assert.Contains(t, wsURL, podLogPath, "WebSocket URL should contain the path")
+	})
+
+	t.Run("scheme conversion prevents bad handshake errors", func(t *testing.T) {
+		// This test verifies that correct scheme conversion prevents the
+		// "websocket: bad handshake" error that was reported in the issue
+		tests := []struct {
+			name           string
+			clusterURL     string
+			expectedScheme string
+		}{
+			{
+				name:           "HTTP cluster URL",
+				clusterURL:     "http://kubernetes.default.svc:8080",
+				expectedScheme: "ws://",
+			},
+			{
+				name:           "HTTPS cluster URL",
+				clusterURL:     "https://kubernetes.default.svc:443",
+				expectedScheme: "wss://",
+			},
+			{
+				name:           "HTTP with IP",
+				clusterURL:     "http://127.0.0.1:8001",
+				expectedScheme: "ws://",
+			},
+			{
+				name:           "HTTPS with IP",
+				clusterURL:     "https://192.168.1.100:6443",
+				expectedScheme: "wss://",
+			},
+		}
+
+		for _, tt := range tests {
+			t.Run(tt.name, func(t *testing.T) {
+				wsURL := createWebSocketURL(tt.clusterURL, podLogPath, "")
+
+				assert.True(t, strings.HasPrefix(wsURL, tt.expectedScheme),
+					"Expected WebSocket URL to start with %s, got: %s", tt.expectedScheme, wsURL)
+			})
+		}
+	})
 }
