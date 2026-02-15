@@ -27,6 +27,77 @@ import { podList } from '../pod/storyHelper';
 import { GraphEdge, GraphNode, GraphSource } from './graph/graphModel';
 import { GraphView } from './GraphView';
 
+/**
+ * Custom hook for realistic WebSocket update simulation
+ * Spreads updates throughout the interval instead of all at once
+ * 
+ * In real Kubernetes clusters, WebSocket events arrive asynchronously:
+ * - Not all pods update at exactly the same time
+ * - Updates trickle in as events occur (pod status changes, deployments, etc.)
+ * - This hook simulates that pattern for realistic testing
+ * 
+ * @param autoUpdate - Whether auto-update is enabled
+ * @param updateInterval - Time window in ms (e.g., 2000ms)
+ * @param changePercentage - % of resources that change (e.g., 1% = 20 pods for 2000 total)
+ * @param totalResources - Total number of resources being simulated
+ * @param setUpdateCounter - State setter to trigger updates
+ */
+function useRealisticWebSocketUpdates(
+  autoUpdate: boolean,
+  updateInterval: number,
+  changePercentage: number,
+  totalResources: number,
+  setUpdateCounter: React.Dispatch<React.SetStateAction<number>>
+) {
+  useEffect(() => {
+    if (!autoUpdate) return;
+
+    const timers: NodeJS.Timeout[] = [];
+
+    // Calculate how many resources will change
+    const numResourcesToUpdate = Math.ceil((totalResources * changePercentage) / 100);
+    
+    // Spread updates across multiple events within the interval
+    // Simulate 1-10 individual WebSocket events arriving at random times
+    // More changes = more events, but cap at reasonable number
+    const numUpdateEvents = Math.max(1, Math.min(Math.ceil(numResourcesToUpdate / 10), 10));
+
+    // Schedule updates at random times throughout the interval
+    for (let i = 0; i < numUpdateEvents; i++) {
+      // Random delay between 0 and updateInterval milliseconds
+      // This simulates WebSocket events arriving asynchronously
+      const delay = Math.random() * updateInterval;
+      
+      const timer = setTimeout(() => {
+        setUpdateCounter(prev => prev + 1);
+      }, delay);
+      
+      timers.push(timer);
+    }
+
+    // Main interval to repeat the pattern
+    const mainInterval = setInterval(() => {
+      // Clear old timers
+      timers.forEach(t => clearTimeout(t));
+      timers.length = 0;
+
+      // Schedule new spread updates for next interval
+      for (let i = 0; i < numUpdateEvents; i++) {
+        const delay = Math.random() * updateInterval;
+        const timer = setTimeout(() => {
+          setUpdateCounter(prev => prev + 1);
+        }, delay);
+        timers.push(timer);
+      }
+    }, updateInterval);
+
+    return () => {
+      clearInterval(mainInterval);
+      timers.forEach(t => clearTimeout(t));
+    };
+  }, [autoUpdate, updateInterval, changePercentage, totalResources, setUpdateCounter]);
+}
+
 export default {
   title: 'GraphView',
   component: GraphView,
@@ -303,16 +374,10 @@ export const PerformanceTest2000Pods = () => {
     },
   };
 
-  // Auto-update simulation
-  useEffect(() => {
-    if (!autoUpdate) return;
-
-    const interval = setInterval(() => {
-      setUpdateCounter(prev => prev + 1);
-    }, updateInterval);
-
-    return () => clearInterval(interval);
-  }, [autoUpdate, updateInterval]);
+  // Auto-update simulation - realistic WebSocket pattern
+  // Spreads updates throughout the interval (e.g., over 2 seconds)
+  // instead of all at once, simulating real async WebSocket events
+  useRealisticWebSocketUpdates(autoUpdate, updateInterval, changePercentage, 2000, setUpdateCounter);
 
   return (
     <TestContext>
@@ -943,16 +1008,9 @@ export const PerformanceTest5000Pods = () => {
     },
   };
 
-  // Auto-update simulation
-  useEffect(() => {
-    if (!autoUpdate) return;
-
-    const interval = setInterval(() => {
-      setUpdateCounter(prev => prev + 1);
-    }, updateInterval);
-
-    return () => clearInterval(interval);
-  }, [autoUpdate, updateInterval]);
+  // Auto-update simulation - realistic WebSocket pattern
+  // Spreads updates throughout the interval instead of all at once
+  useRealisticWebSocketUpdates(autoUpdate, updateInterval, changePercentage, 5000, setUpdateCounter);
 
   return (
     <TestContext>
@@ -1128,16 +1186,9 @@ export const PerformanceTest20000Pods = () => {
     },
   };
 
-  // Auto-update simulation
-  useEffect(() => {
-    if (!autoUpdate) return;
-
-    const interval = setInterval(() => {
-      setUpdateCounter(prev => prev + 1);
-    }, updateInterval);
-
-    return () => clearInterval(interval);
-  }, [autoUpdate, updateInterval]);
+  // Auto-update simulation - realistic WebSocket pattern
+  // Spreads updates throughout the interval instead of all at once
+  useRealisticWebSocketUpdates(autoUpdate, updateInterval, changePercentage, 20000, setUpdateCounter);
 
   return (
     <TestContext>
@@ -1356,16 +1407,9 @@ export const PerformanceTest100000Pods = () => {
     },
   };
 
-  // Auto-update simulation
-  useEffect(() => {
-    if (!autoUpdate) return;
-
-    const interval = setInterval(() => {
-      setUpdateCounter(prev => prev + 1);
-    }, updateInterval);
-
-    return () => clearInterval(interval);
-  }, [autoUpdate, updateInterval]);
+  // Auto-update simulation - realistic WebSocket pattern
+  // Spreads updates throughout the interval instead of all at once
+  useRealisticWebSocketUpdates(autoUpdate, updateInterval, changePercentage, 100000, setUpdateCounter);
 
   return (
     <TestContext>
