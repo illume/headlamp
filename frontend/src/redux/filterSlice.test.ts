@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { getSavedLabelSelector,getSavedNamespaces } from '../lib/storage';
+import { getSavedLabelSelector, getSavedNamespaces } from '../lib/storage';
 import filterReducer, {
   FilterState,
   initialState,
