@@ -52,6 +52,8 @@ const (
 	HandshakeTimeout = 45 * time.Second
 	// CleanupRoutineInterval is the interval at which the multiplexer cleans up unused connections.
 	CleanupRoutineInterval = 5 * time.Minute
+	// SecureWebSocketScheme is the secure WebSocket scheme.
+	SecureWebSocketScheme = "wss"
 )
 
 // ConnectionState represents the current state of a connection.
@@ -884,20 +886,20 @@ func createWebSocketURL(host, path, query string) string {
 		// Log a warning but continue with best effort - the connection will fail anyway
 		logger.Log(logger.LevelWarn, nil, err, "parsing cluster host URL")
 		// Return a fallback URL that will cause a clear connection error
-		return "wss://invalid-url" + path
+		return SecureWebSocketScheme + "://invalid-url" + path
 	}
 
 	// Convert HTTP/HTTPS scheme to WebSocket scheme and preserve existing ws/wss schemes.
 	switch u.Scheme {
 	case "https":
-		u.Scheme = "wss"
+		u.Scheme = SecureWebSocketScheme
 	case "http":
 		u.Scheme = "ws"
-	case "ws", "wss":
+	case "ws", SecureWebSocketScheme:
 		// Preserve existing WebSocket scheme
 	default:
 		// For unknown schemes, default to secure WebSocket.
-		u.Scheme = "wss"
+		u.Scheme = SecureWebSocketScheme
 	}
 
 	u.Path = path
