@@ -57,6 +57,10 @@ app: app-build
 	cd app && npm run package -- --win --linux --mac
 app-win: app-build
 	cd app && npm run package -- --win --x64 --arm64
+app-win-x64: app-build
+	cd app && npm run package -- --win --x64
+app-win-arm64: app-build
+	cd app && npm run package -- --win --arm64
 app-win-msi: app-build
 	cd app && npm run package-msi
 app-linux: app-build
