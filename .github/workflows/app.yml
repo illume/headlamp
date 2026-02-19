@@ -51,9 +51,10 @@ jobs:
         include:
           - arch: x64
             runner: windows-2022
+            node-version: 20.x
           - arch: arm64
             runner: windows-11-arm
-        node-version: [20.x]
+            node-version: 20.x
     runs-on: ${{ matrix.runner }}
     steps:
     - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
