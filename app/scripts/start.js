@@ -5,7 +5,7 @@
  * Assumes being run from within the app/ folder
  */
 const { spawn } = require('child_process');
-const { statSync, existsSync } = require('fs');
+const { statSync, existsSync, readFileSync } = require('fs');
 const { join } = require('path');
 const { execSync } = require('child_process');
 const { spawnSync } = require('child_process');
@@ -56,8 +56,24 @@ function getLastCommitDateMs(backendDir) {
  */
 function isSameArch(headlampServerPath) {
   if (process.platform === 'win32') {
-    // On Windows, the build system creates the correct binary for process.arch
-    return true;
+    // Read PE header to determine binary architecture
+    try {
+      const buffer = readFileSync(headlampServerPath);
+      // PE signature is at offset 0x3C (60 decimal)
+      const peOffset = buffer.readUInt32LE(0x3c);
+      // Machine type is 2 bytes after PE signature (offset +4)
+      const machineType = buffer.readUInt16LE(peOffset + 4);
+      // 0x8664 = x64, 0xAA64 = ARM64
+      const binaryIsX64 = machineType === 0x8664;
+      const binaryIsArm64 = machineType === 0xaa64;
+      
+      if (process.arch === 'x64') return binaryIsX64;
+      if (process.arch === 'arm64') return binaryIsArm64;
+      return true; // Unknown host arch, assume correct
+    } catch (err) {
+      console.warn(`Could not check binary architecture: ${err.message}`);
+      return true; // If we can't check, assume it's correct
+    }
   }
 
   const unameRes = spawnSync('uname', ['-m'], { stdio: ['ignore', 'pipe', 'pipe'] });
