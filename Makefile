@@ -56,7 +56,7 @@ app-build: frontend/build
 app: app-build
 	cd app && npm run package -- --win --linux --mac
 app-win: app-build
-	cd app && npm run package -- --win
+	cd app && npm run package -- --win --x64 --arm64
 app-win-msi: app-build
 	cd app && npm run package-msi
 app-linux: app-build
