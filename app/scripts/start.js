@@ -5,7 +5,7 @@
  * Assumes being run from within the app/ folder
  */
 const { spawn } = require('child_process');
-const { statSync, existsSync, readFileSync } = require('fs');
+const { statSync, existsSync, openSync, readSync, closeSync } = require('fs');
 const { join } = require('path');
 const { execSync } = require('child_process');
 const { spawnSync } = require('child_process');
@@ -56,23 +56,41 @@ function getLastCommitDateMs(backendDir) {
  */
 function isSameArch(headlampServerPath) {
   if (process.platform === 'win32') {
+    // Add .exe extension if not present
+    const exePath = headlampServerPath.endsWith('.exe') ? headlampServerPath : `${headlampServerPath}.exe`;
+    
     // Read PE header to determine binary architecture
     try {
-      const buffer = readFileSync(headlampServerPath);
-      // PE signature is at offset 0x3C (60 decimal)
-      const peOffset = buffer.readUInt32LE(0x3c);
-      // Machine type is 2 bytes after PE signature (offset +4)
-      const machineType = buffer.readUInt16LE(peOffset + 4);
-      // 0x8664 = x64, 0xAA64 = ARM64
-      const binaryIsX64 = machineType === 0x8664;
-      const binaryIsArm64 = machineType === 0xaa64;
-      
-      if (process.arch === 'x64') return binaryIsX64;
-      if (process.arch === 'arm64') return binaryIsArm64;
-      return true; // Unknown host arch, assume correct
+      const fd = openSync(exePath, 'r');
+      try {
+        // Read PE offset (at 0x3C, 4 bytes)
+        const peOffsetBuffer = Buffer.alloc(4);
+        readSync(fd, peOffsetBuffer, 0, 4, 0x3c);
+        const peOffset = peOffsetBuffer.readUInt32LE(0);
+        
+        // Read machine type (2 bytes at peOffset + 4)
+        const machineTypeBuffer = Buffer.alloc(2);
+        readSync(fd, machineTypeBuffer, 0, 2, peOffset + 4);
+        const machineType = machineTypeBuffer.readUInt16LE(0);
+        
+        // 0x8664 = x64, 0xAA64 = ARM64
+        const binaryIsX64 = machineType === 0x8664;
+        const binaryIsArm64 = machineType === 0xaa64;
+        
+        if (process.arch === 'x64') return binaryIsX64;
+        if (process.arch === 'arm64') return binaryIsArm64;
+        // Unknown host arch; be conservative and trigger rebuild
+        return false;
+      } finally {
+        closeSync(fd);
+      }
     } catch (err) {
-      console.warn(`Could not check binary architecture: ${err.message}`);
-      return true; // If we can't check, assume it's correct
+      const fileExists = existsSync(exePath);
+      console.warn(
+        `Could not determine binary architecture for "${exePath}" (exists=${fileExists}): ${err.message}`
+      );
+      // If we can't check, be conservative and trigger rebuild
+      return false;
     }
   }
 

@@ -110,7 +110,7 @@ jobs:
           echo "Not signing binaries"
         }
         cd app
-        npm run build -- --win --${{ matrix.arch }}
+        npm run package -- --win --${{ matrix.arch }}
 
     - name: Create MSI for ${{ matrix.arch }}
       shell: pwsh

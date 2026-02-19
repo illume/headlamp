@@ -62,7 +62,14 @@ app-win-x64: app-build
 app-win-arm64: app-build
 	cd app && npm run package -- --win --arm64
 app-win-msi: app-build
-	cd app && npm run package-msi
+ifndef MSI_ARCH
+	$(error MSI_ARCH is not set. Please set MSI_ARCH (e.g. 'make app-win-msi MSI_ARCH=x64') or use 'make app-win-msi-x64' / 'make app-win-msi-arm64')
+endif
+	cd app && MSI_ARCH="$(MSI_ARCH)" npm run package-msi
+app-win-msi-x64: app-build
+	cd app && MSI_ARCH="x64" npm run package-msi
+app-win-msi-arm64: app-build
+	cd app && MSI_ARCH="arm64" npm run package-msi
 app-linux: app-build
 	cd app && npm run package -- --linux
 app-mac: app-build
