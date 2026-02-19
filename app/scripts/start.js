@@ -75,7 +75,7 @@ function isSameArch(headlampServerPath) {
         
         // 0x8664 = x64, 0xAA64 = ARM64
         const binaryIsX64 = machineType === 0x8664;
-        const binaryIsArm64 = machineType === 0xaa64;
+        const binaryIsArm64 = machineType === 0xAA64;
         
         if (process.arch === 'x64') return binaryIsX64;
         if (process.arch === 'arm64') return binaryIsArm64;
