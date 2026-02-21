@@ -16,13 +16,17 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
+import { Provider } from 'react-redux';
 import { describe, expect, it, vi } from 'vitest';
+import store from '../../../../redux/stores/store';
 import {
+  getWebsocketMultiplexerEnabled,
   kubeObjectListQuery,
   ListResponse,
   makeListRequests,
   useKubeObjectList,
   useWatchKubeObjectLists,
+  useWebsocketMultiplexerEnabled,
 } from './useKubeObjectList';
 import * as websocket from './webSocket';
 
@@ -138,7 +142,9 @@ describe('useWatchKubeObjectLists', () => {
     const queryClient = new QueryClient();
     renderHook(() => useWatchKubeObjectLists({ kubeObjectClass: mockClass, lists: [] }), {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <Provider store={store}>
+          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        </Provider>
       ),
     });
     expect(spy).toHaveBeenCalledWith({ enabled: false, connections: [] });
@@ -157,7 +163,9 @@ describe('useWatchKubeObjectLists', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          <Provider store={store}>
+            <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -183,7 +191,9 @@ describe('useWatchKubeObjectLists', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          <Provider store={store}>
+            <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -241,7 +251,9 @@ describe('useWatchKubeObjectLists', () => {
     // When watching lists
     renderHook(() => useWatchKubeObjectLists({ kubeObjectClass, lists, endpoint }), {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <Provider store={store}>
+          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        </Provider>
       ),
     });
 
@@ -300,7 +312,9 @@ describe('useKubeObjectList', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          <Provider store={store}>
+            <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -332,7 +346,9 @@ describe('useWatchKubeObjectLists (Multiplexer)', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          <Provider store={store}>
+            <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -360,7 +376,9 @@ describe('useWatchKubeObjectLists (Multiplexer)', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          <Provider store={store}>
+            <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -394,7 +412,9 @@ describe('useWatchKubeObjectLists (Multiplexer)', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          <Provider store={store}>
+            <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -410,10 +430,8 @@ describe('useWatchKubeObjectLists (Multiplexer)', () => {
 
 describe('useWebsocketMultiplexerEnabled', () => {
   it('returns true when REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER is "true"', () => {
-    // Build-time env var is set in vitest.config.ts for these tests
-    const { result } = renderHook(() => {
-      const { useWebsocketMultiplexerEnabled } = require('./useKubeObjectList');
-      return useWebsocketMultiplexerEnabled();
+    const { result } = renderHook(() => useWebsocketMultiplexerEnabled(), {
+      wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
     });
     expect(result.current).toBe(true);
   });
@@ -421,14 +439,6 @@ describe('useWebsocketMultiplexerEnabled', () => {
 
 describe('getWebsocketMultiplexerEnabled', () => {
   it('returns true when REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER is "true"', () => {
-    const { getWebsocketMultiplexerEnabled } = require('./useKubeObjectList');
     expect(getWebsocketMultiplexerEnabled()).toBe(true);
-  });
-
-  it('returns false when build-time env is not set and runtime config is false', () => {
-    // This test would need to mock import.meta.env and Redux store
-    // Since REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER is set in vitest.config.ts,
-    // we can't easily test the fallback path without more complex mocking
-    // The integration is validated by the component using the hook
   });
 });
