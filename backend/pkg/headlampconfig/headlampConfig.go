@@ -47,6 +47,7 @@ type HeadlampCFG struct {
 	Insecure                   bool
 	EnableHelm                 bool
 	EnableDynamicClusters      bool
+	AllowKubeconfigChanges     bool
 	EnableWebsocketMultiplexer bool
 	WatchPluginsChanges        bool
 	Port                       uint
@@ -63,4 +64,5 @@ type HeadlampCFG struct {
 	ProxyURLs                  []string
 	TLSCertPath                string
 	TLSKeyPath                 string
+	SessionTTL                 int
 }

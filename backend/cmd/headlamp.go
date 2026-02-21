@@ -97,6 +97,7 @@ const (
 type clientConfig struct {
 	Clusters                      []Cluster `json:"clusters"`
 	IsDynamicClusterEnabled       bool      `json:"isDynamicClusterEnabled"`
+	AllowKubeconfigChanges        bool      `json:"allowKubeconfigChanges"`
 	IsWebsocketMultiplexerEnabled bool      `json:"isWebsocketMultiplexerEnabled"`
 }
 
@@ -392,6 +393,7 @@ func createHeadlampHandler(config *HeadlampConfig) http.Handler {
 	logger.Log(logger.LevelInfo, nil, nil, "me Groups Paths: "+config.MeGroupsPaths)
 	logger.Log(logger.LevelInfo, nil, nil, "me User Info URL: "+config.MeUserInfoURL)
 	logger.Log(logger.LevelInfo, nil, nil, "Base URL: "+config.BaseURL)
+	logger.Log(logger.LevelInfo, nil, nil, "Session TTL: "+fmt.Sprint(config.SessionTTL))
 	logger.Log(logger.LevelInfo, nil, nil, "Use In Cluster: "+fmt.Sprint(config.UseInCluster))
 	logger.Log(logger.LevelInfo, nil, nil, "Watch Plugins Changes: "+fmt.Sprint(config.WatchPluginsChanges))
 
@@ -860,7 +862,7 @@ func createHeadlampHandler(config *HeadlampConfig) http.Handler {
 		}
 
 		// Set auth cookie
-		auth.SetTokenCookie(w, r, oauthConfig.Cluster, rawUserToken, config.BaseURL)
+		auth.SetTokenCookie(w, r, oauthConfig.Cluster, rawUserToken, config.BaseURL, config.SessionTTL)
 
 		redirectURL += fmt.Sprintf("auth?cluster=%1s", oauthConfig.Cluster)
 
@@ -943,7 +945,7 @@ func (c *HeadlampConfig) refreshAndSetToken(oidcAuthConfig *kubeconfig.OidcConfi
 		}
 
 		// Set refreshed token in cookie
-		auth.SetTokenCookie(w, r, cluster, newTokenString, c.BaseURL)
+		auth.SetTokenCookie(w, r, cluster, newTokenString, c.BaseURL, c.SessionTTL)
 
 		c.TelemetryHandler.RecordEvent(span, "Token refreshed successfully")
 	}
@@ -1751,9 +1753,10 @@ func (c *HeadlampConfig) getConfig(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
 	clientConfig := clientConfig{
-		c.getClusters(),
-		c.EnableDynamicClusters,
-		c.EnableWebsocketMultiplexer,
+		Clusters:                      c.getClusters(),
+		IsDynamicClusterEnabled:       c.EnableDynamicClusters,
+		AllowKubeconfigChanges:        c.AllowKubeconfigChanges,
+		IsWebsocketMultiplexerEnabled: c.EnableWebsocketMultiplexer,
 	}
 
 	if err := json.NewEncoder(w).Encode(&clientConfig); err != nil {
@@ -2539,7 +2542,7 @@ func (c *HeadlampConfig) handleSetToken(w http.ResponseWriter, r *http.Request) 
 	if req.Token == "" {
 		auth.ClearTokenCookie(w, r, cluster, c.BaseURL)
 	} else {
-		auth.SetTokenCookie(w, r, cluster, req.Token, c.BaseURL)
+		auth.SetTokenCookie(w, r, cluster, req.Token, c.BaseURL, c.SessionTTL)
 	}
 
 	w.WriteHeader(http.StatusOK)

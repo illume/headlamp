@@ -43,6 +43,17 @@ export interface ConfigState {
     [clusterName: string]: Cluster;
   } | null;
   /**
+   * Whether dynamic clusters are enabled.
+   * When true, users can add and delete clusters dynamically.
+   */
+  isDynamicClusterEnabled: boolean;
+  /**
+   * Whether users are allowed to remove clusters from their kubeconfig.
+   * When true, the UI will show options to delete kubeconfig-sourced clusters.
+   * Defaults to false to prevent accidental removal in company-deployed environments.
+   */
+  allowKubeconfigChanges: boolean;
+  /**
    * Settings is a map of settings names to settings values.
    */
   settings: {
@@ -76,6 +87,8 @@ export const initialState: ConfigState = {
   clusters: null,
   statelessClusters: null,
   allClusters: null,
+  isDynamicClusterEnabled: false,
+  allowKubeconfigChanges: false,
   settings: {
     tableRowsPerPageOptions:
       storedSettings.tableRowsPerPageOptions || defaultTableRowsPerPageOptions,
@@ -99,10 +112,18 @@ const configSlice = createSlice({
       state,
       action: PayloadAction<{
         clusters: ConfigState['clusters'];
+        isDynamicClusterEnabled?: boolean;
+        allowKubeconfigChanges?: boolean;
         isWebsocketMultiplexerEnabled?: boolean;
       }>
     ) {
       state.clusters = action.payload.clusters;
+      if (action.payload.isDynamicClusterEnabled !== undefined) {
+        state.isDynamicClusterEnabled = action.payload.isDynamicClusterEnabled;
+      }
+      if (action.payload.allowKubeconfigChanges !== undefined) {
+        state.allowKubeconfigChanges = action.payload.allowKubeconfigChanges;
+      }
       if (action.payload.isWebsocketMultiplexerEnabled !== undefined) {
         state.isWebsocketMultiplexerEnabled = action.payload.isWebsocketMultiplexerEnabled;
       }
