@@ -6,17 +6,10 @@ metadata:
   name: headlamp
   namespace: default
   labels:
-<<<<<<< HEAD
-    helm.sh/chart: headlamp-0.40.0
-    app.kubernetes.io/name: headlamp
-    app.kubernetes.io/instance: headlamp
-    app.kubernetes.io/version: "0.40.0"
-=======
     helm.sh/chart: headlamp-0.39.0
     app.kubernetes.io/name: headlamp
     app.kubernetes.io/instance: headlamp
     app.kubernetes.io/version: "0.39.0"
->>>>>>> efe47814fc0131eccc2fcf64891a5a957d1e5ea3
     app.kubernetes.io/managed-by: Helm
 ---
 # Source: headlamp/templates/secret.yaml
@@ -34,17 +27,10 @@ kind: ClusterRoleBinding
 metadata:
   name: headlamp-admin
   labels:
-<<<<<<< HEAD
-    helm.sh/chart: headlamp-0.40.0
-    app.kubernetes.io/name: headlamp
-    app.kubernetes.io/instance: headlamp
-    app.kubernetes.io/version: "0.40.0"
-=======
     helm.sh/chart: headlamp-0.39.0
     app.kubernetes.io/name: headlamp
     app.kubernetes.io/instance: headlamp
     app.kubernetes.io/version: "0.39.0"
->>>>>>> efe47814fc0131eccc2fcf64891a5a957d1e5ea3
     app.kubernetes.io/managed-by: Helm
 roleRef:
   apiGroup: rbac.authorization.k8s.io
@@ -62,17 +48,10 @@ metadata:
   name: headlamp
   namespace: default
   labels:
-<<<<<<< HEAD
-    helm.sh/chart: headlamp-0.40.0
-    app.kubernetes.io/name: headlamp
-    app.kubernetes.io/instance: headlamp
-    app.kubernetes.io/version: "0.40.0"
-=======
     helm.sh/chart: headlamp-0.39.0
     app.kubernetes.io/name: headlamp
     app.kubernetes.io/instance: headlamp
     app.kubernetes.io/version: "0.39.0"
->>>>>>> efe47814fc0131eccc2fcf64891a5a957d1e5ea3
     app.kubernetes.io/managed-by: Helm
 spec:
   type: ClusterIP
@@ -96,17 +75,10 @@ metadata:
   name: headlamp
   namespace: default
   labels:
-<<<<<<< HEAD
-    helm.sh/chart: headlamp-0.40.0
-    app.kubernetes.io/name: headlamp
-    app.kubernetes.io/instance: headlamp
-    app.kubernetes.io/version: "0.40.0"
-=======
     helm.sh/chart: headlamp-0.39.0
     app.kubernetes.io/name: headlamp
     app.kubernetes.io/instance: headlamp
     app.kubernetes.io/version: "0.39.0"
->>>>>>> efe47814fc0131eccc2fcf64891a5a957d1e5ea3
     app.kubernetes.io/managed-by: Helm
 spec:
   replicas: 1
@@ -132,11 +104,7 @@ spec:
             runAsGroup: 101
             runAsNonRoot: true
             runAsUser: 100
-<<<<<<< HEAD
-          image: "ghcr.io/headlamp-k8s/headlamp:v0.40.0"
-=======
           image: "ghcr.io/headlamp-k8s/headlamp:v0.39.0"
->>>>>>> efe47814fc0131eccc2fcf64891a5a957d1e5ea3
           imagePullPolicy: IfNotPresent
           
           env:
@@ -144,10 +112,6 @@ spec:
             - "-in-cluster"
             - "-in-cluster-context-name=main"
             - "-plugins-dir=/headlamp/plugins"
-<<<<<<< HEAD
-            - "-session-ttl=86400"
-=======
->>>>>>> efe47814fc0131eccc2fcf64891a5a957d1e5ea3
             # Check if externalSecret is disabled
           ports:
             - name: http
