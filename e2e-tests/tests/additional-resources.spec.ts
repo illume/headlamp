@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 The Kubernetes Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import { test } from '@playwright/test';
 import { HeadlampPage } from './headlampPage';
 
@@ -113,7 +129,7 @@ test.describe('Additional Resources', () => {
       return;
     }
 
-    await headlampPage.checkTableHeaders(['Name', 'Namespace', 'Replicas', 'Age']);
+    await headlampPage.tableHasHeaders('table', ['Name', 'Namespace', 'Replicas', 'Age']);
     
     if (ENABLE_A11Y_CHECKS) {
       await headlampPage.a11y();
@@ -134,7 +150,7 @@ test.describe('Additional Resources', () => {
       return;
     }
 
-    await headlampPage.checkTableHeaders(['Name', 'Namespace', 'Desired', 'Current', 'Ready', 'Age']);
+    await headlampPage.tableHasHeaders('table', ['Name', 'Namespace', 'Desired', 'Current', 'Ready', 'Age']);
     
     if (ENABLE_A11Y_CHECKS) {
       await headlampPage.a11y();
@@ -155,7 +171,7 @@ test.describe('Additional Resources', () => {
       return;
     }
 
-    await headlampPage.checkTableHeaders(['Name', 'Namespace', 'Replicas', 'Age']);
+    await headlampPage.tableHasHeaders('table', ['Name', 'Namespace', 'Replicas', 'Age']);
     
     if (ENABLE_A11Y_CHECKS) {
       await headlampPage.a11y();
@@ -176,7 +192,7 @@ test.describe('Additional Resources', () => {
       return;
     }
 
-    await headlampPage.checkTableHeaders(['Name', 'Namespace', 'Completions', 'Duration', 'Age']);
+    await headlampPage.tableHasHeaders('table', ['Name', 'Namespace', 'Completions', 'Duration', 'Age']);
     
     if (ENABLE_A11Y_CHECKS) {
       await headlampPage.a11y();
@@ -197,7 +213,7 @@ test.describe('Additional Resources', () => {
       return;
     }
 
-    await headlampPage.checkTableHeaders(['Name', 'Namespace', 'Schedule', 'Last Schedule', 'Age']);
+    await headlampPage.tableHasHeaders('table', ['Name', 'Namespace', 'Schedule', 'Last Schedule', 'Age']);
     
     if (ENABLE_A11Y_CHECKS) {
       await headlampPage.a11y();
@@ -218,7 +234,7 @@ test.describe('Additional Resources', () => {
       return;
     }
 
-    await headlampPage.checkTableHeaders(['Name', 'Namespace', 'Replicas', 'Age']);
+    await headlampPage.tableHasHeaders('table', ['Name', 'Namespace', 'Replicas', 'Age']);
     
     if (ENABLE_A11Y_CHECKS) {
       await headlampPage.a11y();
