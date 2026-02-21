@@ -63,6 +63,12 @@ export function saveNamespaces(namespaces: string[], cluster?: string) {
   }
 }
 
+/**
+ * Gets the saved label selector for the specified cluster from localStorage.
+ *
+ * @param cluster - The cluster name. If not provided, uses the current cluster.
+ * @returns The saved label selector string, or empty string if not found.
+ */
 export function getSavedLabelSelector(cluster?: string): string {
   const activeCluster = cluster || getCluster();
   if (!activeCluster) {
@@ -80,6 +86,12 @@ export function getSavedLabelSelector(cluster?: string): string {
   }
 }
 
+/**
+ * Saves the label selector for the specified cluster to localStorage.
+ *
+ * @param labelSelector - The label selector string to save.
+ * @param cluster - The cluster name. If not provided, uses the current cluster.
+ */
 export function saveLabelSelector(labelSelector: string, cluster?: string) {
   const activeCluster = cluster || getCluster();
   if (!activeCluster) {
