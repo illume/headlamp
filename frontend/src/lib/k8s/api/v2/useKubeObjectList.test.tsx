@@ -16,13 +16,17 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
+import { Provider } from 'react-redux';
 import { describe, expect, it, vi } from 'vitest';
+import store from '../../../../redux/stores/store';
 import {
+  getWebsocketMultiplexerEnabled,
   kubeObjectListQuery,
   ListResponse,
   makeListRequests,
   useKubeObjectList,
   useWatchKubeObjectLists,
+  useWebsocketMultiplexerEnabled,
 } from './useKubeObjectList';
 import * as websocket from './webSocket';
 
@@ -138,7 +142,9 @@ describe('useWatchKubeObjectLists', () => {
     const queryClient = new QueryClient();
     renderHook(() => useWatchKubeObjectLists({ kubeObjectClass: mockClass, lists: [] }), {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <Provider store={store}>
+          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        </Provider>
       ),
     });
     expect(spy).toHaveBeenCalledWith({ enabled: false, connections: [] });
@@ -157,7 +163,9 @@ describe('useWatchKubeObjectLists', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          <Provider store={store}>
+            <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -183,7 +191,9 @@ describe('useWatchKubeObjectLists', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          <Provider store={store}>
+            <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -241,7 +251,9 @@ describe('useWatchKubeObjectLists', () => {
     // When watching lists
     renderHook(() => useWatchKubeObjectLists({ kubeObjectClass, lists, endpoint }), {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <Provider store={store}>
+          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        </Provider>
       ),
     });
 
@@ -300,7 +312,9 @@ describe('useKubeObjectList', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          <Provider store={store}>
+            <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -332,7 +346,9 @@ describe('useWatchKubeObjectLists (Multiplexer)', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          <Provider store={store}>
+            <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -360,7 +376,9 @@ describe('useWatchKubeObjectLists (Multiplexer)', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          <Provider store={store}>
+            <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -394,7 +412,9 @@ describe('useWatchKubeObjectLists (Multiplexer)', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          <Provider store={store}>
+            <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -405,5 +425,20 @@ describe('useWatchKubeObjectLists (Multiplexer)', () => {
       'watch=1&resourceVersion=1',
       expect.any(Function)
     );
+  });
+});
+
+describe('useWebsocketMultiplexerEnabled', () => {
+  it('returns true when REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER is "true"', () => {
+    const { result } = renderHook(() => useWebsocketMultiplexerEnabled(), {
+      wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
+    });
+    expect(result.current).toBe(true);
+  });
+});
+
+describe('getWebsocketMultiplexerEnabled', () => {
+  it('returns true when REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER is "true"', () => {
+    expect(getWebsocketMultiplexerEnabled()).toBe(true);
   });
 });
