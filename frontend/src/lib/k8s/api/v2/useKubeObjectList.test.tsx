@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
+import { configureStore } from '@reduxjs/toolkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { describe, expect, it, vi } from 'vitest';
+import configReducer from '../../../../redux/configSlice';
 import store from '../../../../redux/stores/store';
 import {
   getWebsocketMultiplexerEnabled,
@@ -429,16 +431,69 @@ describe('useWatchKubeObjectLists (Multiplexer)', () => {
 });
 
 describe('useWebsocketMultiplexerEnabled', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('returns true when REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER is "true"', () => {
+    vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'true');
     const { result } = renderHook(() => useWebsocketMultiplexerEnabled(), {
       wrapper: ({ children }) => <Provider store={store}>{children}</Provider>,
     });
     expect(result.current).toBe(true);
   });
+
+  it('returns true when runtime config is enabled', () => {
+    vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'false');
+    const testStore = configureStore({
+      reducer: {
+        config: configReducer,
+      },
+      preloadedState: {
+        config: {
+          ...store.getState().config,
+          isWebsocketMultiplexerEnabled: true,
+        },
+      },
+    });
+    const { result } = renderHook(() => useWebsocketMultiplexerEnabled(), {
+      wrapper: ({ children }) => <Provider store={testStore}>{children}</Provider>,
+    });
+    expect(result.current).toBe(true);
+  });
+
+  it('returns false when both are disabled', () => {
+    vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'false');
+    const testStore = configureStore({
+      reducer: {
+        config: configReducer,
+      },
+      preloadedState: {
+        config: {
+          ...store.getState().config,
+          isWebsocketMultiplexerEnabled: false,
+        },
+      },
+    });
+    const { result } = renderHook(() => useWebsocketMultiplexerEnabled(), {
+      wrapper: ({ children }) => <Provider store={testStore}>{children}</Provider>,
+    });
+    expect(result.current).toBe(false);
+  });
 });
 
 describe('getWebsocketMultiplexerEnabled', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('returns true when REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER is "true"', () => {
+    vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'true');
     expect(getWebsocketMultiplexerEnabled()).toBe(true);
+  });
+
+  it('returns false when REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER is not "true"', () => {
+    vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'false');
+    expect(getWebsocketMultiplexerEnabled()).toBe(false);
   });
 });
