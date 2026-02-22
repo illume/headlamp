@@ -22,19 +22,7 @@
               </h1>
               <div
                 class="MuiBox-root css-ldp2l3"
-              >
-                <button
-                  aria-label="Create MutatingWebhookConfiguration"
-                  class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-whz9ym-MuiButtonBase-root-MuiIconButton-root"
-                  data-mui-internal-clone-element="true"
-                  tabindex="0"
-                  type="button"
-                >
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
-                </button>
-              </div>
+              />
             </div>
           </div>
         </div>
@@ -418,8 +406,9 @@
               class="css-1obf64m"
             >
               <tr
-                class="css-1ospngb"
+                class="css-1vcet4r"
                 data-selected="false"
+                tabindex="0"
               >
                 <td
                   class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1nchbpl-MuiTableCell-root"
@@ -505,8 +494,9 @@
                 </td>
               </tr>
               <tr
-                class="css-1ospngb"
+                class="css-1vcet4r"
                 data-selected="false"
+                tabindex="0"
               >
                 <td
                   class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1nchbpl-MuiTableCell-root"
@@ -592,8 +582,9 @@
                 </td>
               </tr>
               <tr
-                class="css-1ospngb"
+                class="css-1vcet4r"
                 data-selected="false"
+                tabindex="0"
               >
                 <td
                   class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1nchbpl-MuiTableCell-root"
@@ -679,8 +670,9 @@
                 </td>
               </tr>
               <tr
-                class="css-1ospngb"
+                class="css-1vcet4r"
                 data-selected="false"
+                tabindex="0"
               >
                 <td
                   class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1nchbpl-MuiTableCell-root"
@@ -766,8 +758,9 @@
                 </td>
               </tr>
               <tr
-                class="css-1ospngb"
+                class="css-1vcet4r"
                 data-selected="false"
+                tabindex="0"
               >
                 <td
                   class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1nchbpl-MuiTableCell-root"
@@ -853,8 +846,9 @@
                 </td>
               </tr>
               <tr
-                class="css-1ospngb"
+                class="css-1vcet4r"
                 data-selected="false"
+                tabindex="0"
               >
                 <td
                   class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1nchbpl-MuiTableCell-root"

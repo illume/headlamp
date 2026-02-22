@@ -174,6 +174,10 @@ const StyledRow = styled('tr')(({ theme }) => ({
   '&[data-selected=true]': {
     background: alpha(theme.palette.primary.main, 0.2),
   },
+  '&:focus-visible > td, &:focus-visible > th': {
+    outline: `2px solid ${theme.palette.primary.main}`,
+    outlineOffset: '-2px',
+  },
 }));
 const StyledBody = styled('tbody')({ display: 'contents' });
 
@@ -585,7 +589,21 @@ const Row = memo(
     onRowClick?: (e: React.MouseEvent, rowIndex: number) => void;
     rowIndex: number;
   }) => (
-    <StyledRow data-selected={isSelected} onClickCapture={e => onRowClick?.(e, rowIndex)}>
+    <StyledRow
+      data-selected={isSelected}
+      aria-selected={isSelected || undefined}
+      tabIndex={0}
+      onClickCapture={e => onRowClick?.(e, rowIndex)}
+      onKeyDown={e => {
+        if (e.key === 'Enter' && e.target === e.currentTarget) {
+          const firstLink = (e.currentTarget as HTMLElement).querySelector('a');
+          if (firstLink) {
+            e.preventDefault();
+            firstLink.click();
+          }
+        }
+      }}
+    >
       {cells.map(cell => (
         <MemoCell
           cell={cell as MRT_Cell<Record<string, any>, unknown>}

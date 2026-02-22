@@ -402,6 +402,10 @@ export default function SimpleTable(props: SimpleTableProps) {
           '& .MuiTableHead-root, & .MuiTableRow-root, & .MuiTableBody-root': {
             display: 'contents',
           },
+          '& .MuiTableBody-root .MuiTableRow-root:focus-visible > .MuiTableCell-root': {
+            outline: `2px solid ${theme.palette.primary.main}`,
+            outlineOffset: '-2px',
+          },
         })}
         size="small"
       >
@@ -440,7 +444,19 @@ export default function SimpleTable(props: SimpleTableProps) {
         <TableBody>
           {filteredData!.length > 0 ? (
             getPagedRows().map((row: any, i: number) => (
-              <TableRow key={i}>
+              <TableRow
+                key={i}
+                tabIndex={0}
+                onKeyDown={(e: React.KeyboardEvent<HTMLTableRowElement>) => {
+                  if (e.key === 'Enter' && e.target === e.currentTarget) {
+                    const firstLink = (e.currentTarget as HTMLElement).querySelector('a');
+                    if (firstLink) {
+                      e.preventDefault();
+                      firstLink.click();
+                    }
+                  }
+                }}
+              >
                 {columns.map((col, i) => {
                   const { cellProps = {} } = col;
                   return (
