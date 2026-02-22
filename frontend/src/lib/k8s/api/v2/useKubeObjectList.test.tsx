@@ -524,12 +524,13 @@ describe('getWebsocketMultiplexerEnabled', () => {
     });
     // Replace the global store temporarily
     const originalGetState = store.getState;
-    store.getState = testStore.getState;
-    
-    expect(getWebsocketMultiplexerEnabled()).toBe(true);
-    
-    // Restore original store
-    store.getState = originalGetState;
+    try {
+      store.getState = testStore.getState;
+      expect(getWebsocketMultiplexerEnabled()).toBe(true);
+    } finally {
+      // Always restore original store
+      store.getState = originalGetState;
+    }
   });
 
   it('returns false when runtime config is disabled (env var false)', () => {
@@ -547,12 +548,13 @@ describe('getWebsocketMultiplexerEnabled', () => {
     });
     // Replace the global store temporarily
     const originalGetState = store.getState;
-    store.getState = testStore.getState;
-    
-    expect(getWebsocketMultiplexerEnabled()).toBe(false);
-    
-    // Restore original store
-    store.getState = originalGetState;
+    try {
+      store.getState = testStore.getState;
+      expect(getWebsocketMultiplexerEnabled()).toBe(false);
+    } finally {
+      // Always restore original store
+      store.getState = originalGetState;
+    }
   });
 
   it('returns false when runtime config is null (env var false)', () => {
@@ -570,11 +572,12 @@ describe('getWebsocketMultiplexerEnabled', () => {
     });
     // Replace the global store temporarily
     const originalGetState = store.getState;
-    store.getState = testStore.getState;
-    
-    expect(getWebsocketMultiplexerEnabled()).toBe(false);
-    
-    // Restore original store
-    store.getState = originalGetState;
+    try {
+      store.getState = testStore.getState;
+      expect(getWebsocketMultiplexerEnabled()).toBe(false);
+    } finally {
+      // Always restore original store
+      store.getState = originalGetState;
+    }
   });
 });
