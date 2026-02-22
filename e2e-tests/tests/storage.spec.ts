@@ -42,13 +42,7 @@ test('storage classes list page should load', async ({ page }) => {
 test('persistent volumes list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/storage/persistentvolumes');
   
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or persistent volumes not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Persistent Volumes') || 
-      !content.includes('href="/c/test/storage/persistentvolumes"')) {
+  if (await headlampPage.shouldSkipPage({ heading: 'Persistent Volumes', href: 'href="/c/test/storage/persistentvolumes"' })) {
     test.skip();
     return;
   }
@@ -63,13 +57,7 @@ test('persistent volumes list page should load', async ({ page }) => {
 test('persistent volume claims list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/storage/persistentvolumeclaims');
   
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or persistent volume claims not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Persistent Volume Claims') || 
-      !content.includes('href="/c/test/storage/persistentvolumeclaims"')) {
+  if (await headlampPage.shouldSkipPage({ heading: 'Persistent Volume Claims', href: 'href="/c/test/storage/persistentvolumeclaims"' })) {
     test.skip();
     return;
   }

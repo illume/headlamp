@@ -32,13 +32,7 @@ test.beforeEach(async ({ page }) => {
 test('horizontal pod autoscalers list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/horizontalpodautoscalers');
   
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or HPAs not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Horizontal Pod Autoscalers') || 
-      !content.includes('href="/c/test/horizontalpodautoscalers"')) {
+  if (await headlampPage.shouldSkipPage({ heading: 'Horizontal Pod Autoscalers', href: 'href="/c/test/horizontalpodautoscalers"' })) {
     test.skip();
     return;
   }
@@ -53,13 +47,7 @@ test('horizontal pod autoscalers list page should load', async ({ page }) => {
 test('vertical pod autoscalers list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/verticalpodautoscalers');
   
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or VPAs not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Vertical Pod Autoscalers') || 
-      !content.includes('href="/c/test/verticalpodautoscalers"')) {
+  if (await headlampPage.shouldSkipPage({ heading: 'Vertical Pod Autoscalers', href: 'href="/c/test/verticalpodautoscalers"' })) {
     test.skip();
     return;
   }
@@ -74,13 +62,7 @@ test('vertical pod autoscalers list page should load', async ({ page }) => {
 test('pod disruption budgets list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/poddisruptionbudgets');
   
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or PDBs not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Pod Disruption Budgets') || 
-      !content.includes('href="/c/test/poddisruptionbudgets"')) {
+  if (await headlampPage.shouldSkipPage({ heading: 'Pod Disruption Budgets', href: 'href="/c/test/poddisruptionbudgets"' })) {
     test.skip();
     return;
   }

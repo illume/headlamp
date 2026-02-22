@@ -42,13 +42,7 @@ test('configmaps list page should load', async ({ page }) => {
 test('secrets list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/secrets');
   
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or secrets not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Secrets') || 
-      !content.includes('href="/c/test/secrets"')) {
+  if (await headlampPage.shouldSkipPage({ heading: 'Secrets', href: 'href="/c/test/secrets"' })) {
     test.skip();
     return;
   }
@@ -63,13 +57,7 @@ test('secrets list page should load', async ({ page }) => {
 test('resource quotas list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/resourcequotas');
   
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or resource quotas not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Resource Quotas') || 
-      !content.includes('href="/c/test/resourcequotas"')) {
+  if (await headlampPage.shouldSkipPage({ heading: 'Resource Quotas', href: 'href="/c/test/resourcequotas"' })) {
     test.skip();
     return;
   }
@@ -84,13 +72,7 @@ test('resource quotas list page should load', async ({ page }) => {
 test('limit ranges list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/limitranges');
   
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or limit ranges not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Limit Ranges') || 
-      !content.includes('href="/c/test/limitranges"')) {
+  if (await headlampPage.shouldSkipPage({ heading: 'Limit Ranges', href: 'href="/c/test/limitranges"' })) {
     test.skip();
     return;
   }

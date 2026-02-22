@@ -34,13 +34,7 @@ test.describe('Additional Resources', () => {
   test('roles list page should load', async ({ page }) => {
     await headlampPage.navigateTopage('/c/test/roles');
     
-    const content = await page.content();
-    
-    // Skip test if page doesn't exist, lacks permission, or roles not available
-    if (content.includes("Whoops! This page doesn't exist") || 
-        content.includes('404') ||
-        !content.includes('Roles') || 
-        !content.includes('href="/c/test/roles"')) {
+    if (await headlampPage.shouldSkipPage({ heading: 'Roles', href: 'href="/c/test/roles"' })) {
       test.skip();
       return;
     }
@@ -55,13 +49,7 @@ test.describe('Additional Resources', () => {
   test('api services list page should load', async ({ page }) => {
     await headlampPage.navigateTopage('/c/test/apiservices');
     
-    const content = await page.content();
-    
-    // Skip test if page doesn't exist, lacks permission, or API services not available
-    if (content.includes("Whoops! This page doesn't exist") || 
-        content.includes('404') ||
-        !content.includes('API Services') || 
-        !content.includes('href="/c/test/apiservices"')) {
+    if (await headlampPage.shouldSkipPage({ heading: 'API Services', href: 'href="/c/test/apiservices"' })) {
       test.skip();
       return;
     }
@@ -76,13 +64,7 @@ test.describe('Additional Resources', () => {
   test('pod security policies list page should load', async ({ page }) => {
     await headlampPage.navigateTopage('/c/test/podsecuritypolicies');
     
-    const content = await page.content();
-    
-    // Skip test if page doesn't exist, lacks permission, or PSPs not available
-    if (content.includes("Whoops! This page doesn't exist") || 
-        content.includes('404') ||
-        !content.includes('Pod Security Policies') || 
-        !content.includes('href="/c/test/podsecuritypolicies"')) {
+    if (await headlampPage.shouldSkipPage({ heading: 'Pod Security Policies', href: 'href="/c/test/podsecuritypolicies"' })) {
       test.skip();
       return;
     }
@@ -97,13 +79,7 @@ test.describe('Additional Resources', () => {
   test('certificate signing requests list page should load', async ({ page }) => {
     await headlampPage.navigateTopage('/c/test/certificatesigningrequests');
     
-    const content = await page.content();
-    
-    // Skip test if page doesn't exist, lacks permission, or CSRs not available
-    if (content.includes("Whoops! This page doesn't exist") || 
-        content.includes('404') ||
-        !content.includes('Certificate Signing Requests') || 
-        !content.includes('href="/c/test/certificatesigningrequests"')) {
+    if (await headlampPage.shouldSkipPage({ heading: 'Certificate Signing Requests', href: 'href="/c/test/certificatesigningrequests"' })) {
       test.skip();
       return;
     }
@@ -118,13 +94,7 @@ test.describe('Additional Resources', () => {
   test('replica sets table headers should be correct', async ({ page }) => {
     await headlampPage.navigateTopage('/c/test/replicasets');
     
-    const content = await page.content();
-    
-    // Skip test if page doesn't exist, lacks permission, or replicasets not available
-    if (content.includes("Whoops! This page doesn't exist") || 
-        content.includes('404') ||
-        !content.includes('ReplicaSets') || 
-        !content.includes('href="/c/test/replicasets"')) {
+    if (await headlampPage.shouldSkipPage({ heading: 'ReplicaSets', href: 'href="/c/test/replicasets"' })) {
       test.skip();
       return;
     }
@@ -139,13 +109,7 @@ test.describe('Additional Resources', () => {
   test('daemon sets table headers should be correct', async ({ page }) => {
     await headlampPage.navigateTopage('/c/test/daemonsets');
     
-    const content = await page.content();
-    
-    // Skip test if page doesn't exist, lacks permission, or daemonsets not available
-    if (content.includes("Whoops! This page doesn't exist") || 
-        content.includes('404') ||
-        !content.includes('DaemonSets') || 
-        !content.includes('href="/c/test/daemonsets"')) {
+    if (await headlampPage.shouldSkipPage({ heading: 'DaemonSets', href: 'href="/c/test/daemonsets"' })) {
       test.skip();
       return;
     }
@@ -160,13 +124,7 @@ test.describe('Additional Resources', () => {
   test('stateful sets table headers should be correct', async ({ page }) => {
     await headlampPage.navigateTopage('/c/test/statefulsets');
     
-    const content = await page.content();
-    
-    // Skip test if page doesn't exist, lacks permission, or statefulsets not available
-    if (content.includes("Whoops! This page doesn't exist") || 
-        content.includes('404') ||
-        !content.includes('StatefulSets') || 
-        !content.includes('href="/c/test/statefulsets"')) {
+    if (await headlampPage.shouldSkipPage({ heading: 'StatefulSets', href: 'href="/c/test/statefulsets"' })) {
       test.skip();
       return;
     }
@@ -181,13 +139,7 @@ test.describe('Additional Resources', () => {
   test('jobs table headers should be correct', async ({ page }) => {
     await headlampPage.navigateTopage('/c/test/jobs');
     
-    const content = await page.content();
-    
-    // Skip test if page doesn't exist, lacks permission, or jobs not available
-    if (content.includes("Whoops! This page doesn't exist") || 
-        content.includes('404') ||
-        !content.includes('Jobs') || 
-        !content.includes('href="/c/test/jobs"')) {
+    if (await headlampPage.shouldSkipPage({ heading: 'Jobs', href: 'href="/c/test/jobs"' })) {
       test.skip();
       return;
     }
@@ -202,13 +154,7 @@ test.describe('Additional Resources', () => {
   test('cron jobs table headers should be correct', async ({ page }) => {
     await headlampPage.navigateTopage('/c/test/cronjobs');
     
-    const content = await page.content();
-    
-    // Skip test if page doesn't exist, lacks permission, or cronjobs not available
-    if (content.includes("Whoops! This page doesn't exist") || 
-        content.includes('404') ||
-        !content.includes('CronJobs') || 
-        !content.includes('href="/c/test/cronjobs"')) {
+    if (await headlampPage.shouldSkipPage({ heading: 'CronJobs', href: 'href="/c/test/cronjobs"' })) {
       test.skip();
       return;
     }
@@ -223,13 +169,7 @@ test.describe('Additional Resources', () => {
   test('deployments table headers should be correct', async ({ page }) => {
     await headlampPage.navigateTopage('/c/test/deployments');
     
-    const content = await page.content();
-    
-    // Skip test if page doesn't exist, lacks permission, or deployments not available
-    if (content.includes("Whoops! This page doesn't exist") || 
-        content.includes('404') ||
-        !content.includes('Deployments') || 
-        !content.includes('href="/c/test/deployments"')) {
+    if (await headlampPage.shouldSkipPage({ heading: 'Deployments', href: 'href="/c/test/deployments"' })) {
       test.skip();
       return;
     }

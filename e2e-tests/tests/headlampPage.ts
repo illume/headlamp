@@ -107,6 +107,35 @@ export class HeadlampPage {
     }
   }
 
+  /**
+   * Check if page should be skipped due to 404, permissions, or missing content.
+   * Returns true if the test should be skipped.
+   * 
+   * @param options.heading - The expected heading text on the page
+   * @param options.href - The expected href link on the page (optional)
+   * @returns true if test should be skipped, false otherwise
+   */
+  async shouldSkipPage(options: { heading: string; href?: string }): Promise<boolean> {
+    const content = await this.page.content();
+    
+    // Check for 404 or missing page
+    if (content.includes("Whoops! This page doesn't exist") || content.includes('404')) {
+      return true;
+    }
+    
+    // Check for missing expected content (permissions or resource not available)
+    if (!content.includes(options.heading)) {
+      return true;
+    }
+    
+    // Check for missing href if provided
+    if (options.href && !content.includes(options.href)) {
+      return true;
+    }
+    
+    return false;
+  }
+
   async logout() {
     // Click on the account button to open the user menu
     await this.page.click('button[aria-label="Account of current user"]');

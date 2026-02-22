@@ -100,13 +100,7 @@ test.skip('ingress classes list page should load', async ({ page }) => {
 test('network policies list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/networkpolicies');
   
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or network policies not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Network Policies') || 
-      !content.includes('href="/c/test/networkpolicies"')) {
+  if (await headlampPage.shouldSkipPage({ heading: 'Network Policies', href: 'href="/c/test/networkpolicies"' })) {
     test.skip();
     return;
   }

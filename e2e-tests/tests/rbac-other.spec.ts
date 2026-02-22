@@ -32,13 +32,7 @@ test.beforeEach(async ({ page }) => {
 test('role bindings list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/rolebindings');
   
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or role bindings not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Role Bindings') || 
-      !content.includes('href="/c/test/rolebindings"')) {
+  if (await headlampPage.shouldSkipPage({ heading: 'Role Bindings', href: 'href="/c/test/rolebindings"' })) {
     test.skip();
     return;
   }
@@ -53,13 +47,7 @@ test('role bindings list page should load', async ({ page }) => {
 test('priority classes list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/priorityclasses');
   
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or priority classes not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Priority Classes') || 
-      !content.includes('href="/c/test/priorityclasses"')) {
+  if (await headlampPage.shouldSkipPage({ heading: 'Priority Classes', href: 'href="/c/test/priorityclasses"' })) {
     test.skip();
     return;
   }
@@ -74,13 +62,7 @@ test('priority classes list page should load', async ({ page }) => {
 test('runtime classes list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/runtimeclasses');
   
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or runtime classes not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Runtime Classes') || 
-      !content.includes('href="/c/test/runtimeclasses"')) {
+  if (await headlampPage.shouldSkipPage({ heading: 'Runtime Classes', href: 'href="/c/test/runtimeclasses"' })) {
     test.skip();
     return;
   }
@@ -95,13 +77,7 @@ test('runtime classes list page should load', async ({ page }) => {
 test('leases list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/leases');
   
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or leases not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Leases') || 
-      !content.includes('href="/c/test/leases"')) {
+  if (await headlampPage.shouldSkipPage({ heading: 'Leases', href: 'href="/c/test/leases"' })) {
     test.skip();
     return;
   }
@@ -116,13 +92,7 @@ test('leases list page should load', async ({ page }) => {
 test('mutating webhook configurations list page should load', async ({ page }) => {
   await headlampPage.navigateTopage('/c/test/mutatingwebhookconfigurations');
   
-  const content = await page.content();
-  
-  // Skip test if page doesn't exist, lacks permission, or mutating webhook configs not available
-  if (content.includes("Whoops! This page doesn't exist") || 
-      content.includes('404') ||
-      !content.includes('Mutating Webhook Configurations') || 
-      !content.includes('href="/c/test/mutatingwebhookconfigurations"')) {
+  if (await headlampPage.shouldSkipPage({ heading: 'Mutating Webhook Configurations', href: 'href="/c/test/mutatingwebhookconfigurations"' })) {
     test.skip();
     return;
   }
