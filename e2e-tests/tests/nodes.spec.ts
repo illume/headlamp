@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { test } from '@playwright/test';
+import { test, expect } from '@playwright/test';
 import { HeadlampPage } from './headlampPage';
 
 // TODO: Enable a11y checks once UI accessibility issues are fixed

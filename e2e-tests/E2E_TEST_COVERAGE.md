@@ -197,7 +197,7 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 ### Major Features
 
 #### Resource Map / Visualization
-- [x] e2e-tests: resource-map-view: Add test for resource map/graph visualization page (tested in `details-settings.spec.ts`)
+- [ ] e2e-tests: resource-map-view: Add test for resource map/graph visualization page (test present but currently skipped in `details-settings.spec.ts`)
 - [ ] e2e-tests: resource-map-navigation: Add test for navigating resources in map view
 - [ ] e2e-tests: resource-map-filters: Add test for filtering resources in map view
 - [ ] e2e-tests: resource-map-zoom: Add test for zoom and pan controls in map view
@@ -215,7 +215,7 @@ This document tracks the end-to-end (e2e) test coverage for all pages in Headlam
 - [ ] e2e-tests: activity-details: Add test for viewing event details
 
 #### Notifications
-- [x] e2e-tests: notifications-list: Add test for notifications list page (tested in `details-settings.spec.ts`)
+- [ ] e2e-tests: notifications-list: Add test for notifications list page (test currently skipped in `details-settings.spec.ts`)
 - [ ] e2e-tests: notifications-read: Add test for marking notifications as read
 - [ ] e2e-tests: notifications-clear: Add test for clearing notifications
 
