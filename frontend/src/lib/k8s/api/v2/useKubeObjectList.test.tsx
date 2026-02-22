@@ -20,7 +20,7 @@ import { renderHook } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { describe, expect, it, vi } from 'vitest';
 import configReducer from '../../../../redux/configSlice';
-import store from '../../../../redux/stores/store';
+import store, { RootState } from '../../../../redux/stores/store';
 import {
   getWebsocketMultiplexerEnabled,
   kubeObjectListQuery,
@@ -525,7 +525,7 @@ describe('getWebsocketMultiplexerEnabled', () => {
     // Replace the global store temporarily
     const originalGetState = store.getState;
     try {
-      store.getState = testStore.getState;
+      store.getState = testStore.getState as () => RootState;
       expect(getWebsocketMultiplexerEnabled()).toBe(true);
     } finally {
       // Always restore original store
@@ -549,7 +549,7 @@ describe('getWebsocketMultiplexerEnabled', () => {
     // Replace the global store temporarily
     const originalGetState = store.getState;
     try {
-      store.getState = testStore.getState;
+      store.getState = testStore.getState as () => RootState;
       expect(getWebsocketMultiplexerEnabled()).toBe(false);
     } finally {
       // Always restore original store
@@ -573,7 +573,7 @@ describe('getWebsocketMultiplexerEnabled', () => {
     // Replace the global store temporarily
     const originalGetState = store.getState;
     try {
-      store.getState = testStore.getState;
+      store.getState = testStore.getState as () => RootState;
       expect(getWebsocketMultiplexerEnabled()).toBe(false);
     } finally {
       // Always restore original store
