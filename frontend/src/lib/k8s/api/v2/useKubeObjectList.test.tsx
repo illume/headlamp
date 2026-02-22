@@ -139,6 +139,10 @@ describe('useWatchKubeObjectLists', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('should not be enabled when no endpoint is provided', () => {
     const spy = vi.spyOn(websocket, 'useWebSockets');
     const queryClient = new QueryClient();
@@ -290,6 +294,10 @@ describe('useKubeObjectList', () => {
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
   it('should call useKubeObjectList with 1 namespace after reducing amount of namespaces', async () => {
     const spy = vi.spyOn(websocket, 'useWebSockets');
     const queryClient = new QueryClient();
@@ -334,6 +342,10 @@ describe('useWatchKubeObjectLists (Multiplexer)', () => {
   beforeEach(() => {
     vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'true');
     vi.clearAllMocks();
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('should subscribe using WebSocketManager when multiplexer is enabled', () => {
@@ -495,5 +507,74 @@ describe('getWebsocketMultiplexerEnabled', () => {
   it('returns false when REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER is not "true"', () => {
     vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'false');
     expect(getWebsocketMultiplexerEnabled()).toBe(false);
+  });
+
+  it('returns true when runtime config is enabled (env var false)', () => {
+    vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'false');
+    const testStore = configureStore({
+      reducer: {
+        config: configReducer,
+      },
+      preloadedState: {
+        config: {
+          ...store.getState().config,
+          isWebsocketMultiplexerEnabled: true,
+        },
+      },
+    });
+    // Replace the global store temporarily
+    const originalGetState = store.getState;
+    store.getState = testStore.getState;
+    
+    expect(getWebsocketMultiplexerEnabled()).toBe(true);
+    
+    // Restore original store
+    store.getState = originalGetState;
+  });
+
+  it('returns false when runtime config is disabled (env var false)', () => {
+    vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'false');
+    const testStore = configureStore({
+      reducer: {
+        config: configReducer,
+      },
+      preloadedState: {
+        config: {
+          ...store.getState().config,
+          isWebsocketMultiplexerEnabled: false,
+        },
+      },
+    });
+    // Replace the global store temporarily
+    const originalGetState = store.getState;
+    store.getState = testStore.getState;
+    
+    expect(getWebsocketMultiplexerEnabled()).toBe(false);
+    
+    // Restore original store
+    store.getState = originalGetState;
+  });
+
+  it('returns false when runtime config is null (env var false)', () => {
+    vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'false');
+    const testStore = configureStore({
+      reducer: {
+        config: configReducer,
+      },
+      preloadedState: {
+        config: {
+          ...store.getState().config,
+          isWebsocketMultiplexerEnabled: null,
+        },
+      },
+    });
+    // Replace the global store temporarily
+    const originalGetState = store.getState;
+    store.getState = testStore.getState;
+    
+    expect(getWebsocketMultiplexerEnabled()).toBe(false);
+    
+    // Restore original store
+    store.getState = originalGetState;
   });
 });
