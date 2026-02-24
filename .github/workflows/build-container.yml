@@ -349,3 +349,17 @@ jobs:
         platforms: linux/s390x
         cache-from: type=gha
         cache-to: type=gha,mode=max
+  backend-s390x:
+    runs-on: ubuntu-latest
+    name: backend build and test for s390x
+    steps:
+    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
+    - name: Build and test backend for s390x
+      run: |
+        docker run --rm --platform linux/s390x \
+          -v "${{ github.workspace }}/backend":/backend \
+          -w /backend \
+          golang:1.24.13@sha256:c29cdf32d47053ab0d914852d9c2ed2da12b3cf13079aaef1704ef21335e68a3 \
+          sh -c "go build ./... && go test ./..."
