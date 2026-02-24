@@ -595,12 +595,25 @@ const Row = memo(
       tabIndex={0}
       onClickCapture={e => onRowClick?.(e, rowIndex)}
       onKeyDown={e => {
-        if (e.key === 'Enter' && e.target === e.currentTarget) {
-          const firstLink = (e.currentTarget as HTMLElement).querySelector('a');
+        const row = e.currentTarget as HTMLElement;
+        if (e.key === 'Enter' && e.target === row) {
+          const firstLink = row.querySelector('a');
           if (firstLink) {
             e.preventDefault();
             firstLink.click();
           }
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          (row.nextElementSibling as HTMLElement | null)?.focus();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          (row.previousElementSibling as HTMLElement | null)?.focus();
+        } else if (e.key === 'Home') {
+          e.preventDefault();
+          (row.parentElement?.firstElementChild as HTMLElement | null)?.focus();
+        } else if (e.key === 'End') {
+          e.preventDefault();
+          (row.parentElement?.lastElementChild as HTMLElement | null)?.focus();
         }
       }}
     >
