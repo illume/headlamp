@@ -332,23 +332,6 @@ jobs:
         name: e2e-tests-report
         path: e2e-tests/playwright-report/
         retention-days: 30
-  build-s390x:
-    runs-on: ubuntu-latest
-    name: build s390x image
-    steps:
-    - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@49b3bc8e6bdd4a60e6116a5414239cba5943d3cf # v3.2.0
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db # v3.6.1
-    - name: Build s390x image
-      uses: docker/build-push-action@0a97817b6ade9f46837855d676c4cca3a2471fc9 # v4.2.1
-      with:
-        context: .
-        push: false
-        platforms: linux/s390x
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
   backend-s390x:
     runs-on: ubuntu-latest
     name: backend build and test for s390x
