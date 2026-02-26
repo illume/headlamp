@@ -15,6 +15,7 @@
  */
 
 import { Icon } from '@iconify/react';
+import Box from '@mui/material/Box';
 import { http, HttpResponse } from 'msw';
 import Pod from '../../lib/k8s/pod';
 import { TestContext } from '../../test';
@@ -115,3 +116,17 @@ export const BasicExample = () => (
   </TestContext>
 );
 BasicExample.args = {};
+
+/**
+ * Demonstrates GraphView inside a height-constrained container, simulating the
+ * layout at high browser zoom levels (e.g. 200%). The `minHeight` on the graph
+ * ensures the canvas remains visible even when the flex parent is very short.
+ */
+export const InConstrainedContainer = () => (
+  <TestContext>
+    <Box sx={{ height: '300px', border: '1px dashed grey', display: 'flex', flexDirection: 'column' }}>
+      <GraphView defaultSources={[mockSource]} />
+    </Box>
+  </TestContext>
+);
+InConstrainedContainer.args = {};
