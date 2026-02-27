@@ -60,36 +60,33 @@ export function useDevicePixelRatio(): number {
 }
 
 /**
- * Returns the current **browser zoom level** as `window.outerWidth / window.innerWidth`
- * and re-renders whenever it changes.
+ * Returns the browser zoom level **relative to when the component first mounted**
+ * and re-renders whenever the zoom changes.
  *
- * Unlike `window.devicePixelRatio` (which combines screen DPR × browser zoom),
- * this ratio reflects only the browser's own zoom setting:
- * - Retina/HiDPI screen at **100% zoom** → returns ~`1.0`
- * - Any screen at **200% zoom** → returns ~`2.0`
+ * The zoom factor is `currentDevicePixelRatio / initialDevicePixelRatio`.
+ * Dividing by the baseline DPR captured at mount time removes the screen's
+ * hardware DPR offset (e.g. 2 on Retina displays), so the returned value
+ * reflects only the user-initiated browser zoom:
  *
- * This makes it reliable for detecting "the user has zoomed in", independent of
- * whether the display is HiDPI. Minor deviations can occur due to browser chrome
- * (scrollbars, sidebars), so compare against a threshold of `1.9` rather than
- * exactly `2.0`.
+ * - Retina screen at **100% zoom** → returns `1.0` (baseline DPR=2, current DPR=2)
+ * - Any screen at **150% zoom** → returns `~1.5`
+ * - Any screen at **200% zoom** → returns `~2.0`
  *
- * Note: `window.outerWidth / window.innerWidth` is the most reliable cross-browser
- * approach available without requiring experimental APIs. It works correctly in
- * Chrome, Edge, Firefox, and Safari.
+ * Unlike `window.outerWidth / window.innerWidth`, this approach works correctly
+ * inside iframes (e.g. Storybook's story canvas) where `outerWidth` reflects the
+ * top-level browser window while `innerWidth` reflects only the iframe viewport,
+ * causing the ratio to be inflated regardless of actual browser zoom.
+ *
+ * **Caveat:** if the page mounts while the browser is already zoomed in, the
+ * initial zoom is treated as the baseline (zoom = 1.0 at mount) and subsequent
+ * changes are measured relative to it.
  */
 export function useBrowserZoom(): number {
-  const getZoom = () =>
-    typeof window !== 'undefined' && window.innerWidth > 0
-      ? window.outerWidth / window.innerWidth
-      : 1;
-
-  const [zoom, setZoom] = useState(getZoom);
-
-  useEffect(() => {
-    const handleResize = () => setZoom(getZoom());
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  return zoom;
+  // Capture the DPR at mount — screenDPR × browser-zoom-at-mount-time.
+  // All subsequent zoom changes are measured relative to this baseline.
+  const [initialDpr] = useState(() =>
+    typeof window !== 'undefined' ? window.devicePixelRatio : 1
+  );
+  const currentDpr = useDevicePixelRatio();
+  return initialDpr > 0 ? currentDpr / initialDpr : 1;
 }

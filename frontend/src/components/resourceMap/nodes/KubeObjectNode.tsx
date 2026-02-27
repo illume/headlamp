@@ -19,7 +19,7 @@ import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import { alpha } from '@mui/system/colorManipulator';
-import { Handle, NodeProps, Position, useReactFlow } from '@xyflow/react';
+import { Handle, NodeProps, Position } from '@xyflow/react';
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Activity } from '../../activity/Activity';
@@ -151,14 +151,13 @@ const GLANCE_MAX_WIDTH = 350;
 const GLANCE_MARGIN = 4;
 /**
  * Browser zoom threshold above which the glance is suppressed when
- * `disableGlanceAtHighZoom` is set. Using `outerWidth/innerWidth` (browser
- * zoom ratio) rather than `devicePixelRatio` means this fires only when the
- * user has actually zoomed the browser — it is NOT triggered by a HiDPI/Retina
- * display at 100% zoom (where `devicePixelRatio` is already 2 but
- * `outerWidth/innerWidth` remains ~1). A threshold of 1.9 gives tolerance for
- * minor deviations due to browser chrome.
+ * `disableGlanceAtHighZoom` is set. Uses `useBrowserZoom()` which returns
+ * `currentDPR / initialDPR` — the zoom factor relative to page-load baseline.
+ * A threshold of 1.4 suppresses the glance at ~150% zoom (≈ 2 Cmd+= presses
+ * from 100% on most browsers). This is Retina/HiDPI safe: a Retina screen at
+ * 100% zoom reports currentDPR=initialDPR=2, so the ratio stays 1.0.
  */
-const HIGH_ZOOM_THRESHOLD = 1.9;
+const HIGH_ZOOM_THRESHOLD = 1.4;
 
 export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const node = useNode(id);
@@ -174,15 +173,10 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const [glanceStyle, setGlanceStyle] = useState<React.CSSProperties>({});
   const theme = useTheme();
   const graph = useGraphView();
-  const reactFlow = useReactFlow();
-  // useBrowserZoom() returns window.outerWidth/innerWidth — the actual browser
-  // zoom level independent of screen DPR. On Retina/HiDPI screens this is ~1.0
-  // at 100% zoom (while devicePixelRatio is 2), so the check correctly fires
-  // only when the user has actually zoomed the browser to ~200%.
   const browserZoom = useBrowserZoom();
 
   // Suppress the glance when disableGlanceAtHighZoom is on and the browser
-  // zoom level is ≥ ~200%.
+  // zoom level is ≥ ~150%.
   const glanceDisabled = graph.disableGlanceAtHighZoom && browserZoom >= HIGH_ZOOM_THRESHOLD;
 
   const mainNode = node?.nodes ? getMainNode(node.nodes) : undefined;
@@ -224,12 +218,13 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
     }
 
     const id = setTimeout(() => setIsExpanded(true), EXPAND_DELAY);
-    return () => clearInterval(id);
+    return () => clearTimeout(id);
   }, [isHovered]);
 
-  // When hover starts, compute a position:fixed style for the glance card so
-  // that it stays fully within the viewport even when the node is partially
-  // outside it (e.g. near or past a left/right/top/bottom edge).
+  // When hover starts OR when the glance expands (after EXPAND_DELAY), compute
+  // a position:fixed style for the glance card. Re-running on `isExpanded`
+  // ensures the rect is fresh after the expand delay, so the card aligns
+  // correctly with the node's current viewport position.
   useEffect(() => {
     if (!isHovered || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
@@ -257,22 +252,7 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
         ? { bottom: window.innerHeight - rect.top + GLANCE_MARGIN }
         : { top: rect.bottom + GLANCE_MARGIN }),
     });
-  }, [isHovered]);
-
-  // When centerOnNodeHover is enabled, smoothly pan the ReactFlow viewport
-  // to keep the hovered/focused node (and its glance) visible.
-  useEffect(() => {
-    if (!graph.centerOnNodeHover || !isHovered) return;
-    const rfNode = reactFlow.getNode(id);
-    if (!rfNode) return;
-    const nodeWidth = rfNode.measured?.width ?? 200;
-    const nodeHeight = rfNode.measured?.height ?? 68;
-    const { zoom } = reactFlow.getViewport();
-    reactFlow.setCenter(rfNode.position.x + nodeWidth / 2, rfNode.position.y + nodeHeight / 2, {
-      zoom,
-      duration: 300,
-    });
-  }, [isHovered, graph.centerOnNodeHover, id, reactFlow]);
+  }, [isHovered, isExpanded]);
 
   const icon = kubeObject ? (
     <KubeIcon width="42px" height="42px" kind={kubeObject.kind} apiGroup={apiGroup} />
@@ -373,9 +353,13 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
       {/* Glance card: rendered via a portal directly into document.body so it
            sits outside the ReactFlow CSS transform. This makes position:fixed
            coordinates map to true browser-viewport coordinates, and the card
-           is never clipped by the canvas overflow or pointer-events:none chain. */}
+           is never clipped by the canvas overflow or pointer-events:none chain.
+           Guard: only render when node.kubeObject is set — NodeGlance returns
+           null for group/custom nodes without a kubeObject, which would
+           produce an empty card. */}
       {isExpanded &&
         !glanceDisabled &&
+        !!node.kubeObject &&
         createPortal(
           <Box
             sx={{

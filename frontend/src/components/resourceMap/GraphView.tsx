@@ -66,7 +66,6 @@ import { useQueryParamsState } from './useQueryParamsState';
 interface GraphViewContent {
   setNodeSelection: (nodeId: string) => void;
   nodeSelection?: string;
-  centerOnNodeHover: boolean;
   disableGlanceAtHighZoom: boolean;
 }
 export const GraphViewContext = createContext({} as any);
@@ -106,21 +105,16 @@ interface GraphViewContentProps {
   /** Default filters to apply */
   defaultFilters?: GraphFilter[];
   /**
-   * When true, the ReactFlow viewport smoothly pans to center on a node when it is
-   * hovered or keyboard-focused, keeping the glance popup in view.
-   */
-  centerOnNodeHover?: boolean;
-  /**
    * When true, the quick-glance popup is hidden whenever the browser's zoom
-   * level is ≥ ~200%, detected via `window.outerWidth / window.innerWidth`.
+   * level is ≥ ~150% (detected via `currentDPR / initialDPR`).
    *
-   * At 200% zoom the viewport narrows to the point where the popup may be
+   * At high zoom the viewport narrows to the point where the popup may be
    * clipped. Setting this prop lets callers suppress the glance in that
    * environment and rely on the full details panel instead.
    *
-   * Unlike `devicePixelRatio`, the `outerWidth/innerWidth` ratio correctly
-   * returns ~1.0 on HiDPI/Retina screens at 100% zoom — so this prop does NOT
-   * fire simply because the user has a Retina display.
+   * The detection uses the ratio of the current `devicePixelRatio` to the DPR
+   * captured at mount time, which correctly returns ~1.0 at 100% zoom on any
+   * display (including Retina/HiDPI) and works inside iframes.
    */
   disableGlanceAtHighZoom?: boolean;
 }
@@ -146,7 +140,6 @@ function GraphViewContent({
   defaultNodeSelection,
   defaultSources = useGetAllSources(),
   defaultFilters = defaultFiltersValue,
-  centerOnNodeHover = false,
   disableGlanceAtHighZoom = false,
 }: GraphViewContentProps) {
   const { t } = useTranslation();
@@ -268,10 +261,9 @@ function GraphViewContent({
     () => ({
       nodeSelection: selectedNodeId,
       setNodeSelection: setSelectedNodeId,
-      centerOnNodeHover,
       disableGlanceAtHighZoom,
     }),
-    [selectedNodeId, setSelectedNodeId, centerOnNodeHover, disableGlanceAtHighZoom]
+    [selectedNodeId, setSelectedNodeId, disableGlanceAtHighZoom]
   );
 
   const fullGraphContext = useMemo(() => {

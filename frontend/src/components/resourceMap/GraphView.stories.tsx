@@ -29,14 +29,10 @@ export default {
   title: 'GraphView',
   component: GraphView,
   argTypes: {
-    centerOnNodeHover: {
-      control: { type: 'boolean' },
-      description: 'Pan the viewport to center on a node when it is hovered or focused.',
-    },
     disableGlanceAtHighZoom: {
       control: { type: 'boolean' },
       description:
-        'Hide the quick-glance popup when devicePixelRatio ≥ 2 (200% zoom on a standard display, or any zoom on HiDPI/Retina).',
+        'Hide the quick-glance popup when browser zoom ≥ ~150% (2 Cmd+= presses from 100%).',
     },
   },
   parameters: {
@@ -124,7 +120,7 @@ const mockSource: GraphSource = {
 
 export const BasicExample = () => (
   <TestContext>
-    <GraphView height="600px" defaultSources={[mockSource]} />;
+    <GraphView height="600px" defaultSources={[mockSource]} />
   </TestContext>
 );
 BasicExample.args = {};
@@ -148,26 +144,18 @@ InConstrainedContainer.args = {};
 /**
  * The graph is anchored to the bottom of the viewport. Hovering any node
  * triggers the glance tooltip to open **upward** because there is no space
- * below. Use the `centerOnNodeHover` control to toggle auto-panning.
+ * below.
  */
-export const GlanceAtBottomEdge = ({
-  centerOnNodeHover = false,
-}: {
-  centerOnNodeHover?: boolean;
-}) => (
+export const GlanceAtBottomEdge = () => (
   <TestContext>
     <Box
       sx={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
     >
-      <GraphView
-        height="260px"
-        defaultSources={[mockSource]}
-        centerOnNodeHover={centerOnNodeHover}
-      />
+      <GraphView height="260px" defaultSources={[mockSource]} />
     </Box>
   </TestContext>
 );
-GlanceAtBottomEdge.args = { centerOnNodeHover: false };
+GlanceAtBottomEdge.args = {};
 
 /**
  * The GraphView canvas is pushed **120 px past the right viewport edge** so that
@@ -221,7 +209,7 @@ GlanceAtLeftEdge.args = {};
  * open **downward** rather than being clipped above the screen. The flip logic
  * only opens upward when there is at least 300px of room above the node.
  */
-export const GlanceAtTopEdge = ({ centerOnNodeHover = false }: { centerOnNodeHover?: boolean }) => (
+export const GlanceAtTopEdge = () => (
   <TestContext>
     <Box
       sx={{
@@ -231,32 +219,11 @@ export const GlanceAtTopEdge = ({ centerOnNodeHover = false }: { centerOnNodeHov
         justifyContent: 'flex-start',
       }}
     >
-      <GraphView
-        height="260px"
-        defaultSources={[mockSource]}
-        centerOnNodeHover={centerOnNodeHover}
-      />
+      <GraphView height="260px" defaultSources={[mockSource]} />
     </Box>
   </TestContext>
 );
-GlanceAtTopEdge.args = { centerOnNodeHover: false };
-
-/**
- * When `centerOnNodeHover` is enabled the ReactFlow viewport smoothly pans to
- * keep the hovered/focused node centred, making the glance popup fully visible
- * even when the node starts off near a canvas edge. Toggle the option with the
- * control below.
- */
-export const GlanceWithAutoCenter = ({
-  centerOnNodeHover = true,
-}: {
-  centerOnNodeHover?: boolean;
-}) => (
-  <TestContext>
-    <GraphView height="600px" defaultSources={[mockSource]} centerOnNodeHover={centerOnNodeHover} />
-  </TestContext>
-);
-GlanceWithAutoCenter.args = { centerOnNodeHover: true };
+GlanceAtTopEdge.args = {};
 
 // ---------------------------------------------------------------------------
 // Live zoom indicator — used inside GlanceDisabledAtHighZoom to show the
@@ -282,7 +249,7 @@ function BrowserZoomIndicator({
   const zoom = useBrowserZoom();
 
   // Threshold must match HIGH_ZOOM_THRESHOLD in KubeObjectNode.tsx
-  const isHighZoom = zoom >= 1.9;
+  const isHighZoom = zoom >= 1.4;
   const glanceSuppressed = disableGlanceAtHighZoom && isHighZoom;
 
   return (
@@ -298,8 +265,8 @@ function BrowserZoomIndicator({
       }}
     >
       <Typography variant="body2">
-        <strong>Browser zoom (outerWidth/innerWidth):</strong> {zoom.toFixed(2)}
-        {isHighZoom ? ' ≥ 1.9 (high zoom detected)' : ' < 1.9 (normal zoom)'}
+        <strong>Browser zoom (currentDPR / initialDPR):</strong> {zoom.toFixed(2)}
+        {isHighZoom ? ' ≥ 1.4 (high zoom detected)' : ' < 1.4 (normal zoom)'}
       </Typography>
       <Typography variant="body2" sx={{ mt: 0.5 }}>
         <strong>window.devicePixelRatio:</strong> {dpr} (screen DPR × zoom — not used for
@@ -307,14 +274,14 @@ function BrowserZoomIndicator({
       </Typography>
       <Typography variant="body2" sx={{ mt: 0.5 }}>
         {glanceSuppressed
-          ? '⚠ Glance is currently hidden (disableGlanceAtHighZoom=true and zoom ≥ 1.9). Hover a node to confirm no popup appears.'
+          ? '⚠ Glance is currently hidden (disableGlanceAtHighZoom=true and zoom ≥ 1.4). Hover a node to confirm no popup appears.'
           : '✓ Glance is active. Hover a node to see the popup.'}
       </Typography>
       <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
         To test: use Ctrl+/- (or Cmd+/-) to zoom the browser. The zoom ratio updates in real-time.
-        At 200% zoom the ratio reaches ~2.0 and the glance will be hidden when the toggle is on.
-        On a Retina Mac at 100% zoom the ratio stays ~1.0 (even though DPR is 2) — so the glance
-        remains visible until you actually zoom the browser.
+        At ~150% zoom (≈ 2 Cmd+= presses from 100%) the ratio reaches ≥1.4 and the glance will be
+        hidden when the toggle is on. Works correctly on Retina/HiDPI screens — the ratio is 1.0 at
+        100% zoom regardless of screen DPR.
       </Typography>
     </Box>
   );
@@ -322,15 +289,17 @@ function BrowserZoomIndicator({
 
 /**
  * Demonstrates the `disableGlanceAtHighZoom` option. When enabled, the
- * quick-glance popup is suppressed when the browser zoom level reaches ~200%.
+ * quick-glance popup is suppressed when the browser zoom level reaches ~150%
+ * (2 Cmd+= presses from 100%).
  *
- * Detection uses `window.outerWidth / window.innerWidth` (not `devicePixelRatio`)
- * so it works correctly on HiDPI/Retina screens — a Retina Mac at 100% zoom is
- * NOT considered "high zoom" even though its `devicePixelRatio` is 2.
+ * Detection uses `currentDPR / initialDPR` — the zoom factor relative to the
+ * page's initial DPR at mount time. This is Retina/HiDPI safe (a Retina Mac at
+ * 100% zoom has DPR ratio = 1.0) and works correctly inside iframes such as
+ * Storybook's story canvas.
  *
  * **To test in Storybook:**
  * 1. Turn the `disableGlanceAtHighZoom` control **on**.
- * 2. Zoom the browser to 200% (Ctrl/Cmd + "+"). The zoom ratio indicator updates live.
+ * 2. Zoom the browser (Ctrl/Cmd + "+") ~2 times. The zoom ratio indicator updates live.
  * 3. Hover any node — no popup should appear.
  * 4. Zoom back to 100%. Hovering nodes shows the popup again.
  */
