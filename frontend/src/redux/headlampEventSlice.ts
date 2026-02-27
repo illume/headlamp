@@ -61,6 +61,8 @@ export enum HeadlampEventType {
   LIST_VIEW = 'headlamp.list-view',
   /** Events related to loading events for a resource. */
   OBJECT_EVENTS = 'headlamp.object-events',
+  /** Events related to a user logging in to a cluster. */
+  USER_LOGIN = 'headlamp.user-login',
 }
 
 /**
@@ -334,6 +336,16 @@ export interface EventListEvent {
   };
 }
 
+/**
+ * Event fired when a user logs in to a cluster.
+ */
+export interface UserLoginEvent extends HeadlampEvent<HeadlampEventType.USER_LOGIN> {
+  data: {
+    /** The cluster the user logged in to. */
+    cluster: string;
+  };
+}
+
 export type HeadlampEventCallback = (data: HeadlampEvent) => void;
 
 const initialState: {
@@ -430,6 +442,9 @@ export function useEventCallback(
 export function useEventCallback(
   eventInfo: HeadlampEventType.OBJECT_EVENTS
 ): (events: Event[], resource?: KubeObject) => void;
+export function useEventCallback(
+  eventType: HeadlampEventType.USER_LOGIN
+): (data: EventDataType<UserLoginEvent>) => void;
 export function useEventCallback(eventType?: HeadlampEventType | string) {
   const dispatch = useDispatch();
 
@@ -510,6 +525,8 @@ export function useEventCallback(eventType?: HeadlampEventType | string) {
           })
         );
       };
+    case HeadlampEventType.USER_LOGIN:
+      return dispatchDataEventFunc<UserLoginEvent>(HeadlampEventType.USER_LOGIN);
     default:
       break;
   }

@@ -89,6 +89,7 @@ import {
   RestartResourceEvent,
   ScaleResourceEvent,
   TerminalEvent,
+  UserLoginEvent,
 } from '../redux/headlampEventSlice';
 import { addOverviewChartsProcessor, OverviewChartsProcessor } from '../redux/overviewChartsSlice';
 import {
@@ -143,6 +144,7 @@ export type {
   ResourceDetailsViewLoadedEvent,
   ResourceListViewLoadedEvent,
   EventListEvent,
+  UserLoginEvent,
   PluginSettingsDetailsProps,
   PluginSettingsComponentType,
   GraphSource,

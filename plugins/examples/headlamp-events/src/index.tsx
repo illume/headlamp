@@ -17,12 +17,17 @@
 /**
  * This plugin listens to Headlamp events and shows a snackbar with the event type and the name of the resource,
  * except for OBJECT_EVENTS, which are ignored.
+ *
+ * It also demonstrates reacting to the USER_LOGIN event, which is useful for plugins that need to
+ * load data after the user authenticates (e.g. loading ConfigMaps that would fail with a 401
+ * before login completes).
  */
 import {
   DefaultHeadlampEvents,
   HeadlampEvent,
   registerAppBarAction,
   registerHeadlampEventCallback,
+  UserLoginEvent,
 } from '@kinvolk/headlamp-plugin/lib';
 import { useSnackbar } from 'notistack';
 import React from 'react';
@@ -50,7 +55,7 @@ function EventNotifier() {
       return;
     }
 
-    const k8sResource = currentEvent.data.resource;
+    const k8sResource = currentEvent.data?.resource;
 
     // Ignore OBJECT_EVENTS for now
     if (currentEvent.type === DefaultHeadlampEvents.OBJECT_EVENTS) {
@@ -58,8 +63,15 @@ function EventNotifier() {
     }
 
     let msg = '';
-    // If we have a resource, we can show its name in the snackbar
-    if (!!k8sResource) {
+
+    // USER_LOGIN fires after a user successfully authenticates with a cluster.
+    // This is the ideal place to (re)load data that requires authentication,
+    // instead of polling in an infinite loop.
+    if (currentEvent.type === DefaultHeadlampEvents.USER_LOGIN) {
+      const loginEvent = currentEvent as UserLoginEvent;
+      msg = `Logged in to cluster: ${loginEvent.data.cluster}`;
+    } else if (!!k8sResource) {
+      // If we have a resource, we can show its name in the snackbar
       msg = `Headlamp Event: ${currentEvent.type}, ${k8sResource.getName()}`;
     } else {
       msg = `Headlamp Event: ${currentEvent.type}`;
