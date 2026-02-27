@@ -124,7 +124,9 @@ BasicExample.args = {};
  */
 export const InConstrainedContainer = () => (
   <TestContext>
-    <Box sx={{ height: '300px', border: '1px dashed grey', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      sx={{ height: '300px', border: '1px dashed grey', display: 'flex', flexDirection: 'column' }}
+    >
       <GraphView defaultSources={[mockSource]} />
     </Box>
   </TestContext>
