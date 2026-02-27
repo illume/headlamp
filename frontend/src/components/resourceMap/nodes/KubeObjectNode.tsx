@@ -15,11 +15,15 @@
  */
 
 import { Icon } from '@iconify/react';
+import Box from '@mui/material/Box';
+import Dialog from '@mui/material/Dialog';
+import DialogContent from '@mui/material/DialogContent';
+import DialogTitle from '@mui/material/DialogTitle';
+import IconButton from '@mui/material/IconButton';
 import { useTheme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import { alpha } from '@mui/system/colorManipulator';
-import Box from '@mui/material/Box';
-import { Handle, NodeProps, Position } from '@xyflow/react';
+import { Handle, NodeProps, Position, useReactFlow } from '@xyflow/react';
 import { memo, useEffect, useRef, useState } from 'react';
 import { Activity } from '../../activity/Activity';
 import { GraphNodeDetails } from '../details/GraphNodeDetails';
@@ -141,15 +145,20 @@ const Title = styled('div')({
 });
 
 const EXPAND_DELAY = 450;
+/** Minimum px of space needed on each side before the glance tooltip flips direction. */
+const GLANCE_FLIP_THRESHOLD = 300;
 
 export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const node = useNode(id);
   const [isHovered, setHovered] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  // Flip direction for the tooltip glance
   const [openUpward, setOpenUpward] = useState(false);
+  const [openLeft, setOpenLeft] = useState(false);
   const theme = useTheme();
   const graph = useGraphView();
+  const reactFlow = useReactFlow();
 
   const mainNode = node?.nodes ? getMainNode(node.nodes) : undefined;
   const kubeObject = node?.kubeObject ?? mainNode?.kubeObject;
@@ -193,13 +202,29 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
     return () => clearInterval(id);
   }, [isHovered]);
 
-  // When hover starts, decide whether the glance should open above or below
-  // the node so it stays within the visible viewport.
+  // When hover starts, decide which direction the glance tooltip should open
+  // so it stays within the visible viewport (flip vertically and/or horizontally).
   useEffect(() => {
     if (!isHovered || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    setOpenUpward(window.innerHeight - rect.bottom < 300);
+    setOpenUpward(window.innerHeight - rect.bottom < GLANCE_FLIP_THRESHOLD);
+    setOpenLeft(window.innerWidth - rect.right < GLANCE_FLIP_THRESHOLD);
   }, [isHovered]);
+
+  // When centerOnNodeHover is enabled, smoothly pan the ReactFlow viewport
+  // to keep the hovered/focused node (and its glance) visible.
+  useEffect(() => {
+    if (!graph.centerOnNodeHover || !isHovered) return;
+    const rfNode = reactFlow.getNode(id);
+    if (!rfNode) return;
+    const nodeWidth = rfNode.measured?.width ?? 200;
+    const nodeHeight = rfNode.measured?.height ?? 68;
+    const { zoom } = reactFlow.getViewport();
+    reactFlow.setCenter(rfNode.position.x + nodeWidth / 2, rfNode.position.y + nodeHeight / 2, {
+      zoom,
+      duration: 300,
+    });
+  }, [isHovered, graph.centerOnNodeHover, id, reactFlow]);
 
   const icon = kubeObject ? (
     <KubeIcon width="42px" height="42px" kind={kubeObject.kind} apiGroup={apiGroup} />
@@ -243,12 +268,13 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
 
   return (
     <Container
+      ref={containerRef}
       tabIndex={0}
       role="button"
       isFaded={false}
       childrenCount={node.nodes?.length ?? 0}
       isSelected={isSelected}
-      isExpanded={isExpanded}
+      isExpanded={false}
       onClick={openDetails}
       onFocus={() => setHovered(true)}
       onBlur={() => setHovered(false)}
@@ -295,7 +321,51 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
           </Title>
         </LabelContainer>
       </TextContainer>
-      {isExpanded && <NodeGlance node={node} />}
+
+      {/* Tooltip glance: absolutely positioned, flips to stay within the viewport */}
+      {isExpanded && graph.glanceMode !== 'dialog' && (
+        <Box
+          sx={{
+            position: 'absolute',
+            zIndex: 10,
+            maxWidth: '350px',
+            minWidth: '200px',
+            background: theme.palette.background.paper,
+            border: '1px solid',
+            borderColor: isSelected ? theme.palette.action.active : theme.palette.divider,
+            borderRadius: '10px',
+            padding: '10px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            // Vertical flip: open above when near the bottom of the viewport
+            ...(openUpward
+              ? { bottom: '100%', marginBottom: '4px' }
+              : { top: '100%', marginTop: '4px' }),
+            // Horizontal flip: anchor to right edge when near the right of the viewport
+            ...(openLeft ? { right: 0 } : { left: 0 }),
+          }}
+        >
+          <NodeGlance node={node} />
+        </Box>
+      )}
+
+      {/* Dialog glance: always centered on screen, never clipped */}
+      {isExpanded && graph.glanceMode === 'dialog' && (
+        <Dialog open onClose={() => setHovered(false)} maxWidth="sm" fullWidth>
+          <DialogTitle sx={{ pr: 6 }}>
+            {label}
+            <IconButton
+              aria-label="close"
+              onClick={() => setHovered(false)}
+              sx={{ position: 'absolute', right: 8, top: 8 }}
+            >
+              <Icon icon="mdi:close" />
+            </IconButton>
+          </DialogTitle>
+          <DialogContent>
+            <NodeGlance node={node} />
+          </DialogContent>
+        </Dialog>
+      )}
     </Container>
   );
 });

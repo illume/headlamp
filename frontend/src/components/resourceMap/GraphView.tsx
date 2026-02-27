@@ -63,9 +63,14 @@ import { GraphSourcesView } from './sources/GraphSourcesView';
 import { useGraphViewport } from './useGraphViewport';
 import { useQueryParamsState } from './useQueryParamsState';
 
+/** Controls how the node quick-glance popup is displayed. */
+export type GlanceMode = 'tooltip' | 'dialog';
+
 interface GraphViewContent {
   setNodeSelection: (nodeId: string) => void;
   nodeSelection?: string;
+  glanceMode: GlanceMode;
+  centerOnNodeHover: boolean;
 }
 export const GraphViewContext = createContext({} as any);
 export const useGraphView = () => useContext<GraphViewContent>(GraphViewContext);
@@ -103,6 +108,17 @@ interface GraphViewContentProps {
 
   /** Default filters to apply */
   defaultFilters?: GraphFilter[];
+  /**
+   * Controls how the node quick-glance popup is displayed.
+   * - `'tooltip'` (default): a smart-positioned floating card that flips to stay within the viewport.
+   * - `'dialog'`: a centered MUI Dialog — always fully visible regardless of node position.
+   */
+  glanceMode?: GlanceMode;
+  /**
+   * When true, the ReactFlow viewport smoothly pans to center on a node when it is
+   * hovered or keyboard-focused, keeping the glance popup in view.
+   */
+  centerOnNodeHover?: boolean;
 }
 
 const defaultFiltersValue: GraphFilter[] = [];
@@ -126,6 +142,8 @@ function GraphViewContent({
   defaultNodeSelection,
   defaultSources = useGetAllSources(),
   defaultFilters = defaultFiltersValue,
+  glanceMode = 'tooltip',
+  centerOnNodeHover = false,
 }: GraphViewContentProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -243,8 +261,13 @@ function GraphViewContent({
   }, [graphSize]);
 
   const contextValue = useMemo(
-    () => ({ nodeSelection: selectedNodeId, setNodeSelection: setSelectedNodeId }),
-    [selectedNodeId, setSelectedNodeId]
+    () => ({
+      nodeSelection: selectedNodeId,
+      setNodeSelection: setSelectedNodeId,
+      glanceMode,
+      centerOnNodeHover,
+    }),
+    [selectedNodeId, setSelectedNodeId, glanceMode, centerOnNodeHover]
   );
 
   const fullGraphContext = useMemo(() => {

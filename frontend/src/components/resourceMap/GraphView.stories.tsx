@@ -21,12 +21,22 @@ import Pod from '../../lib/k8s/pod';
 import { TestContext } from '../../test';
 import { podList } from '../pod/storyHelper';
 import { GraphNode, GraphSource } from './graph/graphModel';
-import { GraphView } from './GraphView';
+import { GlanceMode, GraphView } from './GraphView';
 
 export default {
   title: 'GraphView',
   component: GraphView,
-  argTypes: {},
+  argTypes: {
+    glanceMode: {
+      control: { type: 'radio' },
+      options: ['tooltip', 'dialog'] as GlanceMode[],
+      description: 'How the quick-glance popup is displayed.',
+    },
+    centerOnNodeHover: {
+      control: { type: 'boolean' },
+      description: 'Pan the viewport to center on a node when it is hovered or focused.',
+    },
+  },
   parameters: {
     msw: {
       handlers: {
@@ -132,3 +142,105 @@ export const InConstrainedContainer = () => (
   </TestContext>
 );
 InConstrainedContainer.args = {};
+
+/**
+ * The graph is anchored to the bottom of the viewport. Hovering any node
+ * triggers the glance tooltip to open **upward** because there is no space
+ * below. Use the `glanceMode` and `centerOnNodeHover` controls to toggle
+ * different behaviours.
+ */
+export const GlanceAtBottomEdge = ({
+  glanceMode = 'tooltip',
+  centerOnNodeHover = false,
+}: {
+  glanceMode?: GlanceMode;
+  centerOnNodeHover?: boolean;
+}) => (
+  <TestContext>
+    <Box
+      sx={{ height: '100vh', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end' }}
+    >
+      <GraphView
+        height="260px"
+        defaultSources={[mockSource]}
+        glanceMode={glanceMode}
+        centerOnNodeHover={centerOnNodeHover}
+      />
+    </Box>
+  </TestContext>
+);
+GlanceAtBottomEdge.args = { glanceMode: 'tooltip', centerOnNodeHover: false };
+
+/**
+ * The graph is anchored to the right of the viewport. Hovering any node
+ * triggers the glance tooltip to open **to the left** because there is no
+ * space to the right.
+ */
+export const GlanceAtRightEdge = ({
+  glanceMode = 'tooltip',
+  centerOnNodeHover = false,
+}: {
+  glanceMode?: GlanceMode;
+  centerOnNodeHover?: boolean;
+}) => (
+  <TestContext>
+    <Box sx={{ display: 'flex', justifyContent: 'flex-end', height: '600px' }}>
+      <Box sx={{ width: '340px', height: '100%' }}>
+        <GraphView
+          height="100%"
+          defaultSources={[mockSource]}
+          glanceMode={glanceMode}
+          centerOnNodeHover={centerOnNodeHover}
+        />
+      </Box>
+    </Box>
+  </TestContext>
+);
+GlanceAtRightEdge.args = { glanceMode: 'tooltip', centerOnNodeHover: false };
+
+/**
+ * The glance opens as a centered MUI Dialog — always fully visible regardless
+ * of where the node sits in the viewport. Toggle `glanceMode` between
+ * `'tooltip'` and `'dialog'` with the control below.
+ */
+export const GlanceAsDialog = ({
+  glanceMode = 'dialog',
+  centerOnNodeHover = false,
+}: {
+  glanceMode?: GlanceMode;
+  centerOnNodeHover?: boolean;
+}) => (
+  <TestContext>
+    <GraphView
+      height="600px"
+      defaultSources={[mockSource]}
+      glanceMode={glanceMode}
+      centerOnNodeHover={centerOnNodeHover}
+    />
+  </TestContext>
+);
+GlanceAsDialog.args = { glanceMode: 'dialog', centerOnNodeHover: false };
+
+/**
+ * When `centerOnNodeHover` is enabled the ReactFlow viewport smoothly pans to
+ * keep the hovered/focused node centred, making the glance popup fully visible
+ * even when the node starts off near a canvas edge. Toggle the option with the
+ * control below.
+ */
+export const GlanceWithAutoCenter = ({
+  glanceMode = 'tooltip',
+  centerOnNodeHover = true,
+}: {
+  glanceMode?: GlanceMode;
+  centerOnNodeHover?: boolean;
+}) => (
+  <TestContext>
+    <GraphView
+      height="600px"
+      defaultSources={[mockSource]}
+      glanceMode={glanceMode}
+      centerOnNodeHover={centerOnNodeHover}
+    />
+  </TestContext>
+);
+GlanceWithAutoCenter.args = { glanceMode: 'tooltip', centerOnNodeHover: true };
