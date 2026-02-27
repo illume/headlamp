@@ -23,7 +23,7 @@ import { TestContext } from '../../test';
 import { podList } from '../pod/storyHelper';
 import { GraphNode, GraphSource } from './graph/graphModel';
 import { GraphView } from './GraphView';
-import { useDevicePixelRatio } from './useDevicePixelRatio';
+import { useDevicePixelRatio, useBrowserZoom } from './useDevicePixelRatio';
 
 export default {
   title: 'GraphView',
@@ -259,34 +259,30 @@ export const GlanceWithAutoCenter = ({
 GlanceWithAutoCenter.args = { centerOnNodeHover: true };
 
 // ---------------------------------------------------------------------------
-// Live devicePixelRatio indicator — used inside GlanceDisabledAtHighZoom to
-// show the current zoom/DPR value directly in the canvas.
+// Live zoom indicator — used inside GlanceDisabledAtHighZoom to show the
+// current browser zoom and DPR values directly in the canvas.
 // ---------------------------------------------------------------------------
 
 /**
- * Displays the live `window.devicePixelRatio` and explains whether the glance
- * will be suppressed given the current value.
+ * Displays the live browser zoom level (`window.outerWidth / window.innerWidth`)
+ * and `window.devicePixelRatio`, explaining whether the glance will be suppressed.
  *
- * Zoom detection approach:
- * - Primary: `matchMedia('(resolution: Ndppx)')` (MDN-recommended pattern) —
- *   fires when the DPR changes due to zoom or moving to a different monitor.
- * - Fallback: `window resize` event — catches zoom changes in browsers where
- *   the matchMedia change event may not fire reliably (e.g. some Firefox
- *   versions).
- *
- * Known limitation: `devicePixelRatio` cannot distinguish browser zoom from
- * OS-level HiDPI/Retina scaling. A Retina display at 100% zoom and a standard
- * display at 200% zoom both yield devicePixelRatio ≈ 2. The check is therefore
- * best described as "high zoom OR high-DPI display".
+ * Uses `useBrowserZoom()` (outerWidth/innerWidth ratio) rather than
+ * `devicePixelRatio` because DPR cannot distinguish "200% browser zoom on a
+ * standard display" from "100% zoom on a Retina/HiDPI display". The zoom ratio
+ * correctly returns ~1.0 on Retina at 100% zoom and ~2.0 at 200% zoom on any
+ * display.
  */
-function DevicePixelRatioIndicator({
+function BrowserZoomIndicator({
   disableGlanceAtHighZoom,
 }: {
   disableGlanceAtHighZoom: boolean;
 }) {
   const dpr = useDevicePixelRatio();
+  const zoom = useBrowserZoom();
 
-  const isHighZoom = dpr >= 2;
+  // Threshold must match HIGH_ZOOM_THRESHOLD in KubeObjectNode.tsx
+  const isHighZoom = zoom >= 1.9;
   const glanceSuppressed = disableGlanceAtHighZoom && isHighZoom;
 
   return (
@@ -302,18 +298,23 @@ function DevicePixelRatioIndicator({
       }}
     >
       <Typography variant="body2">
-        <strong>window.devicePixelRatio:</strong> {dpr}
-        {isHighZoom ? ' ≥ 2 (high zoom or HiDPI display)' : ' < 2 (standard zoom)'}
+        <strong>Browser zoom (outerWidth/innerWidth):</strong> {zoom.toFixed(2)}
+        {isHighZoom ? ' ≥ 1.9 (high zoom detected)' : ' < 1.9 (normal zoom)'}
+      </Typography>
+      <Typography variant="body2" sx={{ mt: 0.5 }}>
+        <strong>window.devicePixelRatio:</strong> {dpr} (screen DPR × zoom — not used for
+        detection; Retina screens report 2 at 100% zoom)
       </Typography>
       <Typography variant="body2" sx={{ mt: 0.5 }}>
         {glanceSuppressed
-          ? '⚠ Glance is currently hidden (disableGlanceAtHighZoom=true and DPR ≥ 2). Hover a node to confirm no popup appears.'
+          ? '⚠ Glance is currently hidden (disableGlanceAtHighZoom=true and zoom ≥ 1.9). Hover a node to confirm no popup appears.'
           : '✓ Glance is active. Hover a node to see the popup.'}
       </Typography>
       <Typography variant="caption" color="text.secondary" sx={{ mt: 0.5, display: 'block' }}>
-        To test: use Ctrl+/- (or Cmd+/-) to zoom the browser. The DPR value above updates in
-        real-time. At 200% zoom on a standard display it should reach 2 and the glance will be
-        hidden when the toggle is on.
+        To test: use Ctrl+/- (or Cmd+/-) to zoom the browser. The zoom ratio updates in real-time.
+        At 200% zoom the ratio reaches ~2.0 and the glance will be hidden when the toggle is on.
+        On a Retina Mac at 100% zoom the ratio stays ~1.0 (even though DPR is 2) — so the glance
+        remains visible until you actually zoom the browser.
       </Typography>
     </Box>
   );
@@ -321,16 +322,17 @@ function DevicePixelRatioIndicator({
 
 /**
  * Demonstrates the `disableGlanceAtHighZoom` option. When enabled, the
- * quick-glance popup is suppressed whenever `window.devicePixelRatio ≥ 2`.
+ * quick-glance popup is suppressed when the browser zoom level reaches ~200%.
+ *
+ * Detection uses `window.outerWidth / window.innerWidth` (not `devicePixelRatio`)
+ * so it works correctly on HiDPI/Retina screens — a Retina Mac at 100% zoom is
+ * NOT considered "high zoom" even though its `devicePixelRatio` is 2.
  *
  * **To test in Storybook:**
  * 1. Turn the `disableGlanceAtHighZoom` control **on**.
- * 2. Zoom the browser to 200% (Ctrl/Cmd + "+"). The DPR indicator updates live.
+ * 2. Zoom the browser to 200% (Ctrl/Cmd + "+"). The zoom ratio indicator updates live.
  * 3. Hover any node — no popup should appear.
  * 4. Zoom back to 100%. Hovering nodes shows the popup again.
- *
- * **Limitation:** `devicePixelRatio` cannot distinguish browser zoom from
- * OS-level HiDPI/Retina scaling — see the indicator text for details.
  */
 export const GlanceDisabledAtHighZoom = ({
   disableGlanceAtHighZoom = true,
@@ -339,7 +341,7 @@ export const GlanceDisabledAtHighZoom = ({
 }) => (
   <TestContext>
     <Box sx={{ p: 2, height: '100vh', display: 'flex', flexDirection: 'column' }}>
-      <DevicePixelRatioIndicator disableGlanceAtHighZoom={disableGlanceAtHighZoom} />
+      <BrowserZoomIndicator disableGlanceAtHighZoom={disableGlanceAtHighZoom} />
       <GraphView defaultSources={[mockSource]} disableGlanceAtHighZoom={disableGlanceAtHighZoom} />
     </Box>
   </TestContext>

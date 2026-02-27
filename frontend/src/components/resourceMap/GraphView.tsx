@@ -111,16 +111,16 @@ interface GraphViewContentProps {
    */
   centerOnNodeHover?: boolean;
   /**
-   * When true, the quick-glance popup is hidden whenever the browser's effective
-   * zoom level is high (detected via `window.devicePixelRatio >= 2`).
+   * When true, the quick-glance popup is hidden whenever the browser's zoom
+   * level is ≥ ~200%, detected via `window.outerWidth / window.innerWidth`.
    *
-   * At 200% zoom on a standard display `devicePixelRatio` reaches 2, making the
-   * viewport narrow enough that the popup may be clipped. Setting this prop lets
-   * callers suppress the glance in that environment and rely on the full details
-   * panel instead.
+   * At 200% zoom the viewport narrows to the point where the popup may be
+   * clipped. Setting this prop lets callers suppress the glance in that
+   * environment and rely on the full details panel instead.
    *
-   * Note: on HiDPI / Retina displays `devicePixelRatio` is already 2 at 100%
-   * browser zoom, so the check is best described as "high zoom **or** high-DPI".
+   * Unlike `devicePixelRatio`, the `outerWidth/innerWidth` ratio correctly
+   * returns ~1.0 on HiDPI/Retina screens at 100% zoom — so this prop does NOT
+   * fire simply because the user has a Retina display.
    */
   disableGlanceAtHighZoom?: boolean;
 }

@@ -28,7 +28,7 @@ import { getMainNode } from '../graph/graphGrouping';
 import { useGraphView, useNode } from '../GraphView';
 import { KubeIcon } from '../kubeIcon/KubeIcon';
 import { NodeGlance } from '../KubeObjectGlance/NodeGlance';
-import { useDevicePixelRatio } from '../useDevicePixelRatio';
+import { useBrowserZoom } from '../useDevicePixelRatio';
 import { GroupNodeComponent } from './GroupNode';
 import { getStatus } from './KubeObjectStatus';
 
@@ -150,12 +150,15 @@ const GLANCE_MAX_WIDTH = 350;
 /** Minimum gap between the glance card and any viewport edge. */
 const GLANCE_MARGIN = 4;
 /**
- * devicePixelRatio threshold above which the glance is considered to be in a
- * "high-zoom or high-DPI" environment. A standard display at 200% browser zoom
- * reaches exactly 2. HiDPI/Retina displays also report 2 at 100% zoom, so the
- * check is best described as "high zoom OR high-DPI display".
+ * Browser zoom threshold above which the glance is suppressed when
+ * `disableGlanceAtHighZoom` is set. Using `outerWidth/innerWidth` (browser
+ * zoom ratio) rather than `devicePixelRatio` means this fires only when the
+ * user has actually zoomed the browser — it is NOT triggered by a HiDPI/Retina
+ * display at 100% zoom (where `devicePixelRatio` is already 2 but
+ * `outerWidth/innerWidth` remains ~1). A threshold of 1.9 gives tolerance for
+ * minor deviations due to browser chrome.
  */
-const HIGH_ZOOM_DPR_THRESHOLD = 2;
+const HIGH_ZOOM_THRESHOLD = 1.9;
 
 export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const node = useNode(id);
@@ -172,11 +175,15 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const theme = useTheme();
   const graph = useGraphView();
   const reactFlow = useReactFlow();
-  const dpr = useDevicePixelRatio();
+  // useBrowserZoom() returns window.outerWidth/innerWidth — the actual browser
+  // zoom level independent of screen DPR. On Retina/HiDPI screens this is ~1.0
+  // at 100% zoom (while devicePixelRatio is 2), so the check correctly fires
+  // only when the user has actually zoomed the browser to ~200%.
+  const browserZoom = useBrowserZoom();
 
-  // Suppress the glance when disableGlanceAtHighZoom is on and the current
-  // devicePixelRatio indicates a high-zoom or high-DPI environment.
-  const glanceDisabled = graph.disableGlanceAtHighZoom && dpr >= HIGH_ZOOM_DPR_THRESHOLD;
+  // Suppress the glance when disableGlanceAtHighZoom is on and the browser
+  // zoom level is ≥ ~200%.
+  const glanceDisabled = graph.disableGlanceAtHighZoom && browserZoom >= HIGH_ZOOM_THRESHOLD;
 
   const mainNode = node?.nodes ? getMainNode(node.nodes) : undefined;
   const kubeObject = node?.kubeObject ?? mainNode?.kubeObject;
