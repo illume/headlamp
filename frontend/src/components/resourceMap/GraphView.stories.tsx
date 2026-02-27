@@ -143,10 +143,10 @@ InConstrainedContainer.args = {};
 
 /**
  * The graph is anchored to the bottom of the viewport.  Nodes have less than
- * GLANCE_FLIP_THRESHOLD (300px) space below them, so the glance falls back to
- * the **left or right** side instead of opening below.
+ * GLANCE_FLIP_THRESHOLD (300px) space below them but plenty of space above, so
+ * the glance opens **above** the node (second placement priority).
  *
- * Hover any node to verify the glance opens to a side rather than below.
+ * Hover any node to verify the glance opens above rather than below or to the side.
  */
 export const GlanceAtBottomEdge = () => (
   <TestContext>
@@ -161,14 +161,13 @@ GlanceAtBottomEdge.args = {};
 
 /**
  * The GraphView canvas is pushed **120 px past the right viewport edge** AND
- * placed at the bottom of the viewport so that there is not enough space below.
+ * placed at the bottom of the viewport so there is not enough space below.
  *
- * With the "below first" placement the glance would normally open below the node,
- * but since there is not enough space below (`spaceBelow < 300px`) it falls back
- * to the side.  Because the right side is also tight the glance flips to the
- * **left** of the node.
+ * Placement priority: not enough below → enough above → glance opens **above**
+ * the node.  The glance is left-aligned with the node and clamped horizontally
+ * so it stays within the viewport even though the node is partially off-screen.
  *
- * Hover any node near the right side to verify the glance opens to its left.
+ * Hover any node near the right side to verify the glance opens above.
  */
 export const GlanceAtRightEdge = () => (
   <TestContext>
@@ -193,13 +192,13 @@ GlanceAtRightEdge.args = {};
 
 /**
  * The GraphView canvas is pushed **120 px past the LEFT viewport edge** AND
- * placed at the bottom of the viewport so that there is not enough space below.
+ * placed at the bottom of the viewport so there is not enough space below.
  *
- * With the "below first" placement the glance falls back to the side because
- * `spaceBelow < 300px`.  The left side is too tight (node is off-screen left)
- * so the glance opens to the **right** of the node.
+ * Placement priority: not enough below → enough above → glance opens **above**
+ * the node.  The glance is left-aligned with the node and clamped horizontally
+ * so it stays within the viewport even though the node is partially off-screen.
  *
- * Hover any node near the left side to verify the glance opens to its right.
+ * Hover any node near the left side to verify the glance opens above.
  */
 export const GlanceAtLeftEdge = () => (
   <TestContext>
@@ -225,7 +224,7 @@ GlanceAtLeftEdge.args = {};
 /**
  * The graph is anchored to the top of the viewport.  Nodes have plenty of space
  * below them (`spaceBelow ≥ 300px`), so the glance opens **below** the node —
- * the preferred placement.
+ * the first (preferred) placement priority.
  *
  * Hover any node to verify the glance opens below.
  */
@@ -249,11 +248,10 @@ GlanceAtTopEdge.args = {};
  * Combined case: the graph is anchored to the **bottom** of the viewport AND
  * pushed **120 px past the right edge**.
  *
- * Not enough space below (bottom of viewport) so glance falls back to side.
- * Not enough space on the right so glance flips to the **left**.
- * The glance is anchored at node bottom and grows upward, clamped to viewport top.
+ * Not enough space below → tries above → enough space above → glance opens
+ * **above** the node, horizontally clamped inside the viewport.
  *
- * Hover a node near the bottom-right to verify glance opens to its left.
+ * Hover a node near the bottom-right to verify glance opens above.
  */
 export const GlanceAtRightTopEdge = () => (
   <TestContext>
@@ -280,11 +278,10 @@ GlanceAtRightTopEdge.args = {};
  * Combined case: the graph is anchored to the **bottom** of the viewport AND
  * pushed **120 px past the left edge**.
  *
- * Not enough space below so glance falls back to side.  The left side is off
- * screen so the glance opens to the **right** of the node.
- * The glance grows upward from the node bottom, clamped to viewport top.
+ * Not enough space below → tries above → enough space above → glance opens
+ * **above** the node, horizontally clamped inside the viewport.
  *
- * Hover a node near the bottom-left to verify glance opens to its right.
+ * Hover a node near the bottom-left to verify glance opens above.
  */
 export const GlanceAtLeftBottomEdge = () => (
   <TestContext>

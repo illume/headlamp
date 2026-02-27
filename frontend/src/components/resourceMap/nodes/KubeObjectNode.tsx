@@ -227,13 +227,12 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   // the card is fully visible inside the browser viewport.
   //
   // Placement priority:
-  //  1. BELOW the node  — preferred when there is enough space below
-  //     (≥ GLANCE_FLIP_THRESHOLD px).  The glance is left-aligned with the node
-  //     and clamped horizontally to the viewport.
-  //  2. LEFT or RIGHT   — fallback when below is too tight.  Opens to the right
-  //     by default; flips left when more room is available on the left.  The
-  //     glance is anchored at the node bottom and grows upward, with a maxHeight
-  //     that prevents it overflowing the top viewport edge.
+  //  1. BELOW the node  — preferred when ≥ GLANCE_FLIP_THRESHOLD px below.
+  //  2. ABOVE the node  — second choice when ≥ GLANCE_FLIP_THRESHOLD px above.
+  //  3. LEFT or RIGHT   — fallback when neither above nor below fits.
+  //
+  // In all cases the glance is horizontally left-aligned with the node and
+  // clamped to the viewport.  maxHeight prevents vertical overflow.
   //
   // All size/position values are first derived in SCREEN pixels, then divided by
   // `mapZoom` to produce the node-local CSS units that `position:absolute`
@@ -251,28 +250,43 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
     const gap = GLANCE_GAP * zoom; // gap in screen px
 
     const spaceBelow = viewportH - rect.bottom;
+    const spaceAbove = rect.top;
+
+    // Horizontal: left-aligned with node, clamped to viewport (shared by below + above).
+    const leftVpAligned = Math.max(MARGIN, Math.min(rect.left, viewportW - glanceW - MARGIN));
+    const leftNodeLocalAligned = (leftVpAligned - rect.left) / zoom;
 
     if (spaceBelow >= GLANCE_FLIP_THRESHOLD) {
       // ---- 1. BELOW the node (preferred) ----
-      // Horizontal: left-aligned with the node, clamped to viewport.
-      const leftVp = Math.max(MARGIN, Math.min(rect.left, viewportW - glanceW - MARGIN));
-      const leftNodeLocal = (leftVp - rect.left) / zoom;
-
-      // Vertical: top of glance = bottom of node + gap (in node-local units).
-      // maxHeight prevents the glance overflowing the bottom viewport edge.
+      // top of glance = bottom of node + gap, in node-local units.
       const topNodeLocal = rect.height / zoom + GLANCE_GAP;
       const maxHeight = Math.max(50, (viewportH - rect.bottom - gap - MARGIN) / zoom);
 
       setGlanceStyle({
         position: 'absolute',
-        left: `${leftNodeLocal}px`,
+        left: `${leftNodeLocalAligned}px`,
         top: `${topNodeLocal}px`,
         bottom: 'auto',
         maxHeight: `${maxHeight}px`,
         overflowY: 'auto',
       });
+    } else if (spaceAbove >= GLANCE_FLIP_THRESHOLD) {
+      // ---- 2. ABOVE the node (second preference) ----
+      // bottom of glance = top of node - gap, expressed as offset from node bottom.
+      // CSS bottom = distance above the Container's bottom edge (in node-local units).
+      const bottomNodeLocal = rect.height / zoom + GLANCE_GAP;
+      const maxHeight = Math.max(50, (rect.top - gap - MARGIN) / zoom);
+
+      setGlanceStyle({
+        position: 'absolute',
+        left: `${leftNodeLocalAligned}px`,
+        bottom: `${bottomNodeLocal}px`,
+        top: 'auto',
+        maxHeight: `${maxHeight}px`,
+        overflowY: 'auto',
+      });
     } else {
-      // ---- 2. LEFT or RIGHT (fallback) ----
+      // ---- 3. LEFT or RIGHT (fallback) ----
       // Open to the right by default; flip left when there is more room on the
       // left AND the right side is too narrow.
       let leftVp: number;
