@@ -19,7 +19,7 @@ import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import { alpha } from '@mui/system/colorManipulator';
-import { Handle, NodeProps, Position } from '@xyflow/react';
+import { Handle, NodeProps, Position, useViewport } from '@xyflow/react';
 import React, { memo, useEffect, useRef, useState } from 'react';
 import { Activity } from '../../activity/Activity';
 import { GraphNodeDetails } from '../details/GraphNodeDetails';
@@ -165,18 +165,15 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   /**
-   * Whether the glance card should open to the LEFT of the node.
-   * Computed via getBoundingClientRect() when the node is hovered/focused —
-   * flips left when there is not enough viewport space on the right.
+   * Computed `position:absolute` style for the glance card in node-local units.
+   * Recalculated on hover, expand, and map-zoom changes so the card is always
+   * clamped inside the browser viewport — even when the node itself is partially
+   * off-screen or the map has been zoomed in.
    */
-  const [glanceOnLeft, setGlanceOnLeft] = useState(false);
-  /**
-   * Whether the glance card should be anchored to the node's bottom edge so it
-   * grows upward. Flips when there is not enough space below the node.
-   */
-  const [glanceFlipVertical, setGlanceFlipVertical] = useState(false);
+  const [glanceStyle, setGlanceStyle] = useState<React.CSSProperties>({});
   const theme = useTheme();
   const graph = useGraphView();
+  const { zoom: mapZoom } = useViewport();
   const browserZoom = useBrowserZoom();
 
   // Suppress the glance when disableGlanceAtHighZoom is on and the browser
@@ -225,21 +222,84 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
     return () => clearTimeout(id);
   }, [isHovered]);
 
-  // When hover starts OR when the glance expands (after EXPAND_DELAY), compute
-  // which side the glance should open on. Re-running on `isExpanded` ensures
-  // the rect is fresh when the card actually appears.
+  // When hover starts, when the glance expands (after EXPAND_DELAY), or when the
+  // map zoom changes: recompute the glance's position in node-local coordinates so
+  // the card is fully visible inside the browser viewport.
+  //
+  // Placement priority:
+  //  1. BELOW the node  — preferred when there is enough space below
+  //     (≥ GLANCE_FLIP_THRESHOLD px).  The glance is left-aligned with the node
+  //     and clamped horizontally to the viewport.
+  //  2. LEFT or RIGHT   — fallback when below is too tight.  Opens to the right
+  //     by default; flips left when more room is available on the left.  The
+  //     glance is anchored at the node bottom and grows upward, with a maxHeight
+  //     that prevents it overflowing the top viewport edge.
+  //
+  // All size/position values are first derived in SCREEN pixels, then divided by
+  // `mapZoom` to produce the node-local CSS units that `position:absolute`
+  // expects.  Clamping ensures the glance is always fully visible — it will
+  // slightly overlap the node if the viewport is too narrow, but never clip.
   useEffect(() => {
     if (!isHovered || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
+    const viewportW = window.innerWidth;
+    const viewportH = window.innerHeight;
+    const MARGIN = 4; // minimum px from any viewport edge
+    const zoom = mapZoom; // ReactFlow viewport zoom (node-local 1px = zoom screen px)
 
-    // Horizontal: open to the left when there is not enough space on the right.
-    const spaceRight = window.innerWidth - rect.right;
-    setGlanceOnLeft(spaceRight < GLANCE_MAX_WIDTH + GLANCE_GAP);
+    const glanceW = GLANCE_MAX_WIDTH * zoom; // glance width in screen px at current zoom
+    const gap = GLANCE_GAP * zoom; // gap in screen px
 
-    // Vertical: flip to open upward when there is not enough space below.
-    const hasSpaceBelow = window.innerHeight - rect.bottom >= GLANCE_FLIP_THRESHOLD;
-    setGlanceFlipVertical(!hasSpaceBelow);
-  }, [isHovered, isExpanded]);
+    const spaceBelow = viewportH - rect.bottom;
+
+    if (spaceBelow >= GLANCE_FLIP_THRESHOLD) {
+      // ---- 1. BELOW the node (preferred) ----
+      // Horizontal: left-aligned with the node, clamped to viewport.
+      const leftVp = Math.max(MARGIN, Math.min(rect.left, viewportW - glanceW - MARGIN));
+      const leftNodeLocal = (leftVp - rect.left) / zoom;
+
+      // Vertical: top of glance = bottom of node + gap (in node-local units).
+      // maxHeight prevents the glance overflowing the bottom viewport edge.
+      const topNodeLocal = rect.height / zoom + GLANCE_GAP;
+      const maxHeight = Math.max(50, (viewportH - rect.bottom - gap - MARGIN) / zoom);
+
+      setGlanceStyle({
+        position: 'absolute',
+        left: `${leftNodeLocal}px`,
+        top: `${topNodeLocal}px`,
+        bottom: 'auto',
+        maxHeight: `${maxHeight}px`,
+        overflowY: 'auto',
+      });
+    } else {
+      // ---- 2. LEFT or RIGHT (fallback) ----
+      // Open to the right by default; flip left when there is more room on the
+      // left AND the right side is too narrow.
+      let leftVp: number;
+      if (rect.right + gap + glanceW + MARGIN > viewportW && rect.left > viewportW - rect.right) {
+        leftVp = rect.left - gap - glanceW; // left of node
+      } else {
+        leftVp = rect.right + gap; // right of node
+      }
+
+      // Clamp horizontally — may overlap the node if viewport is very narrow.
+      leftVp = Math.max(MARGIN, Math.min(leftVp, viewportW - glanceW - MARGIN));
+      const leftNodeLocal = (leftVp - rect.left) / zoom;
+
+      // Vertical: anchor glance bottom at node bottom, grow upward.
+      // maxHeight = space from viewport top to node bottom, preventing top clip.
+      const maxHeight = Math.max(50, (rect.bottom - MARGIN) / zoom);
+
+      setGlanceStyle({
+        position: 'absolute',
+        left: `${leftNodeLocal}px`,
+        bottom: 0,
+        top: 'auto',
+        maxHeight: `${maxHeight}px`,
+        overflowY: 'auto',
+      });
+    }
+  }, [isHovered, isExpanded, mapZoom]);
 
   const icon = kubeObject ? (
     <KubeIcon width="42px" height="42px" kind={kubeObject.kind} apiGroup={apiGroup} />
@@ -339,9 +399,10 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
 
       {/* Glance card: rendered as an absolutely-positioned child of the node
            so it automatically moves and scales with the ReactFlow viewport
-           (panning, map zoom controls). Positioned to the right of the node
-           by default; flips left when there is not enough space on the right,
-           and flips upward when there is not enough space below.
+           (panning, map zoom controls).  Position is fully computed in
+           screen-space and converted to node-local units using `mapZoom`, so
+           the card is always clamped inside the browser viewport — including
+           when the map has been zoomed in or the node is near any edge.
            Guard: only render when node.kubeObject is set — NodeGlance returns
            null for group/custom nodes without a kubeObject, which would
            produce an empty card. */}
@@ -350,11 +411,7 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
         !!node.kubeObject && (
           <Box
             sx={{
-              position: 'absolute',
-              ...(glanceOnLeft
-                ? { right: `calc(100% + ${GLANCE_GAP}px)` }
-                : { left: `calc(100% + ${GLANCE_GAP}px)` }),
-              ...(glanceFlipVertical ? { bottom: 0 } : { top: 0 }),
+              ...glanceStyle,
               zIndex: 1500,
               maxWidth: `${GLANCE_MAX_WIDTH}px`,
               minWidth: '200px',

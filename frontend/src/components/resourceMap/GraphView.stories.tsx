@@ -142,9 +142,11 @@ export const InConstrainedContainer = () => (
 InConstrainedContainer.args = {};
 
 /**
- * The graph is anchored to the bottom of the viewport. Hovering any node
- * triggers the glance tooltip to open **upward** because there is no space
- * below.
+ * The graph is anchored to the bottom of the viewport.  Nodes have less than
+ * GLANCE_FLIP_THRESHOLD (300px) space below them, so the glance falls back to
+ * the **left or right** side instead of opening below.
+ *
+ * Hover any node to verify the glance opens to a side rather than below.
  */
 export const GlanceAtBottomEdge = () => (
   <TestContext>
@@ -158,20 +160,31 @@ export const GlanceAtBottomEdge = () => (
 GlanceAtBottomEdge.args = {};
 
 /**
- * The GraphView canvas is pushed **120 px past the right viewport edge** so that
- * nodes near the right side have `getBoundingClientRect().right > window.innerWidth`.
+ * The GraphView canvas is pushed **120 px past the right viewport edge** AND
+ * placed at the bottom of the viewport so that there is not enough space below.
  *
- * The glance card detects insufficient space on the right and opens to the **left**
- * of the node instead. Because the glance is an inline `position:absolute` child of
- * the node it moves and scales with the ReactFlow viewport.
+ * With the "below first" placement the glance would normally open below the node,
+ * but since there is not enough space below (`spaceBelow < 300px`) it falls back
+ * to the side.  Because the right side is also tight the glance flips to the
+ * **left** of the node.
  *
  * Hover any node near the right side to verify the glance opens to its left.
  */
 export const GlanceAtRightEdge = () => (
   <TestContext>
-    <Box sx={{ position: 'relative', height: '400px', overflow: 'hidden' }}>
-      <Box sx={{ position: 'absolute', right: '-120px', width: '500px', height: '400px' }}>
-        <GraphView height="400px" defaultSources={[mockSource]} />
+    <Box
+      sx={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        overflow: 'hidden',
+      }}
+    >
+      <Box sx={{ position: 'relative', overflow: 'hidden', height: '400px' }}>
+        <Box sx={{ position: 'absolute', right: '-120px', width: '500px', height: '400px' }}>
+          <GraphView height="400px" defaultSources={[mockSource]} />
+        </Box>
       </Box>
     </Box>
   </TestContext>
@@ -179,20 +192,30 @@ export const GlanceAtRightEdge = () => (
 GlanceAtRightEdge.args = {};
 
 /**
- * The GraphView canvas is pushed **120 px past the LEFT viewport edge** so that
- * nodes near the left side have `getBoundingClientRect().left < 0`.
+ * The GraphView canvas is pushed **120 px past the LEFT viewport edge** AND
+ * placed at the bottom of the viewport so that there is not enough space below.
  *
- * The glance card detects sufficient space on the right and opens to the **right**
- * of the node. Because the glance is an inline `position:absolute` child of the node
- * it moves and scales with the ReactFlow viewport.
+ * With the "below first" placement the glance falls back to the side because
+ * `spaceBelow < 300px`.  The left side is too tight (node is off-screen left)
+ * so the glance opens to the **right** of the node.
  *
  * Hover any node near the left side to verify the glance opens to its right.
  */
 export const GlanceAtLeftEdge = () => (
   <TestContext>
-    <Box sx={{ position: 'relative', height: '400px', overflow: 'hidden' }}>
-      <Box sx={{ position: 'absolute', left: '-120px', width: '500px', height: '400px' }}>
-        <GraphView height="400px" defaultSources={[mockSource]} />
+    <Box
+      sx={{
+        height: '100vh',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'flex-end',
+        overflow: 'hidden',
+      }}
+    >
+      <Box sx={{ position: 'relative', overflow: 'hidden', height: '400px' }}>
+        <Box sx={{ position: 'absolute', left: '-120px', width: '500px', height: '400px' }}>
+          <GraphView height="400px" defaultSources={[mockSource]} />
+        </Box>
       </Box>
     </Box>
   </TestContext>
@@ -200,10 +223,11 @@ export const GlanceAtLeftEdge = () => (
 GlanceAtLeftEdge.args = {};
 
 /**
- * The graph is anchored to the top of the viewport. When a node is near the
- * top and there is not enough space above for the glance, the tooltip should
- * open **downward** rather than being clipped above the screen. The flip logic
- * only opens upward when there is at least 300px of room below the node.
+ * The graph is anchored to the top of the viewport.  Nodes have plenty of space
+ * below them (`spaceBelow ≥ 300px`), so the glance opens **below** the node —
+ * the preferred placement.
+ *
+ * Hover any node to verify the glance opens below.
  */
 export const GlanceAtTopEdge = () => (
   <TestContext>
@@ -222,14 +246,14 @@ export const GlanceAtTopEdge = () => (
 GlanceAtTopEdge.args = {};
 
 /**
- * Combined case: the graph is anchored to the **top** of the viewport AND
+ * Combined case: the graph is anchored to the **bottom** of the viewport AND
  * pushed **120 px past the right edge**.
  *
- * A node near the top-right corner should cause the glance to:
- * - open to the **left** (not enough space on the right), AND
- * - open **downward** from the node top (not enough space above).
+ * Not enough space below (bottom of viewport) so glance falls back to side.
+ * Not enough space on the right so glance flips to the **left**.
+ * The glance is anchored at node bottom and grows upward, clamped to viewport top.
  *
- * Hover a node near the top-right to verify both flips apply simultaneously.
+ * Hover a node near the bottom-right to verify glance opens to its left.
  */
 export const GlanceAtRightTopEdge = () => (
   <TestContext>
@@ -238,7 +262,7 @@ export const GlanceAtRightTopEdge = () => (
         height: '100vh',
         display: 'flex',
         flexDirection: 'column',
-        justifyContent: 'flex-start',
+        justifyContent: 'flex-end',
         overflow: 'hidden',
       }}
     >
@@ -256,11 +280,11 @@ GlanceAtRightTopEdge.args = {};
  * Combined case: the graph is anchored to the **bottom** of the viewport AND
  * pushed **120 px past the left edge**.
  *
- * A node near the bottom-left corner should cause the glance to:
- * - open to the **right** (not enough space on the left side to show left-glance), AND
- * - open **upward** from the node bottom (not enough space below — less than 300 px).
+ * Not enough space below so glance falls back to side.  The left side is off
+ * screen so the glance opens to the **right** of the node.
+ * The glance grows upward from the node bottom, clamped to viewport top.
  *
- * Hover a node near the bottom-left to verify both flips apply simultaneously.
+ * Hover a node near the bottom-left to verify glance opens to its right.
  */
 export const GlanceAtLeftBottomEdge = () => (
   <TestContext>
