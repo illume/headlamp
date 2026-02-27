@@ -16,10 +16,6 @@
 
 import { Icon } from '@iconify/react';
 import Box from '@mui/material/Box';
-import Dialog from '@mui/material/Dialog';
-import DialogContent from '@mui/material/DialogContent';
-import DialogTitle from '@mui/material/DialogTitle';
-import IconButton from '@mui/material/IconButton';
 import { useTheme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import { alpha } from '@mui/system/colorManipulator';
@@ -31,6 +27,7 @@ import { getMainNode } from '../graph/graphGrouping';
 import { useGraphView, useNode } from '../GraphView';
 import { KubeIcon } from '../kubeIcon/KubeIcon';
 import { NodeGlance } from '../KubeObjectGlance/NodeGlance';
+import { useDevicePixelRatio } from '../useDevicePixelRatio';
 import { GroupNodeComponent } from './GroupNode';
 import { getStatus } from './KubeObjectStatus';
 
@@ -147,6 +144,13 @@ const Title = styled('div')({
 const EXPAND_DELAY = 450;
 /** Minimum px of space needed on each side before the glance tooltip flips direction. */
 const GLANCE_FLIP_THRESHOLD = 300;
+/**
+ * devicePixelRatio threshold above which the glance is considered to be in a
+ * "high-zoom or high-DPI" environment. A standard display at 200% browser zoom
+ * reaches exactly 2. HiDPI/Retina displays also report 2 at 100% zoom, so the
+ * check is best described as "high zoom OR high-DPI display".
+ */
+const HIGH_ZOOM_DPR_THRESHOLD = 2;
 
 export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const node = useNode(id);
@@ -159,6 +163,11 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const theme = useTheme();
   const graph = useGraphView();
   const reactFlow = useReactFlow();
+  const dpr = useDevicePixelRatio();
+
+  // Suppress the glance when disableGlanceAtHighZoom is on and the current
+  // devicePixelRatio indicates a high-zoom or high-DPI environment.
+  const glanceDisabled = graph.disableGlanceAtHighZoom && dpr >= HIGH_ZOOM_DPR_THRESHOLD;
 
   const mainNode = node?.nodes ? getMainNode(node.nodes) : undefined;
   const kubeObject = node?.kubeObject ?? mainNode?.kubeObject;
@@ -204,11 +213,17 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
 
   // When hover starts, decide which direction the glance tooltip should open
   // so it stays within the visible viewport (flip vertically and/or horizontally).
+  // Only flip upward if there is actually enough room above the node — otherwise
+  // keep it opening downward even when space below is also limited.
   useEffect(() => {
     if (!isHovered || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    setOpenUpward(window.innerHeight - rect.bottom < GLANCE_FLIP_THRESHOLD);
-    setOpenLeft(window.innerWidth - rect.right < GLANCE_FLIP_THRESHOLD);
+    const hasSpaceBelow = window.innerHeight - rect.bottom >= GLANCE_FLIP_THRESHOLD;
+    const hasSpaceAbove = rect.top >= GLANCE_FLIP_THRESHOLD;
+    setOpenUpward(!hasSpaceBelow && hasSpaceAbove);
+    const hasSpaceRight = window.innerWidth - rect.right >= GLANCE_FLIP_THRESHOLD;
+    const hasSpaceLeft = rect.left >= GLANCE_FLIP_THRESHOLD;
+    setOpenLeft(!hasSpaceRight && hasSpaceLeft);
   }, [isHovered]);
 
   // When centerOnNodeHover is enabled, smoothly pan the ReactFlow viewport
@@ -323,7 +338,7 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
       </TextContainer>
 
       {/* Tooltip glance: absolutely positioned, flips to stay within the viewport */}
-      {isExpanded && graph.glanceMode !== 'dialog' && (
+      {isExpanded && !glanceDisabled && (
         <Box
           sx={{
             position: 'absolute',
@@ -346,25 +361,6 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
         >
           <NodeGlance node={node} />
         </Box>
-      )}
-
-      {/* Dialog glance: always centered on screen, never clipped */}
-      {isExpanded && graph.glanceMode === 'dialog' && (
-        <Dialog open onClose={() => setHovered(false)} maxWidth="sm" fullWidth>
-          <DialogTitle sx={{ pr: 6 }}>
-            {label}
-            <IconButton
-              aria-label="close"
-              onClick={() => setHovered(false)}
-              sx={{ position: 'absolute', right: 8, top: 8 }}
-            >
-              <Icon icon="mdi:close" />
-            </IconButton>
-          </DialogTitle>
-          <DialogContent>
-            <NodeGlance node={node} />
-          </DialogContent>
-        </Dialog>
       )}
     </Container>
   );

@@ -63,14 +63,11 @@ import { GraphSourcesView } from './sources/GraphSourcesView';
 import { useGraphViewport } from './useGraphViewport';
 import { useQueryParamsState } from './useQueryParamsState';
 
-/** Controls how the node quick-glance popup is displayed. */
-export type GlanceMode = 'tooltip' | 'dialog';
-
 interface GraphViewContent {
   setNodeSelection: (nodeId: string) => void;
   nodeSelection?: string;
-  glanceMode: GlanceMode;
   centerOnNodeHover: boolean;
+  disableGlanceAtHighZoom: boolean;
 }
 export const GraphViewContext = createContext({} as any);
 export const useGraphView = () => useContext<GraphViewContent>(GraphViewContext);
@@ -109,16 +106,23 @@ interface GraphViewContentProps {
   /** Default filters to apply */
   defaultFilters?: GraphFilter[];
   /**
-   * Controls how the node quick-glance popup is displayed.
-   * - `'tooltip'` (default): a smart-positioned floating card that flips to stay within the viewport.
-   * - `'dialog'`: a centered MUI Dialog — always fully visible regardless of node position.
-   */
-  glanceMode?: GlanceMode;
-  /**
    * When true, the ReactFlow viewport smoothly pans to center on a node when it is
    * hovered or keyboard-focused, keeping the glance popup in view.
    */
   centerOnNodeHover?: boolean;
+  /**
+   * When true, the quick-glance popup is hidden whenever the browser's effective
+   * zoom level is high (detected via `window.devicePixelRatio >= 2`).
+   *
+   * At 200% zoom on a standard display `devicePixelRatio` reaches 2, making the
+   * viewport narrow enough that the popup may be clipped. Setting this prop lets
+   * callers suppress the glance in that environment and rely on the full details
+   * panel instead.
+   *
+   * Note: on HiDPI / Retina displays `devicePixelRatio` is already 2 at 100%
+   * browser zoom, so the check is best described as "high zoom **or** high-DPI".
+   */
+  disableGlanceAtHighZoom?: boolean;
 }
 
 const defaultFiltersValue: GraphFilter[] = [];
@@ -142,8 +146,8 @@ function GraphViewContent({
   defaultNodeSelection,
   defaultSources = useGetAllSources(),
   defaultFilters = defaultFiltersValue,
-  glanceMode = 'tooltip',
   centerOnNodeHover = false,
+  disableGlanceAtHighZoom = false,
 }: GraphViewContentProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -264,10 +268,10 @@ function GraphViewContent({
     () => ({
       nodeSelection: selectedNodeId,
       setNodeSelection: setSelectedNodeId,
-      glanceMode,
       centerOnNodeHover,
+      disableGlanceAtHighZoom,
     }),
-    [selectedNodeId, setSelectedNodeId, glanceMode, centerOnNodeHover]
+    [selectedNodeId, setSelectedNodeId, centerOnNodeHover, disableGlanceAtHighZoom]
   );
 
   const fullGraphContext = useMemo(() => {
