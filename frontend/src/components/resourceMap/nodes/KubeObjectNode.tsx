@@ -27,7 +27,6 @@ import { getMainNode } from '../graph/graphGrouping';
 import { useGraphView, useNode } from '../GraphView';
 import { KubeIcon } from '../kubeIcon/KubeIcon';
 import { NodeGlance } from '../KubeObjectGlance/NodeGlance';
-import { useBrowserZoom } from '../useDevicePixelRatio';
 import { GroupNodeComponent } from './GroupNode';
 import { getStatus } from './KubeObjectStatus';
 
@@ -148,17 +147,6 @@ const GLANCE_FLIP_THRESHOLD = 300;
 const GLANCE_MAX_WIDTH = 350;
 /** Visual gap between the node edge and the glance card. */
 const GLANCE_GAP = 8;
-/**
- * Browser zoom threshold above which the glance is suppressed when
- * `disableGlanceAtHighZoom` is set. Using `outerWidth/innerWidth` (browser
- * zoom ratio) rather than `devicePixelRatio` means this fires only when the
- * user has actually zoomed the browser — it is NOT triggered by a HiDPI/Retina
- * display at 100% zoom (where `devicePixelRatio` is already 2 but
- * `outerWidth/innerWidth` remains ~1). A threshold of 1.9 gives tolerance for
- * minor deviations due to browser chrome.
- */
-const HIGH_ZOOM_THRESHOLD = 1.9;
-
 export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const node = useNode(id);
   const [isHovered, setHovered] = useState(false);
@@ -174,12 +162,6 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const theme = useTheme();
   const graph = useGraphView();
   const { zoom: mapZoom } = useViewport();
-  const browserZoom = useBrowserZoom();
-
-  // Suppress the glance when disableGlanceAtHighZoom is on and the browser
-  // zoom level is ≥ ~150%.
-  const glanceDisabled = graph.disableGlanceAtHighZoom && browserZoom >= HIGH_ZOOM_THRESHOLD;
-
   const mainNode = node?.nodes ? getMainNode(node.nodes) : undefined;
   const kubeObject = node?.kubeObject ?? mainNode?.kubeObject;
 
@@ -449,27 +431,25 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
            Guard: only render when node.kubeObject is set — NodeGlance returns
            null for group/custom nodes without a kubeObject, which would
            produce an empty card. */}
-      {isExpanded &&
-        !glanceDisabled &&
-        !!node.kubeObject && (
-          <Box
-            sx={{
-              ...glanceStyle,
-              zIndex: 1500,
-              minWidth: '200px',
-              background: theme.palette.background.paper,
-              border: '1px solid',
-              borderColor: isSelected ? theme.palette.action.active : theme.palette.divider,
-              borderRadius: '10px',
-              padding: '10px',
-              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-            }}
-            onPointerEnter={() => setHovered(true)}
-            onPointerLeave={() => setHovered(false)}
-          >
-            <NodeGlance node={node} />
-          </Box>
-        )}
+      {isExpanded && !!node.kubeObject && (
+        <Box
+          sx={{
+            ...glanceStyle,
+            zIndex: 1500,
+            minWidth: '200px',
+            background: theme.palette.background.paper,
+            border: '1px solid',
+            borderColor: isSelected ? theme.palette.action.active : theme.palette.divider,
+            borderRadius: '10px',
+            padding: '10px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+          }}
+          onPointerEnter={() => setHovered(true)}
+          onPointerLeave={() => setHovered(false)}
+        >
+          <NodeGlance node={node} />
+        </Box>
+      )}
     </Container>
   );
 });

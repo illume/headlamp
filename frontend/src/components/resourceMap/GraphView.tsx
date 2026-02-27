@@ -66,7 +66,6 @@ import { useQueryParamsState } from './useQueryParamsState';
 interface GraphViewContent {
   setNodeSelection: (nodeId: string) => void;
   nodeSelection?: string;
-  disableGlanceAtHighZoom: boolean;
 }
 export const GraphViewContext = createContext({} as any);
 export const useGraphView = () => useContext<GraphViewContent>(GraphViewContext);
@@ -104,19 +103,6 @@ interface GraphViewContentProps {
 
   /** Default filters to apply */
   defaultFilters?: GraphFilter[];
-  /**
-   * When true, the quick-glance popup is hidden whenever the browser's zoom
-   * level is ≥ ~200%, detected via `window.outerWidth / window.innerWidth`.
-   *
-   * At 200% zoom the viewport narrows to the point where the popup may be
-   * clipped. Setting this prop lets callers suppress the glance in that
-   * environment and rely on the full details panel instead.
-   *
-   * Unlike `devicePixelRatio`, the `outerWidth/innerWidth` ratio correctly
-   * returns ~1.0 on HiDPI/Retina screens at 100% zoom — so this prop does NOT
-   * fire simply because the user has a Retina display.
-   */
-  disableGlanceAtHighZoom?: boolean;
 }
 
 const defaultFiltersValue: GraphFilter[] = [];
@@ -140,7 +126,6 @@ function GraphViewContent({
   defaultNodeSelection,
   defaultSources = useGetAllSources(),
   defaultFilters = defaultFiltersValue,
-  disableGlanceAtHighZoom = false,
 }: GraphViewContentProps) {
   const { t } = useTranslation();
   const dispatch = useDispatch();
@@ -261,9 +246,8 @@ function GraphViewContent({
     () => ({
       nodeSelection: selectedNodeId,
       setNodeSelection: setSelectedNodeId,
-      disableGlanceAtHighZoom,
     }),
-    [selectedNodeId, setSelectedNodeId, disableGlanceAtHighZoom]
+    [selectedNodeId, setSelectedNodeId]
   );
 
   const fullGraphContext = useMemo(() => {

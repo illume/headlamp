@@ -1,7 +1,16 @@
 <body>
   <div>
+    <p
+      class="MuiTypography-root MuiTypography-body2 css-184o54p-MuiTypography-root"
+    >
+      Click the map 
+      <strong>
+        +
+      </strong>
+       zoom button several times until a node fills the canvas, then hover the node. The glance should overlay the node and stay fully visible.
+    </p>
     <div
-      class="MuiBox-root css-1yvazsw"
+      class="MuiBox-root css-z2orq9"
     >
       <div
         class="MuiBox-root css-2gjmrx"
