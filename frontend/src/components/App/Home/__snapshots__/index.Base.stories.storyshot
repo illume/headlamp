@@ -577,21 +577,25 @@
                   class="css-1obf64m"
                 >
                   <tr
-                    class="css-1ospngb"
+                    class="css-1vcet4r"
                     data-selected="false"
+                    tabindex="0"
                   >
                     <td
                       class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1nchbpl-MuiTableCell-root"
                     >
                       <span
+                        aria-disabled="true"
                         aria-label="Toggle select row"
-                        class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall css-1li6ni2-MuiButtonBase-root-MuiCheckbox-root"
+                        class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall Mui-disabled PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall Mui-disabled MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall css-1li6ni2-MuiButtonBase-root-MuiCheckbox-root"
                         data-mui-internal-clone-element="true"
+                        tabindex="-1"
                       >
                         <input
                           aria-label="Toggle select row"
                           class="PrivateSwitchBase-input css-1m9pwf3"
                           data-indeterminate="false"
+                          disabled=""
                           type="checkbox"
                         />
                         <svg
@@ -605,9 +609,6 @@
                             d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"
                           />
                         </svg>
-                        <span
-                          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                        />
                       </span>
                     </td>
                     <td
@@ -648,9 +649,9 @@
                         >
                           <p
                             class="MuiTypography-root MuiTypography-body2 css-ab4e19-MuiTypography-root"
-                            style="margin-left: 8px; color: rgb(16, 124, 16);"
+                            style="margin-left: 8px; color: rgb(198, 40, 40);"
                           >
-                            Active
+                            Unreachable
                           </p>
                         </div>
                       </div>
@@ -685,21 +686,25 @@
                     </td>
                   </tr>
                   <tr
-                    class="css-1ospngb"
+                    class="css-1vcet4r"
                     data-selected="false"
+                    tabindex="0"
                   >
                     <td
                       class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1nchbpl-MuiTableCell-root"
                     >
                       <span
+                        aria-disabled="true"
                         aria-label="Toggle select row"
-                        class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall css-1li6ni2-MuiButtonBase-root-MuiCheckbox-root"
+                        class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall Mui-disabled PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall Mui-disabled MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall css-1li6ni2-MuiButtonBase-root-MuiCheckbox-root"
                         data-mui-internal-clone-element="true"
+                        tabindex="-1"
                       >
                         <input
                           aria-label="Toggle select row"
                           class="PrivateSwitchBase-input css-1m9pwf3"
                           data-indeterminate="false"
+                          disabled=""
                           type="checkbox"
                         />
                         <svg
@@ -713,9 +718,6 @@
                             d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"
                           />
                         </svg>
-                        <span
-                          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                        />
                       </span>
                     </td>
                     <td
@@ -756,9 +758,9 @@
                         >
                           <p
                             class="MuiTypography-root MuiTypography-body2 css-ab4e19-MuiTypography-root"
-                            style="margin-left: 8px; color: rgb(16, 124, 16);"
+                            style="margin-left: 8px; color: rgb(198, 40, 40);"
                           >
-                            Active
+                            Unreachable
                           </p>
                         </div>
                       </div>
@@ -793,21 +795,25 @@
                     </td>
                   </tr>
                   <tr
-                    class="css-1ospngb"
+                    class="css-1vcet4r"
                     data-selected="false"
+                    tabindex="0"
                   >
                     <td
                       class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1nchbpl-MuiTableCell-root"
                     >
                       <span
+                        aria-disabled="true"
                         aria-label="Toggle select row"
-                        class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall css-1li6ni2-MuiButtonBase-root-MuiCheckbox-root"
+                        class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall Mui-disabled PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall Mui-disabled MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall css-1li6ni2-MuiButtonBase-root-MuiCheckbox-root"
                         data-mui-internal-clone-element="true"
+                        tabindex="-1"
                       >
                         <input
                           aria-label="Toggle select row"
                           class="PrivateSwitchBase-input css-1m9pwf3"
                           data-indeterminate="false"
+                          disabled=""
                           type="checkbox"
                         />
                         <svg
@@ -821,9 +827,6 @@
                             d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"
                           />
                         </svg>
-                        <span
-                          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                        />
                       </span>
                     </td>
                     <td
@@ -864,9 +867,9 @@
                         >
                           <p
                             class="MuiTypography-root MuiTypography-body2 css-ab4e19-MuiTypography-root"
-                            style="margin-left: 8px; color: rgb(16, 124, 16);"
+                            style="margin-left: 8px; color: rgb(198, 40, 40);"
                           >
-                            Active
+                            Unreachable
                           </p>
                         </div>
                       </div>

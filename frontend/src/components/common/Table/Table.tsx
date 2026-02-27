@@ -174,6 +174,10 @@ const StyledRow = styled('tr')(({ theme }) => ({
   '&[data-selected=true]': {
     background: alpha(theme.palette.primary.main, 0.2),
   },
+  '&:focus-visible > td, &:focus-visible > th': {
+    outline: `2px solid ${theme.palette.primary.main}`,
+    outlineOffset: '-2px',
+  },
 }));
 const StyledBody = styled('tbody')({ display: 'contents' });
 
@@ -585,7 +589,34 @@ const Row = memo(
     onRowClick?: (e: React.MouseEvent, rowIndex: number) => void;
     rowIndex: number;
   }) => (
-    <StyledRow data-selected={isSelected} onClickCapture={e => onRowClick?.(e, rowIndex)}>
+    <StyledRow
+      data-selected={isSelected}
+      aria-selected={isSelected || undefined}
+      tabIndex={0}
+      onClickCapture={e => onRowClick?.(e, rowIndex)}
+      onKeyDown={e => {
+        const row = e.currentTarget as HTMLElement;
+        if (e.key === 'Enter' && e.target === row) {
+          const firstLink = row.querySelector('a');
+          if (firstLink) {
+            e.preventDefault();
+            firstLink.click();
+          }
+        } else if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          (row.nextElementSibling as HTMLElement | null)?.focus();
+        } else if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          (row.previousElementSibling as HTMLElement | null)?.focus();
+        } else if (e.key === 'Home') {
+          e.preventDefault();
+          (row.parentElement?.firstElementChild as HTMLElement | null)?.focus();
+        } else if (e.key === 'End') {
+          e.preventDefault();
+          (row.parentElement?.lastElementChild as HTMLElement | null)?.focus();
+        }
+      }}
+    >
       {cells.map(cell => (
         <MemoCell
           cell={cell as MRT_Cell<Record<string, any>, unknown>}

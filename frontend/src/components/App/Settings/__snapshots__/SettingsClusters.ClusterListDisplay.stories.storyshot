@@ -31,7 +31,7 @@
           tabindex="0"
         >
           <table
-            class="MuiTable-root css-1ml9dpn-MuiTable-root"
+            class="MuiTable-root css-71ojif-MuiTable-root"
           >
             <thead
               class="MuiTableHead-root css-15wwp11-MuiTableHead-root"
@@ -58,6 +58,7 @@
             >
               <tr
                 class="MuiTableRow-root css-13jktim-MuiTableRow-root"
+                tabindex="0"
               >
                 <td
                   class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
@@ -77,6 +78,7 @@
               </tr>
               <tr
                 class="MuiTableRow-root css-13jktim-MuiTableRow-root"
+                tabindex="0"
               >
                 <td
                   class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
@@ -96,6 +98,7 @@
               </tr>
               <tr
                 class="MuiTableRow-root css-13jktim-MuiTableRow-root"
+                tabindex="0"
               >
                 <td
                   class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
