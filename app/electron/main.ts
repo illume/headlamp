@@ -1005,6 +1005,12 @@ function getDefaultAppMenu(): AppMenu[] {
           click: () => adjustZoom(0.1),
         },
         {
+          id: 'original-zoom-in-plus',
+          accelerator: 'CmdOrCtrl+Plus',
+          visible: false,
+          click: () => adjustZoom(0.1),
+        },
+        {
           label: i18n.t('Zoom Out'),
           id: 'original-zoom-out',
           accelerator: 'CmdOrCtrl+-',
