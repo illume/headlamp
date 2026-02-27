@@ -243,7 +243,10 @@ function GraphViewContent({
   }, [graphSize]);
 
   const contextValue = useMemo(
-    () => ({ nodeSelection: selectedNodeId, setNodeSelection: setSelectedNodeId }),
+    () => ({
+      nodeSelection: selectedNodeId,
+      setNodeSelection: setSelectedNodeId,
+    }),
     [selectedNodeId, setSelectedNodeId]
   );
 
@@ -273,6 +276,9 @@ function GraphViewContent({
           sx={{
             position: 'relative',
             height: height ?? '800px',
+            // Ensure the canvas stays visible when flex parent is small (e.g. at
+            // 200% browser zoom where the available height may be < 200px).
+            minHeight: height ? undefined : '400px',
             display: 'flex',
             flexDirection: 'row',
             flex: 1,
