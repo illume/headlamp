@@ -18,8 +18,9 @@ import { Icon } from '@iconify/react';
 import { useTheme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import { alpha } from '@mui/system/colorManipulator';
+import Box from '@mui/material/Box';
 import { Handle, NodeProps, Position } from '@xyflow/react';
-import { memo, useEffect, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import { Activity } from '../../activity/Activity';
 import { GraphNodeDetails } from '../details/GraphNodeDetails';
 import { getMainNode } from '../graph/graphGrouping';
@@ -145,6 +146,8 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const node = useNode(id);
   const [isHovered, setHovered] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [openUpward, setOpenUpward] = useState(false);
   const theme = useTheme();
   const graph = useGraphView();
 
@@ -188,6 +191,14 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
 
     const id = setTimeout(() => setIsExpanded(true), EXPAND_DELAY);
     return () => clearInterval(id);
+  }, [isHovered]);
+
+  // When hover starts, decide whether the glance should open above or below
+  // the node so it stays within the visible viewport.
+  useEffect(() => {
+    if (!isHovered || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setOpenUpward(window.innerHeight - rect.bottom < 300);
   }, [isHovered]);
 
   const icon = kubeObject ? (
