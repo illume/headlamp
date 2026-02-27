@@ -21,7 +21,6 @@ import { styled } from '@mui/material/styles';
 import { alpha } from '@mui/system/colorManipulator';
 import { Handle, NodeProps, Position } from '@xyflow/react';
 import React, { memo, useEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { Activity } from '../../activity/Activity';
 import { GraphNodeDetails } from '../details/GraphNodeDetails';
 import { getMainNode } from '../graph/graphGrouping';
@@ -143,12 +142,12 @@ const Title = styled('div')({
 });
 
 const EXPAND_DELAY = 450;
-/** Minimum px of space needed on each side before the glance tooltip flips direction. */
+/** Minimum px of space below the node before the glance flips to open upward. */
 const GLANCE_FLIP_THRESHOLD = 300;
 /** Maximum width of the glance card in pixels — must match the `maxWidth` sx value. */
 const GLANCE_MAX_WIDTH = 350;
-/** Minimum gap between the glance card and any viewport edge. */
-const GLANCE_MARGIN = 4;
+/** Visual gap between the node edge and the glance card. */
+const GLANCE_GAP = 8;
 /**
  * Browser zoom threshold above which the glance is suppressed when
  * `disableGlanceAtHighZoom` is set. Using `outerWidth/innerWidth` (browser
@@ -166,12 +165,16 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   /**
-   * Computed `position: fixed` style for the floating glance card.
-   * Using fixed positioning lets the card escape the ReactFlow canvas transform,
-   * so it can be clamped to actual viewport edges even when the node itself is
-   * partially outside the visible area.
+   * Whether the glance card should open to the LEFT of the node.
+   * Computed via getBoundingClientRect() when the node is hovered/focused —
+   * flips left when there is not enough viewport space on the right.
    */
-  const [glanceStyle, setGlanceStyle] = useState<React.CSSProperties>({});
+  const [glanceOnLeft, setGlanceOnLeft] = useState(false);
+  /**
+   * Whether the glance card should be anchored to the node's bottom edge so it
+   * grows upward. Flips when there is not enough space below the node.
+   */
+  const [glanceFlipVertical, setGlanceFlipVertical] = useState(false);
   const theme = useTheme();
   const graph = useGraphView();
   const browserZoom = useBrowserZoom();
@@ -223,36 +226,19 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   }, [isHovered]);
 
   // When hover starts OR when the glance expands (after EXPAND_DELAY), compute
-  // a position:fixed style for the glance card. Re-running on `isExpanded`
-  // ensures the rect is fresh after the expand delay, so the card aligns
-  // correctly with the node's current viewport position.
+  // which side the glance should open on. Re-running on `isExpanded` ensures
+  // the rect is fresh when the card actually appears.
   useEffect(() => {
     if (!isHovered || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
 
-    // Vertical: open below the node by default; flip above only when there is
-    // not enough space below but enough space above.
+    // Horizontal: open to the left when there is not enough space on the right.
+    const spaceRight = window.innerWidth - rect.right;
+    setGlanceOnLeft(spaceRight < GLANCE_MAX_WIDTH + GLANCE_GAP);
+
+    // Vertical: flip to open upward when there is not enough space below.
     const hasSpaceBelow = window.innerHeight - rect.bottom >= GLANCE_FLIP_THRESHOLD;
-    const hasSpaceAbove = rect.top >= GLANCE_FLIP_THRESHOLD;
-    const openAbove = !hasSpaceBelow && hasSpaceAbove;
-
-    // Horizontal: start the glance at the node's left edge and clamp rightward
-    // so it never overflows the right viewport edge. If the node is partially
-    // outside the left edge, clamping also pushes it right so it stays visible.
-    const left = Math.max(
-      GLANCE_MARGIN,
-      Math.min(rect.left, window.innerWidth - GLANCE_MAX_WIDTH - GLANCE_MARGIN)
-    );
-
-    setGlanceStyle({
-      position: 'fixed',
-      // MUI Tooltip z-index so the card renders above ReactFlow canvas controls.
-      zIndex: 1500,
-      left,
-      ...(openAbove
-        ? { bottom: window.innerHeight - rect.top + GLANCE_MARGIN }
-        : { top: rect.bottom + GLANCE_MARGIN }),
-    });
+    setGlanceFlipVertical(!hasSpaceBelow);
   }, [isHovered, isExpanded]);
 
   const icon = kubeObject ? (
@@ -351,20 +337,25 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
         </LabelContainer>
       </TextContainer>
 
-      {/* Glance card: rendered via a portal directly into document.body so it
-           sits outside the ReactFlow CSS transform. This makes position:fixed
-           coordinates map to true browser-viewport coordinates, and the card
-           is never clipped by the canvas overflow or pointer-events:none chain.
+      {/* Glance card: rendered as an absolutely-positioned child of the node
+           so it automatically moves and scales with the ReactFlow viewport
+           (panning, map zoom controls). Positioned to the right of the node
+           by default; flips left when there is not enough space on the right,
+           and flips upward when there is not enough space below.
            Guard: only render when node.kubeObject is set — NodeGlance returns
            null for group/custom nodes without a kubeObject, which would
            produce an empty card. */}
       {isExpanded &&
         !glanceDisabled &&
-        !!node.kubeObject &&
-        createPortal(
+        !!node.kubeObject && (
           <Box
             sx={{
-              ...glanceStyle,
+              position: 'absolute',
+              ...(glanceOnLeft
+                ? { right: `calc(100% + ${GLANCE_GAP}px)` }
+                : { left: `calc(100% + ${GLANCE_GAP}px)` }),
+              ...(glanceFlipVertical ? { bottom: 0 } : { top: 0 }),
+              zIndex: 1500,
               maxWidth: `${GLANCE_MAX_WIDTH}px`,
               minWidth: '200px',
               background: theme.palette.background.paper,
@@ -374,10 +365,11 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
               padding: '10px',
               boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
             }}
+            onPointerEnter={() => setHovered(true)}
+            onPointerLeave={() => setHovered(false)}
           >
             <NodeGlance node={node} />
-          </Box>,
-          document.body
+          </Box>
         )}
     </Container>
   );
