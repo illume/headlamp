@@ -15,11 +15,12 @@
  */
 
 import { Icon } from '@iconify/react';
+import Box from '@mui/material/Box';
 import { useTheme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import { alpha } from '@mui/system/colorManipulator';
-import { Handle, NodeProps, Position } from '@xyflow/react';
-import { memo, useEffect, useState } from 'react';
+import { Handle, NodeProps, Position, useViewport } from '@xyflow/react';
+import React, { memo, useEffect, useRef, useState } from 'react';
 import { Activity } from '../../activity/Activity';
 import { GraphNodeDetails } from '../details/GraphNodeDetails';
 import { getMainNode } from '../graph/graphGrouping';
@@ -140,14 +141,27 @@ const Title = styled('div')({
 });
 
 const EXPAND_DELAY = 450;
-
+/** Minimum px of space below the node before the glance flips to open upward. */
+const GLANCE_FLIP_THRESHOLD = 300;
+/** Maximum width of the glance card in pixels — must match the `maxWidth` sx value. */
+const GLANCE_MAX_WIDTH = 350;
+/** Visual gap between the node edge and the glance card. */
+const GLANCE_GAP = 8;
 export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const node = useNode(id);
   const [isHovered, setHovered] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  /**
+   * Computed `position:absolute` style for the glance card in node-local units.
+   * Recalculated on hover, expand, and map-zoom changes so the card is always
+   * clamped inside the browser viewport — even when the node itself is partially
+   * off-screen or the map has been zoomed in.
+   */
+  const [glanceStyle, setGlanceStyle] = useState<React.CSSProperties>({});
   const theme = useTheme();
   const graph = useGraphView();
-
+  const { zoom: mapZoom } = useViewport();
   const mainNode = node?.nodes ? getMainNode(node.nodes) : undefined;
   const kubeObject = node?.kubeObject ?? mainNode?.kubeObject;
 
@@ -187,8 +201,139 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
     }
 
     const id = setTimeout(() => setIsExpanded(true), EXPAND_DELAY);
-    return () => clearInterval(id);
+    return () => clearTimeout(id);
   }, [isHovered]);
+
+  /**
+   * updateGlancePosition computes the optimal position for the glance card
+   * whenever hover starts, the glance expands, or the map zoom changes.
+   * The goal is to ensure the card is always fully visible within the
+   * ReactFlow canvas, even when the node is near the edges or the map is zoomed in.
+   *
+   * When hover starts, when the glance expands (after EXPAND_DELAY), or when the
+   * map zoom changes: recompute the glance's position in node-local coordinates so
+   * the card is always fully visible inside the ReactFlow canvas.
+   *
+   * The glance is `position:absolute` inside the ReactFlow viewport transform, so
+   * it is clipped by the `.react-flow` canvas element (which has `overflow:hidden`),
+   * NOT by the browser viewport.  We therefore clamp everything against the canvas
+   * bounding rect, not `window.inner*`.
+   *
+   * Placement priority:
+   *  1. BELOW — preferred when ≥ GLANCE_FLIP_THRESHOLD px below inside the canvas.
+   *  2. ABOVE — second choice when ≥ GLANCE_FLIP_THRESHOLD px above.
+   *  3. LEFT or RIGHT — fallback when neither above nor below fits.
+   *  4. OVERLAP — last resort when the node is so large that no adjacent placement
+   *     fits.  The glance is placed at the node's top-left corner (still within the
+   *     canvas) so as much content as possible is visible.
+   *
+   * In every case `maxWidth` and `maxHeight` (in node-local units) are computed so
+   * the glance never overflows the canvas.  When the node fills most of the canvas
+   * the glance may overlap the node content (case 4) but it will never be clipped.
+   */
+  function updateGlancePosition() {
+    if (!isHovered || !containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+
+    // Use the ReactFlow canvas as the clipping boundary.
+    const canvasEl = containerRef.current.closest('.react-flow');
+    const clip = canvasEl
+      ? canvasEl.getBoundingClientRect()
+      : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
+
+    const MARGIN = 4; // minimum px from any canvas edge
+    const zoom = mapZoom; // ReactFlow viewport zoom (node-local 1px = zoom screen px)
+    const gap = GLANCE_GAP * zoom; // gap in screen px
+
+    // Effective glance width in screen px — never wider than the canvas itself.
+    const maxWidthScreen = Math.max(100, clip.right - clip.left - 2 * MARGIN);
+    const glanceW = Math.min(GLANCE_MAX_WIDTH * zoom, maxWidthScreen);
+
+    // Corresponding node-local maxWidth for the CSS `maxWidth` property.
+    const maxWidthNodeLocal = glanceW / zoom;
+
+    // Clamp a proposed screen-space left coordinate into the canvas.
+    const clampLeft = (screenLeft: number) =>
+      Math.max(clip.left + MARGIN, Math.min(screenLeft, clip.right - glanceW - MARGIN));
+
+    // Shared horizontal placement: left-aligned with node, clamped to canvas.
+    const leftAligned = clampLeft(rect.left);
+    const leftNodeLocal = (leftAligned - rect.left) / zoom;
+
+    const spaceBelow = clip.bottom - rect.bottom;
+    const spaceAbove = rect.top - clip.top;
+
+    if (spaceBelow >= GLANCE_FLIP_THRESHOLD) {
+      // ---- 1. BELOW the node (preferred) ----
+      const topNodeLocal = rect.height / zoom + GLANCE_GAP;
+      const maxHeight = Math.max(50, (clip.bottom - rect.bottom - gap - MARGIN) / zoom);
+      setGlanceStyle({
+        position: 'absolute',
+        left: `${leftNodeLocal}px`,
+        top: `${topNodeLocal}px`,
+        bottom: 'auto',
+        maxWidth: `${maxWidthNodeLocal}px`,
+        maxHeight: `${maxHeight}px`,
+        overflowY: 'auto',
+      });
+    } else if (spaceAbove >= GLANCE_FLIP_THRESHOLD) {
+      // ---- 2. ABOVE the node ----
+      const bottomNodeLocal = rect.height / zoom + GLANCE_GAP;
+      const maxHeight = Math.max(50, (rect.top - clip.top - gap - MARGIN) / zoom);
+      setGlanceStyle({
+        position: 'absolute',
+        left: `${leftNodeLocal}px`,
+        bottom: `${bottomNodeLocal}px`,
+        top: 'auto',
+        maxWidth: `${maxWidthNodeLocal}px`,
+        maxHeight: `${maxHeight}px`,
+        overflowY: 'auto',
+      });
+    } else if (
+      clip.right - rect.right >= glanceW + gap + MARGIN ||
+      rect.left - clip.left >= glanceW + gap + MARGIN
+    ) {
+      // ---- 3. LEFT or RIGHT ----
+      let glanceLeftScreen: number;
+      if (
+        clip.right - rect.right < glanceW + gap + MARGIN &&
+        rect.left - clip.left > clip.right - rect.right
+      ) {
+        glanceLeftScreen = rect.left - gap - glanceW; // left of node
+      } else {
+        glanceLeftScreen = rect.right + gap; // right of node
+      }
+      const leftNodeLocalSide = (clampLeft(glanceLeftScreen) - rect.left) / zoom;
+      const maxHeight = Math.max(50, (rect.bottom - clip.top - MARGIN) / zoom);
+      setGlanceStyle({
+        position: 'absolute',
+        left: `${leftNodeLocalSide}px`,
+        bottom: 0,
+        top: 'auto',
+        maxWidth: `${maxWidthNodeLocal}px`,
+        maxHeight: `${maxHeight}px`,
+        overflowY: 'auto',
+      });
+    } else {
+      // ---- 4. OVERLAP the node (last resort) ----
+      // Node fills most of the canvas.  Place the glance at the node's top-left
+      // corner, within canvas bounds, so as much content as possible is visible.
+      const overlapLeftNodeLocal = (clampLeft(rect.left) - rect.left) / zoom;
+      // Use 2× MARGIN as buffer to absorb borders/padding rounding.
+      const maxHeight = Math.max(50, (clip.bottom - rect.top - MARGIN * 2) / zoom);
+      setGlanceStyle({
+        position: 'absolute',
+        left: `${overlapLeftNodeLocal}px`,
+        top: 0,
+        bottom: 'auto',
+        maxWidth: `${maxWidthNodeLocal}px`,
+        maxHeight: `${maxHeight}px`,
+        overflowY: 'auto',
+      });
+    }
+  }
+
+  useEffect(updateGlancePosition, [isHovered, isExpanded, mapZoom]);
 
   const icon = kubeObject ? (
     <KubeIcon width="42px" height="42px" kind={kubeObject.kind} apiGroup={apiGroup} />
@@ -232,12 +377,13 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
 
   return (
     <Container
+      ref={containerRef}
       tabIndex={0}
       role="button"
       isFaded={false}
       childrenCount={node.nodes?.length ?? 0}
       isSelected={isSelected}
-      isExpanded={isExpanded}
+      isExpanded={false}
       onClick={openDetails}
       onFocus={() => setHovered(true)}
       onBlur={() => setHovered(false)}
@@ -284,7 +430,44 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
           </Title>
         </LabelContainer>
       </TextContainer>
-      {isExpanded && <NodeGlance node={node} />}
+      {isExpanded &&
+        !!node.kubeObject &&
+        (() => {
+          const content = <NodeGlance node={node} />;
+          if (content === null) return null;
+          {
+            /*
+            Glance card: rendered as an absolutely-positioned child of the node
+            so it automatically moves and scales with the ReactFlow viewport
+            (panning, map zoom controls).  Position is fully computed in
+            screen-space and converted to node-local units using `mapZoom`, so
+            the card is always clamped inside the browser viewport — including
+            when the map has been zoomed in or the node is near any edge.
+            Guard: only render when node.kubeObject is set — NodeGlance returns
+            null for group/custom nodes without a kubeObject, which would
+            produce an empty card.
+          */
+          }
+          return (
+            <Box
+              sx={{
+                ...glanceStyle,
+                zIndex: 1500,
+                minWidth: '200px',
+                background: theme.palette.background.paper,
+                border: '1px solid',
+                borderColor: isSelected ? theme.palette.action.active : theme.palette.divider,
+                borderRadius: '10px',
+                padding: '10px',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+              }}
+              onPointerEnter={() => setHovered(true)}
+              onPointerLeave={() => setHovered(false)}
+            >
+              {content}
+            </Box>
+          );
+        })()}
     </Container>
   );
 });
