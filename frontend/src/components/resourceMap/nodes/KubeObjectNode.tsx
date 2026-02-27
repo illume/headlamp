@@ -20,7 +20,7 @@ import { useTheme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import { alpha } from '@mui/system/colorManipulator';
 import { Handle, NodeProps, Position, useReactFlow } from '@xyflow/react';
-import { memo, useEffect, useRef, useState } from 'react';
+import React, { memo, useEffect, useRef, useState } from 'react';
 import { Activity } from '../../activity/Activity';
 import { GraphNodeDetails } from '../details/GraphNodeDetails';
 import { getMainNode } from '../graph/graphGrouping';
@@ -144,6 +144,10 @@ const Title = styled('div')({
 const EXPAND_DELAY = 450;
 /** Minimum px of space needed on each side before the glance tooltip flips direction. */
 const GLANCE_FLIP_THRESHOLD = 300;
+/** Maximum width of the glance card in pixels — must match the `maxWidth` sx value. */
+const GLANCE_MAX_WIDTH = 350;
+/** Minimum gap between the glance card and any viewport edge. */
+const GLANCE_MARGIN = 4;
 /**
  * devicePixelRatio threshold above which the glance is considered to be in a
  * "high-zoom or high-DPI" environment. A standard display at 200% browser zoom
@@ -157,9 +161,13 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const [isHovered, setHovered] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  // Flip direction for the tooltip glance
-  const [openUpward, setOpenUpward] = useState(false);
-  const [openLeft, setOpenLeft] = useState(false);
+  /**
+   * Computed `position: fixed` style for the floating glance card.
+   * Using fixed positioning lets the card escape the ReactFlow canvas transform,
+   * so it can be clamped to actual viewport edges even when the node itself is
+   * partially outside the visible area.
+   */
+  const [glanceStyle, setGlanceStyle] = useState<React.CSSProperties>({});
   const theme = useTheme();
   const graph = useGraphView();
   const reactFlow = useReactFlow();
@@ -211,19 +219,36 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
     return () => clearInterval(id);
   }, [isHovered]);
 
-  // When hover starts, decide which direction the glance tooltip should open
-  // so it stays within the visible viewport (flip vertically and/or horizontally).
-  // Only flip upward if there is actually enough room above the node — otherwise
-  // keep it opening downward even when space below is also limited.
+  // When hover starts, compute a position:fixed style for the glance card so
+  // that it stays fully within the viewport even when the node is partially
+  // outside it (e.g. near or past a left/right/top/bottom edge).
   useEffect(() => {
     if (!isHovered || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
+
+    // Vertical: open below the node by default; flip above only when there is
+    // not enough space below but enough space above.
     const hasSpaceBelow = window.innerHeight - rect.bottom >= GLANCE_FLIP_THRESHOLD;
     const hasSpaceAbove = rect.top >= GLANCE_FLIP_THRESHOLD;
-    setOpenUpward(!hasSpaceBelow && hasSpaceAbove);
-    const hasSpaceRight = window.innerWidth - rect.right >= GLANCE_FLIP_THRESHOLD;
-    const hasSpaceLeft = rect.left >= GLANCE_FLIP_THRESHOLD;
-    setOpenLeft(!hasSpaceRight && hasSpaceLeft);
+    const openAbove = !hasSpaceBelow && hasSpaceAbove;
+
+    // Horizontal: start the glance at the node's left edge and clamp rightward
+    // so it never overflows the right viewport edge. If the node is partially
+    // outside the left edge, clamping also pushes it right so it stays visible.
+    const left = Math.max(
+      GLANCE_MARGIN,
+      Math.min(rect.left, window.innerWidth - GLANCE_MAX_WIDTH - GLANCE_MARGIN)
+    );
+
+    setGlanceStyle({
+      position: 'fixed',
+      // MUI Tooltip z-index so the card renders above ReactFlow canvas controls.
+      zIndex: 1500,
+      left,
+      ...(openAbove
+        ? { bottom: window.innerHeight - rect.top + GLANCE_MARGIN }
+        : { top: rect.bottom + GLANCE_MARGIN }),
+    });
   }, [isHovered]);
 
   // When centerOnNodeHover is enabled, smoothly pan the ReactFlow viewport
@@ -337,13 +362,13 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
         </LabelContainer>
       </TextContainer>
 
-      {/* Tooltip glance: absolutely positioned, flips to stay within the viewport */}
+      {/* Glance card: position:fixed so it escapes the ReactFlow canvas transform
+           and is always clamped within the visible viewport. */}
       {isExpanded && !glanceDisabled && (
         <Box
           sx={{
-            position: 'absolute',
-            zIndex: 10,
-            maxWidth: '350px',
+            ...glanceStyle,
+            maxWidth: `${GLANCE_MAX_WIDTH}px`,
             minWidth: '200px',
             background: theme.palette.background.paper,
             border: '1px solid',
@@ -351,12 +376,6 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
             borderRadius: '10px',
             padding: '10px',
             boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-            // Vertical flip: open above when near the bottom of the viewport
-            ...(openUpward
-              ? { bottom: '100%', marginBottom: '4px' }
-              : { top: '100%', marginTop: '4px' }),
-            // Horizontal flip: anchor to right edge when near the right of the viewport
-            ...(openLeft ? { right: 0 } : { left: 0 }),
           }}
         >
           <NodeGlance node={node} />

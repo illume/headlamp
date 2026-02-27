@@ -170,28 +170,50 @@ export const GlanceAtBottomEdge = ({
 GlanceAtBottomEdge.args = { centerOnNodeHover: false };
 
 /**
- * The graph is anchored to the right of the viewport. Hovering any node
- * triggers the glance tooltip to open **to the left** because there is no
- * space to the right.
+ * The GraphView canvas is pushed **120 px past the right viewport edge** so that
+ * some nodes have `getBoundingClientRect().right > window.innerWidth`.
+ *
+ * Without the `position:fixed` clamping the glance card would be clipped by the
+ * right viewport edge. With the fix the glance left coordinate is clamped so the
+ * card stays fully visible even though the hovered node is partially off-screen.
+ *
+ * Hover any node that appears near the right side to verify the glance card
+ * remains entirely within the viewport.
  */
-export const GlanceAtRightEdge = ({
-  centerOnNodeHover = false,
-}: {
-  centerOnNodeHover?: boolean;
-}) => (
+export const GlanceAtRightEdge = () => (
   <TestContext>
-    <Box sx={{ display: 'flex', justifyContent: 'flex-end', height: '600px' }}>
-      <Box sx={{ width: '340px', height: '100%' }}>
-        <GraphView
-          height="100%"
-          defaultSources={[mockSource]}
-          centerOnNodeHover={centerOnNodeHover}
-        />
+    {/* overflow:hidden prevents a horizontal scrollbar; the position:fixed glance
+        escapes the overflow clip and still renders in the viewport. */}
+    <Box sx={{ position: 'relative', height: '400px', overflow: 'hidden' }}>
+      <Box sx={{ position: 'absolute', right: '-120px', width: '500px', height: '400px' }}>
+        <GraphView height="400px" defaultSources={[mockSource]} />
       </Box>
     </Box>
   </TestContext>
 );
-GlanceAtRightEdge.args = { centerOnNodeHover: false };
+GlanceAtRightEdge.args = {};
+
+/**
+ * The GraphView canvas is pushed **120 px past the LEFT viewport edge** so that
+ * some nodes have `getBoundingClientRect().left < 0`.
+ *
+ * Without the `position:fixed` clamping the glance card would start off-screen
+ * to the left. With the fix the glance left coordinate is clamped to
+ * `GLANCE_MARGIN` (4 px) from the viewport left edge.
+ *
+ * Hover any node near the left side to verify the glance card remains entirely
+ * within the viewport.
+ */
+export const GlanceAtLeftEdge = () => (
+  <TestContext>
+    <Box sx={{ position: 'relative', height: '400px', overflow: 'hidden' }}>
+      <Box sx={{ position: 'absolute', left: '-120px', width: '500px', height: '400px' }}>
+        <GraphView height="400px" defaultSources={[mockSource]} />
+      </Box>
+    </Box>
+  </TestContext>
+);
+GlanceAtLeftEdge.args = {};
 
 /**
  * The graph is anchored to the top of the viewport. When a node is near the
