@@ -21,6 +21,7 @@ import { styled } from '@mui/material/styles';
 import { alpha } from '@mui/system/colorManipulator';
 import { Handle, NodeProps, Position, useReactFlow } from '@xyflow/react';
 import React, { memo, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Activity } from '../../activity/Activity';
 import { GraphNodeDetails } from '../details/GraphNodeDetails';
 import { getMainNode } from '../graph/graphGrouping';
@@ -362,25 +363,30 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
         </LabelContainer>
       </TextContainer>
 
-      {/* Glance card: position:fixed so it escapes the ReactFlow canvas transform
-           and is always clamped within the visible viewport. */}
-      {isExpanded && !glanceDisabled && (
-        <Box
-          sx={{
-            ...glanceStyle,
-            maxWidth: `${GLANCE_MAX_WIDTH}px`,
-            minWidth: '200px',
-            background: theme.palette.background.paper,
-            border: '1px solid',
-            borderColor: isSelected ? theme.palette.action.active : theme.palette.divider,
-            borderRadius: '10px',
-            padding: '10px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-          }}
-        >
-          <NodeGlance node={node} />
-        </Box>
-      )}
+      {/* Glance card: rendered via a portal directly into document.body so it
+           sits outside the ReactFlow CSS transform. This makes position:fixed
+           coordinates map to true browser-viewport coordinates, and the card
+           is never clipped by the canvas overflow or pointer-events:none chain. */}
+      {isExpanded &&
+        !glanceDisabled &&
+        createPortal(
+          <Box
+            sx={{
+              ...glanceStyle,
+              maxWidth: `${GLANCE_MAX_WIDTH}px`,
+              minWidth: '200px',
+              background: theme.palette.background.paper,
+              border: '1px solid',
+              borderColor: isSelected ? theme.palette.action.active : theme.palette.divider,
+              borderRadius: '10px',
+              padding: '10px',
+              boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+            }}
+          >
+            <NodeGlance node={node} />
+          </Box>,
+          document.body
+        )}
     </Container>
   );
 });
