@@ -142,6 +142,31 @@ export const InConstrainedContainer = () => (
 InConstrainedContainer.args = {};
 
 /**
+ * Simulates a zoomed-in map where the node occupies most of the canvas.
+ *
+ * When `mapZoom` is high (e.g. 3×–4×) a single node can fill the entire
+ * ReactFlow canvas.  In this state there is no room below, above, left, or
+ * right to place the glance without clipping.  The placement algorithm falls
+ * through to **case 4 (OVERLAP)**: the glance is anchored at the node's
+ * top-left corner, still within the canvas, so as much content is visible as
+ * possible.
+ *
+ * To reproduce: click the **+** zoom button several times until a node fills
+ * the canvas, then hover it — the glance should appear overlaying the node,
+ * fully within the canvas boundaries and never clipped.
+ */
+export const GlanceAtHighZoom = () => (
+  <TestContext>
+    <Typography variant="body2" sx={{ mb: 1 }}>
+      Click the map <strong>+</strong> zoom button several times until a node fills the canvas,
+      then hover the node. The glance should overlay the node and stay fully visible.
+    </Typography>
+    <GraphView height="500px" defaultSources={[mockSource]} />
+  </TestContext>
+);
+GlanceAtHighZoom.args = {};
+
+/**
  * The graph is anchored to the bottom of the viewport.  Nodes have less than
  * GLANCE_FLIP_THRESHOLD (300px) space below them but plenty of space above, so
  * the glance opens **above** the node (second placement priority).

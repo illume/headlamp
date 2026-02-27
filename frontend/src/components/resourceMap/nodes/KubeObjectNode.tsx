@@ -224,91 +224,120 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
 
   // When hover starts, when the glance expands (after EXPAND_DELAY), or when the
   // map zoom changes: recompute the glance's position in node-local coordinates so
-  // the card is fully visible inside the browser viewport.
+  // the card is always fully visible inside the ReactFlow canvas.
+  //
+  // The glance is `position:absolute` inside the ReactFlow viewport transform, so
+  // it is clipped by the `.react-flow` canvas element (which has `overflow:hidden`),
+  // NOT by the browser viewport.  We therefore clamp everything against the canvas
+  // bounding rect, not `window.inner*`.
   //
   // Placement priority:
-  //  1. BELOW the node  — preferred when ≥ GLANCE_FLIP_THRESHOLD px below.
-  //  2. ABOVE the node  — second choice when ≥ GLANCE_FLIP_THRESHOLD px above.
-  //  3. LEFT or RIGHT   — fallback when neither above nor below fits.
+  //  1. BELOW — preferred when ≥ GLANCE_FLIP_THRESHOLD px below inside the canvas.
+  //  2. ABOVE — second choice when ≥ GLANCE_FLIP_THRESHOLD px above.
+  //  3. LEFT or RIGHT — fallback when neither above nor below fits.
+  //  4. OVERLAP — last resort when the node is so large that no adjacent placement
+  //     fits.  The glance is placed at the node's top-left corner (still within the
+  //     canvas) so as much content as possible is visible.
   //
-  // In all cases the glance is horizontally left-aligned with the node and
-  // clamped to the viewport.  maxHeight prevents vertical overflow.
-  //
-  // All size/position values are first derived in SCREEN pixels, then divided by
-  // `mapZoom` to produce the node-local CSS units that `position:absolute`
-  // expects.  Clamping ensures the glance is always fully visible — it will
-  // slightly overlap the node if the viewport is too narrow, but never clip.
+  // In every case `maxWidth` and `maxHeight` (in node-local units) are computed so
+  // the glance never overflows the canvas.  When the node fills most of the canvas
+  // the glance may overlap the node content (case 4) but it will never be clipped.
   useEffect(() => {
     if (!isHovered || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-    const viewportW = window.innerWidth;
-    const viewportH = window.innerHeight;
-    const MARGIN = 4; // minimum px from any viewport edge
-    const zoom = mapZoom; // ReactFlow viewport zoom (node-local 1px = zoom screen px)
 
-    const glanceW = GLANCE_MAX_WIDTH * zoom; // glance width in screen px at current zoom
+    // Use the ReactFlow canvas as the clipping boundary.
+    const canvasEl = containerRef.current.closest('.react-flow');
+    const clip = canvasEl
+      ? canvasEl.getBoundingClientRect()
+      : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
+
+    const MARGIN = 4; // minimum px from any canvas edge
+    const zoom = mapZoom; // ReactFlow viewport zoom (node-local 1px = zoom screen px)
     const gap = GLANCE_GAP * zoom; // gap in screen px
 
-    const spaceBelow = viewportH - rect.bottom;
-    const spaceAbove = rect.top;
+    // Effective glance width in screen px — never wider than the canvas itself.
+    const maxWidthScreen = Math.max(100, clip.right - clip.left - 2 * MARGIN);
+    const glanceW = Math.min(GLANCE_MAX_WIDTH * zoom, maxWidthScreen);
 
-    // Horizontal: left-aligned with node, clamped to viewport (shared by below + above).
-    const leftVpAligned = Math.max(MARGIN, Math.min(rect.left, viewportW - glanceW - MARGIN));
-    const leftNodeLocalAligned = (leftVpAligned - rect.left) / zoom;
+    // Corresponding node-local maxWidth for the CSS `maxWidth` property.
+    const maxWidthNodeLocal = glanceW / zoom;
+
+    // Clamp a proposed screen-space left coordinate into the canvas.
+    const clampLeft = (screenLeft: number) =>
+      Math.max(clip.left + MARGIN, Math.min(screenLeft, clip.right - glanceW - MARGIN));
+
+    // Shared horizontal placement: left-aligned with node, clamped to canvas.
+    const leftAligned = clampLeft(rect.left);
+    const leftNodeLocal = (leftAligned - rect.left) / zoom;
+
+    const spaceBelow = clip.bottom - rect.bottom;
+    const spaceAbove = rect.top - clip.top;
 
     if (spaceBelow >= GLANCE_FLIP_THRESHOLD) {
       // ---- 1. BELOW the node (preferred) ----
-      // top of glance = bottom of node + gap, in node-local units.
       const topNodeLocal = rect.height / zoom + GLANCE_GAP;
-      const maxHeight = Math.max(50, (viewportH - rect.bottom - gap - MARGIN) / zoom);
-
+      const maxHeight = Math.max(50, (clip.bottom - rect.bottom - gap - MARGIN) / zoom);
       setGlanceStyle({
         position: 'absolute',
-        left: `${leftNodeLocalAligned}px`,
+        left: `${leftNodeLocal}px`,
         top: `${topNodeLocal}px`,
         bottom: 'auto',
+        maxWidth: `${maxWidthNodeLocal}px`,
         maxHeight: `${maxHeight}px`,
         overflowY: 'auto',
       });
     } else if (spaceAbove >= GLANCE_FLIP_THRESHOLD) {
-      // ---- 2. ABOVE the node (second preference) ----
-      // bottom of glance = top of node - gap, expressed as offset from node bottom.
-      // CSS bottom = distance above the Container's bottom edge (in node-local units).
+      // ---- 2. ABOVE the node ----
       const bottomNodeLocal = rect.height / zoom + GLANCE_GAP;
-      const maxHeight = Math.max(50, (rect.top - gap - MARGIN) / zoom);
-
+      const maxHeight = Math.max(50, (rect.top - clip.top - gap - MARGIN) / zoom);
       setGlanceStyle({
         position: 'absolute',
-        left: `${leftNodeLocalAligned}px`,
+        left: `${leftNodeLocal}px`,
         bottom: `${bottomNodeLocal}px`,
         top: 'auto',
+        maxWidth: `${maxWidthNodeLocal}px`,
+        maxHeight: `${maxHeight}px`,
+        overflowY: 'auto',
+      });
+    } else if (
+      clip.right - rect.right >= glanceW + gap + MARGIN ||
+      rect.left - clip.left >= glanceW + gap + MARGIN
+    ) {
+      // ---- 3. LEFT or RIGHT ----
+      let glanceLeftScreen: number;
+      if (
+        clip.right - rect.right < glanceW + gap + MARGIN &&
+        rect.left - clip.left > clip.right - rect.right
+      ) {
+        glanceLeftScreen = rect.left - gap - glanceW; // left of node
+      } else {
+        glanceLeftScreen = rect.right + gap; // right of node
+      }
+      const leftNodeLocalSide = (clampLeft(glanceLeftScreen) - rect.left) / zoom;
+      const maxHeight = Math.max(50, (rect.bottom - clip.top - MARGIN) / zoom);
+      setGlanceStyle({
+        position: 'absolute',
+        left: `${leftNodeLocalSide}px`,
+        bottom: 0,
+        top: 'auto',
+        maxWidth: `${maxWidthNodeLocal}px`,
         maxHeight: `${maxHeight}px`,
         overflowY: 'auto',
       });
     } else {
-      // ---- 3. LEFT or RIGHT (fallback) ----
-      // Open to the right by default; flip left when there is more room on the
-      // left AND the right side is too narrow.
-      let leftVp: number;
-      if (rect.right + gap + glanceW + MARGIN > viewportW && rect.left > viewportW - rect.right) {
-        leftVp = rect.left - gap - glanceW; // left of node
-      } else {
-        leftVp = rect.right + gap; // right of node
-      }
-
-      // Clamp horizontally — may overlap the node if viewport is very narrow.
-      leftVp = Math.max(MARGIN, Math.min(leftVp, viewportW - glanceW - MARGIN));
-      const leftNodeLocal = (leftVp - rect.left) / zoom;
-
-      // Vertical: anchor glance bottom at node bottom, grow upward.
-      // maxHeight = space from viewport top to node bottom, preventing top clip.
-      const maxHeight = Math.max(50, (rect.bottom - MARGIN) / zoom);
-
+      // ---- 4. OVERLAP the node (last resort) ----
+      // Node fills most of the canvas.  Place the glance at the node's top-left
+      // corner, within canvas bounds, so as much content as possible is visible.
+      const overlapLeftNodeLocal = (clampLeft(rect.left) - rect.left) / zoom;
+      // Use 2× MARGIN as buffer to absorb borders/padding rounding.
+      const maxHeight = Math.max(50, (clip.bottom - rect.top - MARGIN * 2) / zoom);
       setGlanceStyle({
         position: 'absolute',
-        left: `${leftNodeLocal}px`,
-        bottom: 0,
-        top: 'auto',
+        left: `${overlapLeftNodeLocal}px`,
+        top: 0,
+        bottom: 'auto',
+        maxWidth: `${maxWidthNodeLocal}px`,
         maxHeight: `${maxHeight}px`,
         overflowY: 'auto',
       });
@@ -427,7 +456,6 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
             sx={{
               ...glanceStyle,
               zIndex: 1500,
-              maxWidth: `${GLANCE_MAX_WIDTH}px`,
               minWidth: '200px',
               background: theme.palette.background.paper,
               border: '1px solid',
