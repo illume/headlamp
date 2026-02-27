@@ -151,13 +151,14 @@ const GLANCE_MAX_WIDTH = 350;
 const GLANCE_MARGIN = 4;
 /**
  * Browser zoom threshold above which the glance is suppressed when
- * `disableGlanceAtHighZoom` is set. Uses `useBrowserZoom()` which returns
- * `currentDPR / initialDPR` — the zoom factor relative to page-load baseline.
- * A threshold of 1.4 suppresses the glance at ~150% zoom (≈ 2 Cmd+= presses
- * from 100% on most browsers). This is Retina/HiDPI safe: a Retina screen at
- * 100% zoom reports currentDPR=initialDPR=2, so the ratio stays 1.0.
+ * `disableGlanceAtHighZoom` is set. Using `outerWidth/innerWidth` (browser
+ * zoom ratio) rather than `devicePixelRatio` means this fires only when the
+ * user has actually zoomed the browser — it is NOT triggered by a HiDPI/Retina
+ * display at 100% zoom (where `devicePixelRatio` is already 2 but
+ * `outerWidth/innerWidth` remains ~1). A threshold of 1.9 gives tolerance for
+ * minor deviations due to browser chrome.
  */
-const HIGH_ZOOM_THRESHOLD = 1.4;
+const HIGH_ZOOM_THRESHOLD = 1.9;
 
 export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const node = useNode(id);
