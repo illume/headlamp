@@ -6,11 +6,13 @@ For example, when a user applies the changes they are editing for a resource, or
 To run the plugin:
 
 ```bash
-cd plugins/examples/change-logo
+cd plugins/examples/headlamp-events
 npm install
 npm start
 # Go to a list or details view to see one example of a Headlamp event.
+# Log in to a cluster to see the USER_LOGIN event.
 ```
 
 - The plugin shows a notification whenever there is a Headlamp event, except for events of type OBJECT_EVENTS (so checking the event type is demonstrated).
 - For events that have an associated resource, the resource name is shown.
+- When the `USER_LOGIN` event fires (after a user successfully authenticates), a snackbar shows the cluster name. This event is useful for plugins that need to load data after the user authenticates, such as reading ConfigMaps that would return 401 before login completes.

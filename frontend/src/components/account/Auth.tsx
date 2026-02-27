@@ -31,6 +31,7 @@ import { getCluster, getClusterPrefixedPath } from '../../lib/cluster';
 import { useClustersConf } from '../../lib/k8s';
 import { testAuth } from '../../lib/k8s/api/v1/clusterApi';
 import { ApiError } from '../../lib/k8s/api/v2/ApiError';
+import { HeadlampEventType, useEventCallback } from '../../redux/headlampEventSlice';
 import { ClusterDialog } from '../cluster/Chooser';
 import { DialogTitle } from '../common/Dialog';
 import HeadlampLink from '../common/Link';
@@ -43,17 +44,22 @@ export default function AuthToken() {
   const [showError, setShowError] = React.useState(false);
   const clusters = useClustersConf();
   const { t } = useTranslation();
+  const dispatchUserLogin = useEventCallback(HeadlampEventType.USER_LOGIN);
 
   function onAuthClicked() {
     loginWithToken(token).then(code => {
       // If successful, redirect.
       if (code === 200) {
+        const cluster = getCluster();
+        if (cluster) {
+          dispatchUserLogin({ cluster });
+        }
         if (location.state && location.state.from) {
           history.replace(location.state.from);
         } else {
           history.replace(
             generatePath(getClusterPrefixedPath(), {
-              cluster: getCluster() as string,
+              cluster: cluster as string,
             })
           );
         }

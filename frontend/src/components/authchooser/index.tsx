@@ -31,6 +31,7 @@ import { createRouteURL } from '../../lib/router/createRouteURL';
 import { getRoute } from '../../lib/router/getRoute';
 import { getRoutePath } from '../../lib/router/getRoutePath';
 import { setConfig } from '../../redux/configSlice';
+import { HeadlampEventType, useEventCallback } from '../../redux/headlampEventSlice';
 import { ClusterDialog } from '../cluster/Chooser';
 import { DialogTitle } from '../common/Dialog';
 import Empty from '../common/EmptyContent';
@@ -67,6 +68,7 @@ function AuthChooser({ children }: AuthChooserProps) {
   const { t } = useTranslation();
   const clustersRef = React.useRef<typeof clusters>(null);
   const cancelledRef = React.useRef(false);
+  const dispatchUserLogin = useEventCallback(HeadlampEventType.USER_LOGIN);
 
   let clusterAuthType = '';
   if (clusters && clusters[clusterName]) {
@@ -209,6 +211,7 @@ function AuthChooser({ children }: AuthChooserProps) {
       handleTryAgain={runTestAuthAgain}
       handleOidcAuth={() => {
         queryClient.invalidateQueries({ queryKey: ['clusterMe', clusterName], exact: true });
+        dispatchUserLogin({ cluster: clusterName });
         history.replace({
           pathname: generatePath(getClusterPrefixedPath(), {
             cluster: clusterName as string,
