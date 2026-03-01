@@ -20,6 +20,7 @@ import { alpha } from '@mui/system/colorManipulator';
 import { memo } from 'react';
 import { useGraphView, useNode } from '../GraphView';
 import { KubeIcon } from '../kubeIcon/KubeIcon';
+import { usePanToNode } from './usePanToNode';
 
 const Container = styled('div')(({ theme }) => ({
   width: '100%',
@@ -49,6 +50,7 @@ const Label = styled('div')(() => ({
 export const GroupNodeComponent = memo(({ id }: { id: string }) => {
   const graph = useGraphView();
   const node = useNode(id);
+  const panToNode = usePanToNode();
 
   const kubeObject = node?.kubeObject;
 
@@ -65,6 +67,7 @@ export const GroupNodeComponent = memo(({ id }: { id: string }) => {
     <Container
       tabIndex={0}
       role="button"
+      onFocus={() => panToNode(id)}
       onClick={handleSelect}
       onKeyDown={e => {
         if (e.key === 'Enter' || e.key === 'Space') {
