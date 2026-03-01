@@ -67,7 +67,11 @@ export const GroupNodeComponent = memo(({ id }: { id: string }) => {
     <Container
       tabIndex={0}
       role="button"
-      onFocus={() => panToNode(id)}
+      onFocus={e => {
+        if (e.currentTarget.matches(':focus-visible')) {
+          panToNode(id);
+        }
+      }}
       onClick={handleSelect}
       onKeyDown={e => {
         if (e.key === 'Enter' || e.key === 'Space') {

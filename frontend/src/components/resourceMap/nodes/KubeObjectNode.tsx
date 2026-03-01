@@ -241,9 +241,11 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
       isSelected={isSelected}
       isExpanded={isExpanded}
       onClick={openDetails}
-      onFocus={() => {
+      onFocus={e => {
         setHovered(true);
-        panToNode(id);
+        if (e.currentTarget.matches(':focus-visible')) {
+          panToNode(id);
+        }
       }}
       onBlur={() => setHovered(false)}
       onPointerEnter={() => setHovered(true)}
