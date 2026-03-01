@@ -17,3 +17,8 @@
 export const minZoom = 0.1;
 export const maxZoom = 2.0;
 export const viewportPaddingPx = 50;
+
+/** Default node dimensions used by the ELK layout — kept here so that code
+ *  operating on the viewport (e.g. usePanToNode) stays in sync with the layout. */
+export const nodeDefaultWidth = 220;
+export const nodeDefaultHeight = 70;

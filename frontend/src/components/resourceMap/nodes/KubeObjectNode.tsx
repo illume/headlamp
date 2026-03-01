@@ -28,6 +28,7 @@ import { KubeIcon } from '../kubeIcon/KubeIcon';
 import { NodeGlance } from '../KubeObjectGlance/NodeGlance';
 import { GroupNodeComponent } from './GroupNode';
 import { getStatus } from './KubeObjectStatus';
+import { usePanToNode } from './usePanToNode';
 
 const Container = styled('div')<{
   isExpanded: boolean;
@@ -147,6 +148,7 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const theme = useTheme();
   const graph = useGraphView();
+  const panToNode = usePanToNode();
 
   const mainNode = node?.nodes ? getMainNode(node.nodes) : undefined;
   const kubeObject = node?.kubeObject ?? mainNode?.kubeObject;
@@ -239,7 +241,12 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
       isSelected={isSelected}
       isExpanded={isExpanded}
       onClick={openDetails}
-      onFocus={() => setHovered(true)}
+      onFocus={e => {
+        setHovered(true);
+        if (e.currentTarget.matches(':focus-visible')) {
+          panToNode(id);
+        }
+      }}
       onBlur={() => setHovered(false)}
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => {
