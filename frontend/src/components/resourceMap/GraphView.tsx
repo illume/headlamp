@@ -276,6 +276,12 @@ function GraphViewContent({
             display: 'flex',
             flexDirection: 'row',
             flex: 1,
+            // contain: layout prevents focus-induced scroll (scrollIntoView) from
+            // propagating to ancestor scroll containers (e.g. the page's main container).
+            // Graph nodes are positioned using CSS transforms, so their visual bounding
+            // rects can be outside the container bounds, causing unintended horizontal
+            // scroll when keyboard-navigating to nodes inside the graph.
+            contain: 'layout',
           }}
         >
           <CustomThemeProvider>
