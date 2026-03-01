@@ -1,4 +1,4 @@
-name: Build and test other architectures
+name: s390x ppc64le build and test
 
 on:
   pull_request:
