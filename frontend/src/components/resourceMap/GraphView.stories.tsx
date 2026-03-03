@@ -15,9 +15,7 @@
  */
 
 import { Icon } from '@iconify/react';
-import { screen } from '@testing-library/react';
 import { http, HttpResponse } from 'msw';
-import { userEvent } from 'storybook/test';
 import Pod from '../../lib/k8s/pod';
 import { TestContext } from '../../test';
 import { podList } from '../pod/storyHelper';
@@ -119,25 +117,46 @@ export const BasicExample = () => (
 BasicExample.args = {};
 
 /**
- * Shows the graph with a node's glance card visible.
- * The play function hovers over the pod node and waits for the glance to open.
+ * Shows a node with its glance card open from first render.
+ * Uses `initialGlanceOpen: true` on the node — no hover interaction required.
  */
 export const GlanceActive = () => (
   <TestContext>
-    <GraphView height="600px" defaultSources={[mockSource]} />
+    <GraphView
+      height="600px"
+      defaultSources={[
+        {
+          id: 'glance-source',
+          label: 'Pods',
+          useData() {
+            return {
+              nodes: [
+                { id: 'pod-glance', kubeObject: new Pod(podList[0]), initialGlanceOpen: true },
+              ],
+            };
+          },
+        } satisfies GraphSource,
+      ]}
+    />
   </TestContext>
 );
 GlanceActive.parameters = {
-  storyshots: { disable: true },
-};
-GlanceActive.play = async () => {
-  // Wait for ReactFlow to render its nodes (they carry role="button")
-  const buttons = await screen.findAllByRole('button');
-  // The node Container is inside a .react-flow__node wrapper
-  const nodeButton = buttons.find(el => el.closest('.react-flow__node'));
-  if (nodeButton) {
-    await userEvent.hover(nodeButton);
-    // Wait for EXPAND_DELAY (450 ms) so the glance becomes visible
-    await new Promise(resolve => setTimeout(resolve, 600));
-  }
+  msw: {
+    handlers: {
+      story: [
+        http.get(
+          'http://localhost:4466/apis/apiextensions.k8s.io/v1/customresourcedefinitions',
+          () => HttpResponse.json({ kind: 'List', items: [], metadata: {} })
+        ),
+        http.get(
+          'http://localhost:4466/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions',
+          () => HttpResponse.error()
+        ),
+        // KubeObjectGlance fetches events for the open pod node
+        http.get('http://localhost:4466/api/v1/namespaces/default/events', () =>
+          HttpResponse.json({ kind: 'EventList', items: [], metadata: {} })
+        ),
+      ],
+    },
+  },
 };

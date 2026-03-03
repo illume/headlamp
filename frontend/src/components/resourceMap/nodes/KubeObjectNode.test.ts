@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { computeGlanceStyle } from './KubeObjectNode';
+import { computeGlanceStyle } from './glancePositioning';
 
 // Canvas 1200×800, zoom 1, node in the upper part — plenty of space below.
 const defaultClip = { left: 0, top: 0, right: 1200, bottom: 800 };
@@ -148,17 +148,10 @@ describe('computeGlanceStyle', () => {
 
   describe('maxHeight floor', () => {
     it('enforces a 50px minimum maxHeight when available space is tiny', () => {
-      // Node almost reaches the canvas bottom; only 10 px below.
-      const rect = makeRect(100, 100, 220, 690);
-      const style = computeGlanceStyle(rect, defaultClip, 1);
-      // spaceBelow = 800-790 = 10 < 300; spaceAbove = 100 >= 300? No (100 < 300)
-      // side check: clip.right - rect.right = 1200-320 = 880 ≥ 362 → right
-      // maxHeight = max(50, (790-0-4)/1) = 786 → not a floor case here
-      // Use a case where side space is also tiny for a floor test:
+      // Use overlap case (node fills canvas) — maxHeight = max(50, 800-0-8) = 792
       const bigRect = makeRect(50, 50, 1100, 750);
-      const style2 = computeGlanceStyle(bigRect, { left: 0, top: 0, right: 1200, bottom: 800 }, 1);
-      // Overlap case: maxHeight = max(50, 800-0-8) = 792
-      expect(parseFloat(style2.maxHeight as string)).toBeGreaterThanOrEqual(50);
+      const style = computeGlanceStyle(bigRect, { left: 0, top: 0, right: 1200, bottom: 800 }, 1);
+      expect(parseFloat(style.maxHeight as string)).toBeGreaterThanOrEqual(50);
     });
   });
 });
