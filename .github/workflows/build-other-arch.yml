@@ -30,7 +30,7 @@ jobs:
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@988b5a0280414f521da01fcc63a27aeeb4b104db # v3.6.1
     - name: Set up Go
-      uses: actions/setup-go@d60b41a563a30eb0109d7a7ee5026037101c1cc9 # v5.5.0
+      uses: actions/setup-go@41dfa10bad2bb2ae585af6ee5bb4d7d973ad74ed # v5.1.0
       with:
         go-version-file: backend/go.mod
         cache: false
