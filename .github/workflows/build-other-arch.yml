@@ -54,7 +54,7 @@ jobs:
       run: |
         docker run --rm --platform linux/${{ matrix.arch }} \
           -v "${{ github.workspace }}/backend":/backend \
-          -v "$HOME/go/pkg/mod":/root/go/pkg/mod \
+          -v "$HOME/go/pkg/mod":/go/pkg/mod \
           -v "$HOME/.cache/go-build":/root/.cache/go-build \
           -e GONOSUMDB='*' \
           -w /backend \
