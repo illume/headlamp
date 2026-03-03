@@ -17,8 +17,14 @@
 import { useReactFlow, useStoreApi } from '@xyflow/react';
 import { nodeDefaultHeight, nodeDefaultWidth } from '../graphConstants';
 
-/** Duration of the smooth pan animation in milliseconds. */
-const PAN_DURATION_MS = 300;
+/** Duration of the smooth pan animation in milliseconds.
+ *  0 is used when the user has requested reduced motion. */
+function getPanDurationMs(): number {
+  return typeof window !== 'undefined' &&
+    window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    ? 0
+    : 300;
+}
 
 /**
  * Returns a function that pans the ReactFlow canvas to centre a given node,
@@ -66,7 +72,7 @@ export function usePanToNode() {
 
     if (!fullyVisible) {
       setCenter(absX + width / 2, absY + height / 2, {
-        duration: PAN_DURATION_MS,
+        duration: getPanDurationMs(),
       });
     }
   };

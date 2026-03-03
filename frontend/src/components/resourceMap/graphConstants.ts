@@ -18,7 +18,8 @@ export const minZoom = 0.1;
 export const maxZoom = 2.0;
 export const viewportPaddingPx = 50;
 
-/** Default node dimensions used by the ELK layout — kept here so that code
- *  operating on the viewport (e.g. usePanToNode) stays in sync with the layout. */
+/** Default node dimensions for resource map nodes.
+ *  The ELK layout and viewport helpers (e.g. usePanToNode) both use these values
+ *  so that sizing assumptions stay in sync. */
 export const nodeDefaultWidth = 220;
 export const nodeDefaultHeight = 70;

@@ -18,6 +18,7 @@ import { Edge, EdgeMarker, Node } from '@xyflow/react';
 import { ElkExtendedEdge, ElkNode } from 'elkjs';
 import ELK, { type ELK as ELKInterface } from 'elkjs/lib/elk-api';
 import elkWorker from 'elkjs/lib/elk-worker.min.js?url';
+import { nodeDefaultHeight, nodeDefaultWidth } from '../graphConstants';
 import { forEachNode, getNodeWeight, GraphNode } from './graphModel';
 
 type ElkNodeWithData = Omit<ElkNode, 'edges'> & {
@@ -43,8 +44,8 @@ try {
 
 const layoutOptions = {
   nodeSize: {
-    width: 220,
-    height: 70,
+    width: nodeDefaultWidth,
+    height: nodeDefaultHeight,
   },
 };
 
@@ -115,7 +116,7 @@ function convertToElkNode(node: GraphNode, aspectRatio: number): ElkNodeWithData
             'partitioning.activate': 'true',
             'elk.direction': 'UNDEFINED', // ELK will automatically pick direction
             'elk.edgeRouting': 'SPLINES',
-            'elk.nodeSize.minimum': '(220.0,70.0)',
+            'elk.nodeSize.minimum': `(${nodeDefaultWidth}.0,${nodeDefaultHeight}.0)`,
             'elk.nodeSize.constraints': '[MINIMUM_SIZE]',
             'elk.algorithm': 'layered',
             'elk.spacing.nodeNode': isCollapsed ? '1' : '60',
