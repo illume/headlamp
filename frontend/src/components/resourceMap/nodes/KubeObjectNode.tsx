@@ -147,6 +147,118 @@ const GLANCE_FLIP_THRESHOLD = 300;
 const GLANCE_MAX_WIDTH = 350;
 /** Visual gap between the node edge and the glance card. */
 const GLANCE_GAP = 8;
+
+/**
+ * Computes the optimal `position:absolute` style for the glance card.
+ *
+ * The glance is rendered as an absolutely-positioned child of the ReactFlow node
+ * element, so its coordinates are in *node-local* units (screen px ÷ zoom).
+ * The canvas element (`.react-flow`, which has `overflow:hidden`) is used as the
+ * clipping boundary — not the browser viewport.
+ *
+ * Placement priority:
+ *  1. BELOW  — preferred when ≥ GLANCE_FLIP_THRESHOLD px below the node.
+ *  2. ABOVE  — when ≥ GLANCE_FLIP_THRESHOLD px above.
+ *  3. LEFT / RIGHT — when neither above nor below fits but there is a side.
+ *  4. OVERLAP — last resort: pin to canvas top-left corner so as much content
+ *     as possible is visible even when the node fills most of the canvas.
+ *
+ * @internal Exported for unit-testing only.
+ */
+export function computeGlanceStyle(
+  rect: { left: number; top: number; right: number; bottom: number; width: number; height: number },
+  clip: { left: number; top: number; right: number; bottom: number },
+  zoom: number
+): React.CSSProperties {
+  const MARGIN = 4; // minimum px from any canvas edge
+  const gap = GLANCE_GAP * zoom; // gap in screen px
+
+  // Effective glance width in screen px — never wider than the canvas.
+  const maxWidthScreen = Math.max(100, clip.right - clip.left - 2 * MARGIN);
+  const glanceW = Math.min(GLANCE_MAX_WIDTH * zoom, maxWidthScreen);
+  const maxWidthNodeLocal = glanceW / zoom;
+
+  // Clamp a proposed screen-space left into the canvas.
+  const clampLeft = (screenLeft: number) =>
+    Math.max(clip.left + MARGIN, Math.min(screenLeft, clip.right - glanceW - MARGIN));
+
+  // Shared horizontal placement: left-aligned with node, clamped to canvas.
+  const leftAligned = clampLeft(rect.left);
+  const leftNodeLocal = (leftAligned - rect.left) / zoom;
+
+  const spaceBelow = clip.bottom - rect.bottom;
+  const spaceAbove = rect.top - clip.top;
+
+  if (spaceBelow >= GLANCE_FLIP_THRESHOLD) {
+    // ---- 1. BELOW the node (preferred) ----
+    const topNodeLocal = rect.height / zoom + GLANCE_GAP;
+    const maxHeight = Math.max(50, (clip.bottom - rect.bottom - gap - MARGIN) / zoom);
+    return {
+      position: 'absolute',
+      left: `${leftNodeLocal}px`,
+      top: `${topNodeLocal}px`,
+      bottom: 'auto',
+      maxWidth: `${maxWidthNodeLocal}px`,
+      maxHeight: `${maxHeight}px`,
+      overflowY: 'auto',
+    };
+  } else if (spaceAbove >= GLANCE_FLIP_THRESHOLD) {
+    // ---- 2. ABOVE the node ----
+    const bottomNodeLocal = rect.height / zoom + GLANCE_GAP;
+    const maxHeight = Math.max(50, (rect.top - clip.top - gap - MARGIN) / zoom);
+    return {
+      position: 'absolute',
+      left: `${leftNodeLocal}px`,
+      bottom: `${bottomNodeLocal}px`,
+      top: 'auto',
+      maxWidth: `${maxWidthNodeLocal}px`,
+      maxHeight: `${maxHeight}px`,
+      overflowY: 'auto',
+    };
+  } else if (
+    clip.right - rect.right >= glanceW + gap + MARGIN ||
+    rect.left - clip.left >= glanceW + gap + MARGIN
+  ) {
+    // ---- 3. LEFT or RIGHT ----
+    let glanceLeftScreen: number;
+    if (
+      clip.right - rect.right < glanceW + gap + MARGIN &&
+      rect.left - clip.left > clip.right - rect.right
+    ) {
+      glanceLeftScreen = rect.left - gap - glanceW; // left of node
+    } else {
+      glanceLeftScreen = rect.right + gap; // right of node
+    }
+    const leftNodeLocalSide = (clampLeft(glanceLeftScreen) - rect.left) / zoom;
+    const maxHeight = Math.max(50, (rect.bottom - clip.top - MARGIN) / zoom);
+    return {
+      position: 'absolute',
+      left: `${leftNodeLocalSide}px`,
+      bottom: 0,
+      top: 'auto',
+      maxWidth: `${maxWidthNodeLocal}px`,
+      maxHeight: `${maxHeight}px`,
+      overflowY: 'auto',
+    };
+  } else {
+    // ---- 4. OVERLAP the node (last resort) ----
+    // Node fills most of the canvas.  Pin the glance to the canvas top-left
+    // corner so as much content as possible is visible.
+    const overlapLeftNodeLocal = (clip.left + MARGIN - rect.left) / zoom;
+    const overlapTopNodeLocal = (clip.top + MARGIN - rect.top) / zoom;
+    const maxHeight = Math.max(50, (clip.bottom - clip.top - 2 * MARGIN) / zoom);
+    return {
+      position: 'absolute',
+      left: `${overlapLeftNodeLocal}px`,
+      top: `${overlapTopNodeLocal}px`,
+      bottom: 'auto',
+      maxWidth: `${maxWidthNodeLocal}px`,
+      maxHeight: `${maxHeight}px`,
+      overflowY: 'auto',
+    };
+  }
+}
+
 export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const node = useNode(id);
   const [isHovered, setHovered] = useState(false);
@@ -161,7 +273,7 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const [glanceStyle, setGlanceStyle] = useState<React.CSSProperties>({});
   const theme = useTheme();
   const graph = useGraphView();
-  const { zoom: mapZoom } = useViewport();
+  const { zoom: mapZoom, x: viewportX, y: viewportY } = useViewport();
   const mainNode = node?.nodes ? getMainNode(node.nodes) : undefined;
   const kubeObject = node?.kubeObject ?? mainNode?.kubeObject;
 
@@ -205,135 +317,21 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   }, [isHovered]);
 
   /**
-   * updateGlancePosition computes the optimal position for the glance card
-   * whenever hover starts, the glance expands, or the map zoom changes.
-   * The goal is to ensure the card is always fully visible within the
-   * ReactFlow canvas, even when the node is near the edges or the map is zoomed in.
-   *
-   * When hover starts, when the glance expands (after EXPAND_DELAY), or when the
-   * map zoom changes: recompute the glance's position in node-local coordinates so
-   * the card is always fully visible inside the ReactFlow canvas.
-   *
-   * The glance is `position:absolute` inside the ReactFlow viewport transform, so
-   * it is clipped by the `.react-flow` canvas element (which has `overflow:hidden`),
-   * NOT by the browser viewport.  We therefore clamp everything against the canvas
-   * bounding rect, not `window.inner*`.
-   *
-   * Placement priority:
-   *  1. BELOW — preferred when ≥ GLANCE_FLIP_THRESHOLD px below inside the canvas.
-   *  2. ABOVE — second choice when ≥ GLANCE_FLIP_THRESHOLD px above.
-   *  3. LEFT or RIGHT — fallback when neither above nor below fits.
-   *  4. OVERLAP — last resort when the node is so large that no adjacent placement
-   *     fits.  The glance is placed at the node's top-left corner (still within the
-   *     canvas) so as much content as possible is visible.
-   *
-   * In every case `maxWidth` and `maxHeight` (in node-local units) are computed so
-   * the glance never overflows the canvas.  When the node fills most of the canvas
-   * the glance may overlap the node content (case 4) but it will never be clipped.
+   * Recomputes the glance card position whenever hover state, expand state,
+   * zoom, or viewport pan (x/y) changes so the card stays clamped inside
+   * the ReactFlow canvas at all times.
    */
   function updateGlancePosition() {
     if (!isHovered || !containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
-
-    // Use the ReactFlow canvas as the clipping boundary.
     const canvasEl = containerRef.current.closest('.react-flow');
     const clip = canvasEl
       ? canvasEl.getBoundingClientRect()
       : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
-
-    const MARGIN = 4; // minimum px from any canvas edge
-    const zoom = mapZoom; // ReactFlow viewport zoom (node-local 1px = zoom screen px)
-    const gap = GLANCE_GAP * zoom; // gap in screen px
-
-    // Effective glance width in screen px — never wider than the canvas itself.
-    const maxWidthScreen = Math.max(100, clip.right - clip.left - 2 * MARGIN);
-    const glanceW = Math.min(GLANCE_MAX_WIDTH * zoom, maxWidthScreen);
-
-    // Corresponding node-local maxWidth for the CSS `maxWidth` property.
-    const maxWidthNodeLocal = glanceW / zoom;
-
-    // Clamp a proposed screen-space left coordinate into the canvas.
-    const clampLeft = (screenLeft: number) =>
-      Math.max(clip.left + MARGIN, Math.min(screenLeft, clip.right - glanceW - MARGIN));
-
-    // Shared horizontal placement: left-aligned with node, clamped to canvas.
-    const leftAligned = clampLeft(rect.left);
-    const leftNodeLocal = (leftAligned - rect.left) / zoom;
-
-    const spaceBelow = clip.bottom - rect.bottom;
-    const spaceAbove = rect.top - clip.top;
-
-    if (spaceBelow >= GLANCE_FLIP_THRESHOLD) {
-      // ---- 1. BELOW the node (preferred) ----
-      const topNodeLocal = rect.height / zoom + GLANCE_GAP;
-      const maxHeight = Math.max(50, (clip.bottom - rect.bottom - gap - MARGIN) / zoom);
-      setGlanceStyle({
-        position: 'absolute',
-        left: `${leftNodeLocal}px`,
-        top: `${topNodeLocal}px`,
-        bottom: 'auto',
-        maxWidth: `${maxWidthNodeLocal}px`,
-        maxHeight: `${maxHeight}px`,
-        overflowY: 'auto',
-      });
-    } else if (spaceAbove >= GLANCE_FLIP_THRESHOLD) {
-      // ---- 2. ABOVE the node ----
-      const bottomNodeLocal = rect.height / zoom + GLANCE_GAP;
-      const maxHeight = Math.max(50, (rect.top - clip.top - gap - MARGIN) / zoom);
-      setGlanceStyle({
-        position: 'absolute',
-        left: `${leftNodeLocal}px`,
-        bottom: `${bottomNodeLocal}px`,
-        top: 'auto',
-        maxWidth: `${maxWidthNodeLocal}px`,
-        maxHeight: `${maxHeight}px`,
-        overflowY: 'auto',
-      });
-    } else if (
-      clip.right - rect.right >= glanceW + gap + MARGIN ||
-      rect.left - clip.left >= glanceW + gap + MARGIN
-    ) {
-      // ---- 3. LEFT or RIGHT ----
-      let glanceLeftScreen: number;
-      if (
-        clip.right - rect.right < glanceW + gap + MARGIN &&
-        rect.left - clip.left > clip.right - rect.right
-      ) {
-        glanceLeftScreen = rect.left - gap - glanceW; // left of node
-      } else {
-        glanceLeftScreen = rect.right + gap; // right of node
-      }
-      const leftNodeLocalSide = (clampLeft(glanceLeftScreen) - rect.left) / zoom;
-      const maxHeight = Math.max(50, (rect.bottom - clip.top - MARGIN) / zoom);
-      setGlanceStyle({
-        position: 'absolute',
-        left: `${leftNodeLocalSide}px`,
-        bottom: 0,
-        top: 'auto',
-        maxWidth: `${maxWidthNodeLocal}px`,
-        maxHeight: `${maxHeight}px`,
-        overflowY: 'auto',
-      });
-    } else {
-      // ---- 4. OVERLAP the node (last resort) ----
-      // Node fills most of the canvas.  Place the glance at the node's top-left
-      // corner, within canvas bounds, so as much content as possible is visible.
-      const overlapLeftNodeLocal = (clampLeft(rect.left) - rect.left) / zoom;
-      // Use 2× MARGIN as buffer to absorb borders/padding rounding.
-      const maxHeight = Math.max(50, (clip.bottom - rect.top - MARGIN * 2) / zoom);
-      setGlanceStyle({
-        position: 'absolute',
-        left: `${overlapLeftNodeLocal}px`,
-        top: 0,
-        bottom: 'auto',
-        maxWidth: `${maxWidthNodeLocal}px`,
-        maxHeight: `${maxHeight}px`,
-        overflowY: 'auto',
-      });
-    }
+    setGlanceStyle(computeGlanceStyle(rect, clip, mapZoom));
   }
 
-  useEffect(updateGlancePosition, [isHovered, isExpanded, mapZoom]);
+  useEffect(updateGlancePosition, [isHovered, isExpanded, mapZoom, viewportX, viewportY]);
 
   const icon = kubeObject ? (
     <KubeIcon width="42px" height="42px" kind={kubeObject.kind} apiGroup={apiGroup} />
