@@ -20,6 +20,7 @@ import { alpha } from '@mui/system/colorManipulator';
 import { memo } from 'react';
 import { useGraphView, useNode } from '../GraphView';
 import { KubeIcon } from '../kubeIcon/KubeIcon';
+import { usePanToNode } from './usePanToNode';
 
 const Container = styled('div')(({ theme }) => ({
   width: '100%',
@@ -49,6 +50,7 @@ const Label = styled('div')(() => ({
 export const GroupNodeComponent = memo(({ id }: { id: string }) => {
   const graph = useGraphView();
   const node = useNode(id);
+  const panToNode = usePanToNode();
 
   const kubeObject = node?.kubeObject;
 
@@ -65,6 +67,19 @@ export const GroupNodeComponent = memo(({ id }: { id: string }) => {
     <Container
       tabIndex={0}
       role="button"
+      onFocus={e => {
+        // Bug fix: same as KubeObjectNodeComponent — keyboard-tabbing to a group
+        // node that is outside the visible canvas area would leave it invisible.
+        // :focus-visible prevents auto-pan when the node is clicked with a mouse.
+        try {
+          if (e.currentTarget.matches(':focus-visible')) {
+            panToNode(id);
+          }
+        } catch (err) {
+          // :focus-visible throws SyntaxError in browsers that don't support it; skip auto-pan.
+          if (!(err instanceof SyntaxError)) throw err;
+        }
+      }}
       onClick={handleSelect}
       onKeyDown={e => {
         if (e.key === 'Enter' || e.key === 'Space') {

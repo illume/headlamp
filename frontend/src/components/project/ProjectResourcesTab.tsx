@@ -407,7 +407,11 @@ export function ProjectResourcesTab({
           sx={theme => ({
             flexGrow: 1,
             p: 1,
-            overflowY: 'auto',
+            // overflow: auto on both axes so wide resource tables can scroll
+            // horizontally within this panel. Without the x-axis auto, a wide table
+            // would force the outer flex container to grow and cause the Main container
+            // to scroll horizontally instead.
+            overflow: 'auto',
             borderLeft: '1px solid',
             borderColor: theme.palette.divider,
           })}
