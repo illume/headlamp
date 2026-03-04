@@ -247,8 +247,13 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
         // has overflow:hidden, so keyboard-tabbing to an off-canvas node would leave
         // it invisible. panToNode centres the viewport on the node when it receives
         // keyboard focus. The :focus-visible guard prevents auto-pan on mouse click.
-        if (e.currentTarget.matches(':focus-visible')) {
-          panToNode(id);
+        try {
+          if (e.currentTarget.matches(':focus-visible')) {
+            panToNode(id);
+          }
+        } catch (err) {
+          // :focus-visible throws SyntaxError in browsers that don't support it; skip auto-pan.
+          if (!(err instanceof SyntaxError)) throw err;
         }
       }}
       onBlur={() => setHovered(false)}

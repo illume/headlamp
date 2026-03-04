@@ -396,11 +396,6 @@ export function ProjectResourcesTab({
           flexGrow: 1,
           minHeight: 0,
           flexBasis: 0,
-          // contain: layout prevents focus-induced scroll (scrollIntoView) from
-          // propagating to the page's Main container (overflow: auto). Without this,
-          // keyboard-tabbing through links in this panel scrolls Main horizontally,
-          // pushing the left category list off-screen.
-          contain: 'layout',
         })}
       >
         <ResourceCategoriesList
@@ -412,8 +407,10 @@ export function ProjectResourcesTab({
           sx={theme => ({
             flexGrow: 1,
             p: 1,
-            // overflow: auto (both axes) absorbs horizontal scrollIntoView calls
-            // within this panel instead of letting them reach the outer Main container.
+            // overflow: auto on both axes so wide resource tables can scroll
+            // horizontally within this panel. Without the x-axis auto, a wide table
+            // would force the outer flex container to grow and cause the Main container
+            // to scroll horizontally instead.
             overflow: 'auto',
             borderLeft: '1px solid',
             borderColor: theme.palette.divider,

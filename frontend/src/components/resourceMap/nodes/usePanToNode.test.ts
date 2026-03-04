@@ -200,4 +200,35 @@ describe('usePanToNode', () => {
       zoom: 1,
     });
   });
+
+  it('uses zero-duration animation when prefers-reduced-motion is enabled', () => {
+    // right edge at 700+220=920, canvas width=800 → clipped, same as "clipped on the right" test
+    mockNodeLookup.set('n1', makeNode(700, 100, 220, 70));
+    const originalMatchMedia = window.matchMedia;
+    try {
+      // Stub matchMedia to report reduced-motion preference
+      Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        value: vi.fn().mockReturnValue({
+          matches: true,
+          media: '(prefers-reduced-motion: reduce)',
+          onchange: null,
+          addListener: vi.fn(),
+          removeListener: vi.fn(),
+          addEventListener: vi.fn(),
+          removeEventListener: vi.fn(),
+          dispatchEvent: vi.fn(),
+        }),
+      });
+      const { result } = renderHook(() => usePanToNode());
+      result.current('n1');
+      expect(mockSetCenter).toHaveBeenCalledOnce();
+      expect(mockSetCenter).toHaveBeenCalledWith(700 + 220 / 2, 100 + 70 / 2, {
+        duration: 0,
+        zoom: 1,
+      });
+    } finally {
+      Object.defineProperty(window, 'matchMedia', { writable: true, value: originalMatchMedia });
+    }
+  });
 });

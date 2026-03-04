@@ -20,10 +20,10 @@ import { nodeDefaultHeight, nodeDefaultWidth } from '../graphConstants';
 /** Duration of the smooth pan animation in milliseconds.
  *  0 is used when the user has requested reduced motion. */
 function getPanDurationMs(): number {
-  return typeof window !== 'undefined' &&
-    window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    ? 0
-    : 300;
+  if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+    return 300;
+  }
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 300;
 }
 
 /**
