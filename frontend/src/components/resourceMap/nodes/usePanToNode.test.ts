@@ -41,12 +41,7 @@ vi.mock('@xyflow/react', () => ({
 
 // Helper: build a minimal internal ReactFlow node with positionAbsolute.
 // `measuredWidth/Height` absent → node has no measured dimensions (fallback used).
-function makeNode(
-  absX: number,
-  absY: number,
-  measuredWidth?: number,
-  measuredHeight?: number
-) {
+function makeNode(absX: number, absY: number, measuredWidth?: number, measuredHeight?: number) {
   return {
     id: 'n1',
     position: { x: absX, y: absY },
@@ -136,11 +131,9 @@ describe('usePanToNode', () => {
     result.current('n1');
     // nodeDefaultWidth=220 > 200, so it should pan
     expect(mockSetCenter).toHaveBeenCalledOnce();
-    expect(mockSetCenter).toHaveBeenCalledWith(
-      nodeDefaultWidth / 2,
-      nodeDefaultHeight / 2,
-      { duration: 300 }
-    );
+    expect(mockSetCenter).toHaveBeenCalledWith(nodeDefaultWidth / 2, nodeDefaultHeight / 2, {
+      duration: 300,
+    });
   });
 
   it('does NOT pan when node fits with default dimensions', () => {

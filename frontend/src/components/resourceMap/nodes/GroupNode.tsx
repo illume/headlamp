@@ -68,6 +68,9 @@ export const GroupNodeComponent = memo(({ id }: { id: string }) => {
       tabIndex={0}
       role="button"
       onFocus={e => {
+        // Bug fix: same as KubeObjectNodeComponent — keyboard-tabbing to a group
+        // node that is outside the visible canvas area would leave it invisible.
+        // :focus-visible prevents auto-pan when the node is clicked with a mouse.
         if (e.currentTarget.matches(':focus-visible')) {
           panToNode(id);
         }

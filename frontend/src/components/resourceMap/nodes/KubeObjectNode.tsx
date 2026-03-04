@@ -243,6 +243,10 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
       onClick={openDetails}
       onFocus={e => {
         setHovered(true);
+        // Bug fix: ReactFlow nodes are positioned with CSS transforms and the canvas
+        // has overflow:hidden, so keyboard-tabbing to an off-canvas node would leave
+        // it invisible. panToNode centres the viewport on the node when it receives
+        // keyboard focus. The :focus-visible guard prevents auto-pan on mouse click.
         if (e.currentTarget.matches(':focus-visible')) {
           panToNode(id);
         }
