@@ -86,7 +86,10 @@ describe('usePanToNode', () => {
     const { result } = renderHook(() => usePanToNode());
     result.current('n1');
     expect(mockSetCenter).toHaveBeenCalledOnce();
-    expect(mockSetCenter).toHaveBeenCalledWith(700 + 220 / 2, 100 + 70 / 2, { duration: 300 });
+    expect(mockSetCenter).toHaveBeenCalledWith(700 + 220 / 2, 100 + 70 / 2, {
+      duration: 300,
+      zoom: 1,
+    });
   });
 
   it('pans when the node is partially clipped on the bottom', () => {
@@ -133,6 +136,7 @@ describe('usePanToNode', () => {
     expect(mockSetCenter).toHaveBeenCalledOnce();
     expect(mockSetCenter).toHaveBeenCalledWith(nodeDefaultWidth / 2, nodeDefaultHeight / 2, {
       duration: 300,
+      zoom: 1,
     });
   });
 
@@ -168,7 +172,7 @@ describe('usePanToNode', () => {
     const { result } = renderHook(() => usePanToNode());
     result.current('n1');
     // centre = (700 + 220/2, 100 + 70/2) = (810, 135)
-    expect(mockSetCenter).toHaveBeenCalledWith(810, 135, { duration: 300 });
+    expect(mockSetCenter).toHaveBeenCalledWith(810, 135, { duration: 300, zoom: 1 });
   });
 
   it('uses positionAbsolute from internals for nested nodes', () => {
@@ -191,6 +195,9 @@ describe('usePanToNode', () => {
     result.current('nested');
     // Hook must pan (absolute right=920 > 800) and centre on the absolute midpoint
     expect(mockSetCenter).toHaveBeenCalledOnce();
-    expect(mockSetCenter).toHaveBeenCalledWith(700 + 220 / 2, 200 + 70 / 2, { duration: 300 });
+    expect(mockSetCenter).toHaveBeenCalledWith(700 + 220 / 2, 200 + 70 / 2, {
+      duration: 300,
+      zoom: 1,
+    });
   });
 });

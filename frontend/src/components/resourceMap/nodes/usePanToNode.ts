@@ -71,8 +71,11 @@ export function usePanToNode() {
       screenBottom <= canvasHeight;
 
     if (!fullyVisible) {
+      // Pass the current zoom so the viewport only translates — without it,
+      // setCenter defaults to zoom=1 and incorrectly zooms in/out on every focus.
       setCenter(absX + width / 2, absY + height / 2, {
         duration: getPanDurationMs(),
+        zoom,
       });
     }
   };
