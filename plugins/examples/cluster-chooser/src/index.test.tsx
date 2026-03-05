@@ -14,27 +14,14 @@
  * limitations under the License.
  */
 
-import { useClustersConf } from '@kinvolk/headlamp-plugin/lib';
 import { configureStore } from '@reduxjs/toolkit';
 import { render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
 import { describe, expect, it } from 'vitest';
+import { ClusterChooserButton } from './index';
 
-/** A simple component that uses useClustersConf to display cluster names. */
-function ClusterList() {
-  const clusters = useClustersConf();
-  if (!clusters) return <div>No clusters</div>;
-  return (
-    <div>
-      {Object.keys(clusters).map(name => (
-        <span key={name}>{name}</span>
-      ))}
-    </div>
-  );
-}
-
-describe('useClustersConf', () => {
-  it('returns null when clusters have not been loaded', () => {
+describe('ClusterChooserButton', () => {
+  it('shows 0 clusters when clusters have not been loaded', () => {
     const store = configureStore({
       reducer: {
         config: () => ({
@@ -48,14 +35,14 @@ describe('useClustersConf', () => {
 
     render(
       <Provider store={store}>
-        <ClusterList />
+        <ClusterChooserButton clickHandler={() => {}} cluster="test" />
       </Provider>
     );
 
-    expect(screen.getByText('No clusters')).toBeTruthy();
+    expect(screen.getByText(/0 clusters/)).toBeTruthy();
   });
 
-  it('returns clusters from the store', () => {
+  it('shows cluster count from the store', () => {
     const store = configureStore({
       reducer: {
         config: () => ({
@@ -71,14 +58,15 @@ describe('useClustersConf', () => {
 
     render(
       <Provider store={store}>
-        <ClusterList />
+        <ClusterChooserButton clickHandler={() => {}} cluster="my-cluster" />
       </Provider>
     );
 
-    expect(screen.getByText('my-cluster')).toBeTruthy();
+    expect(screen.getByText(/Cluster: my-cluster/)).toBeTruthy();
+    expect(screen.getByText(/1 clusters/)).toBeTruthy();
   });
 
-  it('combines stateless clusters with regular clusters', () => {
+  it('includes stateless clusters in the count', () => {
     const store = configureStore({
       reducer: {
         config: () => ({
@@ -96,11 +84,10 @@ describe('useClustersConf', () => {
 
     render(
       <Provider store={store}>
-        <ClusterList />
+        <ClusterChooserButton clickHandler={() => {}} cluster="regular-cluster" />
       </Provider>
     );
 
-    expect(screen.getByText('regular-cluster')).toBeTruthy();
-    expect(screen.getByText('stateless-cluster')).toBeTruthy();
+    expect(screen.getByText(/2 clusters/)).toBeTruthy();
   });
 });

@@ -21,7 +21,16 @@ import {
 } from '@kinvolk/headlamp-plugin/lib';
 import { Button } from '@mui/material';
 
-registerClusterChooser(({ clickHandler, cluster }: ClusterChooserProps) => {
+/** Props for the ClusterChooserButton component. */
+export interface ClusterChooserButtonProps {
+  /** Handler called when the button is clicked. */
+  clickHandler: ClusterChooserProps['clickHandler'];
+  /** Currently selected cluster name. */
+  cluster: ClusterChooserProps['cluster'];
+}
+
+/** A button that shows the current cluster and total cluster count using useClustersConf. */
+export function ClusterChooserButton({ clickHandler, cluster }: ClusterChooserButtonProps) {
   const clusters = useClustersConf();
   const clusterNames = clusters ? Object.keys(clusters) : [];
 
@@ -30,4 +39,8 @@ registerClusterChooser(({ clickHandler, cluster }: ClusterChooserProps) => {
       Our Cluster Chooser button. Cluster: {cluster} ({clusterNames.length} clusters)
     </Button>
   );
-});
+}
+
+registerClusterChooser(({ clickHandler, cluster }: ClusterChooserProps) => (
+  <ClusterChooserButton clickHandler={clickHandler} cluster={cluster} />
+));
