@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import '@testing-library/jest-dom';
 import { useClustersConf } from '@kinvolk/headlamp-plugin/lib';
 import { configureStore } from '@reduxjs/toolkit';
 import { render, screen } from '@testing-library/react';
 import { Provider } from 'react-redux';
+import { describe, expect, it } from 'vitest';
 
 /** A simple component that uses useClustersConf to display cluster names. */
 function ClusterList() {
@@ -52,7 +52,7 @@ describe('useClustersConf', () => {
       </Provider>
     );
 
-    expect(screen.getByText('No clusters')).toBeInTheDocument();
+    expect(screen.getByText('No clusters')).toBeTruthy();
   });
 
   it('returns clusters from the store', () => {
@@ -75,7 +75,7 @@ describe('useClustersConf', () => {
       </Provider>
     );
 
-    expect(screen.getByText('my-cluster')).toBeInTheDocument();
+    expect(screen.getByText('my-cluster')).toBeTruthy();
   });
 
   it('combines stateless clusters with regular clusters', () => {
@@ -100,7 +100,7 @@ describe('useClustersConf', () => {
       </Provider>
     );
 
-    expect(screen.getByText('regular-cluster')).toBeInTheDocument();
-    expect(screen.getByText('stateless-cluster')).toBeInTheDocument();
+    expect(screen.getByText('regular-cluster')).toBeTruthy();
+    expect(screen.getByText('stateless-cluster')).toBeTruthy();
   });
 });
