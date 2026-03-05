@@ -23,7 +23,6 @@ declare module '@mui/private-theming' {
 import { Activity } from './components/activity/Activity';
 import * as CommonComponents from './components/common';
 import * as K8s from './lib/k8s';
-import { useClustersConf } from './lib/k8s';
 import * as ApiProxy from './lib/k8s/apiProxy';
 import * as Notification from './lib/notification';
 import * as Router from './lib/router';
@@ -133,7 +132,6 @@ export {
   registerClusterStatus,
   registerProjectDeleteButton,
   Activity,
-  useClustersConf,
 };
 
 export type {
@@ -145,3 +143,5 @@ export type {
   DefaultSidebars,
   HeadlampEvent,
 };
+
+export { useClustersConf } from './lib/k8s';
