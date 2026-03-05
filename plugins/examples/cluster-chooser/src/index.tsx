@@ -14,9 +14,20 @@
  * limitations under the License.
  */
 
-import { ClusterChooserProps, registerClusterChooser } from '@kinvolk/headlamp-plugin/lib';
+import {
+  ClusterChooserProps,
+  registerClusterChooser,
+  useClustersConf,
+} from '@kinvolk/headlamp-plugin/lib';
 import { Button } from '@mui/material';
 
 registerClusterChooser(({ clickHandler, cluster }: ClusterChooserProps) => {
-  return <Button onClick={clickHandler}>Our Cluster Chooser button. Cluster: {cluster}</Button>;
+  const clusters = useClustersConf();
+  const clusterNames = clusters ? Object.keys(clusters) : [];
+
+  return (
+    <Button onClick={clickHandler}>
+      Our Cluster Chooser button. Cluster: {cluster} ({clusterNames.length} clusters)
+    </Button>
+  );
 });
