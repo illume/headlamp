@@ -6,6 +6,7 @@ set -o xtrace
 
 npm run check-dependencies
 npm run build
+npm run copy-package-lock
 npm pack
 
 cd ../examples
