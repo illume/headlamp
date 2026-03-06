@@ -41,6 +41,8 @@ export function ClusterChooserButton({ clickHandler, cluster }: ClusterChooserBu
   );
 }
 
+// Replaces the default cluster chooser in the top bar with a button that shows
+// the current cluster name and total number of configured clusters (e.g. "Cluster: minikube (3 clusters)").
 registerClusterChooser(({ clickHandler, cluster }: ClusterChooserProps) => (
   <ClusterChooserButton clickHandler={clickHandler} cluster={cluster} />
 ));
