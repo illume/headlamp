@@ -36,6 +36,23 @@ import { ReplicaSetGlance } from './ReplicaSetGlance';
 import { ServiceGlance } from './ServiceGlance';
 
 /**
+ * Returns true if the given KubeObject type has a dedicated glance component.
+ * Used to avoid rendering an empty glance wrapper for resource types that have
+ * no type-specific content to show.
+ */
+export function hasKubeObjectGlanceContent(resource: KubeObject): boolean {
+  return (
+    Pod.isClassOf(resource) ||
+    Deployment.isClassOf(resource) ||
+    Service.isClassOf(resource) ||
+    Endpoints.isClassOf(resource) ||
+    ReplicaSet.isClassOf(resource) ||
+    StatefulSet.isClassOf(resource) ||
+    HPA.isClassOf(resource)
+  );
+}
+
+/**
  * Little Popup preview of a Kube object
  */
 export const KubeObjectGlance = memo(({ resource }: { resource: KubeObject }) => {

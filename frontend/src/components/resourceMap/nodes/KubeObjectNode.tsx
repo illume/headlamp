@@ -327,6 +327,8 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
               glanceStyle={glanceStyle}
               isSelected={isSelected}
               setHovered={setHovered}
+              label={label}
+              subtitle={subtitle}
             />
           )}
         />
@@ -343,11 +345,15 @@ function GlanceWrapper({
   glanceStyle,
   setHovered,
   isSelected,
+  label,
+  subtitle,
 }: {
   children: React.ReactNode;
   glanceStyle?: React.CSSProperties;
   isSelected?: boolean;
   setHovered: (hovered: boolean) => void;
+  label?: string;
+  subtitle?: string;
 }) {
   const theme = useTheme();
 
@@ -377,6 +383,23 @@ function GlanceWrapper({
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => setHovered(false)}
     >
+      {(label || subtitle) && (
+        <LabelContainer isCollapsed sx={{ mb: 1 }}>
+          {subtitle && <Subtitle>{subtitle}</Subtitle>}
+          {label && (
+            <Title
+              sx={{
+                whiteSpace: 'normal',
+                overflow: 'visible',
+                textOverflow: 'clip',
+                wordBreak: 'break-word',
+              }}
+            >
+              {label}
+            </Title>
+          )}
+        </LabelContainer>
+      )}
       {children}
     </Box>
   );

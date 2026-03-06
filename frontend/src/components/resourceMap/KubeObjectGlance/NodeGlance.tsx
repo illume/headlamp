@@ -18,7 +18,7 @@ import { useSelector } from 'react-redux';
 import { KubeObject } from '../../../lib/k8s/KubeObject';
 import { RootState } from '../../../redux/stores/store';
 import { GraphNode } from '../graph/graphModel';
-import { KubeObjectGlance } from './KubeObjectGlance';
+import { hasKubeObjectGlanceContent, KubeObjectGlance } from './KubeObjectGlance';
 
 /**
  * Generic glance component for rendering node previews in Headlamp's graph view.
@@ -35,7 +35,7 @@ export const NodeGlance = ({ node, wrapper }: { node: GraphNode; wrapper?: React
   const validGlanceResults = glanceResults.filter(result => result !== null);
   const results = [...validGlanceResults];
 
-  if (node.kubeObject instanceof KubeObject) {
+  if (node.kubeObject instanceof KubeObject && hasKubeObjectGlanceContent(node.kubeObject)) {
     results.push(<KubeObjectGlance key="kube-object-glance" resource={node.kubeObject} />);
   }
 
