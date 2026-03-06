@@ -384,7 +384,7 @@ function GlanceWrapper({
       onPointerLeave={() => setHovered(false)}
     >
       {(label || subtitle) && (
-        <Box mb={1}>
+        <LabelContainer isCollapsed sx={{ mb: 1 }}>
           {subtitle && <Subtitle>{subtitle}</Subtitle>}
           {label && (
             <Title
@@ -398,7 +398,7 @@ function GlanceWrapper({
               {label}
             </Title>
           )}
-        </Box>
+        </LabelContainer>
       )}
       {children}
     </Box>
