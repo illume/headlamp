@@ -385,11 +385,18 @@ function GlanceWrapper({
     >
       {(label || subtitle) && (
         <Box mb={1}>
+          {subtitle && <Subtitle>{subtitle}</Subtitle>}
           {label && (
-            <Box sx={{ fontWeight: 'bold', fontSize: 14, wordBreak: 'break-word' }}>{label}</Box>
-          )}
-          {subtitle && (
-            <Box sx={{ opacity: 0.8, fontSize: 12 }}>{subtitle}</Box>
+            <Title
+              sx={{
+                whiteSpace: 'normal',
+                overflow: 'visible',
+                textOverflow: 'clip',
+                wordBreak: 'break-word',
+              }}
+            >
+              {label}
+            </Title>
           )}
         </Box>
       )}

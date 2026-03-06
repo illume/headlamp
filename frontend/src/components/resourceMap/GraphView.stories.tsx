@@ -49,10 +49,16 @@ export default {
   },
 };
 
+// Realistic pod for BasicExample — uses the running pod data with a realistic name
+const basicExamplePod = new Pod({
+  ...podList[5],
+  metadata: { ...podList[5].metadata, name: 'nginx-deployment-7d9f5b8c4-jk8f2', uid: 'basic-1' },
+});
+
 const mockNodes: GraphNode[] = [
   {
     id: 'mock-id',
-    kubeObject: new Pod(podList[0]),
+    kubeObject: basicExamplePod,
   },
   {
     id: 'custom-node',
@@ -116,9 +122,28 @@ export const BasicExample = () => (
 );
 BasicExample.args = {};
 
+/** Shared MSW handlers for stories that open a glance (events endpoint needed). */
+const glanceMswStoryHandlers = {
+  story: [
+    http.get('http://localhost:4466/apis/apiextensions.k8s.io/v1/customresourcedefinitions', () =>
+      HttpResponse.json({ kind: 'List', items: [], metadata: {} })
+    ),
+    http.get(
+      'http://localhost:4466/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions',
+      () => HttpResponse.error()
+    ),
+    // KubeObjectGlance fetches events for the open pod node
+    http.get('http://localhost:4466/api/v1/namespaces/default/events', () =>
+      HttpResponse.json({ kind: 'EventList', items: [], metadata: {} })
+    ),
+  ],
+};
+
 /**
  * Shows a node with its glance card open from first render.
  * Uses `initialGlanceOpen: true` on the node — no hover interaction required.
+ * The pod has a realistic name so the glance header is clearly separate from the
+ * ImagePullBackOff status label shown inside the glance.
  */
 export const GlanceActive = () => (
   <TestContext>
@@ -131,7 +156,18 @@ export const GlanceActive = () => (
           useData() {
             return {
               nodes: [
-                { id: 'pod-glance', kubeObject: new Pod(podList[0]), initialGlanceOpen: true },
+                {
+                  id: 'pod-glance',
+                  kubeObject: new Pod({
+                    ...podList[0],
+                    metadata: {
+                      ...podList[0].metadata,
+                      name: 'coredns-5d78c9869d-8vxlq',
+                      uid: 'glance-active-1',
+                    },
+                  }),
+                  initialGlanceOpen: true,
+                },
               ],
             };
           },
@@ -140,23 +176,41 @@ export const GlanceActive = () => (
     />
   </TestContext>
 );
-GlanceActive.parameters = {
-  msw: {
-    handlers: {
-      story: [
-        http.get(
-          'http://localhost:4466/apis/apiextensions.k8s.io/v1/customresourcedefinitions',
-          () => HttpResponse.json({ kind: 'List', items: [], metadata: {} })
-        ),
-        http.get(
-          'http://localhost:4466/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions',
-          () => HttpResponse.error()
-        ),
-        // KubeObjectGlance fetches events for the open pod node
-        http.get('http://localhost:4466/api/v1/namespaces/default/events', () =>
-          HttpResponse.json({ kind: 'EventList', items: [], metadata: {} })
-        ),
-      ],
-    },
-  },
-};
+GlanceActive.parameters = { msw: { handlers: glanceMswStoryHandlers } };
+
+/**
+ * Shows a glance with a long resource name — demonstrates that the full name is
+ * visible in the glance popup even when it is truncated in the node card.
+ */
+export const GlanceActiveLongName = () => (
+  <TestContext>
+    <GraphView
+      height="600px"
+      defaultSources={[
+        {
+          id: 'glance-long-name-source',
+          label: 'Pods',
+          useData() {
+            return {
+              nodes: [
+                {
+                  id: 'pod-glance-long',
+                  kubeObject: new Pod({
+                    ...podList[5],
+                    metadata: {
+                      ...podList[5].metadata,
+                      name: 'my-application-backend-api-service-deployment-v2-7d9f5b8c4-xk2p9',
+                      uid: 'glance-long-1',
+                    },
+                  }),
+                  initialGlanceOpen: true,
+                },
+              ],
+            };
+          },
+        } satisfies GraphSource,
+      ]}
+    />
+  </TestContext>
+);
+GlanceActiveLongName.parameters = { msw: { handlers: glanceMswStoryHandlers } };
