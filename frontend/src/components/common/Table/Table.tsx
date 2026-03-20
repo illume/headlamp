@@ -22,7 +22,6 @@ import MuiTable from '@mui/material/Table';
 import { TableCellProps } from '@mui/material/TableCell';
 import TableHead from '@mui/material/TableHead';
 import { alpha, styled } from '@mui/system';
-import { visuallyHidden } from '@mui/utils';
 import {
   MRT_BottomToolbar,
   MRT_Cell,
@@ -473,41 +472,19 @@ export default function Table<RowItem extends Record<string, any>>({
     }
   };
 
-  const emptyMsg = emptyMessage || t('No data to be shown.');
-  const isEmpty = !tableProps.data?.length && !loading;
-  const noSearchResults = !errorMessage && !loading && !isEmpty && rows.length === 0;
-  const statusElement = (
-    <Box role="status" aria-live="polite" aria-atomic="true" sx={visuallyHidden}>
-      {isEmpty ? emptyMsg : noSearchResults ? t('No results found') : ''}
-    </Box>
-  );
-
   if (!!errorMessage) {
-    return (
-      <>
-        {statusElement}
-        <Empty color="error">{errorMessage}</Empty>
-      </>
-    );
+    return <Empty color="error">{errorMessage}</Empty>;
   }
 
   if (loading) {
-    return (
-      <>
-        {statusElement}
-        <Loader title={t('Loading table data')} />
-      </>
-    );
+    return <Loader title={t('Loading table data')} />;
   }
 
   if (!tableProps.data?.length && !loading) {
     return (
-      <>
-        {statusElement}
-        <Paper variant="outlined">
-          <Empty>{emptyMsg}</Empty>
-        </Paper>
-      </>
+      <Paper variant="outlined">
+        <Empty>{emptyMessage || t('No data to be shown.')}</Empty>
+      </Paper>
     );
   }
 
@@ -515,7 +492,6 @@ export default function Table<RowItem extends Record<string, any>>({
 
   return (
     <>
-      {statusElement}
       <MRT_TopToolbar table={table} />
       <MuiTable
         sx={{
