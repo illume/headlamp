@@ -306,13 +306,38 @@ export default function SimpleTable(props: SimpleTableProps) {
     return filteredData!.slice(startIndex, startIndex + rowsPerPage);
   }
 
+  const emptyMsg = emptyMessage || t('No data to be shown.');
+  const isEmpty = displayData !== null && (!currentData || currentData.length === 0);
+  const statusElement = (
+    <Box role="status" aria-live="polite" aria-atomic="true" sx={visuallyHidden}>
+      {isEmpty ? emptyMsg : ''}
+    </Box>
+  );
+
+  if (displayData === null) {
+    if (!!errorMessage) {
+      return (
+        <>
+          {statusElement}
+          <Empty color="error">{errorMessage}</Empty>
+        </>
+      );
+    }
+
+    return (
+      <>
+        {statusElement}
+        <Loader title={t('Loading table data')} />
+      </>
+    );
+  }
+
   let filteredData = displayData;
-  if (displayData != null && filterFunction) {
-    filteredData = displayData.filter(filterFunction);
+  if (filterFunction) {
+    filteredData = displayData?.filter(filterFunction);
   }
 
   if (
-    displayData != null &&
     (filteredData?.length === 0 || (filteredData?.length ?? 0) < page * rowsPerPage) &&
     page !== 0
   ) {
@@ -324,24 +349,16 @@ export default function SimpleTable(props: SimpleTableProps) {
     setSortColIndex(index);
   }
 
-  const isLoading = displayData == null && !errorMessage;
-  const hasError = displayData == null && !!errorMessage;
-  const isEmpty = displayData != null && (!currentData || currentData.length === 0);
-  const emptyMsg = emptyMessage || t('No data to be shown.');
-
-  let content;
-  if (hasError) {
-    content = <Empty color="error">{errorMessage}</Empty>;
-  } else if (isLoading) {
-    content = <Loader title={t('Loading table data')} />;
-  } else if (isEmpty) {
-    content = (
+  return !currentData || currentData.length === 0 ? (
+    <>
+      {statusElement}
       <Paper variant="outlined">
         <Empty>{emptyMsg}</Empty>
       </Paper>
-    );
-  } else {
-    content = (
+    </>
+  ) : (
+    <>
+      {statusElement}
       <TableContainer
         className={className}
         sx={{
@@ -454,7 +471,12 @@ export default function SimpleTable(props: SimpleTableProps) {
                       <TableCell key={`cell_${i}`} {...cellProps}>
                         {i === 0 && row.color && (
                           <React.Fragment>
-                            <InlineIcon icon="mdi:square" color={row.color} height="15" width="15" />
+                            <InlineIcon
+                              icon="mdi:square"
+                              color={row.color}
+                              height="15"
+                              width="15"
+                            />
                             &nbsp;
                           </React.Fragment>
                         )}
@@ -493,15 +515,6 @@ export default function SimpleTable(props: SimpleTableProps) {
           />
         )}
       </TableContainer>
-    );
-  }
-
-  return (
-    <>
-      <Box role="status" aria-live="polite" aria-atomic="true" sx={visuallyHidden}>
-        {isEmpty ? emptyMsg : ''}
-      </Box>
-      {content}
     </>
   );
 }

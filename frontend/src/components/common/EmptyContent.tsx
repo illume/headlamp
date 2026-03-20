@@ -24,7 +24,7 @@ type EmptyProps = React.PropsWithChildren<{
 
 export default function Empty({ color = 'textSecondary', children }: EmptyProps) {
   return (
-    <Box padding={2} role="status" aria-live="polite" aria-atomic="true">
+    <Box padding={2}>
       {React.Children.map(children, child => {
         if (typeof child === 'string') {
           return (
