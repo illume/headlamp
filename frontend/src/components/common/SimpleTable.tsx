@@ -303,6 +303,13 @@ export default function SimpleTable(props: SimpleTableProps) {
 
   const emptyMsg = emptyMessage || t('No data to be shown.');
   const isEmpty = displayData !== null && (!currentData || currentData.length === 0);
+  const statusMsg = isEmpty ? emptyMsg : '';
+
+  // Defer status text by one render so NVDA always sees a change ('' → message).
+  const [announcedStatus, setAnnouncedStatus] = React.useState('');
+  React.useEffect(() => {
+    setAnnouncedStatus(statusMsg);
+  }, [statusMsg]);
 
   let content;
   if (displayData === null) {
@@ -505,7 +512,7 @@ export default function SimpleTable(props: SimpleTableProps) {
   return (
     <>
       <Box role="status" aria-live="polite" aria-atomic="true" sx={visuallyHidden}>
-        {isEmpty ? emptyMsg : ''}
+        {announcedStatus}
       </Box>
       {content}
     </>

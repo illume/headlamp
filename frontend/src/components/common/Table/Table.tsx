@@ -476,6 +476,13 @@ export default function Table<RowItem extends Record<string, any>>({
   const emptyMsg = emptyMessage || t('No data to be shown.');
   const isEmpty = !tableProps.data?.length && !loading;
   const noSearchResults = !errorMessage && !loading && !isEmpty && rows.length === 0;
+  const statusMsg = isEmpty ? emptyMsg : noSearchResults ? t('No results found') : '';
+
+  // Defer status text by one render so NVDA always sees a change ('' → message).
+  const [announcedStatus, setAnnouncedStatus] = useState('');
+  useEffect(() => {
+    setAnnouncedStatus(statusMsg);
+  }, [statusMsg]);
 
   let content;
   if (!!errorMessage) {
@@ -543,7 +550,7 @@ export default function Table<RowItem extends Record<string, any>>({
   return (
     <>
       <Box role="status" aria-live="polite" aria-atomic="true" sx={visuallyHidden}>
-        {isEmpty ? emptyMsg : noSearchResults ? t('No results found') : ''}
+        {announcedStatus}
       </Box>
       {content}
     </>
