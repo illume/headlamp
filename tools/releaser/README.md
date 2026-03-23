@@ -37,13 +37,20 @@ export GITHUB_TOKEN=your-token-here
 # 1. Start the release (creates branch, bumps version, commits)
 releaser start 0.42.0
 
-# 2. Create the release tag
+# 2. Create the GitHub draft release
+#    Run the "Create Release Draft" workflow (.github/workflows/draft-release.yml)
+#    via the GitHub Actions UI with releaseName: 0.42.0
+
+# 3. Create the release tag
 releaser tag
 
-# 3. Publish the release (pushes tag, publishes GitHub release)
+# 4. Verify the draft release and its required artifacts before publishing
+releaser check 0.42.0
+
+# 5. Publish the release (pushes tag, publishes GitHub release)
 releaser publish 0.42.0
 
-# 4. Verify the release and its artifacts
+# 6. (Optional) Re-run checks after publishing for extended asset verification
 releaser check 0.42.0
 ```
 
@@ -138,7 +145,7 @@ releaser ci app --list [options]
 | `--list` | List the latest app build workflow runs |
 | `-p, --platform <platform>` | Platform filter: `all`, `windows`, `mac`, or `linux` (default: `all`) |
 | `--latest <number>` | Number of recent runs to fetch when listing (default: `1`) |
-| `-o, --output <format>` | Output format when listing: `simple` or `json` |
+| `-o, --output <format>` | Output format when listing: `simple` or `json` (default: detailed) |
 | `--force` | Skip the confirmation prompt when building |
 
 **Examples:**
