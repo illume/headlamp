@@ -34,7 +34,8 @@ releaser <command>
 ```bash
 export GITHUB_TOKEN=your-token-here
 
-# 1. Start the release (creates branch, bumps version, commits)
+# 1. Start the release (creates branch hl-rc-0.42.0, bumps version
+#    in app/package.json, runs npm install, and commits)
 releaser start 0.42.0
 
 # 2. Create the GitHub draft release
@@ -46,12 +47,15 @@ releaser start 0.42.0
 releaser tag
 
 # 4. Verify the draft release and its required artifacts before publishing
+#    (fetches the GitHub release, checks Mac/Linux/Windows build artifacts exist)
 releaser check 0.42.0
 
-# 5. Publish the release (pushes tag, publishes GitHub release)
+# 5. Publish the release (pushes tag to remote, associates it with the
+#    draft release, and marks the release as published — irreversible)
 releaser publish 0.42.0
 
 # 6. (Optional) Re-run checks after publishing for extended asset verification
+#    (also checks container images, Homebrew, winget, Chocolatey, Flatpak, etc.)
 releaser check 0.42.0
 ```
 
