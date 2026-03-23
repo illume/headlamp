@@ -7,7 +7,7 @@ A CLI tool for managing Headlamp releases. It automates version bumping, tagging
 - **Node.js** >= 20.11.1
 - **npm** >= 10.0.0
 - **Git** (with push access to the repository)
-- **GitHub Personal Access Token** with `repo` scope, set as the `GITHUB_TOKEN` environment variable
+- **GitHub Personal Access Token** with `repo`, `workflow`, and `read:packages` scopes, set as the `GITHUB_TOKEN` environment variable
 
 ## Setup
 
