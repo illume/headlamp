@@ -29,6 +29,24 @@ You can then run the tool as:
 releaser <command>
 ```
 
+## Typical Release Workflow
+
+```bash
+export GITHUB_TOKEN=your-token-here
+
+# 1. Start the release (creates branch, bumps version, commits)
+releaser start 0.42.0
+
+# 2. Create the release tag
+releaser tag
+
+# 3. Publish the release (pushes tag, publishes GitHub release)
+releaser publish 0.42.0
+
+# 4. Verify the release and its artifacts
+releaser check 0.42.0
+```
+
 ## Usage
 
 ### `check` — Verify a release
@@ -137,24 +155,6 @@ releaser ci app --list
 
 # List the 3 most recent Mac runs in JSON format
 releaser ci app --list --platform mac --latest 3 --output json
-```
-
-## Typical Release Workflow
-
-```bash
-export GITHUB_TOKEN=your-token-here
-
-# 1. Start the release (creates branch, bumps version, commits)
-releaser start 0.42.0
-
-# 2. Create the release tag
-releaser tag
-
-# 3. Publish the release (pushes tag, publishes GitHub release)
-releaser publish 0.42.0
-
-# 4. Verify the release and its artifacts
-releaser check 0.42.0
 ```
 
 ## Development
