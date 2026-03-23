@@ -41,7 +41,8 @@ releaser start 0.42.0
 #    Run the "Create Release Draft" workflow (.github/workflows/draft-release.yml)
 #    via the GitHub Actions UI with releaseName: 0.42.0
 
-# 3. Create the release tag
+# 3. Create the release tag (reads version from app/package.json,
+#    creates annotated git tag v0.42.0)
 releaser tag
 
 # 4. Verify the draft release and its required artifacts before publishing
