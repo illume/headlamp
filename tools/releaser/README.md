@@ -17,16 +17,16 @@ npm install
 npm run build
 ```
 
-This compiles the TypeScript source into the `dist/` directory. You can then run the tool with:
+This compiles the TypeScript source into the `dist/` directory. To make the `releaser` command available, link the package:
 
 ```bash
-node dist/index.js <command>
+npm link
 ```
 
-Or use the shorthand via `npm`:
+You can then run the tool as:
 
 ```bash
-npm start -- <command>
+releaser <command>
 ```
 
 ## Usage
@@ -36,13 +36,13 @@ npm start -- <command>
 Check whether a release exists on GitHub and verify that all required artifacts (Mac, Linux, Windows) are present.
 
 ```bash
-node dist/index.js check <release-version>
+releaser check <release-version>
 ```
 
 **Example:**
 
 ```bash
-node dist/index.js check 0.30.0
+releaser check 0.42.0
 ```
 
 For published releases, this also checks extended assets such as container images, Homebrew, winget, Chocolatey, Flatpak, Docker extension, Helm, and Minikube.
@@ -52,7 +52,7 @@ For published releases, this also checks extended assets such as container image
 Update `app/package.json` with the new version, run `npm install` in the app directory, and commit the changes. By default, a release branch named `hl-rc-<version>` is created.
 
 ```bash
-node dist/index.js start <release-version> [options]
+releaser start <release-version> [options]
 ```
 
 **Options:**
@@ -65,10 +65,10 @@ node dist/index.js start <release-version> [options]
 
 ```bash
 # Create a release branch and bump version
-node dist/index.js start 0.30.0
+releaser start 0.42.0
 
 # Bump version on the current branch
-node dist/index.js start 0.30.0 --no-branch
+releaser start 0.42.0 --no-branch
 ```
 
 ### `tag` — Create a release tag
@@ -76,7 +76,7 @@ node dist/index.js start 0.30.0 --no-branch
 Create an annotated git tag (`v<version>`) for the current version read from `app/package.json`.
 
 ```bash
-node dist/index.js tag
+releaser tag
 ```
 
 ### `publish` — Publish a release
@@ -84,7 +84,7 @@ node dist/index.js tag
 Push the tag to the remote, associate it with the GitHub release draft, and publish the release. You will be prompted for confirmation unless `--force` is used.
 
 ```bash
-node dist/index.js publish <release-version> [options]
+releaser publish <release-version> [options]
 ```
 
 **Options:**
@@ -96,8 +96,8 @@ node dist/index.js publish <release-version> [options]
 **Example:**
 
 ```bash
-node dist/index.js publish 0.30.0
-node dist/index.js publish 0.30.0 --force
+releaser publish 0.42.0
+releaser publish 0.42.0 --force
 ```
 
 ### `ci app` — Manage CI app build workflows
@@ -106,10 +106,10 @@ Trigger or list app build workflow runs on GitHub Actions.
 
 ```bash
 # Trigger builds
-node dist/index.js ci app --build <git-ref> [options]
+releaser ci app --build <git-ref> [options]
 
 # List recent runs
-node dist/index.js ci app --list [options]
+releaser ci app --list [options]
 ```
 
 **Options:**
@@ -127,16 +127,16 @@ node dist/index.js ci app --list [options]
 
 ```bash
 # Trigger builds for all platforms on a tag
-node dist/index.js ci app --build v0.30.0
+releaser ci app --build v0.42.0
 
 # Trigger a Linux-only build
-node dist/index.js ci app --build main --platform linux --force
+releaser ci app --build main --platform linux --force
 
 # List the latest run for each platform
-node dist/index.js ci app --list
+releaser ci app --list
 
 # List the 3 most recent Mac runs in JSON format
-node dist/index.js ci app --list --platform mac --latest 3 --output json
+releaser ci app --list --platform mac --latest 3 --output json
 ```
 
 ## Typical Release Workflow
@@ -145,16 +145,16 @@ node dist/index.js ci app --list --platform mac --latest 3 --output json
 export GITHUB_TOKEN=your-token-here
 
 # 1. Start the release (creates branch, bumps version, commits)
-node dist/index.js start 0.30.0
+releaser start 0.42.0
 
 # 2. Create the release tag
-node dist/index.js tag
+releaser tag
 
 # 3. Publish the release (pushes tag, publishes GitHub release)
-node dist/index.js publish 0.30.0
+releaser publish 0.42.0
 
 # 4. Verify the release and its artifacts
-node dist/index.js check 0.30.0
+releaser check 0.42.0
 ```
 
 ## Development
