@@ -402,6 +402,10 @@ export default function SimpleTable(props: SimpleTableProps) {
           '& .MuiTableHead-root, & .MuiTableRow-root, & .MuiTableBody-root': {
             display: 'contents',
           },
+          '& .MuiTableBody-root .MuiTableRow-root:focus-visible > .MuiTableCell-root': {
+            outline: `2px solid ${theme.palette.primary.main}`,
+            outlineOffset: '-2px',
+          },
         })}
         size="small"
       >
@@ -440,7 +444,32 @@ export default function SimpleTable(props: SimpleTableProps) {
         <TableBody>
           {filteredData!.length > 0 ? (
             getPagedRows().map((row: any, i: number) => (
-              <TableRow key={i}>
+              <TableRow
+                key={i}
+                tabIndex={0}
+                onKeyDown={(e: React.KeyboardEvent<HTMLTableRowElement>) => {
+                  const row = e.currentTarget as HTMLElement;
+                  if (e.key === 'Enter' && e.target === row) {
+                    const firstLink = row.querySelector('a');
+                    if (firstLink) {
+                      e.preventDefault();
+                      firstLink.click();
+                    }
+                  } else if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    (row.nextElementSibling as HTMLElement | null)?.focus();
+                  } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    (row.previousElementSibling as HTMLElement | null)?.focus();
+                  } else if (e.key === 'Home') {
+                    e.preventDefault();
+                    (row.parentElement?.firstElementChild as HTMLElement | null)?.focus();
+                  } else if (e.key === 'End') {
+                    e.preventDefault();
+                    (row.parentElement?.lastElementChild as HTMLElement | null)?.focus();
+                  }
+                }}
+              >
                 {columns.map((col, i) => {
                   const { cellProps = {} } = col;
                   return (

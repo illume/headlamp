@@ -468,8 +468,9 @@
         class="css-1obf64m"
       >
         <tr
-          class="css-1ospngb"
+          class="css-1vcet4r"
           data-selected="false"
+          tabindex="0"
         >
           <td
             class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1574zbf-MuiTableCell-root"
@@ -491,8 +492,9 @@
           />
         </tr>
         <tr
-          class="css-1ospngb"
+          class="css-1vcet4r"
           data-selected="false"
+          tabindex="0"
         >
           <td
             class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1574zbf-MuiTableCell-root"
@@ -516,8 +518,9 @@
           </td>
         </tr>
         <tr
-          class="css-1ospngb"
+          class="css-1vcet4r"
           data-selected="false"
+          tabindex="0"
         >
           <td
             class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1574zbf-MuiTableCell-root"
@@ -541,8 +544,9 @@
           </td>
         </tr>
         <tr
-          class="css-1ospngb"
+          class="css-1vcet4r"
           data-selected="false"
+          tabindex="0"
         >
           <td
             class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1574zbf-MuiTableCell-root"
