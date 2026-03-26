@@ -281,12 +281,13 @@ export function filterGraphIncremental(
       // Add node and all related nodes (iterative BFS - same as full filter)
       const queue = [nodeId];
       let queueIndex = 0;
-      const visited = new Set<string>();
+      // PERFORMANCE: Mark visited on enqueue to prevent duplicate queue entries in dense graphs.
+      // Without this, the same node can be enqueued O(max_degree) times before being dequeued,
+      // causing queue size to grow to O(nodes × max_degree) instead of O(nodes+edges).
+      const visited = new Set<string>([nodeId]);
 
       while (queueIndex < queue.length) {
         const currentId = queue[queueIndex++]!;
-        if (visited.has(currentId)) continue;
-        visited.add(currentId);
 
         filteredNodeIds.add(currentId);
 
@@ -297,6 +298,7 @@ export function filterGraphIncremental(
         for (const edge of incomingEdges) {
           const relatedId = edge.source === currentId ? edge.target : edge.source;
           if (!visited.has(relatedId) && currentNodeMap.has(relatedId)) {
+            visited.add(relatedId);
             queue.push(relatedId);
           }
         }
@@ -304,6 +306,7 @@ export function filterGraphIncremental(
         for (const edge of outgoingEdges) {
           const relatedId = edge.source === currentId ? edge.target : edge.source;
           if (!visited.has(relatedId) && currentNodeMap.has(relatedId)) {
+            visited.add(relatedId);
             queue.push(relatedId);
           }
         }
