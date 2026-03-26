@@ -211,6 +211,33 @@ function GraphViewContent({
     edges: [],
   });
 
+  // Build the merged filter array from defaultFilters + user-selected filters.
+  // Shared between the useMemo (for filtering) and useLayoutEffect (for prevFiltersRef).
+  const buildFilters = useCallback((): GraphFilter[] => {
+    const filters: GraphFilter[] = [...defaultFilters];
+    if (hasErrorsFilter) {
+      filters.push({ type: 'hasErrors' });
+    }
+    if (namespaces?.size > 0) {
+      filters.push({ type: 'namespace', namespaces });
+    }
+    return filters;
+  }, [defaultFilters, hasErrorsFilter, namespaces]);
+
+  // Compute a stable JSON signature for a filters array (normalizes Set→sorted array).
+  const computeFilterSig = useCallback(
+    (filters: GraphFilter[]): string =>
+      JSON.stringify(
+        filters.map(filter => {
+          if (filter.type === 'namespace') {
+            return { type: 'namespace', namespaces: Array.from(filter.namespaces).sort() };
+          }
+          return filter;
+        })
+      ),
+    []
+  );
+
   // PERFORMANCE: Apply filters BEFORE simplification to ensure accuracy
   // - Filters run on full graph (all nodes/edges) for correctness
   // - Simplification happens after filtering on reduced dataset
@@ -227,29 +254,15 @@ function GraphViewContent({
   const filteredGraph = useMemo(() => {
     const perfStart = performance.now();
 
-    // Build current filters
-    const filters = [...defaultFilters];
-    if (hasErrorsFilter) {
-      filters.push({ type: 'hasErrors' });
-    }
-    if (namespaces?.size > 0) {
-      filters.push({ type: 'namespace', namespaces });
-    }
+    // Build current filters (shared helper for consistency with useLayoutEffect)
+    const filters = buildFilters();
 
     let result: { nodes: GraphNode[]; edges: GraphEdge[] } = { nodes: [], edges: [] };
     let usedIncremental = false;
 
     // Create filter signature from the full filters array (including defaultFilters)
     // to detect filter changes. If filters change, incremental update would give wrong results.
-    // Normalizes namespace Sets to sorted arrays for stable JSON serialization.
-    const currentFilterSig = JSON.stringify(
-      filters.map(filter => {
-        if (filter.type === 'namespace') {
-          return { type: 'namespace', namespaces: Array.from(filter.namespaces).sort() };
-        }
-        return filter;
-      })
-    );
+    const currentFilterSig = computeFilterSig(filters);
 
     // Try incremental update if enabled and we have previous data and filters unchanged
     if (
@@ -292,7 +305,7 @@ function GraphViewContent({
     }
 
     return result;
-  }, [nodes, edges, hasErrorsFilter, namespaces, defaultFilters, useIncrementalUpdates]);
+  }, [nodes, edges, buildFilters, computeFilterSig, useIncrementalUpdates]);
 
   // Update refs after render is committed to avoid issues with React 18 concurrent rendering.
   // In concurrent mode, renders can be restarted or discarded, so mutating refs during render
@@ -301,24 +314,10 @@ function GraphViewContent({
     prevNodesRef.current = nodes;
     prevEdgesRef.current = edges;
     prevFilteredGraphRef.current = filteredGraph;
-    // Keep this filter signature in sync with the one computed in useMemo above.
-    // Must reconstruct the same filters array and use the same normalization.
-    const filters: GraphFilter[] = [...defaultFilters];
-    if (hasErrorsFilter) {
-      filters.push({ type: 'hasErrors' });
-    }
-    if (namespaces?.size > 0) {
-      filters.push({ type: 'namespace', namespaces });
-    }
-    prevFiltersRef.current = JSON.stringify(
-      filters.map(filter => {
-        if (filter.type === 'namespace') {
-          return { type: 'namespace', namespaces: Array.from(filter.namespaces).sort() };
-        }
-        return filter;
-      })
-    );
-  }, [filteredGraph, nodes, edges, namespaces, hasErrorsFilter, defaultFilters]);
+    // Keep this filter signature in sync with the one computed in useMemo above
+    // using the same shared helpers.
+    prevFiltersRef.current = computeFilterSig(buildFilters());
+  }, [filteredGraph, nodes, edges, buildFilters, computeFilterSig]);
 
   // PERFORMANCE: Simplify graph if it's too large to prevent browser crashes
   // - <1000 nodes: No simplification (fast enough as-is)
