@@ -118,6 +118,104 @@ describe('filterGraph', () => {
     // Valid edge should be included
     expect(result.edges.find(e => e.id === 'e1')).toBeDefined();
   });
+  it('should use OR logic for multiple filters', () => {
+    // Node in kube-system (matches namespace) but no errors
+    const nsNode: GraphNode = {
+      id: 'ns-pod',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { namespace: 'kube-system', name: 'ns-pod', uid: 'uid-ns' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+    // Node with errors (matches hasErrors) but in different namespace
+    const errNode: GraphNode = {
+      id: 'err-pod',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { namespace: 'default', name: 'err-pod', uid: 'uid-err' },
+        status: { phase: 'Failed', conditions: [] },
+      } as any),
+    };
+    // Node that matches neither filter
+    const otherNode: GraphNode = {
+      id: 'other-pod',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { namespace: 'production', name: 'other-pod', uid: 'uid-other' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+
+    const testNodes = [nsNode, errNode, otherNode];
+    const testEdges: GraphEdge[] = [];
+    const filters: GraphFilter[] = [
+      { type: 'namespace', namespaces: new Set(['kube-system']) },
+      { type: 'hasErrors' },
+    ];
+
+    const result = filterGraph(testNodes, testEdges, filters);
+
+    // OR logic: kube-system namespace OR has errors → ns-pod and err-pod
+    expect(result.nodes.map(n => n.id).sort()).toEqual(['err-pod', 'ns-pod']);
+  });
+
+  it('should produce identical results to filterGraphIncremental for multiple filters', () => {
+    const testNodes: GraphNode[] = [
+      {
+        id: 'pod-1',
+        kubeObject: new Pod({
+          kind: 'Pod',
+          metadata: { name: 'pod-1', namespace: 'kube-system', uid: 'uid-1' },
+          status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+        } as any),
+      },
+      {
+        id: 'pod-2',
+        kubeObject: new Pod({
+          kind: 'Pod',
+          metadata: { name: 'pod-2', namespace: 'default', uid: 'uid-2' },
+          status: { phase: 'Failed', conditions: [] },
+        } as any),
+      },
+      {
+        id: 'pod-3',
+        kubeObject: new Pod({
+          kind: 'Pod',
+          metadata: { name: 'pod-3', namespace: 'production', uid: 'uid-3' },
+          status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+        } as any),
+      },
+    ];
+    const testEdges: GraphEdge[] = [];
+    const filters: GraphFilter[] = [
+      { type: 'namespace', namespaces: new Set(['kube-system']) },
+      { type: 'hasErrors' },
+    ];
+
+    // Full filter
+    const fullResult = filterGraph(testNodes, testEdges, filters);
+
+    // Incremental filter (all nodes added)
+    const incrResult = filterGraphIncremental(
+      [],
+      [],
+      new Set(testNodes.map(n => n.id)),
+      new Set(),
+      new Set(),
+      testNodes,
+      testEdges,
+      filters
+    );
+
+    // Both should produce identical results
+    expect(fullResult.nodes.map(n => n.id).sort()).toEqual(
+      incrResult.nodes.map(n => n.id).sort()
+    );
+    expect(fullResult.edges.map(e => e.id).sort()).toEqual(
+      incrResult.edges.map(e => e.id).sort()
+    );
+  });
 });
 
 describe('filterGraphIncremental', () => {
@@ -876,5 +974,244 @@ describe('filterGraphIncremental', () => {
     // since no nodes have errors anymore)
     expect(result.nodes.map(n => n.id).sort()).toEqual(fullResult.nodes.map(n => n.id).sort());
     expect(result.edges.map(e => e.id).sort()).toEqual(fullResult.edges.map(e => e.id).sort());
+  });
+
+  it('should match filterGraph for multi-filter with edges and related nodes', () => {
+    // Graph: errPod --edge--> healthyPod --edge--> isolatedPod
+    //        nsPod (kube-system, healthy)
+    //        otherPod (production, healthy)
+    const errPod: GraphNode = {
+      id: 'err-pod',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'err-pod', namespace: 'default', uid: 'uid-err' },
+        status: { phase: 'Failed', conditions: [] },
+      } as any),
+    };
+    const healthyPod: GraphNode = {
+      id: 'healthy-pod',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'healthy-pod', namespace: 'default', uid: 'uid-healthy' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+    const isolatedPod: GraphNode = {
+      id: 'isolated-pod',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'isolated-pod', namespace: 'default', uid: 'uid-isolated' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+    const nsPod: GraphNode = {
+      id: 'ns-pod',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'ns-pod', namespace: 'kube-system', uid: 'uid-ns' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+    const otherPod: GraphNode = {
+      id: 'other-pod',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'other-pod', namespace: 'production', uid: 'uid-other' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+
+    const allNodes = [errPod, healthyPod, isolatedPod, nsPod, otherPod];
+    const allEdges: GraphEdge[] = [
+      { id: 'e1', source: 'err-pod', target: 'healthy-pod' },
+      { id: 'e2', source: 'healthy-pod', target: 'isolated-pod' },
+    ];
+    const filters: GraphFilter[] = [
+      { type: 'namespace', namespaces: new Set(['kube-system']) },
+      { type: 'hasErrors' },
+    ];
+
+    // Full filter
+    const fullResult = filterGraph(allNodes, allEdges, filters);
+
+    // Incremental filter (all nodes added from scratch)
+    const incrResult = filterGraphIncremental(
+      [],
+      [],
+      new Set(allNodes.map(n => n.id)),
+      new Set(),
+      new Set(),
+      allNodes,
+      allEdges,
+      filters
+    );
+
+    // Both paths must produce identical node sets and edge sets
+    expect(incrResult.nodes.map(n => n.id).sort()).toEqual(
+      fullResult.nodes.map(n => n.id).sort()
+    );
+    expect(incrResult.edges.map(e => e.id).sort()).toEqual(
+      fullResult.edges.map(e => e.id).sort()
+    );
+
+    // Sanity: err-pod matches hasErrors, pulls in healthy-pod and isolated-pod via BFS;
+    // ns-pod matches namespace; other-pod matches neither
+    expect(fullResult.nodes.map(n => n.id).sort()).toEqual(
+      ['err-pod', 'healthy-pod', 'isolated-pod', 'ns-pod']
+    );
+  });
+
+  it('should match filterGraph for multi-filter with node modifications', () => {
+    // Previously: pod-0 had errors and was in filtered set with related pod-1
+    //             pod-2 was in kube-system namespace, also in filtered set
+    const prevNodes: GraphNode[] = [
+      {
+        id: 'pod-0',
+        kubeObject: new Pod({
+          kind: 'Pod',
+          metadata: { name: 'pod-0', namespace: 'default', uid: 'uid-0' },
+          status: { phase: 'Failed', conditions: [] },
+        } as any),
+      },
+      {
+        id: 'pod-1',
+        kubeObject: new Pod({
+          kind: 'Pod',
+          metadata: { name: 'pod-1', namespace: 'default', uid: 'uid-1' },
+          status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+        } as any),
+      },
+      {
+        id: 'pod-2',
+        kubeObject: new Pod({
+          kind: 'Pod',
+          metadata: { name: 'pod-2', namespace: 'kube-system', uid: 'uid-2' },
+          status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+        } as any),
+      },
+    ];
+    const prevEdges: GraphEdge[] = [{ id: 'e1', source: 'pod-0', target: 'pod-1' }];
+    const filters: GraphFilter[] = [
+      { type: 'namespace', namespaces: new Set(['kube-system']) },
+      { type: 'hasErrors' },
+    ];
+
+    // Previous filtered result
+    const prevFiltered = filterGraph(prevNodes, prevEdges, filters);
+
+    // Now: pod-0 is fixed (no longer has errors) → should trigger fallback
+    const currentNodes: GraphNode[] = [
+      {
+        id: 'pod-0',
+        kubeObject: new Pod({
+          kind: 'Pod',
+          metadata: { name: 'pod-0', namespace: 'default', uid: 'uid-0' },
+          status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+        } as any),
+      },
+      prevNodes[1],
+      prevNodes[2],
+    ];
+
+    const fullResult = filterGraph(currentNodes, prevEdges, filters);
+
+    const incrResult = filterGraphIncremental(
+      prevFiltered.nodes,
+      prevFiltered.edges,
+      new Set(),
+      new Set(['pod-0']),
+      new Set(),
+      currentNodes,
+      prevEdges,
+      filters
+    );
+
+    // Both must produce identical results: only pod-2 (kube-system) should remain
+    expect(incrResult.nodes.map(n => n.id).sort()).toEqual(
+      fullResult.nodes.map(n => n.id).sort()
+    );
+    expect(incrResult.edges.map(e => e.id).sort()).toEqual(
+      fullResult.edges.map(e => e.id).sort()
+    );
+    expect(fullResult.nodes.map(n => n.id)).toEqual(['pod-2']);
+  });
+
+  it('should match filterGraph for multi-filter with additions and deletions', () => {
+    // Initial: 3 nodes, namespace + hasErrors filter
+    const node1: GraphNode = {
+      id: 'pod-1',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'pod-1', namespace: 'kube-system', uid: 'uid-1' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+    const node2: GraphNode = {
+      id: 'pod-2',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'pod-2', namespace: 'default', uid: 'uid-2' },
+        status: { phase: 'Failed', conditions: [] },
+      } as any),
+    };
+    const node3: GraphNode = {
+      id: 'pod-3',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'pod-3', namespace: 'production', uid: 'uid-3' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+
+    const filters: GraphFilter[] = [
+      { type: 'namespace', namespaces: new Set(['kube-system']) },
+      { type: 'hasErrors' },
+    ];
+
+    const prevNodes = [node1, node2, node3];
+    const prevEdges: GraphEdge[] = [{ id: 'e1', source: 'pod-2', target: 'pod-3' }];
+    const prevFiltered = filterGraph(prevNodes, prevEdges, filters);
+
+    // Now: pod-3 deleted, pod-4 (kube-system) added, pod-5 (production, error) added
+    const node4: GraphNode = {
+      id: 'pod-4',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'pod-4', namespace: 'kube-system', uid: 'uid-4' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+    const node5: GraphNode = {
+      id: 'pod-5',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'pod-5', namespace: 'production', uid: 'uid-5' },
+        status: { phase: 'Failed', conditions: [] },
+      } as any),
+    };
+
+    const currentNodes = [node1, node2, node4, node5];
+    const currentEdges: GraphEdge[] = [{ id: 'e2', source: 'pod-4', target: 'pod-5' }];
+
+    const fullResult = filterGraph(currentNodes, currentEdges, filters);
+
+    const incrResult = filterGraphIncremental(
+      prevFiltered.nodes,
+      prevFiltered.edges,
+      new Set(['pod-4', 'pod-5']),
+      new Set(),
+      new Set(['pod-3']),
+      currentNodes,
+      currentEdges,
+      filters
+    );
+
+    // Both must produce identical results
+    expect(incrResult.nodes.map(n => n.id).sort()).toEqual(
+      fullResult.nodes.map(n => n.id).sort()
+    );
+    expect(incrResult.edges.map(e => e.id).sort()).toEqual(
+      fullResult.edges.map(e => e.id).sort()
+    );
   });
 });

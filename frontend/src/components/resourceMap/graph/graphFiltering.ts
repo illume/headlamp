@@ -29,6 +29,34 @@ export type GraphFilter =
     };
 
 /**
+ * Check if a node matches any of the provided filters (OR logic).
+ * Returns true if the node matches at least one filter, or if no filters are provided.
+ * This is the single source of truth for filter matching used by both
+ * filterGraph and filterGraphIncremental.
+ */
+export function matchesAnyFilter(node: GraphNode, filters: GraphFilter[]): boolean {
+  if (filters.length === 0) return true;
+  return filters.some(filter => {
+    if (filter.type === 'hasErrors') {
+      return (
+        'kubeObject' in node &&
+        node.kubeObject !== undefined &&
+        getStatus(node.kubeObject) !== 'success'
+      );
+    }
+    if (filter.type === 'namespace' && filter.namespaces.size > 0) {
+      return (
+        'kubeObject' in node &&
+        node.kubeObject !== undefined &&
+        !!node.kubeObject.metadata?.namespace &&
+        filter.namespaces.has(node.kubeObject.metadata.namespace)
+      );
+    }
+    return false;
+  });
+}
+
+/**
  * Filters the graph nodes and edges based on the provided filters
  * The filters are applied using an OR logic, meaning node will be included if it matches any of the filters
  *
@@ -127,25 +155,7 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
 
   const filterStart = performance.now();
   nodes.forEach(node => {
-    let keep = true;
-
-    filters.forEach(filter => {
-      if (filter.type === 'hasErrors') {
-        keep &&=
-          'kubeObject' in node &&
-          node.kubeObject !== undefined &&
-          getStatus(node.kubeObject) !== 'success';
-      }
-      if (filter.type === 'namespace' && filter.namespaces.size > 0) {
-        keep &&=
-          'kubeObject' in node &&
-          node.kubeObject !== undefined &&
-          !!node.kubeObject.metadata?.namespace &&
-          filter.namespaces.has(node.kubeObject?.metadata?.namespace);
-      }
-    });
-
-    if (keep) {
+    if (matchesAnyFilter(node, filters)) {
       pushRelatedNodes(node);
     }
   });
@@ -237,19 +247,7 @@ export function filterGraphIncremental(
     const node = currentNodeMap.get(id);
     if (!node || !node.kubeObject) continue;
 
-    const stillMatches =
-      filters.length === 0 ||
-      filters.some(filter => {
-        if (filter.type === 'hasErrors') {
-          const status = getStatus(node.kubeObject!);
-          return status === 'error' || status === 'warning';
-        }
-        if (filter.type === 'namespace') {
-          const ns = node.kubeObject!.metadata?.namespace;
-          return ns && filter.namespaces.has(ns);
-        }
-        return false;
-      });
+    const stillMatches = matchesAnyFilter(node, filters);
 
     if (!stillMatches) {
       // Fall back to full filtering for correctness
@@ -269,20 +267,8 @@ export function filterGraphIncremental(
     const node = currentNodeMap.get(nodeId);
     if (!node || !node.kubeObject) continue;
 
-    // Check if node matches any filter
-    const matchesFilter =
-      filters.length === 0 ||
-      filters.some(filter => {
-        if (filter.type === 'hasErrors') {
-          const status = getStatus(node.kubeObject!); // Already checked above
-          return status === 'error' || status === 'warning';
-        }
-        if (filter.type === 'namespace') {
-          const ns = node.kubeObject!.metadata?.namespace; // Already checked above
-          return ns && filter.namespaces.has(ns);
-        }
-        return false;
-      });
+    // Check if node matches any filter (uses shared predicate for consistency with filterGraph)
+    const matchesFilter = matchesAnyFilter(node, filters);
 
     if (matchesFilter) {
       // Add node and all related nodes (iterative BFS - same as full filter)
