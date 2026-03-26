@@ -297,14 +297,12 @@ function GraphViewContent({
     prevNodesRef.current = nodes;
     prevEdgesRef.current = edges;
     prevFilteredGraphRef.current = filteredGraph;
-    const namespaceFilter = defaultFilters.find(
-      (f): f is Extract<GraphFilter, { type: 'namespace' }> => f.type === 'namespace'
-    );
+    // Keep this filter signature in sync with the one used for incremental filtering
     prevFiltersRef.current = JSON.stringify({
-      namespaces: namespaceFilter ? Array.from(namespaceFilter.namespaces).sort() : [],
+      namespaces: Array.from(namespaces || []).sort(),
       hasErrors: hasErrorsFilter,
     });
-  }, [filteredGraph, nodes, edges, defaultFilters, hasErrorsFilter]);
+  }, [filteredGraph, nodes, edges, namespaces, hasErrorsFilter]);
 
   // PERFORMANCE: Simplify graph if it's too large to prevent browser crashes
   // - <1000 nodes: No simplification (fast enough as-is)
