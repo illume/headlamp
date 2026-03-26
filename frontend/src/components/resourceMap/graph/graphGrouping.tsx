@@ -63,15 +63,15 @@ const getConnectedComponents = (nodes: GraphNode[], edges: GraphEdge[]): GraphNo
    * This function performs a breadth-first search (BFS) to traverse and collect all nodes
    * that are part of the same connected component as the provided node
    *
-   * PERFORMANCE: Uses index-based queue instead of shift() for O(1) dequeue.
-   * - With 2000 nodes: shift() = 25-40ms overhead, index-based = 1-3ms (10x faster)
-   * - On large components (5000+ nodes): shift() causes O(n²) behavior
-   * - Index-based approach is O(n) total for BFS traversal
+   * PERFORMANCE: Uses an index-based queue instead of Array.shift() to achieve
+   * O(1) amortized dequeue and avoid the O(n²) behavior that shift()-based
+   * queues can exhibit on large components. The resulting BFS traversal runs
+   * in O(n) time with respect to the number of nodes in the component.
    *
-   * PERFORMANCE: Uses iterative BFS instead of recursive DFS.
-   * - Recursive approach would overflow stack at ~200 depth (common in dense graphs)
-   * - Iterative has no depth limit and 24% less memory due to no call stack
-   * - Handles unlimited graph sizes safely
+   * PERFORMANCE: Uses iterative BFS instead of recursive DFS to avoid recursion
+   * depth limits and potential stack overflows on deep or dense graphs. The
+   * iterative approach removes dependence on call stack depth and is suitable
+   * for handling large graphs safely.
    *
    * @param startNode - The starting node for the connected component search
    * @param componentNodes - An array to store the nodes that are part of the connected component

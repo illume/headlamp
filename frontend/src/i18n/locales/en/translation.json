@@ -709,6 +709,8 @@
   "Fit to screen": "Fit to screen",
   "Zoom to 100%": "Zoom to 100%",
   "operations": "operations",
+  "{{count}} operations_one": "{{count}} operation",
+  "{{count}} operations_other": "{{count}} operations",
   "Summary (last {{count}} operations)_one": "Summary (last {{count}} operations)",
   "Summary (last {{count}} operations)_other": "Summary (last {{count}} operations)",
   "Operation": "Operation",

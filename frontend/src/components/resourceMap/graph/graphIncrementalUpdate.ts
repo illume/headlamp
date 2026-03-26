@@ -31,17 +31,11 @@ export interface GraphChanges {
 
 /**
  * Detect changes between previous and current graph
- * This enables incremental updates when only a small percentage of resources change
+ * This enables incremental updates when only a small percentage of resources change.
  *
- * PERFORMANCE: Enables future incremental processing optimizations
- * - Detects what changed: added/modified/deleted nodes and edges
- * - Current use: Monitoring only (5ms overhead for change detection)
- * - Future use: Could enable 92% faster updates for <1% changes
- *   - Example: 1% of 100k pods change = 1000 pods
- *   - Full reprocess: ~1150ms (all 100k pods)
- *   - Incremental (future): ~150ms (only 1000 changed pods) = 92% faster
- * - Trade-off: 5ms overhead now for potential 650ms savings later
- * - Verdict: Worth it for monitoring value and future optimization potential
+ * Detects added, modified, and deleted nodes and edges by comparing IDs and
+ * resourceVersion metadata. When the change percentage is small, downstream
+ * incremental filtering can skip reprocessing unchanged nodes.
  *
  * @param prevNodes - Previous graph nodes
  * @param prevEdges - Previous graph edges
@@ -57,9 +51,8 @@ export function detectGraphChanges(
 ): GraphChanges {
   const perfStart = performance.now();
 
-  // PERFORMANCE: Use Set for O(1) lookups instead of O(n) array.includes()
-  // - With 100k nodes: Set lookup = 0.001ms, array = 50ms (50,000x faster)
-  // - Total for all operations: ~5ms with Sets vs ~2000ms with arrays
+  // Use Set for O(1) average-time lookups instead of O(n) array.includes()
+  // For large graphs, this reduces membership checks from linear to constant time on average.
   const prevNodeIds = new Set(prevNodes.map(n => n.id));
   const currentNodeIds = new Set(currentNodes.map(n => n.id));
   const prevEdgeIds = new Set(prevEdges.map(e => e.id));

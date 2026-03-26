@@ -240,9 +240,9 @@ function GraphViewContent({
   //
   // INCREMENTAL UPDATE OPTIMIZATION (for WebSocket updates):
   // - Detects what changed between previous and current data
-  // - If <20% changed AND incremental enabled: Use incremental processing (87-92% faster)
-  // - If >20% changed OR incremental disabled: Full reprocessing
-  // - Typical WebSocket updates: 1-5% changes (perfect for incremental)
+  // - If <20% changed AND incremental enabled: processes only changed nodes
+  // - If >20% changed OR incremental disabled: full reprocessing
+  // Use the Performance Stats panel to observe actual speedups on your data.
   const filteredGraph = useMemo(() => {
     const perfStart = performance.now();
 

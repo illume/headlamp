@@ -37,19 +37,15 @@ export const EXTREME_SIMPLIFICATION_THRESHOLD = 10000;
 export const EXTREME_SIMPLIFIED_NODE_LIMIT = 300;
 
 /**
- * Simplifies a large graph by keeping only the most important nodes
+ * Simplifies a large graph by keeping only the most important nodes.
  *
- * PERFORMANCE: Essential for graphs >1000 nodes to prevent browser crashes.
- * - Without simplification: 5000 nodes takes 5000ms, 100k nodes crashes browser
- * - With simplification: 5000 nodes→500 nodes in 85ms, 100k nodes→300 nodes in 150ms
- * - Result: 85-90% faster rendering, enables 100k+ pod clusters
- *
- * PERFORMANCE: Auto-adjusts simplification level based on graph size.
- * - Simplification check: Compare nodes.length against maxNodes parameter (default 500)
- * - If nodes.length <= maxNodes: Skip simplification (already small enough)
- * - If nodes.length > maxNodes: Reduce to maxNodes most important nodes
- * - GraphView.tsx uses SIMPLIFICATION_THRESHOLD (1000) to decide when to enable
- *   simplification, then passes maxNodes=500 (or 300 for extreme graphs >10000)
+ * For graphs larger than the threshold, reduces the node count to keep
+ * layout computation tractable and prevent the browser from becoming
+ * unresponsive. Auto-adjusts simplification level based on graph size:
+ * - nodes.length <= maxNodes: no simplification needed
+ * - nodes.length > maxNodes: reduce to maxNodes most important nodes
+ * - GraphView uses SIMPLIFICATION_THRESHOLD (1000) to decide when to enable,
+ *   then passes maxNodes=500 (or 300 for extreme graphs >10000)
  *
  * Importance is based on:
  * - Node weight (higher weight = more important)
@@ -70,8 +66,7 @@ export function simplifyGraph(
     enabled?: boolean;
   } = {}
 ): { nodes: GraphNode[]; edges: GraphEdge[]; simplified: boolean } {
-  // PERFORMANCE: Auto-adjust maxNodes for extreme graphs to prevent crashes
-  // >10k nodes uses 300 limit (vs 500) to keep ELK layout under 1 second
+  // Auto-adjust maxNodes for extreme graphs to keep ELK layout performant and tractable
   const defaultMaxNodes =
     nodes.length > EXTREME_SIMPLIFICATION_THRESHOLD
       ? EXTREME_SIMPLIFIED_NODE_LIMIT

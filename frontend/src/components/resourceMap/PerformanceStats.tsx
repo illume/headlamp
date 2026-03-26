@@ -180,7 +180,7 @@ export function PerformanceStats({ visible = false, onToggle }: PerformanceStats
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Icon icon="mdi:speedometer" width="24" />
           <Typography variant="h6">{t('Performance Stats')}</Typography>
-          <Chip label={`${metrics.length} ${t('operations')}`} size="small" />
+          <Chip label={t('{{count}} operations', { count: metrics.length })} size="small" />
         </Box>
         <Box sx={{ display: 'flex', gap: 1 }}>
           <IconButton

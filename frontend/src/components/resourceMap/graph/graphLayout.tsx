@@ -408,7 +408,7 @@ export const applyGraphLayout = (graph: GraphNode, aspectRatio: number) => {
       });
 
       // Store in cache
-      layoutCache.set(cacheKey, { result, timestamp: now });
+      layoutCache.set(cacheKey, { result, timestamp: Date.now() });
       cleanLayoutCache();
 
       return result;

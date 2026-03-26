@@ -339,11 +339,12 @@ function generateMockEdges(pods: Pod[]): GraphEdge[] {
  * Performance test with 2000 pods
  *
  * Features incremental update testing with configurable change percentage:
- * - <20% changes: Uses filterGraphIncremental (85-92% faster)
- * - >20% changes: Falls back to full filterGraph (safe)
+ * - For smaller change percentages (e.g., typical WebSocket trickle updates), uses incremental
+ *   filtering to significantly reduce the amount of work needed.
+ * - For larger change percentages, falls back to full graph filtering for correctness and simplicity.
  *
- * Enable "Incremental Updates" toggle in GraphView and try different change percentages
- * to see the performance difference in the Performance Stats panel.
+ * Enable the "Incremental Updates" toggle in GraphView and try different change percentages.
+ * Use the Performance Stats panel to observe actual performance characteristics on your machine.
  */
 export const PerformanceTest2000Pods = () => {
   const [updateCounter, setUpdateCounter] = useState(0);
