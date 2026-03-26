@@ -239,13 +239,17 @@ function GraphViewContent({
     let result: { nodes: GraphNode[]; edges: GraphEdge[] } = { nodes: [], edges: [] };
     let usedIncremental = false;
 
-    // Create filter signature to detect filter changes (forces full recompute)
-    // If filters change, incremental update would give wrong results
-    const namespaceFilter = filters.find(f => f.type === 'namespace');
-    const currentFilterSig = JSON.stringify({
-      namespaces: namespaceFilter ? Array.from(namespaceFilter.namespaces).sort() : [],
-      hasErrors: filters.some(f => f.type === 'hasErrors'),
-    });
+    // Create filter signature from the full filters array (including defaultFilters)
+    // to detect filter changes. If filters change, incremental update would give wrong results.
+    // Normalizes namespace Sets to sorted arrays for stable JSON serialization.
+    const currentFilterSig = JSON.stringify(
+      filters.map(filter => {
+        if (filter.type === 'namespace') {
+          return { type: 'namespace', namespaces: Array.from(filter.namespaces).sort() };
+        }
+        return filter;
+      })
+    );
 
     // Try incremental update if enabled and we have previous data and filters unchanged
     if (
@@ -297,12 +301,24 @@ function GraphViewContent({
     prevNodesRef.current = nodes;
     prevEdgesRef.current = edges;
     prevFilteredGraphRef.current = filteredGraph;
-    // Keep this filter signature in sync with the one used for incremental filtering
-    prevFiltersRef.current = JSON.stringify({
-      namespaces: Array.from(namespaces || []).sort(),
-      hasErrors: hasErrorsFilter,
-    });
-  }, [filteredGraph, nodes, edges, namespaces, hasErrorsFilter]);
+    // Keep this filter signature in sync with the one computed in useMemo above.
+    // Must reconstruct the same filters array and use the same normalization.
+    const filters: GraphFilter[] = [...defaultFilters];
+    if (hasErrorsFilter) {
+      filters.push({ type: 'hasErrors' });
+    }
+    if (namespaces?.size > 0) {
+      filters.push({ type: 'namespace', namespaces });
+    }
+    prevFiltersRef.current = JSON.stringify(
+      filters.map(filter => {
+        if (filter.type === 'namespace') {
+          return { type: 'namespace', namespaces: Array.from(filter.namespaces).sort() };
+        }
+        return filter;
+      })
+    );
+  }, [filteredGraph, nodes, edges, namespaces, hasErrorsFilter, defaultFilters]);
 
   // PERFORMANCE: Simplify graph if it's too large to prevent browser crashes
   // - <1000 nodes: No simplification (fast enough as-is)
