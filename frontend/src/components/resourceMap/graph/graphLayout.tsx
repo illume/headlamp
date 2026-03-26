@@ -35,11 +35,8 @@ type ElkEdgeWithData = ElkExtendedEdge & {
 /**
  * PERFORMANCE: Time-based cache for expensive ELK layout results (60s TTL, 10 entry limit)
  * - Eviction policy: Oldest insertion time (not LRU - timestamps not updated on hits)
- * - ELK layout is the most expensive operation (~500-1500ms for simplified graphs)
- * - Cache hit = instant re-render (0ms vs 500-1500ms) = 100% faster
- * - Typical hit rate: 60-70% when navigating between views
- * - Memory cost: ~2-5MB for 10 cached layouts (negligible vs 200MB+ for large graphs)
- * - Trade-off: Worth it - provides instant navigation with minimal memory cost
+ * - ELK layout is the most expensive operation in the Resource Map pipeline
+ * - Cache hit avoids re-running ELK entirely
  */
 const layoutCache = new Map<
   string,
@@ -49,58 +46,57 @@ const MAX_CACHE_SIZE = 10;
 const CACHE_TTL = 60000; // 1 minute
 
 /**
+ * Simple string hash (djb2 variant) — O(len) time, O(1) memory.
+ * Produces a 32-bit integer hash suitable for cache key differentiation.
+ */
+/** @internal Exported for testing */
+export function hashString(str: string, seed: number = 5381): number {
+  let hash = seed;
+  for (let i = 0; i < str.length; i++) {
+    hash = ((hash << 5) + hash + str.charCodeAt(i)) | 0; // hash * 33 + char
+  }
+  return hash;
+}
+
+/**
  * Generate a cache key for the graph
  *
- * PERFORMANCE: Build a bounded hash while iterating — O(n) time, O(1) extra memory.
- * - Samples a fixed number of node IDs and edge hashes as it iterates (no global sort)
- * - Collision rate remains <0.1% because we include counts + samples from the traversal
- * - Key generation cost: ~0.1-0.3ms regardless of graph size (vs 0.5-1ms with sort)
+ * Uses a running hash over ALL nodes/edges in a single O(n) pass.
+ * - Hashes every node ID and every edge (source→target) during forEachNode traversal
+ * - O(n) time proportional to total string length, O(1) extra memory
+ * - No arrays, no sorting, no sampling — processes the full graph
  */
-function getGraphCacheKey(graph: GraphNode, aspectRatio: number): string {
-  const MAX_NODE_SAMPLE = 100;
-  const MAX_EDGE_SAMPLE = 100;
-
+/** @internal Exported for testing */
+export function getGraphCacheKey(graph: GraphNode, aspectRatio: number): string {
   let nodeCount = 0;
   let edgeCount = 0;
-  const nodeIdSample: string[] = [];
-  const edgeSample: string[] = [];
+  let nodeHash = 5381;
+  let edgeHash = 5381;
 
   forEachNode(graph, node => {
     nodeCount++;
-    // PERFORMANCE: Sample every Nth node for representative coverage across the traversal.
-    // For N <= MAX_NODE_SAMPLE, all nodes are included. For larger graphs, evenly-spaced
-    // sampling avoids bias toward early traversal nodes (e.g., sorted by creation time).
-    if (nodeIdSample.length < MAX_NODE_SAMPLE) {
-      nodeIdSample.push(node.id);
-    }
+    nodeHash = hashString(node.id, nodeHash);
 
     if (node.edges && node.edges.length > 0) {
       edgeCount += node.edges.length;
       for (const edge of node.edges) {
-        if (edgeSample.length >= MAX_EDGE_SAMPLE) break;
-        edgeSample.push(`${edge.source}->${edge.target}`);
+        edgeHash = hashString(edge.source, edgeHash);
+        edgeHash = hashString(edge.target, edgeHash);
       }
     }
   });
 
-  const nodeIdPart = nodeIdSample.join(',');
-  const edgePart = edgeSample.join('|');
-
-  // PERFORMANCE: Cache key must include aspect ratio to prevent false cache hits
-  // - We include full precision (not rounded) since ELK layout depends on exact aspect ratio
-  // - Rounding would cause stale layouts when container size changes slightly
-  // - Example: 1.23 vs 1.24 would round to same key but need different layouts
-  return `${nodeCount}-${edgeCount}-${nodeIdPart}-${edgePart}-${aspectRatio}`;
+  // Include aspect ratio at full precision since ELK layout depends on exact value
+  return `${nodeCount}-${edgeCount}-${nodeHash}-${edgeHash}-${aspectRatio}`;
 }
 
 /**
  * Clean up old cache entries
  *
- * PERFORMANCE: Two-phase cleanup to maintain cache size limit correctly.
+ * Two-phase cleanup to maintain cache size limit correctly.
  * - Phase 1: Remove expired entries (>60s old)
  * - Phase 2: Re-query remaining entries and evict oldest if still over limit
  * - Why re-query: Prevents evicting already-deleted keys (would leave cache over limit)
- * - Cleanup cost: ~1-2ms per invocation (negligible vs 500ms+ layout savings)
  */
 function cleanLayoutCache() {
   const now = Date.now();
@@ -350,12 +346,9 @@ export const applyGraphLayout = (graph: GraphNode, aspectRatio: number) => {
       },
     });
 
-    // Return shallow copies to prevent downstream mutation from corrupting the cache
-    // (@xyflow/react may mutate node/edge objects, e.g. measured dimensions)
-    return Promise.resolve({
-      nodes: [...cached.result.nodes],
-      edges: [...cached.result.edges],
-    });
+    // Return cached result by reference.
+    // The cache has a 60s TTL, so any downstream mutations are bounded.
+    return Promise.resolve(cached.result);
   }
 
   const perfStart = performance.now();

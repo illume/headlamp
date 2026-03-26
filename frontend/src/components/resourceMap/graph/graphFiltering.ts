@@ -92,16 +92,8 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
    * Add all the nodes that are related to the given node using iterative approach
    * Related means connected by an edge
    *
-   * PERFORMANCE: Uses index-based queue instead of shift() for O(1) dequeue.
-   * - shift() is O(n) because it moves all remaining elements
-   * - Index-based queue (queueIndex++) is O(1) per dequeue
-   * - On 2000 nodes: shift() = 50-80ms, index-based = 12-18ms (4x faster)
-   * - On 100k nodes: shift() would be 2500ms+, index-based = 340ms (7x faster)
-   *
-   * PERFORMANCE: Uses iterative BFS instead of recursive DFS.
-   * - Recursive DFS risks stack overflow with 2000+ nodes (typical depth 150-200)
-   * - Iterative approach has no depth limit and uses 24% less memory
-   * - Allows unlimited graph sizes without crashes
+   * Uses index-based queue instead of shift() for O(1) dequeue (shift is O(n)).
+   * Uses iterative BFS instead of recursive DFS to avoid stack overflow on deep graphs.
    *
    * @param node - Given node
    */
@@ -202,26 +194,19 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
 }
 
 /**
- * Incremental filter update - only processes changed nodes
- * PERFORMANCE: 87-92% faster when <20% of resources change (typical for WebSocket updates)
- *
- * Example: 100k pods, 1% change = 1000 pods modified
- * - Full filterGraph: ~450ms (processes all 100k)
- * - Incremental filterGraphIncremental: ~60ms (processes only 1000 changed) = 87% faster
+ * Incremental filter update — only processes changed nodes.
  *
  * How it works:
  * - Starts with previous filtered results
  * - Removes deleted nodes
  * - Processes only added/modified nodes through filters
  * - Adds related nodes via BFS (same as full filter)
- * - Result: Same correctness as full filter, but much faster for small changes
- *
- * Trade-off: 8ms overhead for change detection
- * - Worth it when <20% changed (typical WebSocket pattern: 1-5% per update)
- * - Auto-falls back to full processing for large changes (>20%)
+ * - Falls back to full filterGraph when a previously-matching node stops matching
+ *   (because related nodes from the old closure may no longer be needed)
+ * - Result: Same correctness as full filter, faster for small changes
  *
  * @param prevFilteredNodes - Previously filtered nodes
- * @param prevFilteredEdges - Previously filtered edges
+ * @param prevFilteredEdges - Unused: edges are rebuilt from scratch for correctness
  * @param addedNodeIds - IDs of added nodes
  * @param modifiedNodeIds - IDs of modified nodes
  * @param deletedNodeIds - IDs of deleted nodes
@@ -332,22 +317,16 @@ export function filterGraphIncremental(
   const totalTime = performance.now() - perfStart;
 
   if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
-    // PERFORMANCE: Guard against division by zero in debug log estimate
-    const estimateStr =
+    const changeRatio =
       currentNodes.length > 0
-        ? `vs full would be ~${((nodesToCheck.length / currentNodes.length) * 450).toFixed(0)}ms`
-        : '';
+        ? ((nodesToCheck.length / currentNodes.length) * 100).toFixed(0)
+        : '0';
     console.log(
       `[ResourceMap Performance] filterGraphIncremental: ${totalTime.toFixed(2)}ms ` +
-        `(processed ${nodesToCheck.length} changed nodes, result: ${resultNodes.length} nodes) ${estimateStr}`
+        `(processed ${nodesToCheck.length}/${currentNodes.length} nodes = ${changeRatio}% changed, ` +
+        `result: ${resultNodes.length} nodes)`
     );
   }
-
-  // PERFORMANCE: Calculate savings vs full processing (avoid division by zero)
-  const estimatedFull =
-    currentNodes.length > 0 ? (nodesToCheck.length / currentNodes.length) * 450 : 0;
-  const savingsPercent =
-    estimatedFull > 0 ? (((estimatedFull - totalTime) / estimatedFull) * 100).toFixed(0) : '0';
 
   addPerformanceMetric({
     operation: 'filterGraphIncremental',
@@ -355,9 +334,8 @@ export function filterGraphIncremental(
     timestamp: Date.now(),
     details: {
       changedNodes: nodesToCheck.length,
+      totalNodes: currentNodes.length,
       resultNodes: resultNodes.length,
-      estimatedFullTime: estimatedFull.toFixed(0),
-      savings: savingsPercent + '%',
     },
   });
 

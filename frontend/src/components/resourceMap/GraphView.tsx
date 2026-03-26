@@ -189,12 +189,9 @@ function GraphViewContent({
   // Load source data
   const { nodes, edges, selectedSources, sourceData, isLoading, toggleSelection } = useSources();
 
-  // PERFORMANCE: Track previous graph state for incremental update detection
-  // - Store previous nodes/edges to detect what changed on WebSocket updates
-  // - Enables 87-92% faster processing for small changes (<20% of resources)
-  // - Example: 100k pods, 1% change = 1000 pods changed
-  //   - Full reprocess: ~1150ms (processes all 100k)
-  //   - Incremental: ~150ms (only processes 1000 changed) = 87% faster
+  // Track previous graph state for incremental update detection.
+  // When only a small fraction of nodes change (e.g., WebSocket updates),
+  // incremental filtering avoids reprocessing the entire graph.
   const prevNodesRef = useRef<GraphNode[]>([]);
   const prevEdgesRef = useRef<GraphEdge[]>([]);
   const prevFilteredGraphRef = useRef<{ nodes: GraphNode[]; edges: GraphEdge[] }>({
@@ -238,13 +235,8 @@ function GraphViewContent({
     []
   );
 
-  // PERFORMANCE: Apply filters BEFORE simplification to ensure accuracy
-  // - Filters run on full graph (all nodes/edges) for correctness
-  // - Simplification happens after filtering on reduced dataset
-  // - Order matters: filter first (accuracy) → simplify second (performance)
-  // - Example: "Status: Error" filter on 100k pods finds all 50 errors,
-  //   then simplification reduces remaining 99,950 pods to most important
-  // - Cost: ~450ms on 100k pods (unavoidable for correctness)
+  // Apply filters BEFORE simplification to ensure accuracy.
+  // Order matters: filter first (accuracy) → simplify second (performance).
   //
   // INCREMENTAL UPDATE OPTIMIZATION (for WebSocket updates):
   // - Detects what changed between previous and current data
@@ -319,14 +311,9 @@ function GraphViewContent({
     prevFiltersRef.current = computeFilterSig(buildFilters());
   }, [filteredGraph, nodes, edges, buildFilters, computeFilterSig]);
 
-  // PERFORMANCE: Simplify graph if it's too large to prevent browser crashes
-  // - <1000 nodes: No simplification (fast enough as-is)
-  // - 1000-10000 nodes: Reduce to 500 most important (85% faster)
-  // - >10000 nodes: Reduce to 300 most important (90% faster, prevents crash)
-  // - Without simplification: 100k nodes = 8s+ then browser crash
-  // - With simplification: 100k nodes→300 nodes = 1150ms total (usable!)
-  // - Trade-off: Intentional information loss, but user has toggle control
-  // - Error nodes ALWAYS preserved (high priority scoring)
+  // Simplify graph if it's too large for the browser to render efficiently.
+  // Error nodes are always preserved (high priority scoring).
+  // Trade-off: intentional information loss, but user has a toggle control.
   const simplifiedGraph = useMemo(() => {
     const shouldSimplify =
       simplificationEnabled && filteredGraph.nodes.length > SIMPLIFICATION_THRESHOLD;

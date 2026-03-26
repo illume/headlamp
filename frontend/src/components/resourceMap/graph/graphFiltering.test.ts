@@ -212,6 +212,81 @@ describe('filterGraph', () => {
     expect(fullResult.nodes.map(n => n.id).sort()).toEqual(incrResult.nodes.map(n => n.id).sort());
     expect(fullResult.edges.map(e => e.id).sort()).toEqual(incrResult.edges.map(e => e.id).sort());
   });
+
+  it('should not duplicate nodes in diamond-shaped graphs (BFS deduplication)', () => {
+    // Diamond: errPod → B, errPod → C, B → D, C → D
+    // D is reachable via two paths; BFS must visit it only once
+    const errPod: GraphNode = {
+      id: 'err',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'err', namespace: 'default', uid: 'uid-err' },
+        status: { phase: 'Failed', conditions: [] },
+      } as any),
+    };
+    const nodeB: GraphNode = {
+      id: 'b',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'b', namespace: 'default', uid: 'uid-b' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+    const nodeC: GraphNode = {
+      id: 'c',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'c', namespace: 'default', uid: 'uid-c' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+    const nodeD: GraphNode = {
+      id: 'd',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'd', namespace: 'default', uid: 'uid-d' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+
+    const edges: GraphEdge[] = [
+      { id: 'e1', source: 'err', target: 'b' },
+      { id: 'e2', source: 'err', target: 'c' },
+      { id: 'e3', source: 'b', target: 'd' },
+      { id: 'e4', source: 'c', target: 'd' },
+    ];
+
+    const filters: GraphFilter[] = [{ type: 'hasErrors' }];
+    const result = filterGraph([errPod, nodeB, nodeC, nodeD], edges, filters);
+
+    // All 4 nodes should be included (err matches, others are related)
+    expect(result.nodes.map(n => n.id).sort()).toEqual(['b', 'c', 'd', 'err']);
+    // No duplicate nodes
+    const ids = result.nodes.map(n => n.id);
+    expect(ids.length).toBe(new Set(ids).size);
+    // No duplicate edges
+    const edgeIds = result.edges.map(e => e.id);
+    expect(edgeIds.length).toBe(new Set(edgeIds).size);
+  });
+
+  it('should return input arrays by reference for empty filter list', () => {
+    const testNodes: GraphNode[] = [
+      {
+        id: 'a',
+        kubeObject: new Pod({
+          kind: 'Pod',
+          metadata: { namespace: 'ns1', name: 'a', uid: 'uid-a' },
+          status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+        } as any),
+      },
+    ];
+    const testEdges: GraphEdge[] = [];
+
+    // Empty filters → early return with same references
+    const result = filterGraph(testNodes, testEdges, []);
+    expect(result.nodes).toBe(testNodes);
+    expect(result.edges).toBe(testEdges);
+  });
 });
 
 describe('filterGraphIncremental', () => {
@@ -1200,5 +1275,178 @@ describe('filterGraphIncremental', () => {
     // Both must produce identical results
     expect(incrResult.nodes.map(n => n.id).sort()).toEqual(fullResult.nodes.map(n => n.id).sort());
     expect(incrResult.edges.map(e => e.id).sort()).toEqual(fullResult.edges.map(e => e.id).sort());
+  });
+
+  // --- Tests for specific behavioral claims ---
+
+  it('should not duplicate nodes in diamond-shaped graphs (BFS deduplication)', () => {
+    // Diamond: errPod → B, errPod → C, B → D, C → D
+    // D is reachable via two paths; BFS must visit it only once
+    const errPod: GraphNode = {
+      id: 'err',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'err', namespace: 'default', uid: 'uid-err' },
+        status: { phase: 'Failed', conditions: [] },
+      } as any),
+    };
+    const nodeB: GraphNode = {
+      id: 'b',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'b', namespace: 'default', uid: 'uid-b' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+    const nodeC: GraphNode = {
+      id: 'c',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'c', namespace: 'default', uid: 'uid-c' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+    const nodeD: GraphNode = {
+      id: 'd',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'd', namespace: 'default', uid: 'uid-d' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+
+    const allNodes = [errPod, nodeB, nodeC, nodeD];
+    const allEdges: GraphEdge[] = [
+      { id: 'e1', source: 'err', target: 'b' },
+      { id: 'e2', source: 'err', target: 'c' },
+      { id: 'e3', source: 'b', target: 'd' },
+      { id: 'e4', source: 'c', target: 'd' },
+    ];
+
+    const filters: GraphFilter[] = [{ type: 'hasErrors' }];
+
+    // All nodes are new (added)
+    const result = filterGraphIncremental(
+      [],
+      [],
+      new Set(['err', 'b', 'c', 'd']),
+      new Set(),
+      new Set(),
+      allNodes,
+      allEdges,
+      filters
+    );
+
+    // No duplicate nodes
+    const ids = result.nodes.map(n => n.id);
+    expect(ids.length).toBe(new Set(ids).size);
+    // No duplicate edges
+    const edgeIds = result.edges.map(e => e.id);
+    expect(edgeIds.length).toBe(new Set(edgeIds).size);
+
+    // Both full and incremental should match
+    const fullResult = filterGraph(allNodes, allEdges, filters);
+    expect(ids.sort()).toEqual(fullResult.nodes.map(n => n.id).sort());
+  });
+
+  it('should rebuild edges from scratch, not retain stale edges', () => {
+    // Start with A--edge-->B, both matching. Then B is deleted.
+    // The edge should disappear even though A still matches.
+    const nodeA: GraphNode = {
+      id: 'a',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'a', namespace: 'ns1', uid: 'uid-a' },
+        status: { phase: 'Failed', conditions: [] },
+      } as any),
+    };
+    const nodeB: GraphNode = {
+      id: 'b',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'b', namespace: 'ns1', uid: 'uid-b' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+
+    const prevEdges: GraphEdge[] = [{ id: 'e1', source: 'a', target: 'b' }];
+    const filters: GraphFilter[] = [{ type: 'hasErrors' }];
+
+    // Previously both A and B were in filtered results
+    const prevFiltered = [nodeA, nodeB];
+
+    // Now B is deleted
+    const result = filterGraphIncremental(
+      prevFiltered,
+      prevEdges,
+      new Set(),
+      new Set(),
+      new Set(['b']),
+      [nodeA], // only A remains
+      [], // no edges (B is gone)
+      filters
+    );
+
+    // A should still be included (it matches hasErrors)
+    expect(result.nodes.map(n => n.id)).toContain('a');
+    // The edge to B should NOT be in results (B was deleted, edge is stale)
+    expect(result.edges).toHaveLength(0);
+  });
+
+  it('should not retain stale edges from prevFilteredEdges parameter', () => {
+    // Verify that prevFilteredEdges are truly unused (edges rebuilt from current data)
+    const nodeA: GraphNode = {
+      id: 'a',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'a', namespace: 'ns1', uid: 'uid-a' },
+        status: { phase: 'Failed', conditions: [] },
+      } as any),
+    };
+    const nodeB: GraphNode = {
+      id: 'b',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'b', namespace: 'ns1', uid: 'uid-b' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+    const nodeC: GraphNode = {
+      id: 'c',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'c', namespace: 'ns1', uid: 'uid-c' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+
+    const filters: GraphFilter[] = [{ type: 'hasErrors' }];
+
+    // Pass stale edges in prevFilteredEdges that reference nonexistent nodes
+    const staleEdges: GraphEdge[] = [{ id: 'stale-edge', source: 'a', target: 'deleted-node' }];
+    const currentEdges: GraphEdge[] = [
+      { id: 'e1', source: 'a', target: 'b' },
+      { id: 'e2', source: 'b', target: 'c' },
+    ];
+
+    const result = filterGraphIncremental(
+      [nodeA, nodeB],
+      staleEdges, // stale edges that should be ignored
+      new Set(['c']), // nodeC is newly added
+      new Set(),
+      new Set(),
+      [nodeA, nodeB, nodeC],
+      currentEdges,
+      filters
+    );
+
+    // The stale edge should not appear in results
+    expect(result.edges.find(e => e.id === 'stale-edge')).toBeUndefined();
+    // Only edges between result nodes from current edges should be present
+    for (const edge of result.edges) {
+      const nodeIds = new Set(result.nodes.map(n => n.id));
+      expect(nodeIds.has(edge.source)).toBe(true);
+      expect(nodeIds.has(edge.target)).toBe(true);
+    }
   });
 });
