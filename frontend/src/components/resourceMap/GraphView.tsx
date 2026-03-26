@@ -277,12 +277,6 @@ function GraphViewContent({
       result = filterGraph(nodes, edges, filters);
     }
 
-    // Store current state for next update
-    prevNodesRef.current = nodes;
-    prevEdgesRef.current = edges;
-    prevFilteredGraphRef.current = result;
-    prevFiltersRef.current = currentFilterSig;
-
     const totalTime = performance.now() - perfStart;
 
     // Only log to console if debug flag is set
@@ -295,6 +289,22 @@ function GraphViewContent({
 
     return result;
   }, [nodes, edges, hasErrorsFilter, namespaces, defaultFilters, useIncrementalUpdates]);
+
+  // Update refs after render is committed to avoid issues with React 18 concurrent rendering.
+  // In concurrent mode, renders can be restarted or discarded, so mutating refs during render
+  // (inside useMemo) can lead to incorrect incremental comparisons.
+  useLayoutEffect(() => {
+    prevNodesRef.current = nodes;
+    prevEdgesRef.current = edges;
+    prevFilteredGraphRef.current = filteredGraph;
+    const namespaceFilter = defaultFilters.find(
+      (f): f is Extract<GraphFilter, { type: 'namespace' }> => f.type === 'namespace'
+    );
+    prevFiltersRef.current = JSON.stringify({
+      namespaces: namespaceFilter ? Array.from(namespaceFilter.namespaces).sort() : [],
+      hasErrors: hasErrorsFilter,
+    });
+  }, [filteredGraph, nodes, edges, defaultFilters, hasErrorsFilter]);
 
   // PERFORMANCE: Simplify graph if it's too large to prevent browser crashes
   // - <1000 nodes: No simplification (fast enough as-is)

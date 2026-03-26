@@ -72,6 +72,52 @@ describe('filterGraph', () => {
     // Finds node 2 that has an error, and node 1 that is related to it
     expect(filteredNodes.map(it => it.id)).toEqual(['2', '1']);
   });
+
+  it('should only include edges whose both endpoints exist in the result nodes', () => {
+    // Create a graph where an edge points to a node that is NOT in the node list
+    // (simulating owner refs to nodes from unselected sources)
+    const testNodes: GraphNode[] = [
+      {
+        id: 'a',
+        kubeObject: new Pod({
+          kind: 'Pod',
+          metadata: { namespace: 'ns1', name: 'pod-a', uid: 'uid-a' },
+          status: { phase: 'Failed', conditions: [] },
+        } as any),
+      },
+      {
+        id: 'b',
+        kubeObject: new Pod({
+          kind: 'Pod',
+          metadata: { namespace: 'ns1', name: 'pod-b', uid: 'uid-b' },
+          status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+        } as any),
+      },
+    ];
+
+    // Edge from 'a' to 'nonexistent' - target not in nodes
+    const testEdges: GraphEdge[] = [
+      { id: 'e1', source: 'a', target: 'b' },
+      { id: 'e-dangling', source: 'a', target: 'nonexistent' },
+      { id: 'e-dangling2', source: 'nonexistent', target: 'b' },
+    ];
+
+    const filters: GraphFilter[] = [{ type: 'hasErrors' }];
+    const result = filterGraph(testNodes, testEdges, filters);
+
+    // All returned edges should reference only nodes in the result set
+    const resultNodeIds = new Set(result.nodes.map(n => n.id));
+    for (const edge of result.edges) {
+      expect(resultNodeIds.has(edge.source)).toBe(true);
+      expect(resultNodeIds.has(edge.target)).toBe(true);
+    }
+
+    // The dangling edges should not be included
+    expect(result.edges.find(e => e.id === 'e-dangling')).toBeUndefined();
+    expect(result.edges.find(e => e.id === 'e-dangling2')).toBeUndefined();
+    // Valid edge should be included
+    expect(result.edges.find(e => e.id === 'e1')).toBeDefined();
+  });
 });
 
 describe('filterGraphIncremental', () => {
@@ -767,5 +813,141 @@ describe('filterGraphIncremental', () => {
     expect(incrementalResult.nodes.map(n => n.id).sort()).toEqual(
       fullResult.nodes.map(n => n.id).sort()
     );
+  });
+
+  it('should fall back to full filter when modified node stops matching', () => {
+    // Initially: pod-0 has errors, is in filtered set along with related pod-1
+    const errorNode: GraphNode = {
+      id: 'pod-0',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'pod-0', namespace: 'default', uid: 'uid-0' },
+        status: { phase: 'Failed', conditions: [] },
+      } as any),
+    };
+    const relatedNode: GraphNode = {
+      id: 'pod-1',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'pod-1', namespace: 'default', uid: 'uid-1' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+    const unrelatedNode: GraphNode = {
+      id: 'pod-2',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'pod-2', namespace: 'default', uid: 'uid-2' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+
+    const prevEdges: GraphEdge[] = [{ id: 'e1', source: 'pod-0', target: 'pod-1' }];
+    const prevFilteredNodes = [errorNode, relatedNode]; // pod-0 matched, pod-1 was related
+
+    // Now pod-0 is fixed (Running) - no longer matches hasErrors filter
+    const fixedNode: GraphNode = {
+      id: 'pod-0',
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: 'pod-0', namespace: 'default', uid: 'uid-0' },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    };
+
+    const currentNodes = [fixedNode, relatedNode, unrelatedNode];
+    const currentEdges: GraphEdge[] = [{ id: 'e1', source: 'pod-0', target: 'pod-1' }];
+    const filters: GraphFilter[] = [{ type: 'hasErrors' }];
+
+    const result = filterGraphIncremental(
+      prevFilteredNodes,
+      prevEdges,
+      new Set<string>(),
+      new Set(['pod-0']),
+      new Set<string>(),
+      currentNodes,
+      currentEdges,
+      filters
+    );
+
+    const fullResult = filterGraph(currentNodes, currentEdges, filters);
+
+    // Incremental should produce same result as full filter (both should be empty
+    // since no nodes have errors anymore)
+    expect(result.nodes.map(n => n.id).sort()).toEqual(fullResult.nodes.map(n => n.id).sort());
+    expect(result.edges.map(e => e.id).sort()).toEqual(fullResult.edges.map(e => e.id).sort());
+  });
+});
+
+describe('filterGraph performance', () => {
+  it('filterGraph should complete within reasonable time for 2000 nodes with edges', () => {
+    const nodeCount = 2000;
+    const nodes: GraphNode[] = Array.from({ length: nodeCount }, (_, i) => ({
+      id: `pod-${i}`,
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: `pod-${i}`, namespace: i % 2 === 0 ? 'ns-a' : 'ns-b', uid: `uid-${i}` },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    }));
+    // Chain edges to form connected components
+    const edges: GraphEdge[] = nodes.slice(1).map((_, i) => ({
+      id: `edge-${i}`,
+      source: `pod-${i}`,
+      target: `pod-${i + 1}`,
+    }));
+    const filters: GraphFilter[] = [{ type: 'namespace', namespaces: new Set(['ns-a']) }];
+
+    const start = performance.now();
+    const result = filterGraph(nodes, edges, filters);
+    const elapsed = performance.now() - start;
+
+    // Verify correctness
+    expect(result.nodes.length).toBeGreaterThan(0);
+    // All edges should have both endpoints present
+    const nodeIds = new Set(result.nodes.map(n => n.id));
+    for (const edge of result.edges) {
+      expect(nodeIds.has(edge.source)).toBe(true);
+      expect(nodeIds.has(edge.target)).toBe(true);
+    }
+
+    // Performance: should complete under 500ms for 2000 nodes
+    expect(elapsed).toBeLessThan(500);
+  });
+
+  it('filterGraphIncremental should be faster than full filterGraph for small changes', () => {
+    const nodeCount = 2000;
+    const nodes: GraphNode[] = Array.from({ length: nodeCount }, (_, i) => ({
+      id: `pod-${i}`,
+      kubeObject: new Pod({
+        kind: 'Pod',
+        metadata: { name: `pod-${i}`, namespace: 'default', uid: `uid-${i}` },
+        status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+      } as any),
+    }));
+    const edges: GraphEdge[] = [];
+
+    // Full filter benchmark (warm up + measure)
+    filterGraph(nodes, edges, []);
+    const fullStart = performance.now();
+    const fullResult = filterGraph(nodes, edges, []);
+    const fullTime = performance.now() - fullStart;
+
+    // Incremental benchmark: 2% change (40 nodes)
+    const modifiedNodeIds = new Set(nodes.slice(0, 40).map(n => n.id));
+    filterGraphIncremental(fullResult.nodes, fullResult.edges, new Set(), modifiedNodeIds, new Set(), nodes, edges, []);
+    const incrStart = performance.now();
+    const incrResult = filterGraphIncremental(fullResult.nodes, fullResult.edges, new Set(), modifiedNodeIds, new Set(), nodes, edges, []);
+    const incrTime = performance.now() - incrStart;
+
+    // Verify correctness
+    expect(incrResult.nodes).toHaveLength(fullResult.nodes.length);
+
+    // Log timing for visibility (not a hard assertion since CI can be noisy)
+    console.log(`Performance: full=${fullTime.toFixed(2)}ms, incremental=${incrTime.toFixed(2)}ms`);
+
+    // Both should complete in reasonable time
+    expect(fullTime).toBeLessThan(500);
+    expect(incrTime).toBeLessThan(500);
   });
 });

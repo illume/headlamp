@@ -44,11 +44,11 @@ export type GraphFilter =
  * @param filters - List of fitlers to apply
  */
 export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: GraphFilter[]) {
-  const perfStart = performance.now();
-
   if (filters.length === 0) {
     return { nodes, edges };
   }
+
+  const perfStart = performance.now();
 
   const filteredNodes: GraphNode[] = [];
   const filteredEdges: GraphEdge[] = [];
@@ -93,13 +93,13 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
       const outgoing = graphLookup.getOutgoingEdges(node.id);
       if (outgoing) {
         for (const edge of outgoing) {
-          if (!visitedEdges.has(edge.id)) {
-            visitedEdges.add(edge.id);
-            filteredEdges.push(edge);
-          }
-          if (!visitedNodes.has(edge.target)) {
-            const targetNode = graphLookup.getNode(edge.target);
-            if (targetNode) {
+          const targetNode = graphLookup.getNode(edge.target);
+          if (targetNode) {
+            if (!visitedEdges.has(edge.id)) {
+              visitedEdges.add(edge.id);
+              filteredEdges.push(edge);
+            }
+            if (!visitedNodes.has(edge.target)) {
               queue.push(targetNode);
             }
           }
@@ -110,13 +110,13 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
       const incoming = graphLookup.getIncomingEdges(node.id);
       if (incoming) {
         for (const edge of incoming) {
-          if (!visitedEdges.has(edge.id)) {
-            visitedEdges.add(edge.id);
-            filteredEdges.push(edge);
-          }
-          if (!visitedNodes.has(edge.source)) {
-            const sourceNode = graphLookup.getNode(edge.source);
-            if (sourceNode) {
+          const sourceNode = graphLookup.getNode(edge.source);
+          if (sourceNode) {
+            if (!visitedEdges.has(edge.id)) {
+              visitedEdges.add(edge.id);
+              filteredEdges.push(edge);
+            }
+            if (!visitedNodes.has(edge.source)) {
               queue.push(sourceNode);
             }
           }
@@ -229,6 +229,34 @@ export function filterGraphIncremental(
   const prevFilteredNodeIds = new Set(prevFilteredNodes.map(n => n.id));
   const currentNodeMap = new Map(currentNodes.map(n => [n.id, n]));
 
+  // Check if any previously-filtered modified node no longer matches filters.
+  // If so, fall back to full filtering since related nodes from the previous
+  // closure may no longer be needed but we can't easily determine which ones.
+  for (const id of modifiedNodeIds) {
+    if (!prevFilteredNodeIds.has(id)) continue;
+    const node = currentNodeMap.get(id);
+    if (!node || !node.kubeObject) continue;
+
+    const stillMatches =
+      filters.length === 0 ||
+      filters.some(filter => {
+        if (filter.type === 'hasErrors') {
+          const status = getStatus(node.kubeObject!);
+          return status === 'error' || status === 'warning';
+        }
+        if (filter.type === 'namespace') {
+          const ns = node.kubeObject!.metadata?.namespace;
+          return ns && filter.namespaces.has(ns);
+        }
+        return false;
+      });
+
+    if (!stillMatches) {
+      // Fall back to full filtering for correctness
+      return filterGraph(currentNodes, currentEdges, filters);
+    }
+  }
+
   // Start with previous filtered nodes, remove deleted ones
   const filteredNodeIds = new Set(prevFilteredNodeIds);
   deletedNodeIds.forEach(id => filteredNodeIds.delete(id));
@@ -236,10 +264,6 @@ export function filterGraphIncremental(
   // Process added and modified nodes through filters
   const nodesToCheck = [...addedNodeIds, ...modifiedNodeIds];
   const lookup = makeGraphLookup(currentNodes, currentEdges);
-
-  // For modified nodes, we need to remove them first if they don't match filter anymore
-  // This ensures modified nodes are re-evaluated against current filters
-  modifiedNodeIds.forEach(id => filteredNodeIds.delete(id));
 
   for (const nodeId of nodesToCheck) {
     const node = currentNodeMap.get(nodeId);
@@ -277,7 +301,14 @@ export function filterGraphIncremental(
         const incomingEdges = lookup.getIncomingEdges(currentId) || [];
         const outgoingEdges = lookup.getOutgoingEdges(currentId) || [];
 
-        for (const edge of [...incomingEdges, ...outgoingEdges]) {
+        for (const edge of incomingEdges) {
+          const relatedId = edge.source === currentId ? edge.target : edge.source;
+          if (!visited.has(relatedId) && currentNodeMap.has(relatedId)) {
+            queue.push(relatedId);
+          }
+        }
+
+        for (const edge of outgoingEdges) {
           const relatedId = edge.source === currentId ? edge.target : edge.source;
           if (!visited.has(relatedId) && currentNodeMap.has(relatedId)) {
             queue.push(relatedId);

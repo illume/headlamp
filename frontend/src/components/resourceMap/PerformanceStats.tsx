@@ -199,7 +199,10 @@ export function PerformanceStats({ visible = false, onToggle }: PerformanceStats
           <IconButton
             size="small"
             aria-label={expanded ? t('Collapse') : t('Expand')}
-            onClick={() => setExpanded(!expanded)}
+            onClick={e => {
+              e.stopPropagation();
+              setExpanded(!expanded);
+            }}
           >
             <Icon icon={expanded ? 'mdi:chevron-down' : 'mdi:chevron-up'} width="24" />
           </IconButton>

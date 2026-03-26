@@ -18,6 +18,7 @@ import App from '../../../App';
 import Pod from '../../../lib/k8s/pod';
 import { GraphEdge, GraphNode } from './graphModel';
 import {
+  EXTREME_SIMPLIFICATION_THRESHOLD,
   EXTREME_SIMPLIFIED_NODE_LIMIT,
   SIMPLIFIED_NODE_LIMIT,
   simplifyGraph,
@@ -91,7 +92,7 @@ describe('graphSimplification', () => {
     });
 
     it('should use extreme simplification for very large graphs', () => {
-      const nodeCount = 15000;
+      const nodeCount = EXTREME_SIMPLIFICATION_THRESHOLD + 1;
       const nodes: GraphNode[] = Array.from({ length: nodeCount }, (_, i) => ({
         id: `node-${i}`,
         kubeObject: new Pod({
