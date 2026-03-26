@@ -106,15 +106,20 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
    * @param node - Given node
    */
   function pushRelatedNodes(startNode: GraphNode) {
+    // Skip if already visited by a previous pushRelatedNodes call
+    if (visitedNodes.has(startNode.id)) return;
+
     const queue: GraphNode[] = [startNode];
+    // PERFORMANCE: Mark visited on enqueue to prevent duplicate queue entries in dense graphs.
+    // Without this, the same node can be enqueued O(degree) times before being dequeued,
+    // causing worst-case queue growth much larger than O(nodes+edges).
+    visitedNodes.add(startNode.id);
     // PERFORMANCE: Index-based queue for O(1) dequeue instead of O(n) shift()
     let queueIndex = 0;
 
     while (queueIndex < queue.length) {
       const node = queue[queueIndex++]; // O(1) vs shift() which is O(n)
 
-      if (visitedNodes.has(node.id)) continue;
-      visitedNodes.add(node.id);
       filteredNodes.push(node);
 
       // Process outgoing edges
@@ -128,6 +133,7 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
               filteredEdges.push(edge);
             }
             if (!visitedNodes.has(edge.target)) {
+              visitedNodes.add(edge.target);
               queue.push(targetNode);
             }
           }
@@ -145,6 +151,7 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
               filteredEdges.push(edge);
             }
             if (!visitedNodes.has(edge.source)) {
+              visitedNodes.add(edge.source);
               queue.push(sourceNode);
             }
           }

@@ -101,9 +101,9 @@ export function GraphRenderer({
     for (const node of nodes) {
       const x = node.position.x;
       const y = node.position.y;
-      // Use measured dimensions or fallback to defaults (200x100 is typical node size)
-      const width = (node as any).measured?.width || 200;
-      const height = (node as any).measured?.height || 100;
+      // Use measured dimensions or fallback to ELK layout defaults (220x70)
+      const width = (node as any).measured?.width || 220;
+      const height = (node as any).measured?.height || 70;
 
       minX = Math.min(minX, x);
       minY = Math.min(minY, y);

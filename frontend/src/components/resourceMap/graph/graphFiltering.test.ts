@@ -209,12 +209,8 @@ describe('filterGraph', () => {
     );
 
     // Both should produce identical results
-    expect(fullResult.nodes.map(n => n.id).sort()).toEqual(
-      incrResult.nodes.map(n => n.id).sort()
-    );
-    expect(fullResult.edges.map(e => e.id).sort()).toEqual(
-      incrResult.edges.map(e => e.id).sort()
-    );
+    expect(fullResult.nodes.map(n => n.id).sort()).toEqual(incrResult.nodes.map(n => n.id).sort());
+    expect(fullResult.edges.map(e => e.id).sort()).toEqual(incrResult.edges.map(e => e.id).sort());
   });
 });
 
@@ -1047,18 +1043,17 @@ describe('filterGraphIncremental', () => {
     );
 
     // Both paths must produce identical node sets and edge sets
-    expect(incrResult.nodes.map(n => n.id).sort()).toEqual(
-      fullResult.nodes.map(n => n.id).sort()
-    );
-    expect(incrResult.edges.map(e => e.id).sort()).toEqual(
-      fullResult.edges.map(e => e.id).sort()
-    );
+    expect(incrResult.nodes.map(n => n.id).sort()).toEqual(fullResult.nodes.map(n => n.id).sort());
+    expect(incrResult.edges.map(e => e.id).sort()).toEqual(fullResult.edges.map(e => e.id).sort());
 
     // Sanity: err-pod matches hasErrors, pulls in healthy-pod and isolated-pod via BFS;
     // ns-pod matches namespace; other-pod matches neither
-    expect(fullResult.nodes.map(n => n.id).sort()).toEqual(
-      ['err-pod', 'healthy-pod', 'isolated-pod', 'ns-pod']
-    );
+    expect(fullResult.nodes.map(n => n.id).sort()).toEqual([
+      'err-pod',
+      'healthy-pod',
+      'isolated-pod',
+      'ns-pod',
+    ]);
   });
 
   it('should match filterGraph for multi-filter with node modifications', () => {
@@ -1127,12 +1122,8 @@ describe('filterGraphIncremental', () => {
     );
 
     // Both must produce identical results: only pod-2 (kube-system) should remain
-    expect(incrResult.nodes.map(n => n.id).sort()).toEqual(
-      fullResult.nodes.map(n => n.id).sort()
-    );
-    expect(incrResult.edges.map(e => e.id).sort()).toEqual(
-      fullResult.edges.map(e => e.id).sort()
-    );
+    expect(incrResult.nodes.map(n => n.id).sort()).toEqual(fullResult.nodes.map(n => n.id).sort());
+    expect(incrResult.edges.map(e => e.id).sort()).toEqual(fullResult.edges.map(e => e.id).sort());
     expect(fullResult.nodes.map(n => n.id)).toEqual(['pod-2']);
   });
 
@@ -1207,11 +1198,7 @@ describe('filterGraphIncremental', () => {
     );
 
     // Both must produce identical results
-    expect(incrResult.nodes.map(n => n.id).sort()).toEqual(
-      fullResult.nodes.map(n => n.id).sort()
-    );
-    expect(incrResult.edges.map(e => e.id).sort()).toEqual(
-      fullResult.edges.map(e => e.id).sort()
-    );
+    expect(incrResult.nodes.map(n => n.id).sort()).toEqual(fullResult.nodes.map(n => n.id).sort());
+    expect(incrResult.edges.map(e => e.id).sort()).toEqual(fullResult.edges.map(e => e.id).sort());
   });
 });
