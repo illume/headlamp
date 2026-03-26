@@ -347,7 +347,10 @@ export const applyGraphLayout = (graph: GraphNode, aspectRatio: number) => {
     });
 
     // Return cached result by reference.
-    // The cache has a 60s TTL, so any downstream mutations are bounded.
+    // If downstream code mutates the node/edge objects, those mutations would be
+    // visible to other callers that receive the same cached result within the TTL window.
+    // In practice, the only consumer is setLayoutedGraph() which stores it in React state,
+    // and the useEffect that calls this only fires when [visibleGraph, viewport] changes.
     return Promise.resolve(cached.result);
   }
 
