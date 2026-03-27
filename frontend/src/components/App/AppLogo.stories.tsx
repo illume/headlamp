@@ -52,7 +52,8 @@ export default {
 const Template: StoryFn<AppLogoProps> = args => {
   const themeName = args.themeName === 'dark' ? 'dark' : 'light';
   const store = configureStore({
-    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: (state = getMockState(themeName)) => state,
     preloadedState: getMockState(themeName),
   });

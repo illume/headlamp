@@ -53,7 +53,8 @@ const TemplateWithFilter: StoryFn<{
   const { resourceTableArgs, search, namespaces = [] } = args;
 
   const storeWithFilterAndSettings = configureStore({
-    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: (
       state = {
         filter: { namespaces: new Set<string>(), search: '' },

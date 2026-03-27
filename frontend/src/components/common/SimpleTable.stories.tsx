@@ -256,7 +256,8 @@ const TemplateWithFilter: StoryFn<{
   const { simpleTableArgs, namespaces = [], search } = args;
 
   const storeWithFilterAndSettings = configureStore({
-    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: (
       state = {
         filter: { namespaces: new Set<string>() },

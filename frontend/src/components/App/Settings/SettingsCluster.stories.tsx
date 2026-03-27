@@ -31,13 +31,13 @@ function setupLocalStorage(clusterName: string, settings: Record<string, any> = 
 
 function getMockStore(clusters: Record<string, any> = {}) {
   return configureStore({
-    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: {
       config: (
         state = {
           clusters,
-          statelessClusters: {    [headlampApi.reducerPath]: headlampApi.reducer,
-  },
+          statelessClusters: { [headlampApi.reducerPath]: headlampApi.reducer },
           allClusters: clusters,
           settings: {
             tableRowsPerPageOptions: [15, 25, 50],

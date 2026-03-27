@@ -46,7 +46,8 @@ function createNotifications() {
 createNotifications();
 
 const store = configureStore({
-    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+  middleware: getDefaultMiddleware =>
+    getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
   reducer: (
     state = {
       filter: { ...FILTER_INITIAL_STATE },

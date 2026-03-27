@@ -41,7 +41,8 @@ export default {
         <MemoryRouter>
           <Provider
             store={configureStore({
-    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+              middleware: getDefaultMiddleware =>
+                getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
               reducer: (state = ourState) => state,
               preloadedState: ourState,
             })}

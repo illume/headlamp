@@ -44,7 +44,8 @@ const meta: Meta<typeof ClusterNameEditor> = {
 export default meta;
 const Template: StoryFn<typeof ClusterNameEditor> = args => {
   const store = configureStore({
-    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: (state = getMockState()) => state,
     preloadedState: getMockState(),
   });

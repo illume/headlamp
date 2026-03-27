@@ -60,7 +60,8 @@ export default {
 /** Story template with Redux Provider. */
 const Template: StoryFn<typeof PodDebugSettings> = args => {
   const store = configureStore({
-    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: (state = getMockState()) => state,
     preloadedState: getMockState(),
   });

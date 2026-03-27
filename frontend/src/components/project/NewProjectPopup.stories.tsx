@@ -33,7 +33,8 @@ export default {
 
 const makeStore = () => {
   return configureStore({
-    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: reducers,
     preloadedState: {
       config: {

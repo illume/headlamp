@@ -54,7 +54,8 @@ export default {
 
 const Template: StoryFn<typeof NodeShellSettings> = args => {
   const store = configureStore({
-    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: (state = getMockState()) => state,
     preloadedState: getMockState(),
   });
