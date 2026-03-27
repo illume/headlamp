@@ -16,7 +16,6 @@
 
 import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { get } from 'lodash';
 import { http, HttpResponse } from 'msw';
 import { PropsWithChildren } from 'react';
@@ -50,21 +49,10 @@ export default {
   argTypes: {},
   decorators: [
     Story => {
-      // Create a fresh QueryClient per story to prevent cache bleeding
-      // between stories (PureTopBar caches ['clusterMe', clusterName] with staleTime).
-      const storyQueryClient = new QueryClient({
-        defaultOptions: {
-          queries: {
-            retry: false,
-          },
-        },
-      });
       return (
         <MemoryRouter>
           <Provider store={store}>
-            <QueryClientProvider client={storyQueryClient}>
-              <Story />
-            </QueryClientProvider>
+            <Story />
           </Provider>
         </MemoryRouter>
       );

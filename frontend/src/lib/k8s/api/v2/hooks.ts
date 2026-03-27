@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
+import { useDispatch } from 'react-redux';
+import { headlampApi } from '../../../api/headlampApi';
 import { getCluster } from '../../../cluster';
 import type { QueryParameters } from '../../api/v1/queryParameters';
 import type { ApiError } from '../../api/v2/ApiError';
@@ -96,6 +97,99 @@ export const kubeObjectQueryKey = ({
 }) => ['object', cluster, endpoint, namespace ?? '', name, queryParams ?? {}];
 
 /**
+ * Test different endpoints to see which one is working.
+ *
+ * @params endpoints - List of possible endpoints
+ * @returns Endpoint that works
+ *
+ * @throws Error
+ * When no endpoints are working
+ */
+const getWorkingEndpoint = async (
+  endpoints: KubeObjectEndpoint[],
+  cluster: string,
+  namespace?: string
+) => {
+  const promises = endpoints.map(endpoint => {
+    return clusterFetch(KubeObjectEndpoint.toUrl(endpoint, namespace), {
+      method: 'GET',
+      cluster: cluster ?? getCluster() ?? '',
+    }).then(() => endpoint);
+  });
+  return Promise.any(promises).catch((aggregateError: AggregateError) => {
+    // when no endpoint is available, throw an error
+    throw aggregateError.errors[0];
+  });
+};
+
+const injectedApi = headlampApi.injectEndpoints({
+  endpoints: build => ({
+    getWorkingEndpoint: build.query<
+      KubeObjectEndpoint,
+      { endpoints: KubeObjectEndpoint[]; cluster: string; namespace?: string }
+    >({
+      queryFn: async ({ endpoints, cluster, namespace }) => {
+        try {
+          const result = await getWorkingEndpoint(endpoints, cluster, namespace);
+          return { data: result };
+        } catch (error) {
+          return { error };
+        }
+      },
+    }),
+    getKubeObject: build.query<
+      KubeObject | null,
+      {
+        kubeObjectClass: any;
+        endpoint: KubeObjectEndpoint;
+        namespace?: string;
+        name: string;
+        cluster: string;
+        queryParams: Record<string, any>;
+      }
+    >({
+      queryFn: async ({ kubeObjectClass, endpoint, namespace, name, cluster, queryParams }) => {
+        try {
+          const url = makeUrl(
+            [KubeObjectEndpoint.toUrl(endpoint, namespace), name],
+            queryParams
+          );
+          const obj: KubeObjectInterface = await clusterFetch(url, {
+            cluster,
+          }).then(it => it.json());
+          return { data: new kubeObjectClass(obj, cluster) };
+        } catch (error) {
+          return { error };
+        }
+      },
+      serializeQueryArgs: ({ queryArgs: { kubeObjectClass: _cls, ...rest } }) => {
+        return JSON.stringify(rest);
+      },
+      keepUnusedDataFor: 5,
+    }),
+  }),
+});
+
+/**
+ * Checks and returns an endpoint that works from the list
+ *
+ * @params endpoints - List of possible endpoints
+ */
+export const useEndpoints = (
+  endpoints: KubeObjectEndpoint[],
+  cluster: string,
+  namespace?: string
+) => {
+  const { data: endpoint, error } = injectedApi.useGetWorkingEndpointQuery(
+    { endpoints, cluster, namespace },
+    { skip: endpoints.length <= 1 }
+  );
+  if (endpoints.length === 1) return { endpoint: endpoints[0], error: null };
+
+  return { endpoint, error: error as ApiError | undefined };
+};
+
+/**
  * Returns a single KubeObject.
  */
 export function useKubeObject<K extends KubeObject>({
@@ -125,31 +219,25 @@ export function useKubeObject<K extends KubeObject>({
     Object.entries(queryParams ?? {}).filter(([, value]) => value !== undefined && value !== '')
   );
 
-  const queryKey = useMemo(
-    () =>
-      kubeObjectQueryKey({ cluster, name, namespace, endpoint, queryParams: cleanedUpQueryParams }),
-    [endpoint, namespace, name]
+  const queryArgs = useMemo(
+    () => ({
+      kubeObjectClass,
+      endpoint: endpoint!,
+      namespace,
+      name,
+      cluster,
+      queryParams: cleanedUpQueryParams,
+    }),
+    [endpoint, namespace, name, cluster]
   );
 
-  const client = useQueryClient();
-  const query = useQuery<Instance | null, ApiError>({
-    enabled: !!endpoint,
-    placeholderData: null,
-    staleTime: 5000,
-    queryKey,
-    queryFn: async () => {
-      const url = makeUrl(
-        [KubeObjectEndpoint.toUrl(endpoint!, namespace), name],
-        cleanedUpQueryParams
-      );
-      const obj: KubeObjectInterface = await clusterFetch(url, {
-        cluster,
-      }).then(it => it.json());
-      return new kubeObjectClass(obj, cluster) as Instance;
-    },
+  const query = injectedApi.useGetKubeObjectQuery(queryArgs, {
+    skip: !endpoint,
   });
 
-  const data: Instance | null = query.error ? null : query.data ?? null;
+  const dispatch = useDispatch();
+
+  const data: Instance | null = query.error ? null : (query.data as Instance) ?? null;
 
   const connectionsRequests = useMemo(() => {
     if (!endpoint) return [];
@@ -164,7 +252,13 @@ export function useKubeObject<K extends KubeObject>({
         cluster,
         onMessage(update: KubeListUpdateEvent<K>) {
           if (update.type !== 'ADDED' && update.object) {
-            client.setQueryData(queryKey, new kubeObjectClass(update.object));
+            dispatch(
+              injectedApi.util.upsertQueryData(
+                'getKubeObject',
+                queryArgs,
+                new kubeObjectClass(update.object)
+              )
+            );
           }
         },
       },
@@ -186,7 +280,13 @@ export function useKubeObject<K extends KubeObject>({
       cluster,
       onMessage(update: KubeListUpdateEvent<K>) {
         if (update.type !== 'ADDED' && update.object) {
-          client.setQueryData(queryKey, new kubeObjectClass(update.object));
+          dispatch(
+            injectedApi.util.upsertQueryData(
+              'getKubeObject',
+              queryArgs,
+              new kubeObjectClass(update.object)
+            )
+          );
         }
       },
     });
@@ -197,64 +297,26 @@ export function useKubeObject<K extends KubeObject>({
     });
   }
 
+  const isLoading = query.isLoading;
+  const isFetching = query.isFetching;
+  const isError = query.isError || !!endpointError;
+  const isSuccess = query.isSuccess && !endpointError;
+  const status: QueryStatus = isError ? 'error' : isSuccess ? 'success' : 'pending';
+
   // @ts-ignore
   return {
     data,
-    error: endpointError ?? query.error,
-    isError: query.isError,
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    isSuccess: query.isSuccess,
-    status: query.status,
+    error: (endpointError ?? query.error ?? null) as ApiError | null,
+    isError,
+    isLoading,
+    isFetching,
+    isSuccess,
+    status,
     *[Symbol.iterator](): ArrayIterator<ApiError | K | null> {
       yield data;
-      yield endpointError ?? query.error;
+      yield ((endpointError ?? query.error ?? null) as ApiError | null);
     },
   };
 }
 
-/**
- * Test different endpoints to see which one is working.
- *
- * @params endpoints - List of possible endpoints
- * @returns Endpoint that works
- *
- * @throws Error
- * When no endpoints are working
- */
-const getWorkingEndpoint = async (
-  endpoints: KubeObjectEndpoint[],
-  cluster: string,
-  namespace?: string
-) => {
-  const promises = endpoints.map(endpoint => {
-    return clusterFetch(KubeObjectEndpoint.toUrl(endpoint, namespace), {
-      method: 'GET',
-      cluster: cluster ?? getCluster() ?? '',
-    }).then(() => endpoint);
-  });
-  return Promise.any(promises).catch((aggregateError: AggregateError) => {
-    // when no endpoint is available, throw an error
-    throw aggregateError.errors[0];
-  });
-};
-
-/**
- * Checks and returns an endpoint that works from the list
- *
- * @params endpoints - List of possible endpoints
- */
-export const useEndpoints = (
-  endpoints: KubeObjectEndpoint[],
-  cluster: string,
-  namespace?: string
-) => {
-  const { data: endpoint, error } = useQuery<KubeObjectEndpoint, ApiError>({
-    enabled: endpoints.length > 1,
-    queryKey: ['endpoints', endpoints],
-    queryFn: () => getWorkingEndpoint(endpoints, cluster!, namespace),
-  });
-  if (endpoints.length === 1) return { endpoint: endpoints[0], error: null };
-
-  return { endpoint, error };
-};
+export { injectedApi as kubeObjectApi };

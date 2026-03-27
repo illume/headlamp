@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-import type { QueryObserverOptions } from '@tanstack/react-query';
-import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useDispatch } from 'react-redux';
+import { headlampApi } from '../../../api/headlampApi';
 import type { KubeObject, KubeObjectClass } from '../../KubeObject';
 import type { QueryParameters } from '../v1/queryParameters';
 import { ApiError } from './ApiError';
@@ -52,14 +52,30 @@ export interface ListResponse<K extends KubeObject> {
 }
 
 /**
- * Query to list Kube objects from a cluster and namespace(optional)
- *
- * @param kubeObjectClass - Class to instantiate the object with
- * @param endpoint - API endpoint
- * @param namespace - namespace to list objects from(optional)
- * @param cluster - cluster name
- * @param queryParams - query parameters
- * @returns query options for getting a single list of kube resources
+ * Cache key for a kube object list query.
+ * Used to identify individual list queries in the combined endpoint.
+ */
+export function kubeObjectListQueryKey(
+  kubeObjectClass: KubeObjectClass,
+  endpoint: KubeObjectEndpoint,
+  namespace: string | undefined,
+  cluster: string,
+  queryParams: QueryParameters
+) {
+  return [
+    'kubeObject',
+    'list',
+    kubeObjectClass.apiVersion,
+    kubeObjectClass.apiName,
+    cluster,
+    namespace ?? '',
+    queryParams,
+  ];
+}
+
+/**
+ * @deprecated Use kubeObjectListQueryKey instead.
+ * Kept for backward compatibility in tests.
  */
 export function kubeObjectListQuery<K extends KubeObject>(
   kubeObjectClass: KubeObjectClass,
@@ -67,59 +83,92 @@ export function kubeObjectListQuery<K extends KubeObject>(
   namespace: string | undefined,
   cluster: string,
   queryParams: QueryParameters,
-  refetchInterval?: number
-): QueryObserverOptions<ListResponse<K> | undefined | null, ApiError> {
+  _refetchInterval?: number
+) {
   return {
-    placeholderData: null,
-    refetchInterval,
-    queryKey: [
-      'kubeObject',
-      'list',
-      kubeObjectClass.apiVersion,
-      kubeObjectClass.apiName,
-      cluster,
-      namespace ?? '',
-      queryParams,
-    ],
-    queryFn: async () => {
-      // If no valid endpoint is passed, don't make the request
-      if (!endpoint) return;
-
-      try {
-        const list: KubeList<any> = await clusterFetch(
-          makeUrl([KubeObjectEndpoint.toUrl(endpoint!, namespace)], queryParams),
-          {
-            cluster,
-          }
-        ).then(it => it.json());
-        list.items = list.items.map(item => {
-          const itm = new kubeObjectClass({
-            ...item,
-            kind: list.kind.replace('List', ''),
-            apiVersion: list.apiVersion,
-          });
-          itm.cluster = cluster;
-          return itm;
-        });
-
-        const response: ListResponse<K> = {
-          list: list as KubeList<K>,
-          cluster,
-          namespace,
-        };
-
-        return response;
-      } catch (e) {
-        // Rethrow error with cluster and namespace information
-        if (e instanceof ApiError) {
-          e.cluster = cluster;
-          e.namespace = namespace;
-        }
-        throw e;
-      }
-    },
+    queryKey: kubeObjectListQueryKey(kubeObjectClass, endpoint, namespace, cluster, queryParams),
   };
 }
+
+/**
+ * Fetch a single kube object list from one cluster/namespace.
+ */
+async function fetchKubeObjectList<K extends KubeObject>(
+  kubeObjectClass: KubeObjectClass,
+  endpoint: KubeObjectEndpoint,
+  namespace: string | undefined,
+  cluster: string,
+  queryParams: QueryParameters
+): Promise<ListResponse<K>> {
+  try {
+    const list: KubeList<any> = await clusterFetch(
+      makeUrl([KubeObjectEndpoint.toUrl(endpoint!, namespace)], queryParams),
+      {
+        cluster,
+      }
+    ).then(it => it.json());
+    list.items = list.items.map(item => {
+      const itm = new kubeObjectClass({
+        ...item,
+        kind: list.kind.replace('List', ''),
+        apiVersion: list.apiVersion,
+      });
+      itm.cluster = cluster;
+      return itm;
+    });
+
+    return {
+      list: list as KubeList<K>,
+      cluster,
+      namespace,
+    };
+  } catch (e) {
+    if (e instanceof ApiError) {
+      e.cluster = cluster;
+      e.namespace = namespace;
+    }
+    throw e;
+  }
+}
+
+/** Arguments for the combined kube object lists query */
+interface KubeObjectListsQueryArgs {
+  kubeObjectClass: KubeObjectClass;
+  endpoint: KubeObjectEndpoint;
+  queries: Array<{
+    cluster: string;
+    namespace?: string;
+    queryParams: QueryParameters;
+  }>;
+}
+
+const kubeListApi = headlampApi.injectEndpoints({
+  endpoints: build => ({
+    getKubeObjectLists: build.query<
+      Array<ListResponse<any> | null>,
+      KubeObjectListsQueryArgs
+    >({
+      queryFn: async ({ kubeObjectClass, endpoint, queries }) => {
+        try {
+          const results = await Promise.allSettled(
+            queries.map(({ cluster, namespace, queryParams }) =>
+              fetchKubeObjectList(kubeObjectClass, endpoint, namespace, cluster, queryParams)
+            )
+          );
+          const data = results.map(r => (r.status === 'fulfilled' ? r.value : null));
+          return { data };
+        } catch (error) {
+          return { error };
+        }
+      },
+      serializeQueryArgs: ({ queryArgs: { kubeObjectClass: _cls, ...rest } }) => {
+        return JSON.stringify(rest);
+      },
+    }),
+  }),
+});
+
+export { kubeListApi };
 
 /**
  * Accepts a list of lists to watch.
@@ -130,6 +179,7 @@ export function useWatchKubeObjectLists<K extends KubeObject>({
   endpoint,
   lists,
   queryParams,
+  queryArgs,
 }: {
   /** KubeObject class of the watched resource list */
   kubeObjectClass: (new (...args: any) => K) & typeof KubeObject<any>;
@@ -139,6 +189,8 @@ export function useWatchKubeObjectLists<K extends KubeObject>({
   endpoint?: KubeObjectEndpoint | null;
   /** Which clusters and namespaces to watch */
   lists: Array<{ cluster: string; namespace?: string; resourceVersion: string }>;
+  /** RTK Query args for updating the cache */
+  queryArgs?: KubeObjectListsQueryArgs;
 }) {
   if (getWebsocketMultiplexerEnabled()) {
     return useWatchKubeObjectListsMultiplexed({
@@ -146,6 +198,7 @@ export function useWatchKubeObjectLists<K extends KubeObject>({
       endpoint,
       lists,
       queryParams,
+      queryArgs,
     });
   } else {
     return useWatchKubeObjectListsLegacy({
@@ -153,6 +206,7 @@ export function useWatchKubeObjectLists<K extends KubeObject>({
       endpoint,
       lists,
       queryParams,
+      queryArgs,
     });
   }
 }
@@ -173,13 +227,15 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
   endpoint,
   lists,
   queryParams,
+  queryArgs,
 }: {
   kubeObjectClass: (new (...args: any) => K) & typeof KubeObject<any>;
   endpoint?: KubeObjectEndpoint | null;
   lists: Array<{ cluster: string; namespace?: string; resourceVersion: string }>;
   queryParams?: QueryParameters;
+  queryArgs?: KubeObjectListsQueryArgs;
 }): void {
-  const client = useQueryClient();
+  const dispatch = useDispatch();
 
   // Track the latest resource versions to prevent duplicate updates
   const latestResourceVersions = useRef<Record<string, string>>({});
@@ -214,6 +270,10 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
     });
   }, [endpoint, lists, stableQueryParams]);
 
+  // Keep a ref to queryArgs so the handler always has the latest
+  const queryArgsRef = useRef(queryArgs);
+  queryArgsRef.current = queryArgs;
+
   // Create stable update handler to process WebSocket messages
   // Re-create only when dependencies change
   const handleUpdate = useCallback(
@@ -229,32 +289,33 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
         latestResourceVersions.current[key] = update.object.metadata.resourceVersion;
       }
 
-      // Create query key for React Query cache
-      const queryKey = kubeObjectListQuery<K>(
-        kubeObjectClass,
-        endpoint,
-        namespace,
-        cluster,
-        stableQueryParams ?? {}
-      ).queryKey;
-
-      // Update React Query cache with new data
-      client.setQueryData(queryKey, (oldResponse: ListResponse<any> | undefined | null) => {
-        if (!oldResponse) {
-          return oldResponse;
-        }
-
-        const newList = KubeList.applyUpdate(oldResponse.list, update, kubeObjectClass, cluster);
-
-        // Only update if the list actually changed
-        if (newList === oldResponse.list) {
-          return oldResponse;
-        }
-
-        return { ...oldResponse, list: newList };
-      });
+      // Update RTK Query cache
+      if (queryArgsRef.current) {
+        dispatch(
+          kubeListApi.util.updateQueryData(
+            'getKubeObjectLists',
+            queryArgsRef.current,
+            (draft: Array<ListResponse<any> | null>) => {
+              const idx = draft.findIndex(
+                d => d && d.cluster === cluster && d.namespace === namespace
+              );
+              if (idx !== -1 && draft[idx]) {
+                const newList = KubeList.applyUpdate(
+                  draft[idx]!.list,
+                  update,
+                  kubeObjectClass,
+                  cluster
+                );
+                if (newList !== draft[idx]!.list) {
+                  draft[idx] = { ...draft[idx]!, list: newList };
+                }
+              }
+            }
+          )
+        );
+      }
     },
-    [client, kubeObjectClass, endpoint, stableQueryParams]
+    [dispatch, kubeObjectClass, endpoint, stableQueryParams]
   );
 
   // Set up WebSocket subscriptions
@@ -306,6 +367,7 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
   endpoint,
   lists,
   queryParams,
+  queryArgs,
 }: {
   /** KubeObject class of the watched resource list */
   kubeObjectClass: (new (...args: any) => K) & typeof KubeObject<any>;
@@ -315,8 +377,14 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
   endpoint?: KubeObjectEndpoint | null;
   /** Which clusters and namespaces to watch */
   lists: Array<{ cluster: string; namespace?: string; resourceVersion: string }>;
+  /** RTK Query args for updating the cache */
+  queryArgs?: KubeObjectListsQueryArgs;
 }) {
-  const client = useQueryClient();
+  const dispatch = useDispatch();
+
+  // Keep a ref to queryArgs so callbacks always have the latest
+  const queryArgsRef = useRef(queryArgs);
+  queryArgsRef.current = queryArgs;
 
   const connections = useMemo(() => {
     if (!endpoint) return [];
@@ -332,24 +400,28 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
         cluster,
         url,
         onMessage(update: KubeListUpdateEvent<K>) {
-          const key = kubeObjectListQuery<K>(
-            kubeObjectClass,
-            endpoint,
-            namespace,
-            cluster,
-            queryParams ?? {}
-          ).queryKey;
-          client.setQueryData(key, (oldResponse: ListResponse<any> | undefined | null) => {
-            if (!oldResponse) return oldResponse;
-
-            const newList = KubeList.applyUpdate(
-              oldResponse.list,
-              update,
-              kubeObjectClass,
-              cluster
+          if (queryArgsRef.current) {
+            dispatch(
+              kubeListApi.util.updateQueryData(
+                'getKubeObjectLists',
+                queryArgsRef.current,
+                (draft: Array<ListResponse<any> | null>) => {
+                  const idx = draft.findIndex(
+                    d => d && d.cluster === cluster && d.namespace === namespace
+                  );
+                  if (idx !== -1 && draft[idx]) {
+                    const newList = KubeList.applyUpdate(
+                      draft[idx]!.list,
+                      update,
+                      kubeObjectClass,
+                      cluster
+                    );
+                    draft[idx] = { ...draft[idx]!, list: newList };
+                  }
+                }
+              )
             );
-            return { ...oldResponse, list: newList };
-          });
+          }
         },
       };
     });
@@ -428,74 +500,75 @@ export function useKubeObjectList<K extends KubeObject>({
     Object.entries(queryParams ?? {}).filter(([, value]) => value !== undefined && value !== '')
   );
 
-  const queries = useMemo(
+  // Build the list of individual queries for the combined endpoint
+  const queryConfigs = useMemo(
     () =>
       endpoint
         ? requests.flatMap(({ cluster, namespaces }) =>
             namespaces && namespaces.length > 0
-              ? namespaces.map(namespace =>
-                  kubeObjectListQuery<K>(
-                    kubeObjectClass,
-                    endpoint,
-                    namespace,
-                    cluster,
-                    cleanedUpQueryParams,
-                    refetchInterval
-                  )
-                )
-              : kubeObjectListQuery<K>(
-                  kubeObjectClass,
-                  endpoint,
-                  undefined,
+              ? namespaces.map(namespace => ({
                   cluster,
-                  cleanedUpQueryParams,
-                  refetchInterval
-                )
+                  namespace,
+                  queryParams: cleanedUpQueryParams,
+                }))
+              : [{ cluster, namespace: undefined as string | undefined, queryParams: cleanedUpQueryParams }]
           )
         : [],
-    [requests, kubeObjectClass, endpoint, cleanedUpQueryParams]
+    [requests, endpoint, cleanedUpQueryParams]
   );
 
-  const query = useQueries({
-    queries,
-    combine(results) {
-      return {
-        data: results.map(result => result.data),
-        clusterResults: results.reduce((acc, result) => {
-          if (result.data && result.data.cluster) {
-            acc[result.data.cluster] = {
-              data: result.data,
-              error: result.error,
-              errors: result.error ? [result.error] : null,
-              isError: result.isError,
-              isFetching: result.isFetching,
-              isLoading: result.isLoading,
-              isSuccess: result.isSuccess,
-              items: result?.data?.list?.items ?? null,
-              status: result.status,
-            };
-          }
-          return acc;
-        }, {} as Record<string, QueryListResponse<any, K, ApiError>>),
-        items: results.every(result => result.data === null)
-          ? null
-          : results.flatMap(result => result?.data?.list?.items ?? []),
-        errors: results.map(result => result.error).filter(Boolean),
-        isError: results.some(result => result.isError),
-        isLoading: results.some(result => result.isLoading),
-        isFetching: results.some(result => result.isFetching),
-        isSuccess: results.every(result => result.isSuccess),
-      };
-    },
+  const queryArgs: KubeObjectListsQueryArgs = useMemo(
+    () => ({
+      kubeObjectClass,
+      endpoint: endpoint!,
+      queries: queryConfigs,
+    }),
+    [kubeObjectClass, endpoint, queryConfigs]
+  );
+
+  const queryResult = kubeListApi.useGetKubeObjectListsQuery(queryArgs, {
+    skip: !endpoint || queryConfigs.length === 0,
+    pollingInterval: refetchInterval,
   });
 
-  const shouldWatch = watch && !refetchInterval && !query.isLoading;
+  const results = queryResult.data ?? [];
+
+  // Combine results similar to how useQueries' combine worked
+  const combined = useMemo(() => {
+    const clusterResults = results.reduce(
+      (acc, result) => {
+        if (result && result.cluster) {
+          acc[result.cluster] = {
+            data: result,
+            error: null,
+            errors: null,
+            isError: false,
+            isFetching: false,
+            isLoading: false,
+            isSuccess: true,
+            items: result?.list?.items ?? null,
+            status: 'success' as const,
+          };
+        }
+        return acc;
+      },
+      {} as Record<string, QueryListResponse<any, K, ApiError>>
+    );
+
+    const items: K[] | null = results.every(r => r === null)
+      ? null
+      : results.flatMap(r => (r?.list?.items as K[]) ?? []);
+
+    return { clusterResults, items };
+  }, [results]);
+
+  const shouldWatch = watch && !refetchInterval && !queryResult.isLoading;
 
   const [listsToWatch, setListsToWatch] = useState<
     { cluster: string; namespace?: string; resourceVersion: string }[]
   >([]);
 
-  const listsNotYetWatched = query.data
+  const listsNotYetWatched = results
     .filter(Boolean)
     .filter(
       data =>
@@ -532,23 +605,24 @@ export function useKubeObjectList<K extends KubeObject>({
     endpoint,
     kubeObjectClass,
     queryParams: cleanedUpQueryParams,
+    queryArgs,
   });
 
-  const errors = query.errors.filter(it => it !== null);
+  const queryError = queryResult.error as ApiError | undefined;
 
   // @ts-ignore - TS compiler gets confused with iterators
   return {
-    items: endpointError ? [] : query.items,
-    errors: endpointError ? [endpointError] : errors.length > 0 ? errors : null,
-    error: endpointError ?? query.errors.find(it => it !== null) ?? null,
-    clusterResults: query.clusterResults,
-    isError: query.isError,
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    isSuccess: query.isSuccess,
+    items: endpointError ? [] : combined.items,
+    errors: endpointError ? [endpointError] : queryError ? [queryError] : null,
+    error: endpointError ?? queryError ?? null,
+    clusterResults: combined.clusterResults,
+    isError: queryResult.isError || !!endpointError,
+    isLoading: queryResult.isLoading,
+    isFetching: queryResult.isFetching,
+    isSuccess: queryResult.isSuccess && !endpointError,
     *[Symbol.iterator](): ArrayIterator<ApiError | K[] | null> {
-      yield query.items;
-      yield endpointError ?? query.errors.find(it => it !== null) ?? null;
+      yield combined.items;
+      yield endpointError ?? queryError ?? null;
     },
   };
 }

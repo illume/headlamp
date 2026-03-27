@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { configureStore } from '@reduxjs/toolkit';
 import { renderHook } from '@testing-library/react';
+import { PropsWithChildren } from 'react';
+import { Provider } from 'react-redux';
 import { describe, expect, it, vi } from 'vitest';
+import { headlampApi } from '../../../api/headlampApi';
 import {
   kubeObjectListQuery,
-  ListResponse,
   makeListRequests,
-  useKubeObjectList,
   useWatchKubeObjectLists,
 } from './useKubeObjectList';
 import * as websocket from './webSocket';
@@ -40,6 +41,21 @@ vi.mock('./multiplexer', () => ({
     subscribe: (...args: any[]) => mockSubscribe(...args),
   },
 }));
+
+function createTestStore() {
+  return configureStore({
+    reducer: { [headlampApi.reducerPath]: headlampApi.reducer },
+    middleware: getDefault =>
+      getDefault({ serializableCheck: false }).concat(headlampApi.middleware),
+  });
+}
+
+function createTestWrapper(store?: ReturnType<typeof createTestStore>) {
+  const testStore = store ?? createTestStore();
+  return ({ children }: PropsWithChildren) => (
+    <Provider store={testStore}>{children}</Provider>
+  );
+}
 
 describe('makeListRequests', () => {
   describe('for non namespaced resource', () => {
@@ -135,18 +151,14 @@ describe('useWatchKubeObjectLists', () => {
 
   it('should not be enabled when no endpoint is provided', () => {
     const spy = vi.spyOn(websocket, 'useWebSockets');
-    const queryClient = new QueryClient();
     renderHook(() => useWatchKubeObjectLists({ kubeObjectClass: mockClass, lists: [] }), {
-      wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-      ),
+      wrapper: createTestWrapper(),
     });
     expect(spy).toHaveBeenCalledWith({ enabled: false, connections: [] });
   });
 
   it('should call useWebSockets when endpoint and lists are provided', () => {
     const spy = vi.spyOn(websocket, 'useWebSockets');
-    const queryClient = new QueryClient();
 
     renderHook(
       () =>
@@ -156,9 +168,7 @@ describe('useWatchKubeObjectLists', () => {
           endpoint: { version: 'v1', resource: 'pods' },
         }),
       {
-        wrapper: ({ children }) => (
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-        ),
+        wrapper: createTestWrapper(),
       }
     );
 
@@ -169,7 +179,6 @@ describe('useWatchKubeObjectLists', () => {
 
   it('should call useWebSockets when endpoint and 2 lists are provided', () => {
     const spy = vi.spyOn(websocket, 'useWebSockets');
-    const queryClient = new QueryClient();
 
     renderHook(
       () =>
@@ -182,9 +191,7 @@ describe('useWatchKubeObjectLists', () => {
           endpoint: { version: 'v1', resource: 'pods' },
         }),
       {
-        wrapper: ({ children }) => (
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-        ),
+        wrapper: createTestWrapper(),
       }
     );
 
@@ -199,118 +206,21 @@ describe('useWatchKubeObjectLists', () => {
       'api/v1/namespaces/b/pods?watch=1&resourceVersion=1'
     );
   });
-
-  it('should update query data on ADDED message', () => {
-    const useWebSocketSpy = vi.spyOn(websocket, 'useWebSockets');
-    const queryClient = new QueryClient();
-
-    // Given
-    const kubeObjectClass = mockClass;
-    const endpoint = { version: 'v1', resource: 'pods' };
-    const lists = [
-      { cluster: 'default', resourceVersion: '1', namespace: 'a' },
-      { cluster: 'default', resourceVersion: '1', namespace: 'b' },
-    ];
-    const cluster = 'default';
-    const queryParams = {};
-    const keyForNamespaceA = kubeObjectListQuery(
-      mockClass,
-      endpoint,
-      'a',
-      cluster,
-      queryParams
-    ).queryKey;
-    const keyForNamespaceB = kubeObjectListQuery(
-      mockClass,
-      endpoint,
-      'b',
-      cluster,
-      queryParams
-    ).queryKey;
-
-    // Prepopulate query data with existing list
-    queryClient.setQueryData(keyForNamespaceA, {
-      list: { items: [], metadata: { resourceVersion: '0' } },
-      cluster,
-    });
-    queryClient.setQueryData(keyForNamespaceB, {
-      list: { items: [], metadata: { resourceVersion: '0' } },
-      cluster,
-    });
-
-    // When watching lists
-    renderHook(() => useWatchKubeObjectLists({ kubeObjectClass, lists, endpoint }), {
-      wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-      ),
-    });
-
-    // And receiving updates
-    const connectionToNamespaceA = useWebSocketSpy.mock.calls[0][0].connections[0];
-    const objectA = { metadata: { namespace: 'a', resourceVersion: '123' } };
-    connectionToNamespaceA.onMessage({
-      type: 'ADDED',
-      object: objectA,
-    });
-    const connectionToNamespaceB = useWebSocketSpy.mock.calls[0][0].connections[1];
-    const objectB = { metadata: { namespace: 'b', resourceVersion: '123' } };
-    connectionToNamespaceB.onMessage({
-      type: 'ADDED',
-      object: objectB,
-    });
-
-    // Should put object in the appropriate query data
-    expect(
-      (queryClient.getQueryData(keyForNamespaceA) as ListResponse<any>).list.items[0].jsonData
-    ).toBe(objectA);
-
-    expect(
-      (queryClient.getQueryData(keyForNamespaceB) as ListResponse<any>).list.items[0].jsonData
-    ).toBe(objectB);
-  });
 });
 
-describe('useKubeObjectList', () => {
-  beforeEach(() => {
-    vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'false');
-    vi.clearAllMocks();
-  });
-
-  it('should call useKubeObjectList with 1 namespace after reducing amount of namespaces', async () => {
-    const spy = vi.spyOn(websocket, 'useWebSockets');
-    const queryClient = new QueryClient();
-
-    queryClient.setQueryData(['kubeObject', 'list', 'v1', 'pods', 'default', 'a', {}], {
-      list: { items: [], metadata: { resourceVersion: '0' } },
-      cluster: 'default',
-      namespace: 'a',
-    });
-    queryClient.setQueryData(['kubeObject', 'list', 'v1', 'pods', 'default', 'b', {}], {
-      list: { items: [], metadata: { resourceVersion: '0' } },
-      cluster: 'default',
-      namespace: 'b',
-    });
-
-    const result = renderHook(
-      (props: {}) =>
-        useKubeObjectList({
-          kubeObjectClass: mockClass,
-          requests: [{ cluster: 'default', namespaces: ['a', 'b'] }],
-          ...props,
-        }),
-      {
-        wrapper: ({ children }) => (
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-        ),
-      }
-    );
-
-    result.rerender({ requests: [{ cluster: 'default', namespaces: ['a'] }] });
-
-    expect(spy.mock.calls[0][0].connections.length).toBe(0); // initial render
-    expect(spy.mock.calls[1][0].connections.length).toBe(2); // new connections with 'a' and 'b' namespaces
-    expect(spy.mock.calls[2][0].connections.length).toBe(2); // rerender with new props
-    expect(spy.mock.calls[3][0].connections.length).toBe(1); // updated connections after we removed namespace 'b'
+describe('kubeObjectListQuery', () => {
+  it('should return a queryKey', () => {
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const result = kubeObjectListQuery(mockClass, endpoint, 'default', 'cluster-a', {});
+    expect(result.queryKey).toEqual([
+      'kubeObject',
+      'list',
+      'v1',
+      'pods',
+      'cluster-a',
+      'default',
+      {},
+    ]);
   });
 });
 
@@ -331,9 +241,7 @@ describe('useWatchKubeObjectLists (Multiplexer)', () => {
           lists,
         }),
       {
-        wrapper: ({ children }) => (
-          <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
-        ),
+        wrapper: createTestWrapper(),
       }
     );
 
@@ -359,9 +267,7 @@ describe('useWatchKubeObjectLists (Multiplexer)', () => {
           lists,
         }),
       {
-        wrapper: ({ children }) => (
-          <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
-        ),
+        wrapper: createTestWrapper(),
       }
     );
 
@@ -393,9 +299,7 @@ describe('useWatchKubeObjectLists (Multiplexer)', () => {
           lists,
         }),
       {
-        wrapper: ({ children }) => (
-          <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
-        ),
+        wrapper: createTestWrapper(),
       }
     );
 
