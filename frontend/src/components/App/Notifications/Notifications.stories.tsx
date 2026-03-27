@@ -23,6 +23,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { getTestDate } from '../../../helpers/testHelpers';
 import Notifications from './Notifications';
 import { Notification } from './notificationsSlice';
+import { headlampApi } from '../../../lib/api/headlampApi';
 
 const createTestNotification = (
   message: string,
@@ -43,8 +44,10 @@ const createTestNotification = (
 
 const createStore = (notifications: Notification[] = [], clusters = {}) =>
   configureStore({
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: {
-      notifications: (state = { notifications }) => state,
+      notifications: (state = { notifications     [headlampApi.reducerPath]: headlampApi.reducer,
+  }) => state,
       config: (state = { clusters }) => state,
     },
     preloadedState: {

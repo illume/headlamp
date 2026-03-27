@@ -24,6 +24,7 @@ import { makeMockKubeObject } from '../../test/mocker';
 import { SectionBox } from '../common/SectionBox';
 import DetailsViewSection, { DetailsViewSectionProps } from './DetailsViewSection';
 import { setDetailsView } from './detailsViewSectionSlice';
+import { headlampApi } from '../../lib/api/headlampApi';
 
 const ourState = {
   detailsViewSection: {
@@ -40,6 +41,7 @@ export default {
         <MemoryRouter>
           <Provider
             store={configureStore({
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
               reducer: (state = ourState) => state,
               preloadedState: ourState,
             })}

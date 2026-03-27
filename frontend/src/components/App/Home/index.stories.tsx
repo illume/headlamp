@@ -21,6 +21,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { initialState } from '../../../redux/configSlice';
 import shortcutsReducer from '../../../redux/shortcutsSlice';
 import Home from '.';
+import { headlampApi } from '../../../lib/api/headlampApi';
 
 const ourState = {
   config: {
@@ -71,6 +72,7 @@ Base.decorators = [
       <MemoryRouter>
         <Provider
           store={configureStore({
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
             reducer: (state = ourState) => state,
             preloadedState: ourState,
           })}

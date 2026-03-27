@@ -26,6 +26,7 @@ import { Cluster } from '../../../lib/k8s/cluster';
 import { initialState } from '../../../redux/configSlice';
 import { TestContext } from '../../../test';
 import SettingsClusters from './SettingsClusters';
+import { headlampApi } from '../../../lib/api/headlampApi';
 
 /**
  * Helper to convert Cluster array to a name->cluster record.
@@ -98,6 +99,7 @@ const Template: StoryFn<StoryArgs> = args => {
   return (
     <TestContext
       store={configureStore({
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
         reducer: (state = getMockState()) => state,
         preloadedState: getMockState(clusters),
       })}

@@ -24,6 +24,7 @@ import { useFilterFunc } from '../../lib/util';
 import { TestContext, TestContextProps } from '../../test';
 import SectionFilterHeader from './SectionFilterHeader';
 import SimpleTable, { SimpleTableProps } from './SimpleTable';
+import { headlampApi } from '../../lib/api/headlampApi';
 
 export default {
   title: 'SimpleTable',
@@ -255,6 +256,7 @@ const TemplateWithFilter: StoryFn<{
   const { simpleTableArgs, namespaces = [], search } = args;
 
   const storeWithFilterAndSettings = configureStore({
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: (
       state = {
         filter: { namespaces: new Set<string>() },

@@ -237,6 +237,7 @@ export function useKubeObject<K extends KubeObject>({
 
   const query = injectedApi.useGetKubeObjectQuery(queryArgs, {
     skip: !endpoint,
+    refetchOnMountOrArgChange: true,
   });
 
   const dispatch = useDispatch<any>();

@@ -18,6 +18,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import { Provider } from 'react-redux';
 import { ClusterNameEditor } from './ClusterNameEditor';
+import { headlampApi } from '../../../lib/api/headlampApi';
 
 const getMockState = () => ({
   plugins: { loaded: true },
@@ -43,6 +44,7 @@ const meta: Meta<typeof ClusterNameEditor> = {
 export default meta;
 const Template: StoryFn<typeof ClusterNameEditor> = args => {
   const store = configureStore({
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: (state = getMockState()) => state,
     preloadedState: getMockState(),
   });

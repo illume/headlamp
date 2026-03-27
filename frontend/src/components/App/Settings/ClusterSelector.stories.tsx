@@ -20,6 +20,7 @@ import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
 import { Provider } from 'react-redux';
 import ClusterSelector, { ClusterSelectorProps } from './ClusterSelector';
+import { headlampApi } from '../../../lib/api/headlampApi';
 
 const theme = createTheme({
   palette: {
@@ -50,6 +51,7 @@ export default {
 
 const Template: StoryFn<ClusterSelectorProps> = args => {
   const store = configureStore({
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: (state = getMockState()) => state,
     preloadedState: getMockState(),
   });

@@ -19,6 +19,7 @@ import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
 import { TestContext } from '../../test';
 import { AppLogo, AppLogoProps } from './AppLogo';
+import { headlampApi } from '../../lib/api/headlampApi';
 
 const getMockState = (themeName: 'light' | 'dark' = 'light', loaded = true, logo: any = null) => ({
   plugins: { loaded },
@@ -51,6 +52,7 @@ export default {
 const Template: StoryFn<AppLogoProps> = args => {
   const themeName = args.themeName === 'dark' ? 'dark' : 'light';
   const store = configureStore({
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: (state = getMockState(themeName)) => state,
     preloadedState: getMockState(themeName),
   });

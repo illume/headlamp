@@ -25,6 +25,7 @@ import shortcutsReducer from '../../../redux/shortcutsSlice';
 import { TestContext, TestContextProps } from '../../../test';
 import SectionFilterHeader from '../SectionFilterHeader';
 import Table, { TableProps } from './Table';
+import { headlampApi } from '../../../lib/api/headlampApi';
 
 export default {
   title: 'Table',
@@ -261,6 +262,7 @@ const TemplateWithFilter: StoryFn<{
   const { tableArgs: simpleTableArgs, search, namespaces = [] } = args;
 
   const storeWithFilterAndSettings = configureStore({
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: (
       state = {
         filter: { namespaces: new Set<string>(), search: '' },

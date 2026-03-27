@@ -21,6 +21,7 @@ import React from 'react';
 import { expect, userEvent, waitFor } from 'storybook/test';
 import { TestContext } from '../../../test';
 import SettingsCluster from './SettingsCluster';
+import { headlampApi } from '../../../lib/api/headlampApi';
 
 const mockClusterName = 'my-cluster';
 
@@ -30,11 +31,13 @@ function setupLocalStorage(clusterName: string, settings: Record<string, any> = 
 
 function getMockStore(clusters: Record<string, any> = {}) {
   return configureStore({
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: {
       config: (
         state = {
           clusters,
-          statelessClusters: {},
+          statelessClusters: {    [headlampApi.reducerPath]: headlampApi.reducer,
+  },
           allClusters: clusters,
           settings: {
             tableRowsPerPageOptions: [15, 25, 50],

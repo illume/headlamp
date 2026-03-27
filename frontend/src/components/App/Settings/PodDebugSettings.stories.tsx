@@ -24,6 +24,7 @@ import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
 import { Provider } from 'react-redux';
 import PodDebugSettings from './PodDebugSettings';
+import { headlampApi } from '../../../lib/api/headlampApi';
 
 const mockClusterName = 'mock-cluster';
 
@@ -59,6 +60,7 @@ export default {
 /** Story template with Redux Provider. */
 const Template: StoryFn<typeof PodDebugSettings> = args => {
   const store = configureStore({
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: (state = getMockState()) => state,
     preloadedState: getMockState(),
   });

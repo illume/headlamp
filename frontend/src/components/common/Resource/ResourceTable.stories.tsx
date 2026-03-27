@@ -26,6 +26,7 @@ import shortcutsReducer from '../../../redux/shortcutsSlice';
 import { uiSlice } from '../../../redux/uiSlice';
 import { TestContext } from '../../../test';
 import ResourceTable, { ResourceTableFromResourceClassProps } from './ResourceTable';
+import { headlampApi } from '../../../lib/api/headlampApi';
 
 const store = createStore(reducers);
 
@@ -52,6 +53,7 @@ const TemplateWithFilter: StoryFn<{
   const { resourceTableArgs, search, namespaces = [] } = args;
 
   const storeWithFilterAndSettings = configureStore({
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: (
       state = {
         filter: { namespaces: new Set<string>(), search: '' },

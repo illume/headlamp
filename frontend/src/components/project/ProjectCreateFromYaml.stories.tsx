@@ -21,6 +21,7 @@ import reducers from '../../redux/reducers/reducers';
 import { TestContext } from '../../test';
 import { CreateNew } from './ProjectCreateFromYaml';
 import { PROJECT_ID_LABEL } from './projectUtils';
+import { headlampApi } from '../../lib/api/headlampApi';
 
 export default {
   title: 'project/CreateFromYaml',
@@ -31,6 +32,7 @@ export default {
 
 const makeStore = () => {
   return configureStore({
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: reducers,
     preloadedState: {
       config: {

@@ -23,6 +23,7 @@ import { uiSlice } from '../../../../redux/uiSlice';
 import { TestContext } from '../../../../test';
 import { loadNotifications, Notification, storeNotifications } from '../notificationsSlice';
 import NotificationList from './List';
+import { headlampApi } from '../../../../lib/api/headlampApi';
 
 function createNotifications() {
   const notifications = [];
@@ -45,6 +46,7 @@ function createNotifications() {
 createNotifications();
 
 const store = configureStore({
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
   reducer: (
     state = {
       filter: { ...FILTER_INITIAL_STATE },

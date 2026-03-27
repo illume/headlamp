@@ -579,6 +579,7 @@ export function useKubeObjectList<K extends KubeObject>({
   const queryResult = kubeListApi.useGetKubeObjectListsQuery(queryArgs, {
     skip: !endpoint || queryConfigs.length === 0,
     pollingInterval: refetchInterval,
+    refetchOnMountOrArgChange: true,
   });
 
   const results = queryResult.data?.lists ?? [];

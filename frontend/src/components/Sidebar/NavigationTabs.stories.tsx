@@ -24,6 +24,7 @@ import { initialState as configInitialState } from '../../redux/configSlice';
 import { TestContext } from '../../test';
 import NavigationTabs from './NavigationTabs';
 import {
+import { headlampApi } from '../../lib/api/headlampApi';
   DefaultSidebars,
   initialState as sidebarInitialState,
   SidebarEntry,
@@ -117,8 +118,10 @@ const createMockStoryStore = (sidebarConfig: Partial<SidebarState>) => {
   };
 
   return configureStore({
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: {
-      sidebar: createSlice({ name: 'sidebar', initialState: fullSidebarState, reducers: {} })
+      sidebar: createSlice({ name: 'sidebar', initialState: fullSidebarState, reducers: {    [headlampApi.reducerPath]: headlampApi.reducer,
+  } })
         .reducer,
       config: (state = configInitialState) => state,
       filter: (state = { namespaces: new Set() }) => state,
