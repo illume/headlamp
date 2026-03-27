@@ -84,3 +84,19 @@ describe('headlampApi', () => {
     expect(extended).toBeDefined();
   });
 });
+
+describe('auth resetApiState', () => {
+  it('logout delegates to setToken without an extra resetApiState dispatch', async () => {
+    // The review identified that logout() dispatched resetApiState redundantly
+    // (setToken already resets on auth change). After the fix, logout() just
+    // calls setToken(cluster, null) with no additional dispatch.
+    const auth = await import('../auth');
+
+    expect(typeof auth.logout).toBe('function');
+    expect(typeof auth.setToken).toBe('function');
+
+    // Verify logout's compiled code does not reference resetApiState directly
+    const logoutStr = auth.logout.toString();
+    expect(logoutStr).not.toContain('resetApiState');
+  });
+});

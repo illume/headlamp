@@ -21,26 +21,22 @@ import { http, HttpResponse } from 'msw';
 import { PropsWithChildren } from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
+import { headlampApi } from '../../lib/api/headlampApi';
 import { AppBarActionsProcessor } from '../../redux/actionButtonsSlice';
 import { uiSlice } from '../../redux/uiSlice';
 import { initialState as themeInitialState } from './themeSlice';
 import { processAppBarActions, PureTopBar, PureTopBarProps } from './TopBar';
 
 const store = configureStore({
-  reducer: (state = { config: {}, ui: {} }) => state,
-  preloadedState: {
-    config: {},
-    ui: { ...uiSlice.getInitialState() },
-    notifications: {
-      notifications: [],
-    },
-    plugins: {
-      loaded: true,
-    },
-    theme: {
-      ...themeInitialState,
-    },
+  reducer: {
+    [headlampApi.reducerPath]: headlampApi.reducer,
+    config: (state = {}) => state,
+    ui: (state = uiSlice.getInitialState()) => state,
+    notifications: (state = { notifications: [] }) => state,
+    plugins: (state = { loaded: true }) => state,
+    theme: (state = themeInitialState) => state,
   },
+  middleware: getDefault => getDefault({ serializableCheck: false }).concat(headlampApi.middleware),
 });
 
 export default {

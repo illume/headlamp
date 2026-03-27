@@ -71,19 +71,22 @@ function KubeObjectLink(props: {
       onClick={e => {
         // prepopulate the query cache with existing object
         if (endpoint) {
+          const queryArgs = {
+            kubeObjectClass: kubeObject._class(),
+            endpoint,
+            namespace,
+            name,
+            cluster: kubeObject.cluster,
+            queryParams: {},
+          };
+
+          dispatch(kubeObjectApi.util.upsertQueryData('getKubeObject', queryArgs, kubeObject));
+
+          // Trigger a background refetch so the details page sees fresh data
           dispatch(
-            kubeObjectApi.util.upsertQueryData(
-              'getKubeObject',
-              {
-                kubeObjectClass: kubeObject._class(),
-                endpoint,
-                namespace,
-                name,
-                cluster: kubeObject.cluster,
-                queryParams: {},
-              },
-              kubeObject
-            )
+            kubeObjectApi.endpoints.getKubeObject.initiate(queryArgs, {
+              forceRefetch: true,
+            })
           );
         }
 

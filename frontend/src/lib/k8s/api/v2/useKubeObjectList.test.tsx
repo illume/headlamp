@@ -139,7 +139,15 @@ const mockClass = class {
     ],
   };
 
-  constructor(public jsonData: any) {}
+  jsonData: any;
+
+  constructor(jsonData: any, public cluster?: string) {
+    this.jsonData = jsonData;
+  }
+
+  get metadata() {
+    return this.jsonData?.metadata;
+  }
 } as any;
 
 describe('useWatchKubeObjectLists', () => {
@@ -333,18 +341,21 @@ describe('kubeListApi cache behavior', () => {
 
     // Prepopulate RTK Query cache with existing list data
     await store.dispatch(
-      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, [
-        {
-          list: { items: [], metadata: { resourceVersion: '0' } },
-          cluster: 'default',
-          namespace: 'a',
-        },
-        {
-          list: { items: [], metadata: { resourceVersion: '0' } },
-          cluster: 'default',
-          namespace: 'b',
-        },
-      ] as any)
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: { items: [], metadata: { resourceVersion: '0' } },
+            cluster: 'default',
+            namespace: 'a',
+          },
+          {
+            list: { items: [], metadata: { resourceVersion: '0' } },
+            cluster: 'default',
+            namespace: 'b',
+          },
+        ],
+        errors: [],
+      } as any)
     );
 
     // Render the watch hook with queryArgs for cache updates
@@ -381,14 +392,14 @@ describe('kubeListApi cache behavior', () => {
     // Verify cache was updated with new items
     const state = store.getState().headlampApi;
     const queryKey = Object.keys(state.queries)[0];
-    const cached = state.queries[queryKey]?.data as any[];
+    const cached = state.queries[queryKey]?.data as any;
 
     expect(cached).toBeDefined();
-    expect(cached).toHaveLength(2);
-    expect(cached[0].list.items).toHaveLength(1);
-    expect(cached[0].list.items[0].jsonData).toBe(objectA);
-    expect(cached[1].list.items).toHaveLength(1);
-    expect(cached[1].list.items[0].jsonData).toBe(objectB);
+    expect(cached.lists).toHaveLength(2);
+    expect(cached.lists[0].list.items).toHaveLength(1);
+    expect(cached.lists[0].list.items[0].jsonData).toBe(objectA);
+    expect(cached.lists[1].list.items).toHaveLength(1);
+    expect(cached.lists[1].list.items[0].jsonData).toBe(objectB);
   });
 
   it('should update RTK Query cache when websocket sends ADDED message (multiplexer)', async () => {
@@ -404,13 +415,16 @@ describe('kubeListApi cache behavior', () => {
 
     // Prepopulate RTK Query cache
     await store.dispatch(
-      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, [
-        {
-          list: { items: [], metadata: { resourceVersion: '0' } },
-          cluster: 'cluster-a',
-          namespace: 'ns-a',
-        },
-      ] as any)
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: { items: [], metadata: { resourceVersion: '0' } },
+            cluster: 'cluster-a',
+            namespace: 'ns-a',
+          },
+        ],
+        errors: [],
+      } as any)
     );
 
     renderHook(
@@ -440,11 +454,11 @@ describe('kubeListApi cache behavior', () => {
     // Verify the cache was updated
     const state = store.getState().headlampApi;
     const queryKey = Object.keys(state.queries)[0];
-    const cached = state.queries[queryKey]?.data as any[];
+    const cached = state.queries[queryKey]?.data as any;
 
     expect(cached).toBeDefined();
-    expect(cached[0].list.items).toHaveLength(1);
-    expect(cached[0].list.items[0].jsonData).toBe(newObject);
+    expect(cached.lists[0].list.items).toHaveLength(1);
+    expect(cached.lists[0].list.items[0].jsonData).toBe(newObject);
   });
 
   it('should not update cache when queryArgs is not provided', () => {
@@ -509,22 +523,28 @@ describe('kubeListApi serialization', () => {
 
     // Upsert data with classA
     await store.dispatch(
-      kubeListApi.util.upsertQueryData('getKubeObjectLists', argsA, [
-        {
-          list: { items: [{ name: 'pod-1' }], metadata: { resourceVersion: '0' } },
-          cluster: 'default',
-        },
-      ] as any)
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', argsA, {
+        lists: [
+          {
+            list: { items: [{ name: 'pod-1' }], metadata: { resourceVersion: '0' } },
+            cluster: 'default',
+          },
+        ],
+        errors: [],
+      } as any)
     );
 
     // Upsert data with classB (same serialized key, different class reference)
     await store.dispatch(
-      kubeListApi.util.upsertQueryData('getKubeObjectLists', argsB, [
-        {
-          list: { items: [{ name: 'pod-2' }], metadata: { resourceVersion: '1' } },
-          cluster: 'default',
-        },
-      ] as any)
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', argsB, {
+        lists: [
+          {
+            list: { items: [{ name: 'pod-2' }], metadata: { resourceVersion: '1' } },
+            cluster: 'default',
+          },
+        ],
+        errors: [],
+      } as any)
     );
 
     // Both should hit the same cache entry since kubeObjectClass is excluded from serialization
@@ -533,7 +553,117 @@ describe('kubeListApi serialization', () => {
     expect(queryKeys.length).toBe(1);
 
     // The value should be the last upserted one
-    const cached = state.queries[queryKeys[0]]?.data as any[];
-    expect(cached[0].list.items[0].name).toBe('pod-2');
+    const cached = state.queries[queryKeys[0]]?.data as any;
+    expect(cached.lists[0].list.items[0].name).toBe('pod-2');
+  });
+});
+
+describe('kubeListApi partial error handling', () => {
+  it('should include partial errors in result when some fetches fail', async () => {
+    const store = createTestStore();
+    const endpoint = { version: 'v1', resource: 'pods' };
+
+    // Create query args that will produce a mix of success and failure
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [
+        { cluster: 'cluster-ok', queryParams: {} },
+        { cluster: 'cluster-fail', queryParams: {} },
+      ],
+    };
+
+    // Prepopulate with a result that has both lists and partial errors
+    await store.dispatch(
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: { items: [{ name: 'pod-1' }], metadata: { resourceVersion: '0' } },
+            cluster: 'cluster-ok',
+          },
+          null, // failed fetch
+        ],
+        errors: [{ message: 'forbidden', status: 403 }],
+      } as any)
+    );
+
+    const state = store.getState().headlampApi;
+    const queryKey = Object.keys(state.queries)[0];
+    const cached = state.queries[queryKey]?.data as any;
+
+    // The result should contain both lists and errors
+    expect(cached.lists).toHaveLength(2);
+    expect(cached.lists[0]).not.toBeNull();
+    expect(cached.lists[1]).toBeNull();
+    expect(cached.errors).toHaveLength(1);
+    expect(cached.errors[0].message).toBe('forbidden');
+  });
+});
+
+describe('kubeListApi legacy no-op cache writes', () => {
+  beforeEach(() => {
+    vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'false');
+    vi.clearAllMocks();
+  });
+
+  it('should skip cache write when applyUpdate returns same list (stale resourceVersion)', async () => {
+    const spy = vi.spyOn(websocket, 'useWebSockets');
+    const store = createTestStore();
+
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [{ cluster: 'default', namespace: 'a', queryParams: {} }],
+    };
+
+    // Prepopulate cache with resourceVersion '100'
+    await store.dispatch(
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: {
+              items: [new mockClass({ metadata: { name: 'pod-1', uid: 'abc', namespace: 'a' } })],
+              metadata: { resourceVersion: '100' },
+            },
+            cluster: 'default',
+            namespace: 'a',
+          },
+        ],
+        errors: [],
+      } as any)
+    );
+
+    renderHook(
+      () =>
+        useWatchKubeObjectLists({
+          kubeObjectClass: mockClass,
+          lists: [{ cluster: 'default', resourceVersion: '1', namespace: 'a' }],
+          endpoint,
+          queryArgs,
+        }),
+      {
+        wrapper: createTestWrapper(store),
+      }
+    );
+
+    // Get the state before message
+    const stateBefore = store.getState().headlampApi;
+    const queryKey = Object.keys(stateBefore.queries)[0];
+    const dataBefore = stateBefore.queries[queryKey]?.data;
+
+    // Send an update with an older resourceVersion — applyUpdate returns the same list reference
+    const connection = spy.mock.calls[0][0].connections[0];
+    act(() => {
+      connection.onMessage({
+        type: 'MODIFIED',
+        object: { metadata: { name: 'pod-1', uid: 'abc', namespace: 'a', resourceVersion: '50' } },
+      });
+    });
+
+    // Cache reference should be unchanged (no-op write skipped by our guard)
+    const stateAfter = store.getState().headlampApi;
+    const dataAfter = stateAfter.queries[queryKey]?.data;
+    expect(dataAfter).toBe(dataBefore);
   });
 });

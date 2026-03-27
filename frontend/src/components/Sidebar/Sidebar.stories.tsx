@@ -18,6 +18,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import { http, HttpResponse } from 'msw';
 import { SnackbarProvider } from 'notistack';
+import { headlampApi } from '../../lib/api/headlampApi';
 import { initialState as THEME_INITIAL_STATE } from '../../components/App/themeSlice';
 import { initialState as CONFIG_INITIAL_STATE } from '../../redux/configSlice';
 import { initialState as FILTER_INITIAL_STATE } from '../../redux/filterSlice';
@@ -64,12 +65,9 @@ type StoryProps = Partial<SidebarState>;
 
 const Template: StoryFn<StoryProps> = args => {
   const sidebarStore = configureStore({
-    reducer: (
-      state = {
-        ui: { ...uiSlice.getInitialState() },
-      }
-    ) => state,
+    reducer: (state = { ui: { ...uiSlice.getInitialState() } }) => state,
     preloadedState: {
+      [headlampApi.reducerPath]: undefined as any,
       plugins: {
         loaded: true,
       },
@@ -92,6 +90,8 @@ const Template: StoryFn<StoryProps> = args => {
         ...args,
       },
     },
+    middleware: getDefault =>
+      getDefault({ serializableCheck: false }).concat(headlampApi.middleware),
   });
   return (
     <TestContext store={sidebarStore}>

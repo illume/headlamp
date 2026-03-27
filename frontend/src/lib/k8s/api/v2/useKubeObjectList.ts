@@ -142,9 +142,16 @@ interface KubeObjectListsQueryArgs {
   }>;
 }
 
+/** Result from the combined kube object lists query, including partial errors */
+interface KubeObjectListsResult<K extends KubeObject> {
+  lists: Array<ListResponse<K> | null>;
+  /** Errors from individual cluster/namespace fetches that failed */
+  errors: ApiError[];
+}
+
 const kubeListApi = headlampApi.injectEndpoints({
   endpoints: build => ({
-    getKubeObjectLists: build.query<Array<ListResponse<any> | null>, KubeObjectListsQueryArgs>({
+    getKubeObjectLists: build.query<KubeObjectListsResult<any>, KubeObjectListsQueryArgs>({
       queryFn: async ({ kubeObjectClass, endpoint, queries }) => {
         try {
           const results = await Promise.allSettled(
@@ -152,8 +159,15 @@ const kubeListApi = headlampApi.injectEndpoints({
               fetchKubeObjectList(kubeObjectClass, endpoint, namespace, cluster, queryParams)
             )
           );
-          const data = results.map(r => (r.status === 'fulfilled' ? r.value : null));
-          return { data };
+          const lists = results.map(r => (r.status === 'fulfilled' ? r.value : null));
+          const errors = results
+            .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
+            .map(r => r.reason as ApiError);
+          if (errors.length > 0 && errors.length === results.length) {
+            // All queries failed — return as error
+            return { error: errors[0] };
+          }
+          return { data: { lists, errors } };
         } catch (error) {
           return { error };
         }
@@ -292,19 +306,19 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
           kubeListApi.util.updateQueryData(
             'getKubeObjectLists',
             queryArgsRef.current,
-            (draft: Array<ListResponse<any> | null>) => {
-              const idx = draft.findIndex(
+            (draft: KubeObjectListsResult<any>) => {
+              const idx = draft.lists.findIndex(
                 d => d && d.cluster === cluster && d.namespace === namespace
               );
-              if (idx !== -1 && draft[idx]) {
+              if (idx !== -1 && draft.lists[idx]) {
                 const newList = KubeList.applyUpdate(
-                  draft[idx]!.list,
+                  draft.lists[idx]!.list,
                   update,
                   kubeObjectClass,
                   cluster
                 );
-                if (newList !== draft[idx]!.list) {
-                  draft[idx] = { ...draft[idx]!, list: newList };
+                if (newList !== draft.lists[idx]!.list) {
+                  draft.lists[idx] = { ...draft.lists[idx]!, list: newList };
                 }
               }
             }
@@ -402,18 +416,20 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
               kubeListApi.util.updateQueryData(
                 'getKubeObjectLists',
                 queryArgsRef.current,
-                (draft: Array<ListResponse<any> | null>) => {
-                  const idx = draft.findIndex(
+                (draft: KubeObjectListsResult<any>) => {
+                  const idx = draft.lists.findIndex(
                     d => d && d.cluster === cluster && d.namespace === namespace
                   );
-                  if (idx !== -1 && draft[idx]) {
+                  if (idx !== -1 && draft.lists[idx]) {
                     const newList = KubeList.applyUpdate(
-                      draft[idx]!.list,
+                      draft.lists[idx]!.list,
                       update,
                       kubeObjectClass,
                       cluster
                     );
-                    draft[idx] = { ...draft[idx]!, list: newList };
+                    if (newList !== draft.lists[idx]!.list) {
+                      draft.lists[idx] = { ...draft.lists[idx]!, list: newList };
+                    }
                   }
                 }
               )
@@ -534,7 +550,8 @@ export function useKubeObjectList<K extends KubeObject>({
     pollingInterval: refetchInterval,
   });
 
-  const results = queryResult.data ?? [];
+  const results = queryResult.data?.lists ?? [];
+  const partialErrors = queryResult.data?.errors ?? [];
 
   // Combine results similar to how useQueries' combine worked
   const combined = useMemo(() => {
@@ -609,12 +626,15 @@ export function useKubeObjectList<K extends KubeObject>({
   });
 
   const queryError = queryResult.error as ApiError | undefined;
+  const allErrors = endpointError
+    ? [endpointError]
+    : [...partialErrors, ...(queryError ? [queryError] : [])];
 
   // @ts-ignore - TS compiler gets confused with iterators
   return {
     items: endpointError ? [] : combined.items,
-    errors: endpointError ? [endpointError] : queryError ? [queryError] : null,
-    error: endpointError ?? queryError ?? null,
+    errors: allErrors.length > 0 ? allErrors : null,
+    error: endpointError ?? allErrors[0] ?? queryError ?? null,
     clusterResults: combined.clusterResults,
     isError: queryResult.isError || !!endpointError,
     isLoading: queryResult.isLoading,

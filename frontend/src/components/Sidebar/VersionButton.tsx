@@ -43,9 +43,9 @@ const VersionIcon = styled(Icon)({
 const versionApi = headlampApi.injectEndpoints({
   endpoints: build => ({
     getClusterVersion: build.query<any, { cluster: string }>({
-      queryFn: async () => {
+      queryFn: async ({ cluster }) => {
         try {
-          const results = await getVersion();
+          const results = await getVersion(cluster);
           return { data: results };
         } catch (error: any) {
           console.error('Getting the cluster version:', error);

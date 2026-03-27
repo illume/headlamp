@@ -126,9 +126,7 @@ export function setToken(cluster: string, token: string | null) {
  * @throws {Error} When logout request fails
  */
 export async function logout(cluster: string) {
-  return setToken(cluster, null).then(() => {
-    store.dispatch(headlampApi.util.resetApiState());
-  });
+  return setToken(cluster, null);
 }
 
 /**

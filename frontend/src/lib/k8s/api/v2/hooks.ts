@@ -216,6 +216,11 @@ export function useKubeObject<K extends KubeObject>({
     Object.entries(queryParams ?? {}).filter(([, value]) => value !== undefined && value !== '')
   );
 
+  const stableQueryParams = useMemo(
+    () => cleanedUpQueryParams,
+    [JSON.stringify(cleanedUpQueryParams)]
+  );
+
   const queryArgs = useMemo(
     () => ({
       kubeObjectClass,
@@ -223,9 +228,9 @@ export function useKubeObject<K extends KubeObject>({
       namespace,
       name,
       cluster,
-      queryParams: cleanedUpQueryParams,
+      queryParams: stableQueryParams,
     }),
-    [endpoint, namespace, name, cluster]
+    [kubeObjectClass, endpoint, namespace, name, cluster, stableQueryParams]
   );
 
   const query = injectedApi.useGetKubeObjectQuery(queryArgs, {
