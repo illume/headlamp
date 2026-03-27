@@ -469,7 +469,7 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
         },
       };
     });
-  }, [lists, kubeObjectClass, endpoint, indexMap]);
+  }, [lists, kubeObjectClass, endpoint, indexMap, queryParams]);
 
   useWebSockets<KubeListUpdateEvent<K>>({
     enabled: !!endpoint,

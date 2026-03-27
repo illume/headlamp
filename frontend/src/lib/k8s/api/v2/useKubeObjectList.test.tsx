@@ -213,6 +213,36 @@ describe('useWatchKubeObjectLists', () => {
       'api/v1/namespaces/b/pods?watch=1&resourceVersion=1'
     );
   });
+
+  it('should update websocket connections URL when queryParams change', () => {
+    const spy = vi.spyOn(websocket, 'useWebSockets');
+    let qp: Record<string, string> = { labelSelector: 'app=old' };
+
+    const { rerender } = renderHook(
+      () =>
+        useWatchKubeObjectLists({
+          kubeObjectClass: mockClass,
+          lists: [{ cluster: 'default', resourceVersion: '1' }],
+          endpoint: { version: 'v1', resource: 'pods' },
+          queryParams: qp,
+        }),
+      {
+        wrapper: createTestWrapper(),
+      }
+    );
+
+    // First render: URL should contain old label selector
+    const firstUrl = spy.mock.calls[spy.mock.calls.length - 1][0].connections[0]?.url;
+    expect(firstUrl).toContain('labelSelector=app%3Dold');
+
+    // Change queryParams
+    qp = { labelSelector: 'app=new' };
+    rerender();
+
+    // After rerender: URL should contain new label selector
+    const updatedUrl = spy.mock.calls[spy.mock.calls.length - 1][0].connections[0]?.url;
+    expect(updatedUrl).toContain('labelSelector=app%3Dnew');
+  });
 });
 
 describe('kubeObjectListQuery', () => {

@@ -425,6 +425,122 @@ describe('useKubeObject', () => {
     const lastCall = wsSpy.mock.calls[wsSpy.mock.calls.length - 1][0] as any;
     expect(lastCall.enabled).toBe(false);
   });
+
+  it('should update websocket URL when namespace changes', async () => {
+    const podData = { metadata: { name: 'pod1', namespace: 'ns-a', uid: 'uid1' } };
+    mockClusterFetch.mockResolvedValue({
+      json: () => Promise.resolve(podData),
+    });
+
+    const wsSpy = vi.spyOn(websocket, 'useWebSockets');
+    let ns = 'ns-a';
+
+    const { result, rerender } = renderHook(
+      () =>
+        useKubeObject({
+          kubeObjectClass: mockKubeObjectClass,
+          namespace: ns,
+          name: 'pod1',
+          cluster: 'c1',
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    const urlBefore = (wsSpy.mock.calls[wsSpy.mock.calls.length - 1][0] as any).connections[0]?.url;
+    expect(urlBefore).toContain('ns-a');
+
+    // Change namespace
+    ns = 'ns-b';
+    rerender();
+
+    await waitFor(() => {
+      const lastUrl = (wsSpy.mock.calls[wsSpy.mock.calls.length - 1][0] as any).connections[0]?.url;
+      expect(lastUrl).toContain('ns-b');
+    });
+  });
+
+  it('should update websocket URL when name changes', async () => {
+    const podData = { metadata: { name: 'pod-a', namespace: 'ns', uid: 'uid-a' } };
+    mockClusterFetch.mockResolvedValue({
+      json: () => Promise.resolve(podData),
+    });
+
+    const wsSpy = vi.spyOn(websocket, 'useWebSockets');
+    let podName = 'pod-a';
+
+    const { result, rerender } = renderHook(
+      () =>
+        useKubeObject({
+          kubeObjectClass: mockKubeObjectClass,
+          namespace: 'ns',
+          name: podName,
+          cluster: 'c1',
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    const urlBefore = (wsSpy.mock.calls[wsSpy.mock.calls.length - 1][0] as any).connections[0]?.url;
+    expect(urlBefore).toContain('metadata.name%3Dpod-a');
+
+    // Change name
+    podName = 'pod-b';
+    mockClusterFetch.mockResolvedValue({
+      json: () => Promise.resolve({ metadata: { name: 'pod-b', namespace: 'ns', uid: 'uid-b' } }),
+    });
+    rerender();
+
+    await waitFor(() => {
+      const lastUrl = (wsSpy.mock.calls[wsSpy.mock.calls.length - 1][0] as any).connections[0]?.url;
+      expect(lastUrl).toContain('metadata.name%3Dpod-b');
+    });
+  });
+
+  it('should update websocket cluster when cluster changes', async () => {
+    const podData = { metadata: { name: 'pod1', namespace: 'ns', uid: 'uid1' } };
+    mockClusterFetch.mockResolvedValue({
+      json: () => Promise.resolve(podData),
+    });
+
+    const wsSpy = vi.spyOn(websocket, 'useWebSockets');
+    let cluster = 'cluster-a';
+
+    const { result, rerender } = renderHook(
+      () =>
+        useKubeObject({
+          kubeObjectClass: mockKubeObjectClass,
+          namespace: 'ns',
+          name: 'pod1',
+          cluster,
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    const clusterBefore = (wsSpy.mock.calls[wsSpy.mock.calls.length - 1][0] as any).connections[0]
+      ?.cluster;
+    expect(clusterBefore).toBe('cluster-a');
+
+    // Change cluster
+    cluster = 'cluster-b';
+    rerender();
+
+    await waitFor(() => {
+      const lastCluster = (wsSpy.mock.calls[wsSpy.mock.calls.length - 1][0] as any).connections[0]
+        ?.cluster;
+      expect(lastCluster).toBe('cluster-b');
+    });
+  });
 });
 
 describe('kubeObjectApi cache key serialization', () => {

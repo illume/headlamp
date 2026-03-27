@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { headlampApi } from '../../../api/headlampApi';
 import { getCluster } from '../../../cluster';
@@ -244,13 +244,17 @@ export function useKubeObject<K extends KubeObject>({
 
   const data: Instance | null = query.error ? null : (query.data as Instance) ?? null;
 
+  // Keep refs for values used in onMessage so the callback always sees the latest
+  const queryArgsRef = useRef(queryArgs);
+  queryArgsRef.current = queryArgs;
+
   const connectionsRequests = useMemo(() => {
     if (!endpoint) return [];
 
     return [
       {
         url: makeUrl([KubeObjectEndpoint.toUrl(endpoint!, namespace)], {
-          ...cleanedUpQueryParams,
+          ...stableQueryParams,
           watch: 1,
           fieldSelector: `metadata.name=${name}`,
         }),
@@ -260,7 +264,7 @@ export function useKubeObject<K extends KubeObject>({
             dispatch(
               injectedApi.util.upsertQueryData(
                 'getKubeObject',
-                queryArgs,
+                queryArgsRef.current,
                 new kubeObjectClass(update.object, cluster)
               )
             );
@@ -268,7 +272,7 @@ export function useKubeObject<K extends KubeObject>({
         },
       },
     ];
-  }, [endpoint]);
+  }, [endpoint, namespace, name, cluster, stableQueryParams, kubeObjectClass, dispatch]);
 
   // Breaking rules of hooks here a little but
   // getWebsocketMultiplexerEnabled is a feature toggle
