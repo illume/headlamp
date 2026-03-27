@@ -19,6 +19,7 @@ import { composeStories, type Meta, setProjectAnnotations, type StoryFn } from '
 import { act, render as testingLibraryRender, waitFor } from '@testing-library/react';
 import { getWorker } from 'msw-storybook-addon';
 import path from 'path';
+import React from 'react';
 import * as previewAnnotations from '../.storybook/preview';
 
 const annotations = setProjectAnnotations([previewAnnotations, { testingLibraryRender }]);
@@ -73,6 +74,14 @@ vi.mock('@monaco-editor/react', () => ({
   useMonaco: () => null,
   loader: { config: () => null },
   default: () => <div className="mock-monaco-editor" />,
+}));
+
+// Mock AuthVisible to render children synchronously.
+// The baseMocks MSW handler returns allowed=true for all auth checks, but the
+// RTK Query async pipeline creates non-deterministic timing with fake timers.
+// This mock matches the intended baseMock behavior without the async race.
+vi.mock('./components/common/Resource/AuthVisible', () => ({
+  default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 window.matchMedia = () => ({
