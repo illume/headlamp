@@ -34,10 +34,11 @@ function getMockStore(clusters: Record<string, any> = {}) {
     middleware: getDefaultMiddleware =>
       getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: {
+      [headlampApi.reducerPath]: headlampApi.reducer,
       config: (
         state = {
           clusters,
-          statelessClusters: { [headlampApi.reducerPath]: headlampApi.reducer },
+          statelessClusters: {},
           allClusters: clusters,
           settings: {
             tableRowsPerPageOptions: [15, 25, 50],

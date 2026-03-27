@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { skipToken } from '@reduxjs/toolkit/query/react';
 import React, { useEffect } from 'react';
 import { headlampApi } from '../../../lib/api/headlampApi';
 import { KubeObject } from '../../../lib/k8s/KubeObject';
@@ -100,16 +101,17 @@ export default function AuthVisible(props: AuthVisibleProps) {
   const itemName = (item as KubeObject)?.getName?.();
 
   const { data, error: queryError } = authVisibleApi.useCheckAuthVisibleQuery(
-    {
-      itemName,
-      apiName: itemClass.apiName,
-      apiVersion: itemClass.apiVersion,
-      authVerb,
-      subresource,
-      namespace,
-      item: item!,
-    },
-    { skip: !item }
+    item && itemClass
+      ? {
+          itemName,
+          apiName: itemClass.apiName,
+          apiVersion: itemClass.apiVersion,
+          authVerb,
+          subresource,
+          namespace,
+          item,
+        }
+      : skipToken
   );
 
   useEffect(() => {
