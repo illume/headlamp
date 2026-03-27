@@ -192,6 +192,7 @@ describe('AuthVisible', () => {
     });
 
     // Now re-render with a new onError callback
+    const onError1CallCount = onError1.mock.calls.length;
     const onError2 = vi.fn();
 
     rerender(
@@ -207,6 +208,9 @@ describe('AuthVisible', () => {
     await waitFor(() => {
       expect(onError2).toHaveBeenCalled();
     });
+
+    // Verify the old callback was not called again after rerender
+    expect(onError1.mock.calls.length).toBe(onError1CallCount);
   });
 
   it('calls onAuthResult with the latest callback when auth data arrives', async () => {
@@ -238,6 +242,7 @@ describe('AuthVisible', () => {
     });
 
     // Now re-render with a new onAuthResult callback
+    const onAuthResult1CallCount = onAuthResult1.mock.calls.length;
     const onAuthResult2 = vi.fn();
 
     rerender(
@@ -252,5 +257,8 @@ describe('AuthVisible', () => {
     await waitFor(() => {
       expect(onAuthResult2).toHaveBeenCalledWith({ allowed: true, reason: 'RBAC: allowed' });
     });
+
+    // Verify the old callback was not called again after rerender
+    expect(onAuthResult1.mock.calls.length).toBe(onAuthResult1CallCount);
   });
 });
