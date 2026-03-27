@@ -21,7 +21,6 @@ import { Provider } from 'react-redux';
 import { describe, expect, it, vi } from 'vitest';
 import { headlampApi } from '../../../api/headlampApi';
 import { kubeObjectApi, useEndpoints, useKubeObject } from './hooks';
-import * as fetchModule from './fetch';
 import * as websocket from './webSocket';
 
 const mockClusterFetch = vi.fn();

@@ -19,8 +19,8 @@
  */
 
 import { getHeadlampAPIHeaders } from '../helpers/getHeadlampAPIHeaders';
-import { headlampApi } from './api/headlampApi';
 import store from '../redux/stores/store';
+import { headlampApi } from './api/headlampApi';
 import { backendFetch } from './k8s/api/v2/fetch';
 
 /**

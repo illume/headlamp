@@ -77,13 +77,12 @@ export function kubeObjectListQueryKey(
  * @deprecated Use kubeObjectListQueryKey instead.
  * Kept for backward compatibility in tests.
  */
-export function kubeObjectListQuery<K extends KubeObject>(
+export function kubeObjectListQuery(
   kubeObjectClass: KubeObjectClass,
   endpoint: KubeObjectEndpoint,
   namespace: string | undefined,
   cluster: string,
-  queryParams: QueryParameters,
-  _refetchInterval?: number
+  queryParams: QueryParameters
 ) {
   return {
     queryKey: kubeObjectListQueryKey(kubeObjectClass, endpoint, namespace, cluster, queryParams),
@@ -172,7 +171,9 @@ const kubeListApi = headlampApi.injectEndpoints({
           return { error };
         }
       },
-      serializeQueryArgs: ({ queryArgs: { kubeObjectClass: _cls, ...rest } }) => {
+      serializeQueryArgs: ({ queryArgs }) => {
+        const { kubeObjectClass, ...rest } = queryArgs;
+        void kubeObjectClass;
         return JSON.stringify(rest);
       },
     }),

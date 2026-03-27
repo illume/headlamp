@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { headlampApi } from '../../../lib/api/headlampApi';
 import React, { useEffect } from 'react';
+import { headlampApi } from '../../../lib/api/headlampApi';
 import { KubeObject } from '../../../lib/k8s/KubeObject';
 import { KubeObjectClass } from '../../../lib/k8s/KubeObject';
 
@@ -79,7 +79,9 @@ const authVisibleApi = headlampApi.injectEndpoints({
           return { error: e };
         }
       },
-      serializeQueryArgs: ({ queryArgs: { item: _item, ...rest } }) => {
+      serializeQueryArgs: ({ queryArgs }) => {
+        const { item, ...rest } = queryArgs;
+        void item;
         return JSON.stringify(rest);
       },
     }),

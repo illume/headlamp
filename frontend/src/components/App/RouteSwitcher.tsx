@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import { headlampApi } from '../../lib/api/headlampApi';
 import React, { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { Redirect, Route, RouteProps, Switch, useHistory } from 'react-router-dom';
+import { headlampApi } from '../../lib/api/headlampApi';
 import { getCluster, getSelectedClusters } from '../../lib/cluster';
 import { useCluster, useClustersConf } from '../../lib/k8s';
 import { testAuth } from '../../lib/k8s/api/v1/clusterApi';

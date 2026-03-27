@@ -159,7 +159,9 @@ const injectedApi = headlampApi.injectEndpoints({
           return { error };
         }
       },
-      serializeQueryArgs: ({ queryArgs: { kubeObjectClass: _cls, ...rest } }) => {
+      serializeQueryArgs: ({ queryArgs }) => {
+        const { kubeObjectClass, ...rest } = queryArgs;
+        void kubeObjectClass;
         return JSON.stringify(rest);
       },
       keepUnusedDataFor: 5, // seconds
