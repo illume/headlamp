@@ -8,8 +8,8 @@ function assertContextKwok() {
     stdio: ["pipe", "pipe", "pipe"],
   });
   const stdoutData = result.toString();
-  if (stdoutData.trim() !== "kwok-kwok") {
-    console.error("Error: current context is not kwok-kwok");
+  if (!stdoutData.trim().startsWith("kwok-")) {
+    console.error("Error: current context does not start with kwok-");
     process.exit(1);
   }
 }
