@@ -30,6 +30,7 @@ import { getNodeWeight, GraphEdge, GraphNode } from './graphModel';
  * @returns The top `count` items (unordered)
  */
 export function selectTopN<T>(items: T[], count: number, getScore: (item: T) => number): T[] {
+  if (count <= 0) return [];
   if (items.length <= count) return items;
 
   // Build a min-heap of size `count` so the smallest score is at index 0.

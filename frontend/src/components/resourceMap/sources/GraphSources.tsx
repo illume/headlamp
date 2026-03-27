@@ -233,7 +233,12 @@ export function GraphSourceManager({ sources, children, relations }: GraphSource
 
   const onData = useCallback(
     (id: string, data: MaybeNodesAndEdges) => {
-      setSourceData(map => new Map(map).set(id, data));
+      setSourceData(map => {
+        // Skip update if the data reference hasn't changed, avoiding a new Map
+        // allocation that would trigger downstream useMemo recomputations.
+        if (map.get(id) === data) return map;
+        return new Map(map).set(id, data);
+      });
     },
     [setSourceData],
   );

@@ -9,7 +9,9 @@ function assertContextKwok() {
   });
   const stdoutData = result.toString();
   if (!stdoutData.trim().startsWith("kwok-")) {
-    console.error("Error: current context does not start with kwok-");
+    console.error(
+      `Error: current context '${stdoutData.trim()}' does not start with kwok-`,
+    );
     process.exit(1);
   }
 }
