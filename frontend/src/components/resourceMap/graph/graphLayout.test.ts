@@ -87,19 +87,13 @@ describe('getGraphCacheKey', () => {
 
   it('should produce different keys when an edge is added', () => {
     const graph1 = makeGraph([{ id: 'a' }, { id: 'b' }]);
-    const graph2 = makeGraph([{ id: 'a' }, { id: 'b' }], [
-      { id: 'e1', source: 'a', target: 'b' },
-    ]);
+    const graph2 = makeGraph([{ id: 'a' }, { id: 'b' }], [{ id: 'e1', source: 'a', target: 'b' }]);
     expect(getGraphCacheKey(graph1, 1.5)).not.toBe(getGraphCacheKey(graph2, 1.5));
   });
 
   it('should produce different keys when edge direction changes', () => {
-    const graph1 = makeGraph([{ id: 'a' }, { id: 'b' }], [
-      { id: 'e1', source: 'a', target: 'b' },
-    ]);
-    const graph2 = makeGraph([{ id: 'a' }, { id: 'b' }], [
-      { id: 'e1', source: 'b', target: 'a' },
-    ]);
+    const graph1 = makeGraph([{ id: 'a' }, { id: 'b' }], [{ id: 'e1', source: 'a', target: 'b' }]);
+    const graph2 = makeGraph([{ id: 'a' }, { id: 'b' }], [{ id: 'e1', source: 'b', target: 'a' }]);
     expect(getGraphCacheKey(graph1, 1.5)).not.toBe(getGraphCacheKey(graph2, 1.5));
   });
 
