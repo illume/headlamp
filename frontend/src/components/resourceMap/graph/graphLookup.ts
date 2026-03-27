@@ -37,7 +37,7 @@ export interface GraphLookup<N, E> {
  */
 export function makeGraphLookup<N extends GraphNode, E extends GraphEdge>(
   nodes: N[],
-  edges: E[]
+  edges: E[],
 ): GraphLookup<N, E> {
   const nodeMap = new Map<string, N>();
   nodes.forEach(n => {

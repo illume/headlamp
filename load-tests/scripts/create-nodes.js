@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-const yargs = require('yargs');
-const { assertContextKwok, batchApply } = require('./helpers');
+const yargs = require("yargs");
+const { assertContextKwok, batchApply } = require("./helpers");
 
 function nodeYaml(index) {
   return `apiVersion: v1
@@ -67,25 +67,25 @@ function createNodes(numNodes) {
 }
 
 yargs
-  .scriptName('create-nodes')
-  .usage('$0 <cmd> [args]')
+  .scriptName("create-nodes")
+  .usage("$0 <cmd> [args]")
   .command(
-    '$0 <numNodes> [sleepInterval]',
-    'Create Kubernetes nodes',
-    yargs => {
-      yargs.positional('numNodes', {
-        describe: 'Number of nodes to create',
-        type: 'number',
+    "$0 <numNodes> [sleepInterval]",
+    "Create Kubernetes nodes",
+    (yargs) => {
+      yargs.positional("numNodes", {
+        describe: "Number of nodes to create",
+        type: "number",
       });
-      yargs.positional('sleepInterval', {
-        describe: 'Deprecated, ignored. Kept for backward compatibility.',
-        type: 'number',
+      yargs.positional("sleepInterval", {
+        describe: "Deprecated, ignored. Kept for backward compatibility.",
+        type: "number",
         default: 0,
       });
     },
-    argv => {
+    (argv) => {
       assertContextKwok();
       createNodes(argv.numNodes);
-    }
+    },
   )
   .help().argv;

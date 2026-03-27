@@ -236,5 +236,5 @@ export const GraphSourcesView = memo(
         </Popover>
       </>
     );
-  }
+  },
 );

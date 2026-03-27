@@ -193,7 +193,7 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const icon = kubeObject ? (
     <KubeIcon width="42px" height="42px" kind={kubeObject.kind} apiGroup={apiGroup} />
   ) : (
-    node?.icon ?? null
+    (node?.icon ?? null)
   );
 
   const openDetails = () => {

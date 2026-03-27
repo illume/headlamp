@@ -262,7 +262,7 @@ describe('graphSimplification', () => {
             metadata: { name: `pod-${i}`, namespace: 'default', uid: `uid-${i}` },
             status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
           } as any),
-        })
+        }),
       );
 
       const resultAboveLimit = simplifyGraph(nodesAboveLimit, []);

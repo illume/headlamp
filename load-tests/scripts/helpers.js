@@ -1,15 +1,15 @@
-const { execSync } = require('child_process');
+const { execSync } = require("child_process");
 
 /**
  * fails if the current kubectl context is not kwok-kwok
  */
 function assertContextKwok() {
-  const result = execSync('kubectl config current-context', {
-    stdio: ['pipe', 'pipe', 'pipe'],
+  const result = execSync("kubectl config current-context", {
+    stdio: ["pipe", "pipe", "pipe"],
   });
   const stdoutData = result.toString();
-  if (stdoutData.trim() !== 'kwok-kwok') {
-    console.error('Error: current context is not kwok-kwok');
+  if (stdoutData.trim() !== "kwok-kwok") {
+    console.error("Error: current context is not kwok-kwok");
     process.exit(1);
   }
 }
@@ -29,19 +29,21 @@ function batchApply(yamls, batchSize = 500) {
   const totalBatches = Math.ceil(yamls.length / batchSize);
   for (let i = 0; i < yamls.length; i += batchSize) {
     const batch = yamls.slice(i, i + batchSize);
-    const combined = batch.join('\n---\n');
+    const combined = batch.join("\n---\n");
     const batchNum = Math.floor(i / batchSize) + 1;
     try {
-      execSync('kubectl apply -f -', {
+      execSync("kubectl apply -f -", {
         input: combined,
-        stdio: ['pipe', 'pipe', 'pipe'],
+        stdio: ["pipe", "pipe", "pipe"],
         maxBuffer: 100 * 1024 * 1024,
       });
-      console.log(`Batch ${batchNum}/${totalBatches}: applied ${batch.length} resources`);
+      console.log(
+        `Batch ${batchNum}/${totalBatches}: applied ${batch.length} resources`,
+      );
     } catch (error) {
       console.error(
         `Batch ${batchNum}/${totalBatches} error:`,
-        error.stderr?.toString() || error.message
+        error.stderr?.toString() || error.message,
       );
     }
   }

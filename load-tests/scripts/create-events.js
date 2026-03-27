@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-const yargs = require('yargs');
-const { assertContextKwok, batchApply } = require('./helpers');
+const yargs = require("yargs");
+const { assertContextKwok, batchApply } = require("./helpers");
 
 function eventYaml(index, now) {
   return `apiVersion: v1
@@ -35,25 +35,25 @@ function createNonsenseEvents(numEvents) {
 }
 
 yargs
-  .scriptName('create-events')
-  .usage('$0 <cmd> [args]')
+  .scriptName("create-events")
+  .usage("$0 <cmd> [args]")
   .command(
-    '$0 <numEvents> [sleepInterval]',
-    'Create nonsense events for load testing',
-    yargs => {
-      yargs.positional('numEvents', {
-        describe: 'Number of events to create',
-        type: 'number',
+    "$0 <numEvents> [sleepInterval]",
+    "Create nonsense events for load testing",
+    (yargs) => {
+      yargs.positional("numEvents", {
+        describe: "Number of events to create",
+        type: "number",
       });
-      yargs.positional('sleepInterval', {
-        describe: 'Deprecated, ignored. Kept for backward compatibility.',
-        type: 'number',
+      yargs.positional("sleepInterval", {
+        describe: "Deprecated, ignored. Kept for backward compatibility.",
+        type: "number",
         default: 0,
       });
     },
-    argv => {
+    (argv) => {
       assertContextKwok();
       createNonsenseEvents(argv.numEvents);
-    }
+    },
   )
   .help().argv;

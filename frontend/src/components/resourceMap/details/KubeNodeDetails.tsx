@@ -111,7 +111,7 @@ const kindComponentMap: Record<
 export const canRenderDetails = (maybeKind: string) =>
   maybeKind === 'customresource' ||
   Object.entries(kindComponentMap).find(
-    ([key]) => key.toLowerCase() === maybeKind?.toLowerCase()
+    ([key]) => key.toLowerCase() === maybeKind?.toLowerCase(),
   ) !== undefined;
 
 function DetailsNotFound() {
@@ -138,7 +138,7 @@ export const KubeObjectDetails = memo(
 
     const Component =
       Object.entries(kindComponentMap).find(
-        ([key]) => key.toLowerCase() === kind?.toLowerCase()
+        ([key]) => key.toLowerCase() === kind?.toLowerCase(),
       )?.[1] ?? DetailsNotFound;
 
     const content = customResourceDefinition ? (
@@ -155,7 +155,7 @@ export const KubeObjectDetails = memo(
     useEffect(() => {
       if (!kindComponentMap[kind]) {
         console.error(
-          `No details component for kind ${kind} was found. See KubeNodeDetails.tsx for more info`
+          `No details component for kind ${kind} was found. See KubeNodeDetails.tsx for more info`,
         );
       }
     }, [kind, kindComponentMap]);
@@ -165,5 +165,5 @@ export const KubeObjectDetails = memo(
         <Box sx={{ marginTop: '-70px' }}>{content}</Box>
       </Box>
     );
-  }
+  },
 );

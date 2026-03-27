@@ -67,7 +67,7 @@ export const useGraphViewport = () => {
           reactFlowHeight,
           minZoom,
           maxZoom,
-          0
+          0,
         );
 
         flow.setViewport(viewport);
@@ -96,7 +96,7 @@ export const useGraphViewport = () => {
 
       console.error('Unknown zoom mode', mode);
     },
-    [flow, zoomMode, reactFlowWidth, reactFlowHeight]
+    [flow, zoomMode, reactFlowWidth, reactFlowHeight],
   );
 
   return useMemo(() => ({ updateViewport, aspectRatio }), [updateViewport, aspectRatio]);

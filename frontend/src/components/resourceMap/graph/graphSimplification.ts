@@ -64,7 +64,7 @@ export function simplifyGraph(
   options: {
     maxNodes?: number;
     enabled?: boolean;
-  } = {}
+  } = {},
 ): { nodes: GraphNode[]; edges: GraphEdge[]; simplified: boolean } {
   // Auto-adjust maxNodes for extreme graphs to keep ELK layout performant and tractable
   const defaultMaxNodes =
@@ -124,7 +124,7 @@ export function simplifyGraph(
 
   // Keep only edges where both source and target are in topNodes
   const simplifiedEdges = edges.filter(
-    edge => topNodeIds.has(edge.source) && topNodeIds.has(edge.target)
+    edge => topNodeIds.has(edge.source) && topNodeIds.has(edge.target),
   );
 
   const totalTime = performance.now() - perfStart;
@@ -134,7 +134,7 @@ export function simplifyGraph(
     console.log(
       `[ResourceMap Performance] simplifyGraph: ${totalTime.toFixed(2)}ms (nodes: ${
         nodes.length
-      } -> ${topNodes.length}, edges: ${edges.length} -> ${simplifiedEdges.length})`
+      } -> ${topNodes.length}, edges: ${edges.length} -> ${simplifiedEdges.length})`,
     );
   }
 

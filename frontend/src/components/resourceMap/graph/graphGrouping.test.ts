@@ -173,7 +173,7 @@ describe('groupGraph', () => {
 
     // Find connected component
     const connectedGroup = groupedGraph.nodes?.find(
-      node => node.id.startsWith('group-') && node.edges && node.edges.length > 0
+      node => node.id.startsWith('group-') && node.edges && node.edges.length > 0,
     );
 
     // Should be named after deployment (higher weight than service)

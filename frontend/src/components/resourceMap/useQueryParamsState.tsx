@@ -19,7 +19,7 @@ import { useHistory, useLocation } from 'react-router';
 
 type UseQueryParamsStateReturnType<T> = [
   T | undefined,
-  (newValue: T | undefined, params?: { replace?: boolean }) => void
+  (newValue: T | undefined, params?: { replace?: boolean }) => void,
 ];
 
 /**
@@ -35,7 +35,7 @@ type UseQueryParamsStateReturnType<T> = [
  */
 export function useQueryParamsState<T extends string | undefined>(
   param: string,
-  initialState: T
+  initialState: T,
 ): UseQueryParamsStateReturnType<T> {
   const { search } = useLocation();
   const history = useHistory();
@@ -67,7 +67,7 @@ export function useQueryParamsState<T extends string | undefined>(
         history.push(newSearch);
       }
     },
-    [history.location.search, param]
+    [history.location.search, param],
   );
 
   // Apply initialState if any

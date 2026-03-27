@@ -43,7 +43,7 @@ export const KubeObjectGlance = memo(({ resource }: { resource: KubeObject }) =>
   const [events, setEvents] = useState<Event[]>([]);
   useEffect(() => {
     Event.objectEvents(resource).then(fetchedEvents =>
-      setEvents(fetchedEvents.map((event: KubeEvent) => new Event(event)))
+      setEvents(fetchedEvents.map((event: KubeEvent) => new Event(event))),
     );
   }, []);
 
@@ -102,7 +102,7 @@ export const KubeObjectGlance = memo(({ resource }: { resource: KubeObject }) =>
             <DateLabel date={it.lastOccurrence} format="mini" />
           </Box>
         ))}
-      </Box>
+      </Box>,
     );
   }
 

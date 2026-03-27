@@ -143,7 +143,7 @@ const SourceLoader = memo(
     }, [id, data]);
 
     return null;
-  }
+  },
 );
 
 export default function useThrottledMemo<T>(factory: () => T, deps: any[], throttleMs: number): T {
@@ -228,14 +228,14 @@ export function GraphSourceManager({ sources, children, relations }: GraphSource
         return new Set(selection);
       });
     },
-    [setSelectedSources]
+    [setSelectedSources],
   );
 
   const onData = useCallback(
     (id: string, data: MaybeNodesAndEdges) => {
       setSourceData(map => new Map(map).set(id, data));
     },
-    [setSourceData]
+    [setSourceData],
   );
 
   const components = useMemo(() => {
@@ -281,10 +281,38 @@ export function GraphSourceManager({ sources, children, relations }: GraphSource
         }
       });
 
+      // Build a UID → node index once, shared by all relations that provide
+      // buildEdgesWithIndex. This avoids the O(fromNodes × allNodes) nested-loop
+      // predicate scan for owner-reference relations, reducing them to
+      // O(fromNodes × avgOwnerRefs) with O(1) Map lookups.
+      let nodesByUid: Map<string, GraphNode> | null = null;
+      const getNodesByUid = () => {
+        if (!nodesByUid) {
+          nodesByUid = new Map();
+          for (const node of nodes) {
+            const uid = node.kubeObject?.metadata?.uid;
+            if (uid) {
+              nodesByUid.set(uid, node);
+            }
+          }
+        }
+        return nodesByUid;
+      };
+
       // Create edges based on Relations
       enabledRelations.forEach(relation => {
         const fromNodes = nodesPerSource.get(relation.fromSource) ?? [];
-        const toNodes = relation.toSource ? nodesPerSource.get(relation.toSource) ?? [] : nodes;
+
+        // Use index-based edge builder when available (O(n) vs O(n²))
+        if (relation.buildEdgesWithIndex) {
+          const indexEdges = relation.buildEdgesWithIndex(fromNodes, getNodesByUid());
+          for (const edge of indexEdges) {
+            edges.push(edge);
+          }
+          return;
+        }
+
+        const toNodes = relation.toSource ? (nodesPerSource.get(relation.toSource) ?? []) : nodes;
 
         fromNodes.forEach(from => {
           toNodes.forEach(to => {
@@ -314,7 +342,7 @@ export function GraphSourceManager({ sources, children, relations }: GraphSource
       };
     },
     [sources, selectedSources, sourceData, setSelectedSources, relations],
-    500
+    500,
   );
 
   return (

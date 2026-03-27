@@ -34,7 +34,7 @@ export function EndpointsGlance({ endpoints }: { endpoints: Endpoints }) {
           <StatusLabel status="" key={it.protocol + it.port}>
             {it.protocol}:{it.port}
           </StatusLabel>
-        ) : null
+        ) : null,
       )}
     </Box>
   );

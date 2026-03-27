@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-const yargs = require('yargs');
-const { assertContextKwok, batchApply } = require('./helpers');
+const yargs = require("yargs");
+const { assertContextKwok, batchApply } = require("./helpers");
 
 function deploymentYaml(index) {
   return `apiVersion: apps/v1
@@ -46,25 +46,25 @@ function createDeployments(numDeployments) {
 }
 
 yargs
-  .scriptName('create-deployments')
-  .usage('$0 <cmd> [args]')
+  .scriptName("create-deployments")
+  .usage("$0 <cmd> [args]")
   .command(
-    '$0 <numDeployments> [sleepInterval]',
-    'Create Kubernetes deployments',
-    yargs => {
-      yargs.positional('numDeployments', {
-        describe: 'Number of deployments to create',
-        type: 'number',
+    "$0 <numDeployments> [sleepInterval]",
+    "Create Kubernetes deployments",
+    (yargs) => {
+      yargs.positional("numDeployments", {
+        describe: "Number of deployments to create",
+        type: "number",
       });
-      yargs.positional('sleepInterval', {
-        describe: 'Deprecated, ignored. Kept for backward compatibility.',
-        type: 'number',
+      yargs.positional("sleepInterval", {
+        describe: "Deprecated, ignored. Kept for backward compatibility.",
+        type: "number",
         default: 0,
       });
     },
-    argv => {
+    (argv) => {
       assertContextKwok();
       createDeployments(argv.numDeployments);
-    }
+    },
   )
   .help().argv;

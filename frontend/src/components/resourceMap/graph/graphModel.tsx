@@ -128,10 +128,7 @@ export interface Relation {
    * fromNodes array and a Map<uid, GraphNode> index of all candidate target nodes,
    * and returns edges in O(fromNodes × avgRefs) time instead of O(fromNodes × allNodes).
    */
-  buildEdgesWithIndex?: (
-    fromNodes: GraphNode[],
-    nodesByUid: Map<string, GraphNode>
-  ) => GraphEdge[];
+  buildEdgesWithIndex?: (fromNodes: GraphNode[], nodesByUid: Map<string, GraphNode>) => GraphEdge[];
 }
 
 /**
