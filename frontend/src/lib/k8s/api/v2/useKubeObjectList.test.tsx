@@ -630,6 +630,159 @@ describe('kubeListApi partial error handling', () => {
   });
 });
 
+describe('kubeListApi indexMap with partial failures', () => {
+  beforeEach(() => {
+    vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'false');
+    vi.clearAllMocks();
+  });
+
+  it('should update the correct cache index when a middle list fetch failed (legacy)', async () => {
+    const spy = vi.spyOn(websocket, 'useWebSockets');
+    const store = createTestStore();
+
+    const endpoint = { version: 'v1', resource: 'pods' };
+    // 3 queries: cluster-a, cluster-b (will fail), cluster-c
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [
+        { cluster: 'cluster-a', namespace: 'ns-a', queryParams: {} },
+        { cluster: 'cluster-b', namespace: 'ns-b', queryParams: {} },
+        { cluster: 'cluster-c', namespace: 'ns-c', queryParams: {} },
+      ],
+    };
+
+    // Prepopulate cache: cluster-b failed (null), others succeeded
+    await store.dispatch(
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: { items: [], metadata: { resourceVersion: '0' } },
+            cluster: 'cluster-a',
+            namespace: 'ns-a',
+          },
+          null, // cluster-b fetch failed
+          {
+            list: { items: [], metadata: { resourceVersion: '0' } },
+            cluster: 'cluster-c',
+            namespace: 'ns-c',
+          },
+        ],
+        errors: [{ message: 'forbidden', status: 403 }],
+      } as any)
+    );
+
+    // Only watch successfully fetched lists (skipping cluster-b)
+    renderHook(
+      () =>
+        useWatchKubeObjectLists({
+          kubeObjectClass: mockClass,
+          lists: [
+            { cluster: 'cluster-a', resourceVersion: '1', namespace: 'ns-a' },
+            { cluster: 'cluster-c', resourceVersion: '1', namespace: 'ns-c' },
+          ],
+          endpoint,
+          queryArgs,
+        }),
+      {
+        wrapper: createTestWrapper(store),
+      }
+    );
+
+    // Connection[1] is for cluster-c (the 2nd watched list)
+    const connectionToC = spy.mock.calls[0][0].connections[1];
+    const objectC = { metadata: { namespace: 'ns-c', resourceVersion: '123' } };
+    act(() => {
+      connectionToC.onMessage({ type: 'ADDED', object: objectC });
+    });
+
+    // Verify the update went to draft.lists[2] (cluster-c's position in queryArgs.queries)
+    // NOT draft.lists[1] (which would be wrong — that's the null/failed entry)
+    const state = store.getState().headlampApi;
+    const queryKey = Object.keys(state.queries)[0];
+    const cached = state.queries[queryKey]?.data as any;
+
+    expect(cached.lists).toHaveLength(3);
+    expect(cached.lists[0].list.items).toHaveLength(0); // cluster-a unchanged
+    expect(cached.lists[1]).toBeNull(); // cluster-b still null
+    expect(cached.lists[2].list.items).toHaveLength(1); // cluster-c got the update
+    expect(cached.lists[2].list.items[0].jsonData).toBe(objectC);
+  });
+
+  it('should update the correct cache index when a middle list fetch failed (multiplexer)', async () => {
+    vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'true');
+    const store = createTestStore();
+
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [
+        { cluster: 'cluster-a', namespace: 'ns-a', queryParams: {} },
+        { cluster: 'cluster-b', namespace: 'ns-b', queryParams: {} },
+        { cluster: 'cluster-c', namespace: 'ns-c', queryParams: {} },
+      ],
+    };
+
+    // Prepopulate cache: cluster-b failed (null)
+    await store.dispatch(
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: { items: [], metadata: { resourceVersion: '0' } },
+            cluster: 'cluster-a',
+            namespace: 'ns-a',
+          },
+          null,
+          {
+            list: { items: [], metadata: { resourceVersion: '0' } },
+            cluster: 'cluster-c',
+            namespace: 'ns-c',
+          },
+        ],
+        errors: [{ message: 'forbidden', status: 403 }],
+      } as any)
+    );
+
+    // Only watch successfully fetched lists (skipping cluster-b)
+    renderHook(
+      () =>
+        useWatchKubeObjectLists({
+          kubeObjectClass: mockClass,
+          lists: [
+            { cluster: 'cluster-a', resourceVersion: '1', namespace: 'ns-a' },
+            { cluster: 'cluster-c', resourceVersion: '1', namespace: 'ns-c' },
+          ],
+          endpoint,
+          queryArgs,
+        }),
+      {
+        wrapper: createTestWrapper(store),
+      }
+    );
+
+    // cluster-c's subscribe call is the 2nd one (index 1)
+    expect(mockSubscribe).toHaveBeenCalledTimes(2);
+    const updateCallbackC = mockSubscribe.mock.calls[1][3];
+    const objectC = { metadata: { namespace: 'ns-c', resourceVersion: '999' } };
+
+    act(() => {
+      updateCallbackC({ type: 'ADDED', object: objectC });
+    });
+
+    // Verify the update went to draft.lists[2] (cluster-c's position in queryArgs.queries)
+    const state = store.getState().headlampApi;
+    const queryKey = Object.keys(state.queries)[0];
+    const cached = state.queries[queryKey]?.data as any;
+
+    expect(cached.lists).toHaveLength(3);
+    expect(cached.lists[0].list.items).toHaveLength(0); // cluster-a unchanged
+    expect(cached.lists[1]).toBeNull(); // cluster-b still null
+    expect(cached.lists[2].list.items).toHaveLength(1); // cluster-c got the update
+    expect(cached.lists[2].list.items[0].jsonData).toBe(objectC);
+  });
+});
+
 describe('kubeListApi legacy no-op cache writes', () => {
   beforeEach(() => {
     vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'false');

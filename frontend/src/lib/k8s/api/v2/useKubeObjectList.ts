@@ -308,9 +308,10 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
   queryArgsRef.current = queryArgs;
 
   // Precompute {cluster:namespace} → index map for O(1) cache lookups.
-  // Updated whenever the lists array changes.
+  // Built from queryArgs.queries (not lists) so indices match draft.lists ordering,
+  // even when some fetches failed and lists only contains successful entries.
   const indexMapRef = useRef<Map<string, number>>(new Map());
-  indexMapRef.current = useMemo(() => buildListIndexMap(lists), [lists]);
+  indexMapRef.current = useMemo(() => buildListIndexMap(queryArgs?.queries ?? []), [queryArgs]);
 
   // Create stable update handler to process WebSocket messages
   // Re-create only when dependencies change
@@ -425,8 +426,9 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
   queryArgsRef.current = queryArgs;
 
   // Precompute {cluster:namespace} → index map for O(1) cache lookups.
-  // Used directly in the connections memo closures (which re-create on lists change).
-  const indexMap = useMemo(() => buildListIndexMap(lists), [lists]);
+  // Built from queryArgs.queries (not lists) so indices match draft.lists ordering,
+  // even when some fetches failed and lists only contains successful entries.
+  const indexMap = useMemo(() => buildListIndexMap(queryArgs?.queries ?? []), [queryArgs]);
 
   const connections = useMemo(() => {
     if (!endpoint) return [];
