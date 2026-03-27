@@ -17,9 +17,9 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
+import { headlampApi } from '../../lib/api/headlampApi';
 import { TestContext } from '../../test';
 import { AppLogo, AppLogoProps } from './AppLogo';
-import { headlampApi } from '../../lib/api/headlampApi';
 
 const getMockState = (themeName: 'light' | 'dark' = 'light', loaded = true, logo: any = null) => ({
   plugins: { loaded },

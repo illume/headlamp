@@ -19,8 +19,8 @@ import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
 import { Provider } from 'react-redux';
-import ClusterSelector, { ClusterSelectorProps } from './ClusterSelector';
 import { headlampApi } from '../../../lib/api/headlampApi';
+import ClusterSelector, { ClusterSelectorProps } from './ClusterSelector';
 
 const theme = createTheme({
   palette: {

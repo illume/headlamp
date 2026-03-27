@@ -18,11 +18,11 @@ import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import { http, HttpResponse } from 'msw';
 import { useState } from 'react';
+import { headlampApi } from '../../lib/api/headlampApi';
 import reducers from '../../redux/reducers/reducers';
 import { TestContext } from '../../test';
 import { NewProjectPopup } from './NewProjectPopup';
 import { PROJECT_ID_LABEL } from './projectUtils';
-import { headlampApi } from '../../lib/api/headlampApi';
 
 export default {
   title: 'project/NewProjectPopup',

@@ -17,8 +17,8 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import { Provider } from 'react-redux';
-import { ClusterNameEditor } from './ClusterNameEditor';
 import { headlampApi } from '../../../lib/api/headlampApi';
+import { ClusterNameEditor } from './ClusterNameEditor';
 
 const getMockState = () => ({
   plugins: { loaded: true },

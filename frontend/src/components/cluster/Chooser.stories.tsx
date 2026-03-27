@@ -21,7 +21,6 @@ import { Cluster } from '../../lib/k8s/cluster';
 import { initialState } from '../../redux/configSlice';
 import { TestContext } from '../../test';
 import Chooser from './Chooser';
-import { headlampApi } from '../../lib/api/headlampApi';
 
 const ourState = (clusters?: Cluster[]) => ({
   config: {
@@ -95,7 +94,6 @@ const Template: StoryFn = args => {
   return (
     <TestContext
       store={configureStore({
-    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
         reducer: (state = ourState()) => state,
         preloadedState: ourState(clusters),
       })}

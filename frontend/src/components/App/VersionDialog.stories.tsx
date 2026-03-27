@@ -17,8 +17,8 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import { Provider } from 'react-redux';
-import VersionDialogComponent from './VersionDialog';
 import { headlampApi } from '../../lib/api/headlampApi';
+import VersionDialogComponent from './VersionDialog';
 
 const store = configureStore({
     middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),

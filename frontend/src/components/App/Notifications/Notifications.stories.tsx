@@ -21,9 +21,9 @@ import React from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { getTestDate } from '../../../helpers/testHelpers';
+import { headlampApi } from '../../../lib/api/headlampApi';
 import Notifications from './Notifications';
 import { Notification } from './notificationsSlice';
-import { headlampApi } from '../../../lib/api/headlampApi';
 
 const createTestNotification = (
   message: string,
@@ -44,11 +44,12 @@ const createTestNotification = (
 
 const createStore = (notifications: Notification[] = [], clusters = {}) =>
   configureStore({
-    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: {
-      notifications: (state = { notifications     [headlampApi.reducerPath]: headlampApi.reducer,
-  }) => state,
+      notifications: (state = { notifications }) => state,
       config: (state = { clusters }) => state,
+      [headlampApi.reducerPath]: headlampApi.reducer,
     },
     preloadedState: {
       notifications: { notifications },

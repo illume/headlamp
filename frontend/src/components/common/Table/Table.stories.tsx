@@ -19,13 +19,13 @@ import Typography from '@mui/material/Typography';
 import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import { useLocation } from 'react-router-dom';
+import { headlampApi } from '../../../lib/api/headlampApi';
 import { KubeObjectInterface } from '../../../lib/k8s/KubeObject';
 import { useFilterFunc } from '../../../lib/util';
 import shortcutsReducer from '../../../redux/shortcutsSlice';
 import { TestContext, TestContextProps } from '../../../test';
 import SectionFilterHeader from '../SectionFilterHeader';
 import Table, { TableProps } from './Table';
-import { headlampApi } from '../../../lib/api/headlampApi';
 
 export default {
   title: 'Table',

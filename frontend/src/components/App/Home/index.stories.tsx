@@ -18,10 +18,10 @@ import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
+import { headlampApi } from '../../../lib/api/headlampApi';
 import { initialState } from '../../../redux/configSlice';
 import shortcutsReducer from '../../../redux/shortcutsSlice';
 import Home from '.';
-import { headlampApi } from '../../../lib/api/headlampApi';
 
 const ourState = {
   config: {
@@ -56,6 +56,21 @@ const ourState = {
   shortcuts: { ...shortcutsReducer(undefined, { type: '' }) },
 };
 
+const createHomeStore = (state: Record<string, any>) =>
+  configureStore({
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+    reducer: {
+      config: (s = state.config) => s,
+      filter: (s = state.filter) => s,
+      resourceTable: (s = state.resourceTable) => s,
+      clusterProvider: (s = state.clusterProvider) => s,
+      drawerMode: (s = state.drawerMode) => s,
+      shortcuts: (s = state.shortcuts) => s,
+      [headlampApi.reducerPath]: headlampApi.reducer,
+    },
+  });
+
 // @todo: Add a way for the results from useClustersVersion to be mocked, so not
 // all clusters appear as not accessible.
 export default {
@@ -70,13 +85,7 @@ Base.decorators = [
   Story => {
     return (
       <MemoryRouter>
-        <Provider
-          store={configureStore({
-    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
-            reducer: (state = ourState) => state,
-            preloadedState: ourState,
-          })}
-        >
+        <Provider store={createHomeStore(ourState)}>
           <Story />
         </Provider>
       </MemoryRouter>
@@ -97,12 +106,7 @@ LoadingClusters.decorators = [
   Story => {
     return (
       <MemoryRouter>
-        <Provider
-          store={configureStore({
-            reducer: (state = loadingState) => state,
-            preloadedState: loadingState,
-          })}
-        >
+        <Provider store={createHomeStore(loadingState)}>
           <Story />
         </Provider>
       </MemoryRouter>

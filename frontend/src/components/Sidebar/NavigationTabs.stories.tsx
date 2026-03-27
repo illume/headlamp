@@ -20,11 +20,11 @@ import { http, HttpResponse } from 'msw';
 import React from 'react';
 import { Provider } from 'react-redux';
 import { BrowserRouter, Route } from 'react-router-dom';
+import { headlampApi } from '../../lib/api/headlampApi';
 import { initialState as configInitialState } from '../../redux/configSlice';
 import { TestContext } from '../../test';
 import NavigationTabs from './NavigationTabs';
 import {
-import { headlampApi } from '../../lib/api/headlampApi';
   DefaultSidebars,
   initialState as sidebarInitialState,
   SidebarEntry,
@@ -118,16 +118,17 @@ const createMockStoryStore = (sidebarConfig: Partial<SidebarState>) => {
   };
 
   return configureStore({
-    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: {
-      sidebar: createSlice({ name: 'sidebar', initialState: fullSidebarState, reducers: {    [headlampApi.reducerPath]: headlampApi.reducer,
-  } })
+      sidebar: createSlice({ name: 'sidebar', initialState: fullSidebarState, reducers: {} })
         .reducer,
       config: (state = configInitialState) => state,
       filter: (state = { namespaces: new Set() }) => state,
       routes: (state = { routes: {}, routeFilters: [] }) => state,
       ui: (state = { functionsToOverride: {} }) => state,
       projects: (state = { projects: {} }) => state,
+      [headlampApi.reducerPath]: headlampApi.reducer,
     },
   });
 };
