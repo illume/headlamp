@@ -244,7 +244,7 @@ export function useKubeObject<K extends KubeObject>({
 
   const data: Instance | null = query.error ? null : (query.data as Instance) ?? null;
 
-  // Keep refs for values used in onMessage so the callback always sees the latest
+  // Keep ref for queryArgs so the onMessage callback always sees the latest value
   const queryArgsRef = useRef(queryArgs);
   queryArgsRef.current = queryArgs;
 
