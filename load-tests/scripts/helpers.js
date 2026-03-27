@@ -39,7 +39,10 @@ function batchApply(yamls, batchSize = 500) {
       });
       console.log(`Batch ${batchNum}/${totalBatches}: applied ${batch.length} resources`);
     } catch (error) {
-      console.error(`Batch ${batchNum}/${totalBatches} error:`, error.stderr?.toString());
+      console.error(
+        `Batch ${batchNum}/${totalBatches} error:`,
+        error.stderr?.toString() || error.message
+      );
     }
   }
 }
