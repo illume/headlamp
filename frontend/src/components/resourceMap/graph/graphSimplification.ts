@@ -20,6 +20,60 @@ import { makeGraphLookup } from './graphLookup';
 import { getNodeWeight, GraphEdge, GraphNode } from './graphModel';
 
 /**
+ * Selects the top N items from an array by a numeric score, using a min-heap.
+ * Runs in O(n log k) time and O(k) memory where k = count,
+ * compared to O(n log n) for a full sort.
+ *
+ * @param items - The full array to select from
+ * @param count - How many top items to return
+ * @param getScore - Function that returns a numeric score for each item (higher = better)
+ * @returns The top `count` items (unordered)
+ */
+export function selectTopN<T>(items: T[], count: number, getScore: (item: T) => number): T[] {
+  if (items.length <= count) return items;
+
+  // Build a min-heap of size `count` so the smallest score is at index 0.
+  // For each remaining item, if its score exceeds the heap minimum, replace it.
+  const heap: { item: T; score: number }[] = new Array(count);
+
+  // Fill heap with first `count` items
+  for (let i = 0; i < count; i++) {
+    heap[i] = { item: items[i], score: getScore(items[i]) };
+  }
+
+  // Heapify (build min-heap)
+  for (let i = Math.floor(count / 2) - 1; i >= 0; i--) {
+    siftDown(heap, i, count);
+  }
+
+  // Scan remaining items; push into heap if larger than current minimum
+  for (let i = count; i < items.length; i++) {
+    const score = getScore(items[i]);
+    if (score > heap[0].score) {
+      heap[0] = { item: items[i], score };
+      siftDown(heap, 0, count);
+    }
+  }
+
+  return heap.map(h => h.item);
+}
+
+function siftDown(heap: { score: number }[], i: number, size: number): void {
+  while (true) {
+    let smallest = i;
+    const left = 2 * i + 1;
+    const right = 2 * i + 2;
+    if (left < size && heap[left].score < heap[smallest].score) smallest = left;
+    if (right < size && heap[right].score < heap[smallest].score) smallest = right;
+    if (smallest === i) break;
+    const tmp = heap[i];
+    heap[i] = heap[smallest];
+    heap[smallest] = tmp;
+    i = smallest;
+  }
+}
+
+/**
  * Threshold for when to simplify the graph automatically
  */
 export const SIMPLIFICATION_THRESHOLD = 1000;
@@ -112,14 +166,10 @@ export function simplifyGraph(
     nodeScores.set(node.id, score);
   });
 
-  // Sort nodes by score and take top N
-  const sortedNodes = [...nodes].sort((a, b) => {
-    const scoreA = nodeScores.get(a.id) ?? 0;
-    const scoreB = nodeScores.get(b.id) ?? 0;
-    return scoreB - scoreA;
-  });
-
-  const topNodes = sortedNodes.slice(0, maxNodes);
+  // Select the top N nodes by score using a min-heap.
+  // This is O(n log k) where k = maxNodes, instead of O(n log n) for a full sort.
+  // At 20k nodes with k=300, this is ~20k × 8 ≈ 160k comparisons vs ~20k × 14 ≈ 280k.
+  const topNodes = selectTopN(nodes, maxNodes, node => nodeScores.get(node.id) ?? 0);
   const topNodeIds = new Set(topNodes.map(n => n.id));
 
   // Keep only edges where both source and target are in topNodes

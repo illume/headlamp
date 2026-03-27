@@ -20,6 +20,7 @@ import { GraphEdge, GraphNode } from './graphModel';
 import {
   EXTREME_SIMPLIFICATION_THRESHOLD,
   EXTREME_SIMPLIFIED_NODE_LIMIT,
+  selectTopN,
   SIMPLIFIED_NODE_LIMIT,
   simplifyGraph,
 } from './graphSimplification';
@@ -268,5 +269,44 @@ describe('graphSimplification', () => {
       const resultAboveLimit = simplifyGraph(nodesAboveLimit, []);
       expect(resultAboveLimit.simplified).toBe(true);
     });
+  });
+});
+
+describe('selectTopN', () => {
+  it('should return all items when count >= array length', () => {
+    const items = [3, 1, 4, 1, 5];
+    const result = selectTopN(items, 10, x => x);
+    expect(result).toEqual(items);
+  });
+
+  it('should return top N items by score', () => {
+    const items = [1, 5, 3, 8, 2, 7, 4, 6];
+    const result = selectTopN(items, 3, x => x);
+    const sorted = result.sort((a, b) => b - a);
+    expect(sorted).toEqual([8, 7, 6]);
+  });
+
+  it('should handle single element selection', () => {
+    const items = [3, 1, 4, 1, 5, 9, 2, 6];
+    const result = selectTopN(items, 1, x => x);
+    expect(result).toEqual([9]);
+  });
+
+  it('should work with custom score function', () => {
+    const items = [
+      { name: 'a', weight: 10 },
+      { name: 'b', weight: 30 },
+      { name: 'c', weight: 20 },
+    ];
+    const result = selectTopN(items, 2, item => item.weight);
+    const names = result.map(r => r.name).sort();
+    expect(names).toEqual(['b', 'c']);
+  });
+
+  it('should handle duplicate scores correctly', () => {
+    const items = [5, 5, 5, 3, 3, 1];
+    const result = selectTopN(items, 3, x => x);
+    const sorted = result.sort((a, b) => b - a);
+    expect(sorted).toEqual([5, 5, 5]);
   });
 });
