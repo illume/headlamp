@@ -22,7 +22,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Link from '@mui/material/Link';
 import { styled } from '@mui/material/styles';
 import { Dispatch, UnknownAction } from '@reduxjs/toolkit';
-import { useQuery } from '@tanstack/react-query';
+import { headlampApi } from '../../lib/api/headlampApi';
 import { useEffect } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
@@ -184,6 +184,21 @@ const fetchConfig = (dispatch: Dispatch<UnknownAction>) => {
 
 const disableBackendLoader = true;
 
+const layoutApi = headlampApi.injectEndpoints({
+  endpoints: build => ({
+    getConfig: build.query<any, void>({
+      queryFn: async (_, { dispatch }) => {
+        try {
+          const result = await fetchConfig(dispatch as any);
+          return { data: result };
+        } catch (error) {
+          return { error };
+        }
+      },
+    }),
+  }),
+});
+
 export default function Layout({}: LayoutProps) {
   const arePluginsLoaded = useTypedSelector(state => state.plugins.loaded);
   const dispatch = useDispatch();
@@ -201,12 +216,8 @@ export default function Layout({}: LayoutProps) {
     data: config,
     isLoading,
     error,
-  } = useQuery({
-    queryKey: ['cluster-fetch'],
-    queryFn: () => fetchConfig(dispatch),
-    refetchInterval: disableBackendLoader
-      ? CLUSTER_FETCH_INTERVAL
-      : query => (query.state.status === 'error' ? false : CLUSTER_FETCH_INTERVAL),
+  } = layoutApi.useGetConfigQuery(undefined, {
+    pollingInterval: CLUSTER_FETCH_INTERVAL,
   });
 
   // Remove splash screen styles from the body
@@ -237,7 +248,7 @@ export default function Layout({}: LayoutProps) {
 
   if (!disableBackendLoader) {
     if (error && !config) {
-      return <ErrorPage message={<Trans>Failed to connect to the backend</Trans>} error={error} />;
+      return <ErrorPage message={<Trans>Failed to connect to the backend</Trans>} error={error as Error} />;
     }
 
     if (isLoading) {

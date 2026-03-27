@@ -15,11 +15,11 @@
  */
 
 import MuiLink from '@mui/material/Link';
-import { useQueryClient } from '@tanstack/react-query';
 import React from 'react';
+import { useDispatch } from 'react-redux';
 import { Link as RouterLink } from 'react-router-dom';
 import { formatClusterPathParam, getCluster, getSelectedClusters } from '../../lib/cluster';
-import { kubeObjectQueryKey, useEndpoints } from '../../lib/k8s/api/v2/hooks';
+import { kubeObjectApi, useEndpoints } from '../../lib/k8s/api/v2/hooks';
 import type { KubeObject } from '../../lib/k8s/KubeObject';
 import type { RouteURLProps } from '../../lib/router/createRouteURL';
 import { createRouteURL } from '../../lib/router/createRouteURL';
@@ -62,24 +62,30 @@ function KubeObjectLink(props: {
 }) {
   const { kubeObject, onClick, ...otherProps } = props;
 
-  const client = useQueryClient();
+  const dispatch = useDispatch<any>();
   const { namespace, name } = kubeObject.metadata;
   const { endpoint } = useEndpoints(kubeObject._class().apiEndpoint.apiInfo, kubeObject.cluster);
 
   return (
     <MuiLink
       onClick={e => {
-        const key = kubeObjectQueryKey({
-          cluster: kubeObject.cluster,
-          endpoint,
-          namespace,
-          name,
-        });
         // prepopulate the query cache with existing object
-        client.setQueryData(key, kubeObject);
-        // and invalidate it (mark as stale)
-        // so that the latest version will be downloaded in the background
-        client.invalidateQueries({ queryKey: key });
+        if (endpoint) {
+          dispatch(
+            kubeObjectApi.util.upsertQueryData(
+              'getKubeObject',
+              {
+                kubeObjectClass: kubeObject._class(),
+                endpoint,
+                namespace,
+                name,
+                cluster: kubeObject.cluster,
+                queryParams: {},
+              },
+              kubeObject
+            )
+          );
+        }
 
         if (onClick) {
           e.preventDefault();
