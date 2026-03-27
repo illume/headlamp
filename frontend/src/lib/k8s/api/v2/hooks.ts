@@ -150,10 +150,7 @@ const injectedApi = headlampApi.injectEndpoints({
     >({
       queryFn: async ({ kubeObjectClass, endpoint, namespace, name, cluster, queryParams }) => {
         try {
-          const url = makeUrl(
-            [KubeObjectEndpoint.toUrl(endpoint, namespace), name],
-            queryParams
-          );
+          const url = makeUrl([KubeObjectEndpoint.toUrl(endpoint, namespace), name], queryParams);
           const obj: KubeObjectInterface = await clusterFetch(url, {
             cluster,
           }).then(it => it.json());
@@ -314,7 +311,7 @@ export function useKubeObject<K extends KubeObject>({
     status,
     *[Symbol.iterator](): ArrayIterator<ApiError | K | null> {
       yield data;
-      yield ((endpointError ?? query.error ?? null) as ApiError | null);
+      yield (endpointError ?? query.error ?? null) as ApiError | null;
     },
   };
 }

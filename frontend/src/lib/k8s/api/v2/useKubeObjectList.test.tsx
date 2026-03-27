@@ -53,9 +53,7 @@ function createTestStore() {
 
 function createTestWrapper(store?: ReturnType<typeof createTestStore>) {
   const testStore = store ?? createTestStore();
-  return ({ children }: PropsWithChildren) => (
-    <Provider store={testStore}>{children}</Provider>
-  );
+  return ({ children }: PropsWithChildren) => <Provider store={testStore}>{children}</Provider>;
 }
 
 describe('makeListRequests', () => {
@@ -512,14 +510,20 @@ describe('kubeListApi serialization', () => {
     // Upsert data with classA
     await store.dispatch(
       kubeListApi.util.upsertQueryData('getKubeObjectLists', argsA, [
-        { list: { items: [{ name: 'pod-1' }], metadata: { resourceVersion: '0' } }, cluster: 'default' },
+        {
+          list: { items: [{ name: 'pod-1' }], metadata: { resourceVersion: '0' } },
+          cluster: 'default',
+        },
       ] as any)
     );
 
     // Upsert data with classB (same serialized key, different class reference)
     await store.dispatch(
       kubeListApi.util.upsertQueryData('getKubeObjectLists', argsB, [
-        { list: { items: [{ name: 'pod-2' }], metadata: { resourceVersion: '1' } }, cluster: 'default' },
+        {
+          list: { items: [{ name: 'pod-2' }], metadata: { resourceVersion: '1' } },
+          cluster: 'default',
+        },
       ] as any)
     );
 

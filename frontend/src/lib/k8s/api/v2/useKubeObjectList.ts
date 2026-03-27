@@ -144,10 +144,7 @@ interface KubeObjectListsQueryArgs {
 
 const kubeListApi = headlampApi.injectEndpoints({
   endpoints: build => ({
-    getKubeObjectLists: build.query<
-      Array<ListResponse<any> | null>,
-      KubeObjectListsQueryArgs
-    >({
+    getKubeObjectLists: build.query<Array<ListResponse<any> | null>, KubeObjectListsQueryArgs>({
       queryFn: async ({ kubeObjectClass, endpoint, queries }) => {
         try {
           const results = await Promise.allSettled(
@@ -511,7 +508,13 @@ export function useKubeObjectList<K extends KubeObject>({
                   namespace,
                   queryParams: cleanedUpQueryParams,
                 }))
-              : [{ cluster, namespace: undefined as string | undefined, queryParams: cleanedUpQueryParams }]
+              : [
+                  {
+                    cluster,
+                    namespace: undefined as string | undefined,
+                    queryParams: cleanedUpQueryParams,
+                  },
+                ]
           )
         : [],
     [requests, endpoint, cleanedUpQueryParams]
@@ -535,25 +538,22 @@ export function useKubeObjectList<K extends KubeObject>({
 
   // Combine results similar to how useQueries' combine worked
   const combined = useMemo(() => {
-    const clusterResults = results.reduce(
-      (acc, result) => {
-        if (result && result.cluster) {
-          acc[result.cluster] = {
-            data: result,
-            error: null,
-            errors: null,
-            isError: false,
-            isFetching: false,
-            isLoading: false,
-            isSuccess: true,
-            items: result?.list?.items ?? null,
-            status: 'success' as const,
-          };
-        }
-        return acc;
-      },
-      {} as Record<string, QueryListResponse<any, K, ApiError>>
-    );
+    const clusterResults = results.reduce((acc, result) => {
+      if (result && result.cluster) {
+        acc[result.cluster] = {
+          data: result,
+          error: null,
+          errors: null,
+          isError: false,
+          isFetching: false,
+          isLoading: false,
+          isSuccess: true,
+          items: result?.list?.items ?? null,
+          status: 'success' as const,
+        };
+      }
+      return acc;
+    }, {} as Record<string, QueryListResponse<any, K, ApiError>>);
 
     const items: K[] | null = results.every(r => r === null)
       ? null

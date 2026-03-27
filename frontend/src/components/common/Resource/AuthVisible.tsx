@@ -55,15 +55,18 @@ export interface AuthVisibleProps extends React.PropsWithChildren<{}> {
  */
 const authVisibleApi = headlampApi.injectEndpoints({
   endpoints: build => ({
-    checkAuthVisible: build.query<any, {
-      itemName?: string;
-      apiName: string;
-      apiVersion: string | string[];
-      authVerb: string;
-      subresource?: string;
-      namespace?: string;
-      item: any;
-    }>({
+    checkAuthVisible: build.query<
+      any,
+      {
+        itemName?: string;
+        apiName: string;
+        apiVersion: string | string[];
+        authVerb: string;
+        subresource?: string;
+        namespace?: string;
+        item: any;
+      }
+    >({
       queryFn: async ({ item, authVerb, subresource, namespace }) => {
         try {
           const res = await item.getAuthorization(

@@ -107,9 +107,7 @@ const topBarApi = headlampApi.injectEndpoints({
     >({
       queryFn: async ({ clusters }) => {
         try {
-          const results = await Promise.allSettled(
-            clusters.map(c => getClusterUserInfo(c))
-          );
+          const results = await Promise.allSettled(clusters.map(c => getClusterUserInfo(c)));
           const map: Record<string, ClusterUserInfo | undefined> = {};
           clusters.forEach((c, i) => {
             const r = results[i];

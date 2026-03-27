@@ -248,7 +248,12 @@ export default function Layout({}: LayoutProps) {
 
   if (!disableBackendLoader) {
     if (error && !config) {
-      return <ErrorPage message={<Trans>Failed to connect to the backend</Trans>} error={error as Error} />;
+      return (
+        <ErrorPage
+          message={<Trans>Failed to connect to the backend</Trans>}
+          error={error as Error}
+        />
+      );
     }
 
     if (isLoading) {
