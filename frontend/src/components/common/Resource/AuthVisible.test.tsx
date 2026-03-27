@@ -51,13 +51,15 @@ afterEach(() => {
 });
 
 describe('AuthVisible', () => {
-  it('does not throw when item is null (skipToken prevents query)', () => {
+  it('does not throw when item is null (skipToken prevents query)', async () => {
     // This is the key regression test: before the fix, passing null would throw
     // because itemClass.apiName was dereferenced before skip could take effect.
+    const onAuthResult = vi.fn();
+
     expect(() => {
       render(
         <TestContext>
-          <AuthVisible item={null} authVerb="get">
+          <AuthVisible item={null} authVerb="get" onAuthResult={onAuthResult}>
             <div>Should not appear</div>
           </AuthVisible>
         </TestContext>
@@ -66,6 +68,11 @@ describe('AuthVisible', () => {
 
     // Children should not be rendered when item is null
     expect(screen.queryByText('Should not appear')).not.toBeInTheDocument();
+
+    // Verify the query was never executed (skipToken prevents it)
+    // Wait briefly to ensure async would have resolved if it ran
+    await new Promise(resolve => setTimeout(resolve, 50));
+    expect(onAuthResult).not.toHaveBeenCalled();
   });
 
   it('renders children when authorized', async () => {
