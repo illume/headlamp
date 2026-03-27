@@ -667,3 +667,377 @@ describe('kubeListApi legacy no-op cache writes', () => {
     expect(dataAfter).toBe(dataBefore);
   });
 });
+
+describe('kubeListApi cache behavior (MODIFIED / DELETED)', () => {
+  beforeEach(() => {
+    vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'false');
+    vi.clearAllMocks();
+  });
+
+  it('should update an existing item on MODIFIED message', async () => {
+    const spy = vi.spyOn(websocket, 'useWebSockets');
+    const store = createTestStore();
+
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const existingItem = new mockClass({
+      metadata: { name: 'pod-1', namespace: 'a', uid: 'uid-1', resourceVersion: '10' },
+    });
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [{ cluster: 'default', namespace: 'a', queryParams: {} }],
+    };
+
+    await store.dispatch(
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: { items: [existingItem], metadata: { resourceVersion: '10' } },
+            cluster: 'default',
+            namespace: 'a',
+          },
+        ],
+        errors: [],
+      } as any)
+    );
+
+    renderHook(
+      () =>
+        useWatchKubeObjectLists({
+          kubeObjectClass: mockClass,
+          lists: [{ cluster: 'default', resourceVersion: '10', namespace: 'a' }],
+          endpoint,
+          queryArgs,
+        }),
+      { wrapper: createTestWrapper(store) }
+    );
+
+    const connection = spy.mock.calls[0][0].connections[0];
+
+    // Send MODIFIED message with newer resourceVersion
+    act(() => {
+      connection.onMessage({
+        type: 'MODIFIED',
+        object: {
+          metadata: {
+            name: 'pod-1',
+            namespace: 'a',
+            uid: 'uid-1',
+            resourceVersion: '20',
+          },
+          spec: { updated: true },
+        },
+      });
+    });
+
+    const state = store.getState().headlampApi;
+    const queryKey = Object.keys(state.queries)[0];
+    const cached = state.queries[queryKey]?.data as any;
+
+    expect(cached.lists[0].list.items).toHaveLength(1);
+    expect(cached.lists[0].list.items[0].jsonData.spec?.updated).toBe(true);
+    expect(cached.lists[0].list.metadata.resourceVersion).toBe('20');
+  });
+
+  it('should remove an item on DELETED message', async () => {
+    const spy = vi.spyOn(websocket, 'useWebSockets');
+    const store = createTestStore();
+
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const item1 = new mockClass({
+      metadata: { name: 'pod-1', namespace: 'a', uid: 'uid-1', resourceVersion: '10' },
+    });
+    const item2 = new mockClass({
+      metadata: { name: 'pod-2', namespace: 'a', uid: 'uid-2', resourceVersion: '10' },
+    });
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [{ cluster: 'default', namespace: 'a', queryParams: {} }],
+    };
+
+    await store.dispatch(
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: { items: [item1, item2], metadata: { resourceVersion: '10' } },
+            cluster: 'default',
+            namespace: 'a',
+          },
+        ],
+        errors: [],
+      } as any)
+    );
+
+    renderHook(
+      () =>
+        useWatchKubeObjectLists({
+          kubeObjectClass: mockClass,
+          lists: [{ cluster: 'default', resourceVersion: '10', namespace: 'a' }],
+          endpoint,
+          queryArgs,
+        }),
+      { wrapper: createTestWrapper(store) }
+    );
+
+    const connection = spy.mock.calls[0][0].connections[0];
+
+    // DELETED event for pod-1
+    act(() => {
+      connection.onMessage({
+        type: 'DELETED',
+        object: {
+          metadata: {
+            name: 'pod-1',
+            namespace: 'a',
+            uid: 'uid-1',
+            resourceVersion: '20',
+          },
+        },
+      });
+    });
+
+    const state = store.getState().headlampApi;
+    const queryKey = Object.keys(state.queries)[0];
+    const cached = state.queries[queryKey]?.data as any;
+
+    // Should have 1 item remaining (pod-2)
+    expect(cached.lists[0].list.items).toHaveLength(1);
+    expect(cached.lists[0].list.items[0].metadata.name).toBe('pod-2');
+  });
+});
+
+describe('kubeListApi multiplexer cache writes', () => {
+  beforeEach(() => {
+    vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'true');
+    vi.clearAllMocks();
+  });
+
+  it('should skip cache write on stale resourceVersion (multiplexer)', async () => {
+    const store = createTestStore();
+
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const existingItem = new mockClass({
+      metadata: { name: 'pod-1', namespace: 'ns-a', uid: 'uid-1', resourceVersion: '100' },
+    });
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [{ cluster: 'cluster-a', namespace: 'ns-a', queryParams: {} }],
+    };
+
+    await store.dispatch(
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: { items: [existingItem], metadata: { resourceVersion: '100' } },
+            cluster: 'cluster-a',
+            namespace: 'ns-a',
+          },
+        ],
+        errors: [],
+      } as any)
+    );
+
+    renderHook(
+      () =>
+        useWatchKubeObjectLists({
+          kubeObjectClass: mockClass,
+          lists: [{ cluster: 'cluster-a', resourceVersion: '1', namespace: 'ns-a' }],
+          endpoint,
+          queryArgs,
+        }),
+      { wrapper: createTestWrapper(store) }
+    );
+
+    const stateBefore = store.getState().headlampApi;
+    const queryKey = Object.keys(stateBefore.queries)[0];
+    const dataBefore = stateBefore.queries[queryKey]?.data;
+
+    // Send stale MODIFIED message
+    const updateCallback = mockSubscribe.mock.calls[0][3];
+    act(() => {
+      updateCallback({
+        type: 'MODIFIED',
+        object: {
+          metadata: { name: 'pod-1', uid: 'uid-1', namespace: 'ns-a', resourceVersion: '50' },
+        },
+      });
+    });
+
+    // Cache reference should not change
+    const stateAfter = store.getState().headlampApi;
+    const dataAfter = stateAfter.queries[queryKey]?.data;
+    expect(dataAfter).toBe(dataBefore);
+  });
+
+  it('should update cache on fresh MODIFIED message (multiplexer)', async () => {
+    const store = createTestStore();
+
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const existingItem = new mockClass({
+      metadata: { name: 'pod-1', namespace: 'ns-a', uid: 'uid-1', resourceVersion: '10' },
+    });
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [{ cluster: 'cluster-a', namespace: 'ns-a', queryParams: {} }],
+    };
+
+    await store.dispatch(
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: { items: [existingItem], metadata: { resourceVersion: '10' } },
+            cluster: 'cluster-a',
+            namespace: 'ns-a',
+          },
+        ],
+        errors: [],
+      } as any)
+    );
+
+    renderHook(
+      () =>
+        useWatchKubeObjectLists({
+          kubeObjectClass: mockClass,
+          lists: [{ cluster: 'cluster-a', resourceVersion: '10', namespace: 'ns-a' }],
+          endpoint,
+          queryArgs,
+        }),
+      { wrapper: createTestWrapper(store) }
+    );
+
+    const updateCallback = mockSubscribe.mock.calls[0][3];
+    act(() => {
+      updateCallback({
+        type: 'MODIFIED',
+        object: {
+          metadata: {
+            name: 'pod-1',
+            uid: 'uid-1',
+            namespace: 'ns-a',
+            resourceVersion: '200',
+          },
+          spec: { modified: true },
+        },
+      });
+    });
+
+    const state = store.getState().headlampApi;
+    const queryKey = Object.keys(state.queries)[0];
+    const cached = state.queries[queryKey]?.data as any;
+
+    expect(cached.lists[0].list.items).toHaveLength(1);
+    expect(cached.lists[0].list.items[0].jsonData.spec?.modified).toBe(true);
+    expect(cached.lists[0].list.metadata.resourceVersion).toBe('200');
+  });
+
+  it('should not crash when update has no matching cache entry', async () => {
+    const store = createTestStore();
+
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [{ cluster: 'cluster-a', namespace: 'ns-a', queryParams: {} }],
+    };
+
+    await store.dispatch(
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: { items: [], metadata: { resourceVersion: '0' } },
+            cluster: 'cluster-a',
+            namespace: 'ns-a',
+          },
+        ],
+        errors: [],
+      } as any)
+    );
+
+    renderHook(
+      () =>
+        useWatchKubeObjectLists({
+          kubeObjectClass: mockClass,
+          lists: [{ cluster: 'cluster-a', resourceVersion: '1', namespace: 'ns-a' }],
+          endpoint,
+          // Deliberately pass different queryArgs so cache entry won't be found
+          queryArgs: {
+            kubeObjectClass: mockClass,
+            endpoint,
+            queries: [{ cluster: 'cluster-b', namespace: 'ns-b', queryParams: {} }],
+          },
+        }),
+      { wrapper: createTestWrapper(store) }
+    );
+
+    // The subscribe should have been called
+    expect(mockSubscribe).toHaveBeenCalledTimes(1);
+
+    // Send an update — should not crash even though cache entry uses different args
+    const updateCallback = mockSubscribe.mock.calls[0][3];
+    act(() => {
+      updateCallback({
+        type: 'ADDED',
+        object: { metadata: { name: 'pod-x', uid: 'x', namespace: 'ns-a', resourceVersion: '5' } },
+      });
+    });
+
+    // Original cache entry should be unchanged
+    const state = store.getState().headlampApi;
+    const queryKey = Object.keys(state.queries)[0];
+    const cached = state.queries[queryKey]?.data as any;
+    expect(cached.lists[0].list.items).toHaveLength(0);
+  });
+
+  it('should ignore invalid/null update messages', async () => {
+    const store = createTestStore();
+
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [{ cluster: 'cluster-a', namespace: 'ns-a', queryParams: {} }],
+    };
+
+    await store.dispatch(
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: { items: [], metadata: { resourceVersion: '0' } },
+            cluster: 'cluster-a',
+            namespace: 'ns-a',
+          },
+        ],
+        errors: [],
+      } as any)
+    );
+
+    renderHook(
+      () =>
+        useWatchKubeObjectLists({
+          kubeObjectClass: mockClass,
+          lists: [{ cluster: 'cluster-a', resourceVersion: '1', namespace: 'ns-a' }],
+          endpoint,
+          queryArgs,
+        }),
+      { wrapper: createTestWrapper(store) }
+    );
+
+    const updateCallback = mockSubscribe.mock.calls[0][3];
+
+    // Send null, undefined, and non-object values — should not crash
+    act(() => {
+      updateCallback(null);
+      updateCallback(undefined);
+      updateCallback('not-an-object');
+    });
+
+    // Cache should be unchanged
+    const state = store.getState().headlampApi;
+    const queryKey = Object.keys(state.queries)[0];
+    const cached = state.queries[queryKey]?.data as any;
+    expect(cached.lists[0].list.items).toHaveLength(0);
+  });
+});
