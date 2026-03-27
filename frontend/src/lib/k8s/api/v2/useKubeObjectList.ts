@@ -626,15 +626,17 @@ export function useKubeObjectList<K extends KubeObject>({
   });
 
   const queryError = queryResult.error as ApiError | undefined;
-  const allErrors = endpointError
-    ? [endpointError]
-    : [...partialErrors, ...(queryError ? [queryError] : [])];
+  const allErrors = [
+    ...(endpointError ? [endpointError] : []),
+    ...partialErrors,
+    ...(queryError ? [queryError] : []),
+  ];
 
   // @ts-ignore - TS compiler gets confused with iterators
   return {
     items: endpointError ? [] : combined.items,
     errors: allErrors.length > 0 ? allErrors : null,
-    error: endpointError ?? allErrors[0] ?? queryError ?? null,
+    error: allErrors[0] ?? null,
     clusterResults: combined.clusterResults,
     isError: queryResult.isError || !!endpointError,
     isLoading: queryResult.isLoading,
@@ -642,7 +644,7 @@ export function useKubeObjectList<K extends KubeObject>({
     isSuccess: queryResult.isSuccess && !endpointError,
     *[Symbol.iterator](): ArrayIterator<ApiError | K[] | null> {
       yield combined.items;
-      yield endpointError ?? queryError ?? null;
+      yield allErrors[0] ?? null;
     },
   };
 }
