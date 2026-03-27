@@ -15,7 +15,7 @@
  */
 
 import { configureStore } from '@reduxjs/toolkit';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { headlampApi } from './headlampApi';
 
 function createStoreWithApi() {
@@ -86,17 +86,34 @@ describe('headlampApi', () => {
 });
 
 describe('auth resetApiState', () => {
-  it('logout delegates to setToken without an extra resetApiState dispatch', async () => {
+  it('logout delegates to setToken and does not dispatch resetApiState itself', async () => {
     // The review identified that logout() dispatched resetApiState redundantly
     // (setToken already resets on auth change). After the fix, logout() just
     // calls setToken(cluster, null) with no additional dispatch.
+    //
+    // We mock the fetch layer to prevent actual network calls and spy on
+    // store.dispatch to count resetApiState dispatches. setToken dispatches it
+    // once; if logout had its own dispatch we would see two.
+    const fetchModule = await import('../k8s/api/v2/fetch');
+    vi.spyOn(fetchModule, 'backendFetch').mockResolvedValue(
+      new Response(JSON.stringify({ ok: true }), { status: 200 })
+    );
+
+    const storeModule = await import('../../redux/stores/store');
+    const dispatchSpy = vi.spyOn(storeModule.default, 'dispatch');
+
     const auth = await import('../auth');
+    await auth.logout('test-cluster');
 
-    expect(typeof auth.logout).toBe('function');
-    expect(typeof auth.setToken).toBe('function');
+    // Count how many times resetApiState was dispatched
+    const resetCalls = dispatchSpy.mock.calls.filter(([action]) =>
+      headlampApi.util.resetApiState.match(action)
+    );
 
-    // Verify logout's compiled code does not reference resetApiState directly
-    const logoutStr = auth.logout.toString();
-    expect(logoutStr).not.toContain('resetApiState');
+    // setToken dispatches resetApiState once. If logout had a redundant call,
+    // we would see two dispatches here.
+    expect(resetCalls.length).toBe(1);
+
+    dispatchSpy.mockRestore();
   });
 });

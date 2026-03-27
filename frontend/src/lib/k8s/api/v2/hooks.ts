@@ -260,7 +260,7 @@ export function useKubeObject<K extends KubeObject>({
               injectedApi.util.upsertQueryData(
                 'getKubeObject',
                 queryArgs,
-                new kubeObjectClass(update.object)
+                new kubeObjectClass(update.object, cluster)
               )
             );
           }
@@ -288,7 +288,7 @@ export function useKubeObject<K extends KubeObject>({
             injectedApi.util.upsertQueryData(
               'getKubeObject',
               queryArgs,
-              new kubeObjectClass(update.object)
+              new kubeObjectClass(update.object, cluster)
             )
           );
         }

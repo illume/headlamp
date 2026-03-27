@@ -183,6 +183,27 @@ const kubeListApi = headlampApi.injectEndpoints({
 export { kubeListApi };
 
 /**
+ * Build a lookup key from cluster and namespace for O(1) list index resolution.
+ */
+function listKey(cluster: string, namespace: string | undefined): string {
+  return `${cluster}:${namespace || ''}`;
+}
+
+/**
+ * Build a Map from `"cluster:namespace"` → index in the lists array.
+ * Used by websocket handlers for O(1) cache index lookups instead of O(n) findIndex.
+ */
+function buildListIndexMap(
+  lists: ReadonlyArray<{ cluster: string; namespace?: string }>
+): Map<string, number> {
+  const map = new Map<string, number>();
+  for (let i = 0; i < lists.length; i++) {
+    map.set(listKey(lists[i].cluster, lists[i].namespace), i);
+  }
+  return map;
+}
+
+/**
  * Accepts a list of lists to watch.
  * Upon receiving update it will modify query data for list query
  */
@@ -264,7 +285,7 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
     }
 
     return lists.map(list => {
-      const key = `${list.cluster}:${list.namespace || ''}`;
+      const key = listKey(list.cluster, list.namespace);
 
       // Always use the latest resource version from the server
       latestResourceVersions.current[key] = list.resourceVersion;
@@ -286,6 +307,11 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
   const queryArgsRef = useRef(queryArgs);
   queryArgsRef.current = queryArgs;
 
+  // Precompute {cluster:namespace} → index map for O(1) cache lookups.
+  // Updated whenever the lists array changes.
+  const indexMapRef = useRef<Map<string, number>>(new Map());
+  indexMapRef.current = useMemo(() => buildListIndexMap(lists), [lists]);
+
   // Create stable update handler to process WebSocket messages
   // Re-create only when dependencies change
   const handleUpdate = useCallback(
@@ -294,7 +320,7 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
         return;
       }
 
-      const key = `${cluster}:${namespace || ''}`;
+      const key = listKey(cluster, namespace);
 
       // Update resource version from incoming message
       if (update.object?.metadata?.resourceVersion) {
@@ -303,23 +329,23 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
 
       // Update RTK Query cache
       if (queryArgsRef.current) {
+        const cachedIdx = indexMapRef.current.get(key);
+        if (cachedIdx === undefined) return;
+
         dispatch(
           kubeListApi.util.updateQueryData(
             'getKubeObjectLists',
             queryArgsRef.current,
             (draft: KubeObjectListsResult<any>) => {
-              const idx = draft.lists.findIndex(
-                d => d && d.cluster === cluster && d.namespace === namespace
-              );
-              if (idx !== -1 && draft.lists[idx]) {
+              if (cachedIdx < draft.lists.length && draft.lists[cachedIdx]) {
                 const newList = KubeList.applyUpdate(
-                  draft.lists[idx]!.list,
+                  draft.lists[cachedIdx]!.list,
                   update,
                   kubeObjectClass,
                   cluster
                 );
-                if (newList !== draft.lists[idx]!.list) {
-                  draft.lists[idx] = { ...draft.lists[idx]!, list: newList };
+                if (newList !== draft.lists[cachedIdx]!.list) {
+                  draft.lists[cachedIdx] = { ...draft.lists[cachedIdx]!, list: newList };
                 }
               }
             }
@@ -398,6 +424,10 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
   const queryArgsRef = useRef(queryArgs);
   queryArgsRef.current = queryArgs;
 
+  // Precompute {cluster:namespace} → index map for O(1) cache lookups.
+  const indexMapRef = useRef<Map<string, number>>(new Map());
+  indexMapRef.current = useMemo(() => buildListIndexMap(lists), [lists]);
+
   const connections = useMemo(() => {
     if (!endpoint) return [];
 
@@ -413,23 +443,23 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
         url,
         onMessage(update: KubeListUpdateEvent<K>) {
           if (queryArgsRef.current) {
+            const cachedIdx = indexMapRef.current.get(listKey(cluster, namespace));
+            if (cachedIdx === undefined) return;
+
             dispatch(
               kubeListApi.util.updateQueryData(
                 'getKubeObjectLists',
                 queryArgsRef.current,
                 (draft: KubeObjectListsResult<any>) => {
-                  const idx = draft.lists.findIndex(
-                    d => d && d.cluster === cluster && d.namespace === namespace
-                  );
-                  if (idx !== -1 && draft.lists[idx]) {
+                  if (cachedIdx < draft.lists.length && draft.lists[cachedIdx]) {
                     const newList = KubeList.applyUpdate(
-                      draft.lists[idx]!.list,
+                      draft.lists[cachedIdx]!.list,
                       update,
                       kubeObjectClass,
                       cluster
                     );
-                    if (newList !== draft.lists[idx]!.list) {
-                      draft.lists[idx] = { ...draft.lists[idx]!, list: newList };
+                    if (newList !== draft.lists[cachedIdx]!.list) {
+                      draft.lists[cachedIdx] = { ...draft.lists[cachedIdx]!, list: newList };
                     }
                   }
                 }

@@ -83,12 +83,12 @@ function KubeObjectLink(props: {
           dispatch(kubeObjectApi.util.upsertQueryData('getKubeObject', queryArgs, kubeObject));
 
           // Trigger a background refetch so the details page sees fresh data.
-          // The returned ref is intentionally not awaited — the refetch runs in
-          // the background while the user navigates. RTK Query manages the
-          // subscription lifecycle internally for one-shot initiates.
+          // Use subscribe: false to avoid accumulating RTK Query subscriptions
+          // on repeated clicks — this is a one-shot fetch, not a long-lived subscription.
           dispatch(
             kubeObjectApi.endpoints.getKubeObject.initiate(queryArgs, {
               forceRefetch: true,
+              subscribe: false,
             })
           );
         }
