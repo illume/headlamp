@@ -77,7 +77,7 @@ export const GroupNodeComponent = memo(({ id }: { id: string }) => {
           {node?.kubeObject ? (
             <KubeIcon kind={node.kubeObject.kind} apiGroup={apiGroup} width="24px" height="24px" />
           ) : (
-            (node?.icon ?? null)
+            node?.icon ?? null
           )}
           <Box sx={{ opacity: 0.8 }}>{node?.subtitle}</Box>
           <Box sx={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{node?.label}</Box>

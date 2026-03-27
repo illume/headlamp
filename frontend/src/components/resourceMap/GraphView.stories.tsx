@@ -47,7 +47,7 @@ function useRealisticWebSocketUpdates(
   updateInterval: number,
   changePercentage: number,
   totalResources: number,
-  setUpdateCounter: React.Dispatch<React.SetStateAction<number>>,
+  setUpdateCounter: React.Dispatch<React.SetStateAction<number>>
 ) {
   useEffect(() => {
     if (!autoUpdate) return;
@@ -64,7 +64,7 @@ function useRealisticWebSocketUpdates(
     const MAX_WEBSOCKET_EVENTS = 10; // Cap to avoid too many tiny updates
     const numUpdateEvents = Math.max(
       1,
-      Math.min(Math.ceil(totalChangedResources / RESOURCES_PER_EVENT), MAX_WEBSOCKET_EVENTS),
+      Math.min(Math.ceil(totalChangedResources / RESOURCES_PER_EVENT), MAX_WEBSOCKET_EVENTS)
     );
 
     // Schedule updates at random times throughout the interval
@@ -118,11 +118,11 @@ export default {
                 kind: 'List',
                 items: [],
                 metadata: {},
-              }),
+              })
           ),
           http.get(
             'http://localhost:4466/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions',
-            () => HttpResponse.error(),
+            () => HttpResponse.error()
           ),
         ],
       },
@@ -214,7 +214,7 @@ const POD_ERROR_RATE = 0.05; // 5% of pods will have error status
 function generateMockPods(
   count: number,
   updateCounter: number = 0,
-  changePercentage: number = 100,
+  changePercentage: number = 100
 ): Pod[] {
   const pods: Pod[] = [];
   const namespaces = ['default', 'kube-system', 'monitoring', 'production', 'staging'];
@@ -367,7 +367,7 @@ export const PerformanceTest2000Pods = () => {
         id: pod.metadata.uid,
         kubeObject: pod,
       })),
-    [pods],
+    [pods]
   );
 
   const data = { nodes, edges };
@@ -388,7 +388,7 @@ export const PerformanceTest2000Pods = () => {
     updateInterval,
     changePercentage,
     2000,
-    setUpdateCounter,
+    setUpdateCounter
   );
 
   return (
@@ -520,7 +520,7 @@ export const PerformanceTest500Pods = () => {
         id: pod.metadata.uid,
         kubeObject: pod,
       })),
-    [pods],
+    [pods]
   );
 
   const data = { nodes, edges };
@@ -596,7 +596,7 @@ function generateMockDeployments(
   count: number,
   namespace: string,
   updateCounter: number = 0,
-  changePercentage: number = 100,
+  changePercentage: number = 100
 ): Deployment[] {
   const deployments: Deployment[] = [];
 
@@ -671,7 +671,7 @@ function generateMockReplicaSets(
   // eslint-disable-next-line no-unused-vars
   updateCounter: number = 0,
   // eslint-disable-next-line no-unused-vars
-  changePercentage: number = 100,
+  changePercentage: number = 100
 ): ReplicaSet[] {
   const replicaSets: ReplicaSet[] = [];
 
@@ -729,7 +729,7 @@ function generateMockServices(
   namespaces: string[],
   servicesPerNamespace: number,
   updateCounter: number = 0,
-  changePercentage: number = 100,
+  changePercentage: number = 100
 ): Service[] {
   const services: Service[] = [];
 
@@ -791,7 +791,7 @@ function generateMockPodsForDeployments(
   // eslint-disable-next-line no-unused-vars
   updateCounter: number = 0,
   // eslint-disable-next-line no-unused-vars
-  changePercentage: number = 100,
+  changePercentage: number = 100
 ): Pod[] {
   const pods: Pod[] = [];
   const statuses = ['Running', 'Pending', 'Failed', 'Succeeded'];
@@ -888,7 +888,7 @@ function generateResourceEdges(
   pods: Pod[],
   replicaSets: ReplicaSet[],
   deployments: Deployment[],
-  services: Service[],
+  services: Service[]
 ): GraphEdge[] {
   const edges: GraphEdge[] = [];
 
@@ -978,7 +978,7 @@ export const PerformanceTest5000Pods = () => {
     const deployments: Deployment[] = [];
     namespaces.forEach(ns => {
       deployments.push(
-        ...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter, changePercentage),
+        ...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter, changePercentage)
       );
     });
 
@@ -988,7 +988,7 @@ export const PerformanceTest5000Pods = () => {
       namespaces,
       servicesPerNamespace,
       updateCounter,
-      changePercentage,
+      changePercentage
     );
 
     const edges = generateResourceEdges(pods, replicaSets, deployments, services);
@@ -998,7 +998,7 @@ export const PerformanceTest5000Pods = () => {
 
   const allResources: KubeObject[] = useMemo(
     () => [...pods, ...replicaSets, ...deployments, ...services],
-    [pods, replicaSets, deployments, services],
+    [pods, replicaSets, deployments, services]
   );
 
   const nodes: GraphNode[] = useMemo(
@@ -1007,7 +1007,7 @@ export const PerformanceTest5000Pods = () => {
         id: resource.metadata.uid,
         kubeObject: resource,
       })),
-    [allResources],
+    [allResources]
   );
 
   const data = { nodes, edges };
@@ -1027,7 +1027,7 @@ export const PerformanceTest5000Pods = () => {
     updateInterval,
     changePercentage,
     5000,
-    setUpdateCounter,
+    setUpdateCounter
   );
 
   return (
@@ -1162,7 +1162,7 @@ export const PerformanceTest20000Pods = () => {
     const deployments: Deployment[] = [];
     namespaces.forEach(ns => {
       deployments.push(
-        ...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter, changePercentage),
+        ...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter, changePercentage)
       );
     });
 
@@ -1172,7 +1172,7 @@ export const PerformanceTest20000Pods = () => {
       namespaces,
       servicesPerNamespace,
       updateCounter,
-      changePercentage,
+      changePercentage
     );
 
     const edges = generateResourceEdges(pods, replicaSets, deployments, services);
@@ -1182,7 +1182,7 @@ export const PerformanceTest20000Pods = () => {
 
   const allResources: KubeObject[] = useMemo(
     () => [...pods, ...replicaSets, ...deployments, ...services],
-    [pods, replicaSets, deployments, services],
+    [pods, replicaSets, deployments, services]
   );
 
   const nodes: GraphNode[] = useMemo(
@@ -1191,7 +1191,7 @@ export const PerformanceTest20000Pods = () => {
         id: resource.metadata.uid,
         kubeObject: resource,
       })),
-    [allResources],
+    [allResources]
   );
 
   const data = { nodes, edges };
@@ -1211,7 +1211,7 @@ export const PerformanceTest20000Pods = () => {
     updateInterval,
     changePercentage,
     20000,
-    setUpdateCounter,
+    setUpdateCounter
   );
 
   return (
@@ -1389,7 +1389,7 @@ export const PerformanceTest100000Pods = () => {
     const deployments: Deployment[] = [];
     namespaces.forEach(ns => {
       deployments.push(
-        ...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter, changePercentage),
+        ...generateMockDeployments(deploymentsPerNamespace, ns, updateCounter, changePercentage)
       );
     });
 
@@ -1399,7 +1399,7 @@ export const PerformanceTest100000Pods = () => {
       namespaces,
       servicesPerNamespace,
       updateCounter,
-      changePercentage,
+      changePercentage
     );
 
     const edges = generateResourceEdges(pods, replicaSets, deployments, services);
@@ -1409,7 +1409,7 @@ export const PerformanceTest100000Pods = () => {
 
   const allResources: KubeObject[] = useMemo(
     () => [...pods, ...replicaSets, ...deployments, ...services],
-    [pods, replicaSets, deployments, services],
+    [pods, replicaSets, deployments, services]
   );
 
   const nodes: GraphNode[] = useMemo(
@@ -1418,7 +1418,7 @@ export const PerformanceTest100000Pods = () => {
         id: resource.metadata.uid,
         kubeObject: resource,
       })),
-    [allResources],
+    [allResources]
   );
 
   const data = { nodes, edges };
@@ -1438,7 +1438,7 @@ export const PerformanceTest100000Pods = () => {
     updateInterval,
     changePercentage,
     100000,
-    setUpdateCounter,
+    setUpdateCounter
   );
 
   return (

@@ -44,7 +44,7 @@ import ServiceAccount from '../../../../lib/k8s/serviceAccount';
 import StatefulSet from '../../../../lib/k8s/statefulSet';
 import ValidatingWebhookConfiguration from '../../../../lib/k8s/validatingWebhookConfiguration';
 import { useNamespaces } from '../../../../redux/filterSlice';
-import { Relation } from '../../graph/graphModel';
+import { GraphEdge, GraphNode, Relation } from '../../graph/graphModel';
 import { makeKubeSourceId } from './graphDefinitionUtils';
 
 /**
@@ -61,7 +61,7 @@ export const matchesLabels = (matchLabels: Record<string, string>, item: KubeObj
 const makeRelation = <From extends KubeObjectClass, To extends KubeObjectClass>(
   from: From,
   to: To,
-  selector: (a: InstanceType<From>, b: InstanceType<To>) => unknown,
+  selector: (a: InstanceType<From>, b: InstanceType<To>) => unknown
 ): Relation => ({
   fromSource: makeKubeSourceId(from),
   toSource: makeKubeSourceId(to),
@@ -142,13 +142,13 @@ const makeOwnerRelationReversed = (cl: KubeObjectClass): Relation => ({
 });
 
 const configMapUsedInPods = makeRelation(Pod, ConfigMap, (pod, configMap) =>
-  pod.spec.volumes?.find(volume => volume.configMap?.name === configMap.metadata.name),
+  pod.spec.volumes?.find(volume => volume.configMap?.name === configMap.metadata.name)
 );
 
 const configMapUsedInJobs = makeRelation(Job, ConfigMap, (job, configMap) =>
   job.spec.template.spec.volumes?.find(
-    volume => volume?.configMap?.name === configMap.metadata.name,
-  ),
+    volume => volume?.configMap?.name === configMap.metadata.name
+  )
 );
 
 const secretsUsedInPods = makeRelation(
@@ -156,19 +156,17 @@ const secretsUsedInPods = makeRelation(
   Secret,
   (pod, secret) =>
     pod.spec.containers?.find(container =>
-      container.env?.find(env => secret.metadata.name === env.valueFrom?.secretKeyRef?.name),
+      container.env?.find(env => secret.metadata.name === env.valueFrom?.secretKeyRef?.name)
     ) ??
     pod.spec.volumes?.find(volume =>
-      volume.projected?.sources?.find(
-        (source: any) => source.secret?.name === secret.metadata.name,
-      ),
-    ),
+      volume.projected?.sources?.find((source: any) => source.secret?.name === secret.metadata.name)
+    )
 );
 
 const secretsUsedInJobs = makeRelation(Job, Secret, (job, secret) =>
   job.spec.template.spec.containers?.find(container =>
-    container.env?.find(env => secret.metadata.name === env.valueFrom?.secretKeyRef?.name),
-  ),
+    container.env?.find(env => secret.metadata.name === env.valueFrom?.secretKeyRef?.name)
+  )
 );
 
 const hpaToDeployment = makeRelation(
@@ -177,7 +175,7 @@ const hpaToDeployment = makeRelation(
   (hpa, deployment) =>
     hpa.spec.scaleTargetRef?.apiVersion === Deployment.apiVersion &&
     hpa.spec.scaleTargetRef?.kind === Deployment.kind &&
-    hpa.spec.scaleTargetRef?.name === deployment.metadata.name,
+    hpa.spec.scaleTargetRef?.name === deployment.metadata.name
 );
 
 const hpaToStatefulSet = makeRelation(
@@ -186,57 +184,57 @@ const hpaToStatefulSet = makeRelation(
   (hpa, statefulSet) =>
     hpa.spec.scaleTargetRef?.apiVersion === StatefulSet.apiVersion &&
     hpa.spec.scaleTargetRef?.kind === StatefulSet.kind &&
-    hpa.spec.scaleTargetRef?.name === statefulSet.metadata.name,
+    hpa.spec.scaleTargetRef?.name === statefulSet.metadata.name
 );
 
 const vwcToService = makeRelation(ValidatingWebhookConfiguration, Service, (vwc, service) =>
-  vwc.webhooks.find(webhook => service.metadata.name === webhook.clientConfig.service?.name),
+  vwc.webhooks.find(webhook => service.metadata.name === webhook.clientConfig.service?.name)
 );
 
 const mwcToService = makeRelation(MutatingWebhookConfiguration, Service, (mwc, service) =>
-  mwc.webhooks.find(webhook => service.metadata.name === webhook.clientConfig.service?.name),
+  mwc.webhooks.find(webhook => service.metadata.name === webhook.clientConfig.service?.name)
 );
 
 const serviceToPods = makeRelation(Service, Pod, (service, pod) =>
-  matchesLabels(service.spec.selector, pod),
+  matchesLabels(service.spec.selector, pod)
 );
 
 const endpointsToServices = makeRelation(
   Endpoints,
   Service,
-  (endpoint, service) => endpoint.getName() === service.getName(),
+  (endpoint, service) => endpoint.getName() === service.getName()
 );
 
 const endpointSlicesToServices = makeRelation(
   EndpointSlice,
   Service,
-  (endpoint, service) => endpoint.getOwnerServiceName() === service.getName(),
+  (endpoint, service) => endpoint.getOwnerServiceName() === service.getName()
 );
 
 const ingressToService = makeRelation(Ingress, Service, (ingress, service) =>
   ingress.spec?.rules?.find((rule: any) =>
-    rule.http?.paths?.find((path: any) => service.metadata.name === path?.backend?.service?.name),
-  ),
+    rule.http?.paths?.find((path: any) => service.metadata.name === path?.backend?.service?.name)
+  )
 );
 
 const ingressToSecret = makeRelation(Ingress, Secret, (ingress, secret) =>
-  ingress.spec.tls?.find(tls => tls.secretName === secret.metadata.name),
+  ingress.spec.tls?.find(tls => tls.secretName === secret.metadata.name)
 );
 
 const networkPolicyToPod = makeRelation(NetworkPolicy, Pod, (np, pod) =>
-  matchesLabels(np.jsonData.spec.podSelector.matchLabels, pod),
+  matchesLabels(np.jsonData.spec.podSelector.matchLabels, pod)
 );
 
 const roleBindingsToRole = makeRelation(
   RoleBinding,
   Role,
-  (binding, role) => role.metadata.name === binding.roleRef.name,
+  (binding, role) => role.metadata.name === binding.roleRef.name
 );
 
 const roleBindingToServiceAccount = makeRelation(RoleBinding, ServiceAccount, (binding, sa) =>
   binding.subjects.find(
-    subject => subject.kind === 'ServiceAccount' && sa.metadata.name === subject.name,
-  ),
+    subject => subject.kind === 'ServiceAccount' && sa.metadata.name === subject.name
+  )
 );
 
 const serviceAccountToDeployments = makeRelation(
@@ -244,7 +242,7 @@ const serviceAccountToDeployments = makeRelation(
   Deployment,
   (sa, deployment) =>
     (deployment.spec?.template?.spec?.serviceAccountName ?? 'default') === sa.metadata.name &&
-    deployment.metadata.namespace === sa.metadata.namespace,
+    deployment.metadata.namespace === sa.metadata.namespace
 );
 
 const serviceAccountToDaemonSets = makeRelation(
@@ -252,11 +250,11 @@ const serviceAccountToDaemonSets = makeRelation(
   DaemonSet,
   (sa, ds) =>
     (ds.spec?.template?.spec?.serviceAccountName ?? 'default') === sa.metadata.name &&
-    ds.metadata.namespace === sa.metadata.namespace,
+    ds.metadata.namespace === sa.metadata.namespace
 );
 
 const pvcToPods = makeRelation(PersistentVolumeClaim, Pod, (pvc, pod) =>
-  pod.spec.volumes?.find(volume => volume.persistentVolumeClaim?.claimName === pvc.metadata.name),
+  pod.spec.volumes?.find(volume => volume.persistentVolumeClaim?.claimName === pvc.metadata.name)
 );
 
 const podToOwner = makeOwnerRelation(Pod);
@@ -277,23 +275,23 @@ const useGetCRToOwnerRelations = () => {
 };
 
 const jobToCronJob = makeRelation(Job, CronJob, (job, cronJob) =>
-  job.metadata.ownerReferences?.find(owner => owner.uid === cronJob.metadata.uid),
+  job.metadata.ownerReferences?.find(owner => owner.uid === cronJob.metadata.uid)
 );
 
 const gatewayToGatewayClass = makeRelation(
   Gateway,
   GatewayClass,
-  (gateway, gatewayClass) => gateway.spec.gatewayClassName === gatewayClass.metadata.name,
+  (gateway, gatewayClass) => gateway.spec.gatewayClassName === gatewayClass.metadata.name
 );
 
 const httpRouteToGateway = makeRelation(HTTPRoute, Gateway, (httpRoute, gateway) =>
-  httpRoute.spec.parentRefs?.find(ref => ref.name === gateway.metadata.name),
+  httpRoute.spec.parentRefs?.find(ref => ref.name === gateway.metadata.name)
 );
 
 const httpRouteToService = makeRelation(HTTPRoute, Service, (httpRoute, service) =>
   httpRoute.spec.rules?.find(rule =>
-    rule.backendRefs?.find(backend => backend.name === service.metadata.name),
-  ),
+    rule.backendRefs?.find(backend => backend.name === service.metadata.name)
+  )
 );
 
 const backendTLSPolicyToService = makeRelation(
@@ -301,7 +299,7 @@ const backendTLSPolicyToService = makeRelation(
   Service,
   (tlsPolicy, service) =>
     tlsPolicy.spec.targetRef?.name === service.metadata.name &&
-    tlsPolicy.spec.targetRef?.kind === 'Service',
+    tlsPolicy.spec.targetRef?.kind === 'Service'
 );
 
 const backendTrafficPolicyToService = makeRelation(
@@ -309,7 +307,7 @@ const backendTrafficPolicyToService = makeRelation(
   Service,
   (trafficPolicy, service) =>
     trafficPolicy.spec.targetRef?.name === service.metadata.name &&
-    trafficPolicy.spec.targetRef?.kind === 'Service',
+    trafficPolicy.spec.targetRef?.kind === 'Service'
 );
 
 export function useGetAllRelations(): Relation[] {

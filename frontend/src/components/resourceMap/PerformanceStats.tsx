@@ -122,21 +122,18 @@ export function PerformanceStats({ visible = false, onToggle }: PerformanceStats
   }
 
   // Calculate summary statistics
-  const summary = metrics.reduce(
-    (acc, metric) => {
-      if (!acc[metric.operation]) {
-        acc[metric.operation] = { total: 0, count: 0, avg: 0, min: Infinity, max: 0 };
-      }
-      const stats = acc[metric.operation];
-      stats.total += metric.duration;
-      stats.count += 1;
-      stats.avg = stats.total / stats.count;
-      stats.min = Math.min(stats.min, metric.duration);
-      stats.max = Math.max(stats.max, metric.duration);
-      return acc;
-    },
-    {} as Record<string, { total: number; count: number; avg: number; min: number; max: number }>,
-  );
+  const summary = metrics.reduce((acc, metric) => {
+    if (!acc[metric.operation]) {
+      acc[metric.operation] = { total: 0, count: 0, avg: 0, min: Infinity, max: 0 };
+    }
+    const stats = acc[metric.operation];
+    stats.total += metric.duration;
+    stats.count += 1;
+    stats.avg = stats.total / stats.count;
+    stats.min = Math.min(stats.min, metric.duration);
+    stats.max = Math.max(stats.max, metric.duration);
+    return acc;
+  }, {} as Record<string, { total: number; count: number; avg: number; min: number; max: number }>);
 
   const getPerformanceColor = (duration: number, operation: string) => {
     // Thresholds vary by operation
@@ -283,7 +280,7 @@ export function PerformanceStats({ visible = false, onToggle }: PerformanceStats
                       <TableCell colSpan={4} align="center">
                         <Typography variant="body2" color="text.secondary">
                           {t(
-                            'No performance data available. Interact with the graph to see metrics.',
+                            'No performance data available. Interact with the graph to see metrics.'
                           )}
                         </Typography>
                       </TableCell>

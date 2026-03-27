@@ -143,7 +143,7 @@ const SourceLoader = memo(
     }, [id, data]);
 
     return null;
-  },
+  }
 );
 
 export default function useThrottledMemo<T>(factory: () => T, deps: any[], throttleMs: number): T {
@@ -228,7 +228,7 @@ export function GraphSourceManager({ sources, children, relations }: GraphSource
         return new Set(selection);
       });
     },
-    [setSelectedSources],
+    [setSelectedSources]
   );
 
   const onData = useCallback(
@@ -240,7 +240,7 @@ export function GraphSourceManager({ sources, children, relations }: GraphSource
         return new Map(map).set(id, data);
       });
     },
-    [setSourceData],
+    [setSourceData]
   );
 
   const components = useMemo(() => {
@@ -317,7 +317,7 @@ export function GraphSourceManager({ sources, children, relations }: GraphSource
           return;
         }
 
-        const toNodes = relation.toSource ? (nodesPerSource.get(relation.toSource) ?? []) : nodes;
+        const toNodes = relation.toSource ? nodesPerSource.get(relation.toSource) ?? [] : nodes;
 
         fromNodes.forEach(from => {
           toNodes.forEach(to => {
@@ -347,7 +347,7 @@ export function GraphSourceManager({ sources, children, relations }: GraphSource
       };
     },
     [sources, selectedSources, sourceData, setSelectedSources, relations],
-    500,
+    500
   );
 
   return (

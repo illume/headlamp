@@ -55,7 +55,7 @@ describe('getGraphCacheKey', () => {
   function makeGraph(nodes: { id: string }[], edges: GraphEdge[] = []): GraphNode {
     return {
       id: 'root',
-      nodes: nodes.map(n => ({ id: n.id }) as GraphNode),
+      nodes: nodes.map(n => ({ id: n.id } as GraphNode)),
       edges,
     };
   }

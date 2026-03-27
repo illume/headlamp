@@ -79,7 +79,7 @@ const getConnectedComponents = (nodes: GraphNode[], edges: GraphEdge[]): GraphNo
   const findConnectedComponent = (
     startNode: GraphNode,
     componentNodes: GraphNode[],
-    componentEdges: GraphEdge[],
+    componentEdges: GraphEdge[]
   ) => {
     const queue: GraphNode[] = [startNode];
     // PERFORMANCE: Index-based queue for O(1) dequeue instead of O(n) shift()
@@ -161,10 +161,10 @@ const getConnectedComponents = (nodes: GraphNode[], edges: GraphEdge[]): GraphNo
   if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
     console.log(
       `[ResourceMap Performance] getConnectedComponents: ${totalTime.toFixed(
-        2,
+        2
       )}ms (lookup: ${lookupTime.toFixed(2)}ms, component detection: ${componentTime.toFixed(
-        2,
-      )}ms, nodes: ${nodes.length}, components: ${components.length})`,
+        2
+      )}ms, nodes: ${nodes.length}, components: ${components.length})`
     );
   }
 
@@ -233,12 +233,12 @@ const groupByProperty = (
   }: {
     label: string;
     allowSingleMemberGroup?: boolean;
-  },
+  }
 ) => {
   const groups = Object.entries(
     groupBy(nodes, node => {
       return accessor(node);
-    }),
+    })
   ).map(
     ([property, components]): GraphNode => ({
       id: label + '-' + property,
@@ -246,7 +246,7 @@ const groupByProperty = (
       edges: [],
       subtitle: label,
       label: property,
-    }),
+    })
   );
 
   const result = groups
@@ -277,7 +277,7 @@ export function groupGraph(
     groupBy,
     namespaces,
     k8sNodes,
-  }: { groupBy?: GroupBy; namespaces: Namespace[]; k8sNodes: Node[] },
+  }: { groupBy?: GroupBy; namespaces: Namespace[]; k8sNodes: Node[] }
 ): GraphNode {
   const perfStart = performance.now();
 
@@ -302,13 +302,13 @@ export function groupGraph(
         }
         return component.kubeObject?.metadata?.namespace;
       },
-      { label: 'Namespace', allowSingleMemberGroup: true },
+      { label: 'Namespace', allowSingleMemberGroup: true }
     );
 
     components.forEach(component => {
       if (!component.kubeObject) {
         component.kubeObject = namespaces.find(
-          namespace => namespace.metadata.name === component.label,
+          namespace => namespace.metadata.name === component.label
         );
         if (component.kubeObject) {
           component.id = component.kubeObject.metadata.uid;
@@ -329,13 +329,13 @@ export function groupGraph(
 
         return (component.kubeObject as Pod)?.spec?.nodeName;
       },
-      { label: 'Node', allowSingleMemberGroup: true },
+      { label: 'Node', allowSingleMemberGroup: true }
     );
 
     components.forEach(component => {
       if (!component.kubeObject) {
         component.kubeObject = k8sNodes.find(
-          namespace => namespace.metadata.name === component.label,
+          namespace => namespace.metadata.name === component.label
         );
         if (component.kubeObject) {
           component.id = component.kubeObject.metadata.uid;
@@ -355,7 +355,7 @@ export function groupGraph(
         }
         return node.kubeObject?.metadata?.labels?.['app.kubernetes.io/instance'];
       },
-      { label: 'Instance' },
+      { label: 'Instance' }
     );
   }
 
@@ -401,10 +401,10 @@ export function groupGraph(
   if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
     console.log(
       `[ResourceMap Performance] groupGraph: ${totalTime.toFixed(
-        2,
+        2
       )}ms (grouping: ${groupingTime.toFixed(2)}ms, sorting: ${sortTime.toFixed(2)}ms, groupBy: ${
         groupBy || 'none'
-      })`,
+      })`
     );
   }
 
@@ -449,7 +449,7 @@ export function getParentNode(graph: GraphNode, elementId: string): GraphNode | 
 export function findGroupContaining(
   graph: GraphNode,
   elementId: string,
-  strict?: boolean,
+  strict?: boolean
 ): GraphNode | undefined {
   // Group is actually selcted, not a node inside a group
   if (graph.id === elementId && !strict) return graph;
@@ -491,7 +491,7 @@ export function findGroupContaining(
  */
 export function collapseGraph(
   graph: GraphNode,
-  { selectedNodeId = 'root', expandAll }: { selectedNodeId?: string; expandAll: boolean },
+  { selectedNodeId = 'root', expandAll }: { selectedNodeId?: string; expandAll: boolean }
 ) {
   let root = { ...graph };
   let selectedGroup: GraphNode | undefined;

@@ -167,7 +167,7 @@ function GraphViewContent({
   // ID of the selected Node, undefined means nothing is selected
   const [selectedNodeId, _setSelectedNodeId] = useQueryParamsState<string | undefined>(
     'node',
-    defaultNodeSelection,
+    defaultNodeSelection
   );
   const setSelectedNodeId = useCallback(
     (id: string | undefined) => {
@@ -177,7 +177,7 @@ function GraphViewContent({
       }
       _setSelectedNodeId(id);
     },
-    [_setSelectedNodeId],
+    [_setSelectedNodeId]
   );
 
   // Expand all groups state
@@ -230,9 +230,9 @@ function GraphViewContent({
             return { type: 'namespace', namespaces: Array.from(filter.namespaces).sort() };
           }
           return filter;
-        }),
+        })
       ),
-    [],
+    []
   );
 
   // Apply filters BEFORE simplification to ensure accuracy.
@@ -275,7 +275,7 @@ function GraphViewContent({
           changes.deletedNodes,
           nodes,
           edges,
-          filters,
+          filters
         );
         usedIncremental = true;
       }
@@ -292,7 +292,7 @@ function GraphViewContent({
     if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
       console.log(
         `[ResourceMap Performance] filteredGraph useMemo: ${totalTime.toFixed(2)}ms ` +
-          `(${usedIncremental ? 'INCREMENTAL' : 'FULL'} processing)`,
+          `(${usedIncremental ? 'INCREMENTAL' : 'FULL'} processing)`
       );
     }
 
@@ -349,8 +349,8 @@ function GraphViewContent({
     if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
       console.log(
         `[ResourceMap Performance] grouping useMemo: ${totalTime.toFixed(
-          2,
-        )}ms (collapse: ${collapseTime.toFixed(2)}ms)`,
+          2
+        )}ms (collapse: ${collapseTime.toFixed(2)}ms)`
       );
     }
 
@@ -397,7 +397,7 @@ function GraphViewContent({
 
   const contextValue = useMemo(
     () => ({ nodeSelection: selectedNodeId, setNodeSelection: setSelectedNodeId }),
-    [selectedNodeId, setSelectedNodeId],
+    [selectedNodeId, setSelectedNodeId]
   );
 
   const fullGraphContext = useMemo(() => {
@@ -424,8 +424,8 @@ function GraphViewContent({
     if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
       console.log(
         `[ResourceMap Performance] fullGraphContext useMemo: ${totalTime.toFixed(
-          2,
-        )}ms (lookup: ${lookupTime.toFixed(2)}ms, nodes: ${nodes.length}, edges: ${edges.length})`,
+          2
+        )}ms (lookup: ${lookupTime.toFixed(2)}ms, nodes: ${nodes.length}, edges: ${edges.length})`
       );
     }
 
@@ -671,7 +671,7 @@ export function GraphView(props: GraphViewContentProps) {
 
   const sources = useMemo(
     () => [...propsSources, ...pluginGraphSources],
-    [propsSources, pluginGraphSources],
+    [propsSources, pluginGraphSources]
   );
 
   return (

@@ -384,10 +384,10 @@ export const applyGraphLayout = (graph: GraphNode, aspectRatio: number) => {
       if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
         console.log(
           `[ResourceMap Performance] applyGraphLayout: ${totalTime.toFixed(
-            2,
+            2
           )}ms (conversion: ${conversionTime.toFixed(2)}ms, ELK layout: ${layoutTime.toFixed(
-            2,
-          )}ms, conversion back: ${conversionBackTime.toFixed(2)}ms, nodes: ${nodeCount})`,
+            2
+          )}ms, conversion back: ${conversionBackTime.toFixed(2)}ms, nodes: ${nodeCount})`
         );
       }
 

@@ -59,18 +59,19 @@ export function selectTopN<T>(items: T[], count: number, getScore: (item: T) => 
   return heap.map(h => h.item);
 }
 
-function siftDown(heap: { score: number }[], i: number, size: number): void {
+function siftDown(heap: { score: number }[], startIdx: number, size: number): void {
+  let idx = startIdx;
   while (true) {
-    let smallest = i;
-    const left = 2 * i + 1;
-    const right = 2 * i + 2;
+    let smallest = idx;
+    const left = 2 * idx + 1;
+    const right = 2 * idx + 2;
     if (left < size && heap[left].score < heap[smallest].score) smallest = left;
     if (right < size && heap[right].score < heap[smallest].score) smallest = right;
-    if (smallest === i) break;
-    const tmp = heap[i];
-    heap[i] = heap[smallest];
+    if (smallest === idx) break;
+    const tmp = heap[idx];
+    heap[idx] = heap[smallest];
     heap[smallest] = tmp;
-    i = smallest;
+    idx = smallest;
   }
 }
 
@@ -119,7 +120,7 @@ export function simplifyGraph(
   options: {
     maxNodes?: number;
     enabled?: boolean;
-  } = {},
+  } = {}
 ): { nodes: GraphNode[]; edges: GraphEdge[]; simplified: boolean } {
   // Auto-adjust maxNodes for extreme graphs to keep ELK layout performant and tractable
   const defaultMaxNodes =
@@ -175,7 +176,7 @@ export function simplifyGraph(
 
   // Keep only edges where both source and target are in topNodes
   const simplifiedEdges = edges.filter(
-    edge => topNodeIds.has(edge.source) && topNodeIds.has(edge.target),
+    edge => topNodeIds.has(edge.source) && topNodeIds.has(edge.target)
   );
 
   const totalTime = performance.now() - perfStart;
@@ -185,7 +186,7 @@ export function simplifyGraph(
     console.log(
       `[ResourceMap Performance] simplifyGraph: ${totalTime.toFixed(2)}ms (nodes: ${
         nodes.length
-      } -> ${topNodes.length}, edges: ${edges.length} -> ${simplifiedEdges.length})`,
+      } -> ${topNodes.length}, edges: ${edges.length} -> ${simplifiedEdges.length})`
     );
   }
 

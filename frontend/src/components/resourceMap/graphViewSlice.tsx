@@ -77,7 +77,7 @@ export const graphViewSlice = createSlice({
     },
     addKindIcon(
       state,
-      action: PayloadAction<{ kind: string; definition: IconDefinition; apiGroup?: string }>,
+      action: PayloadAction<{ kind: string; definition: IconDefinition; apiGroup?: string }>
     ) {
       const { kind, definition, apiGroup } = action.payload;
       const key = apiGroup ? `${apiGroup}/${kind}` : kind;

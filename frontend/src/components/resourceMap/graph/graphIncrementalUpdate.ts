@@ -47,7 +47,7 @@ export function detectGraphChanges(
   prevNodes: GraphNode[],
   prevEdges: GraphEdge[],
   currentNodes: GraphNode[],
-  currentEdges: GraphEdge[],
+  currentEdges: GraphEdge[]
 ): GraphChanges {
   const perfStart = performance.now();
 
@@ -121,10 +121,10 @@ export function detectGraphChanges(
   if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
     console.log(
       `[ResourceMap Performance] detectGraphChanges: ${totalTime.toFixed(
-        2,
+        2
       )}ms (${changePercentage.toFixed(1)}% changed: +${addedNodes.size} ~${modifiedNodes.size} -${
         deletedNodes.size
-      })`,
+      })`
     );
   }
 

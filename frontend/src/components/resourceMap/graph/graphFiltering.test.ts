@@ -205,7 +205,7 @@ describe('filterGraph', () => {
       new Set(),
       testNodes,
       testEdges,
-      filters,
+      filters
     );
 
     // Both should produce identical results
@@ -318,7 +318,7 @@ describe('filterGraphIncremental', () => {
       new Set(),
       allNodes,
       allEdges,
-      [], // No filters
+      [] // No filters
     );
 
     // Should return all 100 nodes (modified nodes still pass empty filter)
@@ -363,7 +363,7 @@ describe('filterGraphIncremental', () => {
       new Set(),
       allNodes,
       allEdges,
-      filters,
+      filters
     );
 
     // Should include pod-2 (has error)
@@ -409,7 +409,7 @@ describe('filterGraphIncremental', () => {
       deletedNodeIds,
       allNodes,
       allEdges,
-      [],
+      []
     );
 
     // Should only have pod-1
@@ -462,7 +462,7 @@ describe('filterGraphIncremental', () => {
       new Set(),
       allNodes,
       allEdges,
-      filters,
+      filters
     );
 
     // pod-1 no longer passes error filter (now Running/Ready), should be removed
@@ -520,13 +520,13 @@ describe('filterGraphIncremental', () => {
       new Set(),
       allNodes,
       allEdges,
-      filters,
+      filters
     );
 
     // Results should be identical
     expect(incrementalResult.nodes).toHaveLength(fullResult.nodes.length);
     expect(incrementalResult.nodes.map(n => n.id).sort()).toEqual(
-      fullResult.nodes.map(n => n.id).sort(),
+      fullResult.nodes.map(n => n.id).sort()
     );
   });
 
@@ -578,7 +578,7 @@ describe('filterGraphIncremental', () => {
       new Set(),
       allNodes,
       allEdges,
-      filters,
+      filters
     );
 
     // Should show pod-1 and pod-3 (default namespace), not pod-2 (production)
@@ -615,7 +615,7 @@ describe('filterGraphIncremental', () => {
       new Set(),
       allNodes,
       allEdges,
-      [],
+      []
     );
 
     expect(result.nodes).toHaveLength(3);
@@ -720,7 +720,7 @@ describe('filterGraphIncremental', () => {
       deletedNodeIds,
       allNodes,
       allEdges,
-      filters,
+      filters
     );
 
     // Should show 3 modified pods with Failed status (pod-10, pod-20, pod-30)
@@ -781,13 +781,13 @@ describe('filterGraphIncremental', () => {
       new Set(),
       allNodes,
       allEdges,
-      filters,
+      filters
     );
 
     // Results should match full filter - both should have 10 Failed pods
     expect(incrementalResult.nodes).toHaveLength(fullResult.nodes.length);
     expect(incrementalResult.nodes.map(n => n.id).sort()).toEqual(
-      fullResult.nodes.map(n => n.id).sort(),
+      fullResult.nodes.map(n => n.id).sort()
     );
     expect(incrementalResult.nodes).toHaveLength(10); // 10 failed pods
   });
@@ -841,7 +841,7 @@ describe('filterGraphIncremental', () => {
       new Set(),
       allNodes,
       allEdges,
-      filters,
+      filters
     );
 
     // Should include pod-1 (error) AND related pod-2 and pod-3 via BFS
@@ -879,7 +879,7 @@ describe('filterGraphIncremental', () => {
       new Set(),
       allNodes,
       allEdges,
-      [],
+      []
     );
 
     expect(result.nodes).toHaveLength(1);
@@ -938,7 +938,7 @@ describe('filterGraphIncremental', () => {
       new Set(),
       allNodes,
       allEdges,
-      filters,
+      filters
     );
 
     // Should include pod-1 (kube-system) and pod-2 (error), not pod-3 (production + no error)
@@ -972,7 +972,7 @@ describe('filterGraphIncremental', () => {
       new Set(),
       allNodes,
       allEdges,
-      [],
+      []
     );
 
     const fullResult = filterGraph(allNodes, allEdges, []);
@@ -980,7 +980,7 @@ describe('filterGraphIncremental', () => {
     // Results should be identical (correctness test, not speed test)
     expect(incrementalResult.nodes).toHaveLength(fullResult.nodes.length);
     expect(incrementalResult.nodes.map(n => n.id).sort()).toEqual(
-      fullResult.nodes.map(n => n.id).sort(),
+      fullResult.nodes.map(n => n.id).sort()
     );
   });
 
@@ -1036,7 +1036,7 @@ describe('filterGraphIncremental', () => {
       new Set<string>(),
       currentNodes,
       currentEdges,
-      filters,
+      filters
     );
 
     const fullResult = filterGraph(currentNodes, currentEdges, filters);
@@ -1114,7 +1114,7 @@ describe('filterGraphIncremental', () => {
       new Set(),
       allNodes,
       allEdges,
-      filters,
+      filters
     );
 
     // Both paths must produce identical node sets and edge sets
@@ -1193,7 +1193,7 @@ describe('filterGraphIncremental', () => {
       new Set(),
       currentNodes,
       prevEdges,
-      filters,
+      filters
     );
 
     // Both must produce identical results: only pod-2 (kube-system) should remain
@@ -1269,7 +1269,7 @@ describe('filterGraphIncremental', () => {
       new Set(['pod-3']),
       currentNodes,
       currentEdges,
-      filters,
+      filters
     );
 
     // Both must produce identical results
@@ -1334,7 +1334,7 @@ describe('filterGraphIncremental', () => {
       new Set(),
       allNodes,
       allEdges,
-      filters,
+      filters
     );
 
     // No duplicate nodes
@@ -1384,7 +1384,7 @@ describe('filterGraphIncremental', () => {
       new Set(['b']),
       [nodeA], // only A remains
       [], // no edges (B is gone)
-      filters,
+      filters
     );
 
     // A should still be included (it matches hasErrors)
@@ -1437,7 +1437,7 @@ describe('filterGraphIncremental', () => {
       new Set(),
       [nodeA, nodeB, nodeC],
       currentEdges,
-      filters,
+      filters
     );
 
     // The stale edge should not appear in results

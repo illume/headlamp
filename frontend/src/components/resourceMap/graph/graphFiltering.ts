@@ -166,10 +166,10 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
   if (typeof window !== 'undefined' && (window as any).__HEADLAMP_DEBUG_PERFORMANCE__) {
     console.log(
       `[ResourceMap Performance] filterGraph: ${totalTime.toFixed(
-        2,
+        2
       )}ms (lookup: ${lookupTime.toFixed(2)}ms, filter: ${filterTime.toFixed(2)}ms, nodes: ${
         nodes.length
-      } -> ${filteredNodes.length}, edges: ${edges.length} -> ${filteredEdges.length})`,
+      } -> ${filteredNodes.length}, edges: ${edges.length} -> ${filteredEdges.length})`
     );
   }
 
@@ -223,7 +223,7 @@ export function filterGraphIncremental(
   deletedNodeIds: Set<string>,
   currentNodes: GraphNode[],
   currentEdges: GraphEdge[],
-  filters: GraphFilter[],
+  filters: GraphFilter[]
 ): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const perfStart = performance.now();
 
@@ -324,7 +324,7 @@ export function filterGraphIncremental(
     console.log(
       `[ResourceMap Performance] filterGraphIncremental: ${totalTime.toFixed(2)}ms ` +
         `(processed ${nodesToCheck.length}/${currentNodes.length} nodes = ${changeRatio}% changed, ` +
-        `result: ${resultNodes.length} nodes)`,
+        `result: ${resultNodes.length} nodes)`
     );
   }
 
