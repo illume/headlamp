@@ -235,7 +235,7 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
   queryParams?: QueryParameters;
   queryArgs?: KubeObjectListsQueryArgs;
 }): void {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<any>();
 
   // Track the latest resource versions to prevent duplicate updates
   const latestResourceVersions = useRef<Record<string, string>>({});
@@ -380,7 +380,7 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
   /** RTK Query args for updating the cache */
   queryArgs?: KubeObjectListsQueryArgs;
 }) {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<any>();
 
   // Keep a ref to queryArgs so callbacks always have the latest
   const queryArgsRef = useRef(queryArgs);

@@ -172,9 +172,6 @@ describe('Storybook Tests', () => {
           }
           worker.events.on('request:unhandled', onUnhandledRequest);
 
-          act(() => {
-            previewAnnotations.queryClient.clear();
-          });
           await act(async () => {
             await story.run();
           });
@@ -200,21 +197,6 @@ describe('Storybook Tests', () => {
             unhandledRequests,
             'MSW: intercepted a request without a matching request handler. Please create a request handler for it'
           ).toEqual([]);
-
-          await waitFor(() => {
-            if (previewAnnotations.queryClient.isFetching()) {
-              const pendingQueries = previewAnnotations.queryClient
-                .getQueryCache()
-                .findAll({ fetchStatus: 'fetching' });
-
-              throw new Error(
-                'The react-query is still fetching following queries:\n' +
-                  pendingQueries
-                    .map((it, i) => String(i + 1) + ': ' + JSON.stringify(it.queryKey))
-                    .join('\n')
-              );
-            }
-          });
 
           // Cleanup listeners
           worker.events.removeListener('request:start', onStart);

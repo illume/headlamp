@@ -235,7 +235,7 @@ export function useKubeObject<K extends KubeObject>({
     skip: !endpoint,
   });
 
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<any>();
 
   const data: Instance | null = query.error ? null : (query.data as Instance) ?? null;
 
