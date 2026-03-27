@@ -425,8 +425,8 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
   queryArgsRef.current = queryArgs;
 
   // Precompute {cluster:namespace} → index map for O(1) cache lookups.
-  const indexMapRef = useRef<Map<string, number>>(new Map());
-  indexMapRef.current = useMemo(() => buildListIndexMap(lists), [lists]);
+  // Used directly in the connections memo closures (which re-create on lists change).
+  const indexMap = useMemo(() => buildListIndexMap(lists), [lists]);
 
   const connections = useMemo(() => {
     if (!endpoint) return [];
@@ -443,7 +443,7 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
         url,
         onMessage(update: KubeListUpdateEvent<K>) {
           if (queryArgsRef.current) {
-            const cachedIdx = indexMapRef.current.get(listKey(cluster, namespace));
+            const cachedIdx = indexMap.get(listKey(cluster, namespace));
             if (cachedIdx === undefined) return;
 
             dispatch(
@@ -469,7 +469,7 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
         },
       };
     });
-  }, [lists, kubeObjectClass, endpoint]);
+  }, [lists, kubeObjectClass, endpoint, indexMap]);
 
   useWebSockets<KubeListUpdateEvent<K>>({
     enabled: !!endpoint,

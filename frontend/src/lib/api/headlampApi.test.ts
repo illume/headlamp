@@ -95,25 +95,28 @@ describe('auth resetApiState', () => {
     // store.dispatch to count resetApiState dispatches. setToken dispatches it
     // once; if logout had its own dispatch we would see two.
     const fetchModule = await import('../k8s/api/v2/fetch');
-    vi.spyOn(fetchModule, 'backendFetch').mockResolvedValue(
-      new Response(JSON.stringify({ ok: true }), { status: 200 })
-    );
+    const fetchSpy = vi
+      .spyOn(fetchModule, 'backendFetch')
+      .mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
 
     const storeModule = await import('../../redux/stores/store');
     const dispatchSpy = vi.spyOn(storeModule.default, 'dispatch');
 
-    const auth = await import('../auth');
-    await auth.logout('test-cluster');
+    try {
+      const auth = await import('../auth');
+      await auth.logout('test-cluster');
 
-    // Count how many times resetApiState was dispatched
-    const resetCalls = dispatchSpy.mock.calls.filter(([action]) =>
-      headlampApi.util.resetApiState.match(action)
-    );
+      // Count how many times resetApiState was dispatched
+      const resetCalls = dispatchSpy.mock.calls.filter(([action]) =>
+        headlampApi.util.resetApiState.match(action)
+      );
 
-    // setToken dispatches resetApiState once. If logout had a redundant call,
-    // we would see two dispatches here.
-    expect(resetCalls.length).toBe(1);
-
-    dispatchSpy.mockRestore();
+      // setToken dispatches resetApiState once. If logout had a redundant call,
+      // we would see two dispatches here.
+      expect(resetCalls.length).toBe(1);
+    } finally {
+      dispatchSpy.mockRestore();
+      fetchSpy.mockRestore();
+    }
   });
 });
