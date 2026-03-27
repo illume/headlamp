@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { useMemo, useRef } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
 import { useDispatch } from 'react-redux';
 import { headlampApi } from '../../../api/headlampApi';
 import { getCluster } from '../../../cluster';
@@ -274,30 +274,43 @@ export function useKubeObject<K extends KubeObject>({
     ];
   }, [endpoint, namespace, name, cluster, stableQueryParams, kubeObjectClass, dispatch]);
 
+  // Memoize the url callback so useWebSocket doesn't reconnect on every render.
+  // Uses stableQueryParams (not cleanedUpQueryParams) for stable identity.
+  const multiplexerUrl = useCallback(
+    () =>
+      makeUrl([KubeObjectEndpoint.toUrl(endpoint!, namespace)], {
+        ...stableQueryParams,
+        watch: 1,
+        fieldSelector: `metadata.name=${name}`,
+      }),
+    [endpoint, namespace, name, stableQueryParams]
+  );
+
+  // Memoize onMessage; use queryArgsRef so the callback doesn't change when queryArgs changes
+  const multiplexerOnMessage = useCallback(
+    (update: KubeListUpdateEvent<K>) => {
+      if (update.type !== 'ADDED' && update.object) {
+        dispatch(
+          injectedApi.util.upsertQueryData(
+            'getKubeObject',
+            queryArgsRef.current,
+            new kubeObjectClass(update.object, cluster)
+          )
+        );
+      }
+    },
+    [dispatch, kubeObjectClass, cluster]
+  );
+
   // Breaking rules of hooks here a little but
   // getWebsocketMultiplexerEnabled is a feature toggle
   // and not a variable so this `if` should never change during runtime
   if (getWebsocketMultiplexerEnabled()) {
     useWebSocket<KubeListUpdateEvent<K>>({
-      url: () =>
-        makeUrl([KubeObjectEndpoint.toUrl(endpoint!)], {
-          ...cleanedUpQueryParams,
-          watch: 1,
-          fieldSelector: `metadata.name=${name}`,
-        }),
+      url: multiplexerUrl,
       enabled: !!endpoint && !!data,
       cluster,
-      onMessage(update: KubeListUpdateEvent<K>) {
-        if (update.type !== 'ADDED' && update.object) {
-          dispatch(
-            injectedApi.util.upsertQueryData(
-              'getKubeObject',
-              queryArgs,
-              new kubeObjectClass(update.object, cluster)
-            )
-          );
-        }
-      },
+      onMessage: multiplexerOnMessage,
     });
   } else {
     useWebSockets({

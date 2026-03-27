@@ -118,7 +118,7 @@ export default function AuthVisible(props: AuthVisibleProps) {
     if (queryError) {
       onError?.(queryError as Error);
     }
-  }, [queryError]);
+  }, [queryError, onError]);
 
   const visible = data?.status?.allowed ?? false;
 
@@ -129,7 +129,7 @@ export default function AuthVisible(props: AuthVisibleProps) {
         reason: data.status?.reason ?? '',
       });
     }
-  }, [data]);
+  }, [data, onAuthResult, visible]);
 
   if (!visible) {
     return null;

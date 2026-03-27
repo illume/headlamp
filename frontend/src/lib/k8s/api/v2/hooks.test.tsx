@@ -700,6 +700,81 @@ describe('kubeObjectApi cache key serialization', () => {
   });
 });
 
+describe('useKubeObject multiplexer websocket', () => {
+  it('should pass a stable (memoized) url callback to useWebSocket', async () => {
+    // Override the mock so getWebsocketMultiplexerEnabled returns true
+    const multiplexerModule = await import('./useKubeObjectList');
+    const spy = vi.spyOn(multiplexerModule, 'getWebsocketMultiplexerEnabled').mockReturnValue(true);
+
+    const podData = { metadata: { name: 'mux-pod', namespace: 'ns', uid: 'mux-uid' } };
+    mockClusterFetch.mockResolvedValue({
+      json: () => Promise.resolve(podData),
+    });
+
+    const { result, rerender } = renderHook(
+      () =>
+        useKubeObject({
+          kubeObjectClass: mockKubeObjectClass,
+          namespace: 'ns',
+          name: 'mux-pod',
+          cluster: 'c1',
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    // useWebSocket should have been called with a function for url
+    expect(mockUseWebSocket).toHaveBeenCalled();
+    const firstCall = mockUseWebSocket.mock.calls[mockUseWebSocket.mock.calls.length - 1][0];
+    const urlFn1 = firstCall.url;
+    expect(typeof urlFn1).toBe('function');
+
+    // Rerender with same props — url callback should be the same reference (memoized)
+    rerender();
+    const secondCall = mockUseWebSocket.mock.calls[mockUseWebSocket.mock.calls.length - 1][0];
+    const urlFn2 = secondCall.url;
+    expect(urlFn2).toBe(urlFn1); // Same reference = no unnecessary reconnect
+
+    spy.mockRestore();
+  });
+
+  it('should include namespace in multiplexer websocket URL', async () => {
+    const multiplexerModule = await import('./useKubeObjectList');
+    const spy = vi.spyOn(multiplexerModule, 'getWebsocketMultiplexerEnabled').mockReturnValue(true);
+
+    const podData = { metadata: { name: 'ns-pod', namespace: 'my-ns', uid: 'ns-uid' } };
+    mockClusterFetch.mockResolvedValue({
+      json: () => Promise.resolve(podData),
+    });
+
+    const { result } = renderHook(
+      () =>
+        useKubeObject({
+          kubeObjectClass: mockKubeObjectClass,
+          namespace: 'my-ns',
+          name: 'ns-pod',
+          cluster: 'c1',
+        }),
+      { wrapper: createWrapper() }
+    );
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    // The url callback should produce a URL containing the namespace
+    const lastCall = mockUseWebSocket.mock.calls[mockUseWebSocket.mock.calls.length - 1][0];
+    const urlFn = lastCall.url;
+    const urlString = urlFn();
+    expect(urlString).toContain('my-ns');
+
+    spy.mockRestore();
+  });
+});
+
 describe('headlampApi resetApiState with cached data', () => {
   it('should clear all cached queries when resetApiState is dispatched', async () => {
     const store = createTestStore();

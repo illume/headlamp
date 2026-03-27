@@ -163,4 +163,94 @@ describe('AuthVisible', () => {
       expect(screen.getByText('Create Button')).toBeInTheDocument();
     });
   });
+
+  it('calls onError with the latest callback when auth check fails', async () => {
+    // This verifies that when onError prop changes, the new callback is used (not stale)
+    // Use a unique item name to avoid RTK Query cache collisions with other tests
+    const failingItem = {
+      cluster: 'test-cluster',
+      getName: () => 'error-test-resource',
+      _class: () => ({
+        apiName: 'secrets',
+        apiVersion: 'v1',
+      }),
+      getAuthorization: vi.fn().mockRejectedValue(new Error('RBAC: forbidden')),
+    } as any;
+
+    const onError1 = vi.fn();
+
+    const { rerender } = render(
+      <TestContext>
+        <AuthVisible item={failingItem} authVerb="delete" onError={onError1}>
+          <div>Content</div>
+        </AuthVisible>
+      </TestContext>
+    );
+
+    await waitFor(() => {
+      expect(onError1).toHaveBeenCalledWith(expect.any(Error));
+    });
+
+    // Now re-render with a new onError callback
+    const onError2 = vi.fn();
+
+    rerender(
+      <TestContext>
+        <AuthVisible item={failingItem} authVerb="delete" onError={onError2}>
+          <div>Content</div>
+        </AuthVisible>
+      </TestContext>
+    );
+
+    // The new callback should be used (not the stale one)
+    // Due to RTK Query caching, error is already present so the effect should fire with onError2
+    await waitFor(() => {
+      expect(onError2).toHaveBeenCalled();
+    });
+  });
+
+  it('calls onAuthResult with the latest callback when auth data arrives', async () => {
+    // This verifies that when onAuthResult prop changes, the new callback is used (not stale)
+    // Use unique item config to avoid cache collisions with other tests
+    const mockItem = {
+      cluster: 'test-cluster',
+      getName: () => 'result-test-resource',
+      _class: () => ({
+        apiName: 'configmaps',
+        apiVersion: 'v1',
+      }),
+      getAuthorization: vi.fn().mockResolvedValue({
+        status: { allowed: true, reason: 'RBAC: allowed' },
+      }),
+    } as any;
+    const onAuthResult1 = vi.fn();
+
+    const { rerender } = render(
+      <TestContext>
+        <AuthVisible item={mockItem} authVerb="watch" onAuthResult={onAuthResult1}>
+          <div>Content</div>
+        </AuthVisible>
+      </TestContext>
+    );
+
+    await waitFor(() => {
+      expect(onAuthResult1).toHaveBeenCalledWith({ allowed: true, reason: 'RBAC: allowed' });
+    });
+
+    // Now re-render with a new onAuthResult callback
+    const onAuthResult2 = vi.fn();
+
+    rerender(
+      <TestContext>
+        <AuthVisible item={mockItem} authVerb="watch" onAuthResult={onAuthResult2}>
+          <div>Content</div>
+        </AuthVisible>
+      </TestContext>
+    );
+
+    // The new callback should fire (not the stale one) because data is already present
+    await waitFor(() => {
+      expect(onAuthResult2).toHaveBeenCalledWith({ allowed: true, reason: 'RBAC: allowed' });
+    });
+  });
 });
