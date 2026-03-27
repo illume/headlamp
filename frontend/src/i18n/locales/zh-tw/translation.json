@@ -702,7 +702,7 @@
   "Performance Stats": "",
   "Fit to screen": "適合螢幕",
   "Zoom to 100%": "縮放到 100%",
-  "operations": "",
+  "{{count}} operations_other": "",
   "Summary (last {{count}} operations)_other": "",
   "Operation": "",
   "Avg": "",
