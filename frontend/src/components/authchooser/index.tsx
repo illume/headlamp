@@ -23,10 +23,10 @@ import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { generatePath, useHistory, useLocation } from 'react-router-dom';
 import { getAppUrl } from '../../helpers/getAppUrl';
+import { headlampApi } from '../../lib/api/headlampApi';
 import { getCluster, getClusterPrefixedPath } from '../../lib/cluster';
 import { useClustersConf } from '../../lib/k8s';
 import { testAuth } from '../../lib/k8s/api/v1/clusterApi';
-import { queryClient } from '../../lib/queryClient';
 import { createRouteURL } from '../../lib/router/createRouteURL';
 import { getRoute } from '../../lib/router/getRoute';
 import { getRoutePath } from '../../lib/router/getRoutePath';
@@ -208,7 +208,7 @@ function AuthChooser({ children }: AuthChooserProps) {
       clusterAuthType={clusterAuthType}
       handleTryAgain={runTestAuthAgain}
       handleOidcAuth={() => {
-        queryClient.invalidateQueries({ queryKey: ['clusterMe', clusterName], exact: true });
+        dispatch(headlampApi.util.resetApiState());
         history.replace(from);
       }}
       handleBackButtonPress={() => {

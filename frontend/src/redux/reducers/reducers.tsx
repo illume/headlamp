@@ -19,6 +19,7 @@ import { activityReducer } from '../../components/activity/activitySlice';
 import notificationsReducer from '../../components/App/Notifications/notificationsSlice';
 import themeReducer from '../../components/App/themeSlice';
 import graphViewReducer from '../../components/resourceMap/graphViewSlice';
+import { headlampApi } from '../../lib/api/headlampApi';
 import pluginsReducer from '../../plugin/pluginsSlice';
 import actionButtons from '../actionButtonsSlice';
 import clusterAction from '../clusterActionSlice';
@@ -60,6 +61,7 @@ const reducers = combineReducers({
   activity: activityReducer,
   projects: projectsReducer,
   shortcuts: shortcutsReducer,
+  [headlampApi.reducerPath]: headlampApi.reducer,
 });
 
 export type RootState = ReturnType<typeof reducers>;

@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-import { useQuery } from '@tanstack/react-query';
 import React, { Suspense } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { Redirect, Route, RouteProps, Switch, useHistory } from 'react-router-dom';
+import { headlampApi } from '../../lib/api/headlampApi';
 import { getCluster, getSelectedClusters } from '../../lib/cluster';
 import { useCluster, useClustersConf } from '../../lib/k8s';
 import { testAuth } from '../../lib/k8s/api/v1/clusterApi';
@@ -33,6 +33,21 @@ import { uiSlice } from '../../redux/uiSlice';
 import ErrorBoundary from '../common/ErrorBoundary';
 import ErrorComponent from '../common/ErrorPage';
 import { useSidebarItem } from '../Sidebar';
+
+const routeSwitcherApi = headlampApi.injectEndpoints({
+  endpoints: build => ({
+    testAuth: build.query<any, { cluster: string }>({
+      queryFn: async ({ cluster }) => {
+        try {
+          const result = await testAuth(cluster);
+          return { data: result };
+        } catch (error) {
+          return { error };
+        }
+      },
+    }),
+  }),
+});
 
 export default function RouteSwitcher(props: { requiresToken: () => boolean }) {
   // The NotFoundRoute always has to be evaluated in the last place.
@@ -165,12 +180,10 @@ function AuthRoute(props: AuthRouteProps) {
 
   useSidebarItem(sidebar, computedMatch);
   const cluster = useCluster();
-  const query = useQuery({
-    queryKey: ['auth', cluster],
-    queryFn: () => testAuth(cluster!),
-    enabled: !!cluster && requiresAuth,
-    retry: 0,
-  });
+  const query = routeSwitcherApi.useTestAuthQuery(
+    { cluster: cluster! },
+    { skip: !cluster || !requiresAuth }
+  );
 
   const clusters = useClustersConf();
   const currentCluster = getCluster();

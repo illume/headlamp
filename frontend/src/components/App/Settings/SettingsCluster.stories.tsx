@@ -19,6 +19,7 @@ import { Meta, StoryFn } from '@storybook/react';
 import { screen } from '@testing-library/react';
 import React from 'react';
 import { expect, userEvent, waitFor } from 'storybook/test';
+import { headlampApi } from '../../../lib/api/headlampApi';
 import { TestContext } from '../../../test';
 import SettingsCluster from './SettingsCluster';
 
@@ -30,7 +31,10 @@ function setupLocalStorage(clusterName: string, settings: Record<string, any> = 
 
 function getMockStore(clusters: Record<string, any> = {}) {
   return configureStore({
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: {
+      [headlampApi.reducerPath]: headlampApi.reducer,
       config: (
         state = {
           clusters,

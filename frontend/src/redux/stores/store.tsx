@@ -15,6 +15,7 @@
  */
 
 import { configureStore } from '@reduxjs/toolkit';
+import { headlampApi } from '../../lib/api/headlampApi';
 import { initialState as CLUSTER_ACTIONS_INITIAL_STATE } from '../clusterActionSlice';
 import { initialState as CLUSTER_PROVIDER_INITIAL_STATE } from '../clusterProviderSlice';
 import { initialState as CONFIG_INITIAL_STATE } from '../configSlice';
@@ -34,7 +35,9 @@ const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: false,
       thunk: true,
-    }).prepend(listenerMiddleware.middleware),
+    })
+      .prepend(listenerMiddleware.middleware)
+      .concat(headlampApi.middleware),
 });
 
 export default store;

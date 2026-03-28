@@ -20,6 +20,7 @@ import React from 'react';
 import { Provider } from 'react-redux';
 import { useDispatch } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
+import { headlampApi } from '../../lib/api/headlampApi';
 import { makeMockKubeObject } from '../../test/mocker';
 import { SectionBox } from '../common/SectionBox';
 import DetailsViewSection, { DetailsViewSectionProps } from './DetailsViewSection';
@@ -40,6 +41,8 @@ export default {
         <MemoryRouter>
           <Provider
             store={configureStore({
+              middleware: getDefaultMiddleware =>
+                getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
               reducer: (state = ourState) => state,
               preloadedState: ourState,
             })}

@@ -27,13 +27,13 @@ import { useTheme } from '@mui/material/styles';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { useQueries } from '@tanstack/react-query';
 import { has } from 'lodash';
 import React, { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router-dom';
 import { getProductName, getVersion } from '../../helpers/getProductInfo';
+import { headlampApi } from '../../lib/api/headlampApi';
 import { logout } from '../../lib/auth';
 import { useCluster, useClustersConf, useSelectedClusters } from '../../lib/k8s';
 import { ClusterUserInfo, getClusterUserInfo } from '../../lib/k8s/api/v1/clusterApi';
@@ -98,6 +98,30 @@ function getUserDisplayName(
   }
   return clusterName;
 }
+
+const topBarApi = headlampApi.injectEndpoints({
+  endpoints: build => ({
+    getClusterUserInfoBatch: build.query<
+      Record<string, ClusterUserInfo | undefined>,
+      { clusters: string[] }
+    >({
+      queryFn: async ({ clusters }) => {
+        try {
+          const results = await Promise.allSettled(clusters.map(c => getClusterUserInfo(c)));
+          const map: Record<string, ClusterUserInfo | undefined> = {};
+          clusters.forEach((c, i) => {
+            const r = results[i];
+            map[c] = r.status === 'fulfilled' ? r.value : undefined;
+          });
+          return { data: map };
+        } catch (error) {
+          return { error };
+        }
+      },
+      keepUnusedDataFor: 300,
+    }),
+  }),
+});
 
 export default function TopBar({}: TopBarProps) {
   const dispatch = useDispatch();
@@ -295,21 +319,10 @@ export const PureTopBar = memo(
     const clustersToQuery =
       selectedClusters && selectedClusters.length > 0 ? selectedClusters : cluster ? [cluster] : [];
 
-    const userInfoQueries = useQueries({
-      queries: clustersToQuery.map(clusterName => ({
-        queryKey: ['clusterMe', clusterName],
-        queryFn: () => getClusterUserInfo(clusterName),
-        staleTime: 5 * 60 * 1000,
-        retry: 1,
-      })),
-    });
-
-    const clusterUserInfoMap: Record<string, ClusterUserInfo | undefined> = {};
-    clustersToQuery.forEach((clusterName, index) => {
-      if (userInfoQueries[index]?.data) {
-        clusterUserInfoMap[clusterName] = userInfoQueries[index].data;
-      }
-    });
+    const { data: clusterUserInfoMap = {} } = topBarApi.useGetClusterUserInfoBatchQuery(
+      { clusters: clustersToQuery },
+      { skip: clustersToQuery.length === 0 }
+    );
 
     const showUserMenu = (!!selectedClusters && selectedClusters.length > 0) || isClusterContext;
 

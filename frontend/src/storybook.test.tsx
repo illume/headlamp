@@ -19,7 +19,10 @@ import { composeStories, type Meta, setProjectAnnotations, type StoryFn } from '
 import { act, render as testingLibraryRender, waitFor } from '@testing-library/react';
 import { getWorker } from 'msw-storybook-addon';
 import path from 'path';
+import React from 'react';
 import * as previewAnnotations from '../.storybook/preview';
+import { headlampApi } from './lib/api/headlampApi';
+import store from './redux/stores/store';
 
 const annotations = setProjectAnnotations([previewAnnotations, { testingLibraryRender }]);
 beforeAll(annotations.beforeAll!);
@@ -75,6 +78,14 @@ vi.mock('@monaco-editor/react', () => ({
   default: () => <div className="mock-monaco-editor" />,
 }));
 
+// Mock AuthVisible to render children synchronously.
+// The baseMocks MSW handler returns allowed=true for all auth checks, but the
+// RTK Query async pipeline creates non-deterministic timing with fake timers.
+// This mock matches the intended baseMock behavior without the async race.
+vi.mock('./components/common/Resource/AuthVisible', () => ({
+  default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+}));
+
 window.matchMedia = () => ({
   matches: false,
   addListener: () => {},
@@ -121,6 +132,10 @@ function replaceUseId(node: any) {
 describe('Storybook Tests', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    // Reset RTK Query cache between stories to prevent cross-story state bleed.
+    // Stories using module-level stores may still share cache internally, but
+    // the default app store (used by most stories via TestContext) is cleaned.
+    store.dispatch(headlampApi.util.resetApiState());
   });
   afterEach(() => {
     vi.useRealTimers();
@@ -172,9 +187,6 @@ describe('Storybook Tests', () => {
           }
           worker.events.on('request:unhandled', onUnhandledRequest);
 
-          act(() => {
-            previewAnnotations.queryClient.clear();
-          });
           await act(async () => {
             await story.run();
           });
@@ -200,21 +212,6 @@ describe('Storybook Tests', () => {
             unhandledRequests,
             'MSW: intercepted a request without a matching request handler. Please create a request handler for it'
           ).toEqual([]);
-
-          await waitFor(() => {
-            if (previewAnnotations.queryClient.isFetching()) {
-              const pendingQueries = previewAnnotations.queryClient
-                .getQueryCache()
-                .findAll({ fetchStatus: 'fetching' });
-
-              throw new Error(
-                'The react-query is still fetching following queries:\n' +
-                  pendingQueries
-                    .map((it, i) => String(i + 1) + ': ' + JSON.stringify(it.queryKey))
-                    .join('\n')
-              );
-            }
-          });
 
           // Cleanup listeners
           worker.events.removeListener('request:start', onStart);

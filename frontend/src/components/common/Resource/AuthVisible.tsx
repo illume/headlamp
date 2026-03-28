@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-import { useQuery } from '@tanstack/react-query';
+import { skipToken } from '@reduxjs/toolkit/query/react';
 import React, { useEffect } from 'react';
+import { headlampApi } from '../../../lib/api/headlampApi';
+import { getCluster } from '../../../lib/cluster';
 import { KubeObject } from '../../../lib/k8s/KubeObject';
 import { KubeObjectClass } from '../../../lib/k8s/KubeObject';
 
@@ -53,6 +55,38 @@ export interface AuthVisibleProps extends React.PropsWithChildren<{}> {
 /** A component that will only render its children if the user is authorized to perform the specified action on the given resource.
  * @param props The props for the component.
  */
+const authVisibleApi = headlampApi.injectEndpoints({
+  endpoints: build => ({
+    checkAuthVisible: build.query<
+      any,
+      {
+        itemName?: string;
+        apiName: string;
+        apiVersion: string | string[];
+        authVerb: string;
+        subresource?: string;
+        namespace?: string;
+        cluster?: string;
+        item: any;
+      }
+    >({
+      queryFn: async ({ item, authVerb, subresource, namespace, cluster }) => {
+        try {
+          const res = await item.getAuthorization(authVerb, { subresource, namespace }, cluster);
+          return { data: res };
+        } catch (e: any) {
+          return { error: e };
+        }
+      },
+      serializeQueryArgs: ({ queryArgs }) => {
+        const { item, ...rest } = queryArgs;
+        void item;
+        return JSON.stringify(rest);
+      },
+    }),
+  }),
+});
+
 export default function AuthVisible(props: AuthVisibleProps) {
   const { item, authVerb, subresource, namespace, onError, onAuthResult, children } = props;
 
@@ -64,30 +98,26 @@ export default function AuthVisible(props: AuthVisibleProps) {
   const itemClass: KubeObjectClass | null = (item as KubeObject)?._class?.() ?? item;
   const itemName = (item as KubeObject)?.getName?.();
 
-  const { data } = useQuery<any>({
-    enabled: !!item,
-    queryKey: [
-      'authVisible',
-      itemName,
-      itemClass.apiName,
-      itemClass.apiVersion,
-      authVerb,
-      subresource,
-      namespace,
-    ],
-    queryFn: async () => {
-      try {
-        const res = await item!.getAuthorization(
+  const { data, error: queryError } = authVisibleApi.useCheckAuthVisibleQuery(
+    item && itemClass
+      ? {
+          itemName,
+          apiName: itemClass.apiName,
+          apiVersion: itemClass.apiVersion,
           authVerb,
-          { subresource, namespace },
-          (item as any).cluster
-        );
-        return res;
-      } catch (e: any) {
-        onError?.(e);
-      }
-    },
-  });
+          subresource,
+          namespace,
+          cluster: (item as KubeObject)?.cluster ?? getCluster() ?? '',
+          item,
+        }
+      : skipToken
+  );
+
+  useEffect(() => {
+    if (queryError) {
+      onError?.(queryError as Error);
+    }
+  }, [queryError, onError]);
 
   const visible = data?.status?.allowed ?? false;
 
@@ -98,7 +128,7 @@ export default function AuthVisible(props: AuthVisibleProps) {
         reason: data.status?.reason ?? '',
       });
     }
-  }, [data]);
+  }, [data, onAuthResult, visible]);
 
   if (!visible) {
     return null;

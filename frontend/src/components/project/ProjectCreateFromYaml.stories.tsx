@@ -17,6 +17,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import { http, HttpResponse } from 'msw';
+import { headlampApi } from '../../lib/api/headlampApi';
 import reducers from '../../redux/reducers/reducers';
 import { TestContext } from '../../test';
 import { CreateNew } from './ProjectCreateFromYaml';
@@ -31,6 +32,8 @@ export default {
 
 const makeStore = () => {
   return configureStore({
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: reducers,
     preloadedState: {
       config: {
