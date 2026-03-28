@@ -124,6 +124,8 @@ export default function VersionButton() {
       }
       prevVersionRef.current = clusterVersion.gitVersion;
     }
+    // Only fire when clusterVersion changes; t and enqueueSnackbar are omitted to avoid
+    // re-triggering the version-change snackbar on language change or provider re-renders.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clusterVersion]);
 
