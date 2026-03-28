@@ -1704,7 +1704,7 @@ describe('WS cache writes with KubeList optimizations', () => {
 });
 
 // ================================================================
-// Bug-hunting tests: 20+ tests probing potential RTK Query issues
+// Bug-hunting tests: 25 tests probing potential RTK Query issues
 // ================================================================
 
 describe('KubeList.applyUpdate edge cases and correctness', () => {
