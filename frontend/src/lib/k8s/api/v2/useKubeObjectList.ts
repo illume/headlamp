@@ -658,7 +658,9 @@ export function useKubeObjectList<K extends KubeObject>({
   const queryResult = kubeListApi.useGetKubeObjectListsQuery(queryArgs, {
     skip: !endpoint || queryConfigs.length === 0,
     pollingInterval: refetchInterval,
-    refetchOnMountOrArgChange: true,
+    // Use 180s stale window (matching React Query's staleTime: 3 * 60_000 on main).
+    // `true` caused cascade refetches: config dispatch → re-render → remount → refetch.
+    refetchOnMountOrArgChange: 180,
   });
 
   const results = queryResult.data?.lists ?? [];

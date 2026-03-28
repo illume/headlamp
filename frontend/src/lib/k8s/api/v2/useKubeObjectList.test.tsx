@@ -2802,3 +2802,157 @@ describe('WS event throttling', () => {
     expect(dataAfter.lists[0].list.items).toHaveLength(1);
   });
 });
+
+/**
+ * refetchOnMountOrArgChange: 180 tests
+ *
+ * RTK Query's refetchOnMountOrArgChange controls whether a hook refetches
+ * when it remounts. With `true`, every remount triggers a refetch. With a
+ * number (seconds), refetch is skipped if cached data is younger than that.
+ *
+ * These tests verify the 180-second stale window — matching React Query's
+ * staleTime: 3 * 60_000 that the main branch used. Without this, Redux
+ * dispatches (e.g. from fetchConfig) cause component re-renders that
+ * remount list hooks, each remount triggers a refetch, creating a cascade
+ * of requests that prevents Playwright's networkidle from being reached.
+ */
+describe('kubeListApi refetchOnMountOrArgChange stale window', () => {
+  beforeEach(() => {
+    vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'false');
+    vi.clearAllMocks();
+  });
+
+  it('should not refetch when remounting within 180s stale window', async () => {
+    const store = createTestStore();
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [{ cluster: 'default', namespace: 'ns-a', queryParams: {} }],
+    };
+
+    // Mock fetch to return list data
+    mockClusterFetch.mockResolvedValue({
+      json: () =>
+        Promise.resolve({
+          kind: 'PodList',
+          items: [],
+          metadata: { resourceVersion: '100' },
+        }),
+    });
+
+    // First mount — triggers real fetch, setting fulfilledTimeStamp
+    const { unmount } = renderHook(
+      () =>
+        kubeListApi.useGetKubeObjectListsQuery(queryArgs, {
+          skip: false,
+          refetchOnMountOrArgChange: 180,
+        }),
+      { wrapper: createTestWrapper(store) }
+    );
+
+    // Wait for fetch to complete
+    await act(async () => {
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const fetchCountAfterFirstMount = mockClusterFetch.mock.calls.length;
+    expect(fetchCountAfterFirstMount).toBeGreaterThan(0);
+
+    // Unmount, advance 10 seconds (within 180s window)
+    unmount();
+    act(() => {
+      vi.advanceTimersByTime(10_000);
+    });
+
+    // Remount — should NOT refetch (data is only 10s old)
+    const { unmount: unmount2 } = renderHook(
+      () =>
+        kubeListApi.useGetKubeObjectListsQuery(queryArgs, {
+          skip: false,
+          refetchOnMountOrArgChange: 180,
+        }),
+      { wrapper: createTestWrapper(store) }
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+    });
+
+    // No new fetch calls
+    expect(mockClusterFetch.mock.calls.length).toBe(fetchCountAfterFirstMount);
+
+    unmount2();
+  });
+
+  it('should refetch when remounting after 180s stale window expires', async () => {
+    const store = createTestStore();
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [{ cluster: 'default', namespace: 'ns-a', queryParams: {} }],
+    };
+
+    // Mock fetch to return list data
+    mockClusterFetch.mockResolvedValue({
+      json: () =>
+        Promise.resolve({
+          kind: 'PodList',
+          items: [],
+          metadata: { resourceVersion: '100' },
+        }),
+    });
+
+    // First mount — triggers real fetch
+    const { unmount } = renderHook(
+      () =>
+        kubeListApi.useGetKubeObjectListsQuery(queryArgs, {
+          skip: false,
+          refetchOnMountOrArgChange: 180,
+        }),
+      { wrapper: createTestWrapper(store) }
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+    });
+    await act(async () => {
+      await Promise.resolve();
+    });
+
+    const fetchCountAfterFirstMount = mockClusterFetch.mock.calls.length;
+    expect(fetchCountAfterFirstMount).toBeGreaterThan(0);
+
+    // Unmount, advance past 180s window
+    unmount();
+    act(() => {
+      vi.advanceTimersByTime(181_000);
+    });
+
+    // Remount — SHOULD refetch (data is stale)
+    const { unmount: unmount2 } = renderHook(
+      () =>
+        kubeListApi.useGetKubeObjectListsQuery(queryArgs, {
+          skip: false,
+          refetchOnMountOrArgChange: 180,
+        }),
+      { wrapper: createTestWrapper(store) }
+    );
+
+    await act(async () => {
+      vi.advanceTimersByTime(100);
+      await Promise.resolve();
+    });
+
+    expect(mockClusterFetch.mock.calls.length).toBeGreaterThan(fetchCountAfterFirstMount);
+
+    unmount2();
+  });
+});

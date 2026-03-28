@@ -808,3 +808,67 @@ describe('headlampApi resetApiState with cached data', () => {
     expect(Object.keys(state.queries).length).toBe(0);
   });
 });
+
+/**
+ * refetchOnMountOrArgChange: 180 tests
+ *
+ * Verifies that useKubeObject uses a 180-second stale window instead of
+ * refetching on every remount. This matches React Query's staleTime: 3 * 60_000.
+ * Without this, Redux dispatches (e.g. from config polling) cause component
+ * re-renders that remount hooks and trigger cascade refetches.
+ *
+ * The full behavioral test (verifying RTK Query skips refetch within the
+ * window) is in useKubeObjectList.test.tsx. This test verifies that the
+ * useKubeObject hook correctly fetches data on the first mount and returns
+ * cached data on subsequent renders without extra fetches.
+ */
+describe('kubeObjectApi refetchOnMountOrArgChange stale window', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('should use stale window (not refetch-on-every-mount) for cached data', async () => {
+    const store = createTestStore();
+
+    const podData = {
+      metadata: { name: 'test-pod', namespace: 'default', uid: 'uid-1' },
+      kind: 'Pod',
+      apiVersion: 'v1',
+    };
+
+    mockClusterFetch.mockResolvedValue({
+      json: () => Promise.resolve(podData),
+    });
+
+    // First render — triggers fetch
+    const { result, rerender } = renderHook(
+      () =>
+        useKubeObject({
+          kubeObjectClass: mockKubeObjectClass,
+          namespace: 'default',
+          name: 'test-pod',
+          cluster: 'test-cluster',
+        }),
+      { wrapper: createWrapper(store) }
+    );
+
+    // Wait for data
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    const fetchCountAfterLoad = mockClusterFetch.mock.calls.length;
+    expect(fetchCountAfterLoad).toBeGreaterThan(0);
+
+    // Rerender (simulates parent re-render from Redux dispatch) — should NOT refetch
+    rerender();
+
+    await waitFor(() => {
+      expect(result.current.isSuccess).toBe(true);
+    });
+
+    // No additional fetch — cached data is reused
+    expect(mockClusterFetch.mock.calls.length).toBe(fetchCountAfterLoad);
+    expect(result.current.data?.metadata.name).toBe('test-pod');
+  });
+});

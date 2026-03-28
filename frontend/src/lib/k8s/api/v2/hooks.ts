@@ -237,7 +237,9 @@ export function useKubeObject<K extends KubeObject>({
 
   const query = injectedApi.useGetKubeObjectQuery(queryArgs, {
     skip: !endpoint,
-    refetchOnMountOrArgChange: true,
+    // Use 180s stale window (matching React Query's staleTime: 3 * 60_000 on main).
+    // `true` caused cascade refetches: config dispatch → re-render → remount → refetch.
+    refetchOnMountOrArgChange: 180,
   });
 
   const dispatch = useDispatch<any>();
