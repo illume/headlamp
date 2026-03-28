@@ -27,6 +27,7 @@ import {
   kubeObjectListQuery,
   makeListRequests,
   useWatchKubeObjectLists,
+  WS_THROTTLE_INTERVAL_MS,
 } from './useKubeObjectList';
 import * as websocket from './webSocket';
 
@@ -62,6 +63,24 @@ function createTestWrapper(store?: ReturnType<typeof createTestStore>) {
   const testStore = store ?? createTestStore();
   return ({ children }: PropsWithChildren) => <Provider store={testStore}>{children}</Provider>;
 }
+
+/**
+ * Flush throttled WS cache updates by advancing timers past the throttle interval.
+ * Call this after sending WS events to tests that verify cache state.
+ */
+function flushWSThrottle() {
+  act(() => {
+    vi.advanceTimersByTime(WS_THROTTLE_INTERVAL_MS + 1);
+  });
+}
+
+// Enable fake timers globally so throttled WS cache updates can be flushed deterministically.
+beforeEach(() => {
+  vi.useFakeTimers();
+});
+afterEach(() => {
+  vi.useRealTimers();
+});
 
 describe('makeListRequests', () => {
   describe('for non namespaced resource', () => {
@@ -425,6 +444,7 @@ describe('kubeListApi cache behavior', () => {
     act(() => {
       connectionToB.onMessage({ type: 'ADDED', object: objectB });
     });
+    flushWSThrottle();
 
     // Verify cache was updated with new items
     const state = store.getState().headlampApi;
@@ -487,6 +507,7 @@ describe('kubeListApi cache behavior', () => {
     act(() => {
       updateCallback({ type: 'ADDED', object: newObject });
     });
+    flushWSThrottle();
 
     // Verify the cache was updated
     const state = store.getState().headlampApi;
@@ -523,6 +544,7 @@ describe('kubeListApi cache behavior', () => {
     act(() => {
       connection.onMessage({ type: 'ADDED', object: { metadata: { resourceVersion: '1' } } });
     });
+    flushWSThrottle();
 
     // Cache should still be empty since we didn't provide queryArgs
     const state = store.getState().headlampApi;
@@ -702,6 +724,7 @@ describe('kubeListApi indexMap with partial failures', () => {
     act(() => {
       connectionToC.onMessage({ type: 'ADDED', object: objectC });
     });
+    flushWSThrottle();
 
     // Verify the update went to draft.lists[2] (cluster-c's position in queryArgs.queries)
     // NOT draft.lists[1] (which would be wrong — that's the null/failed entry)
@@ -776,6 +799,7 @@ describe('kubeListApi indexMap with partial failures', () => {
     act(() => {
       updateCallbackC({ type: 'ADDED', object: objectC });
     });
+    flushWSThrottle();
 
     // Verify the update went to draft.lists[2] (cluster-c's position in queryArgs.queries)
     const state = store.getState().headlampApi;
@@ -850,6 +874,7 @@ describe('kubeListApi legacy no-op cache writes', () => {
         object: { metadata: { name: 'pod-1', uid: 'abc', namespace: 'a', resourceVersion: '50' } },
       });
     });
+    flushWSThrottle();
 
     // Cache reference should be unchanged (no-op write skipped by our guard)
     const stateAfter = store.getState().headlampApi;
@@ -919,6 +944,7 @@ describe('kubeListApi cache behavior (MODIFIED / DELETED)', () => {
         },
       });
     });
+    flushWSThrottle();
 
     const state = store.getState().headlampApi;
     const queryKey = Object.keys(state.queries)[0];
@@ -986,6 +1012,7 @@ describe('kubeListApi cache behavior (MODIFIED / DELETED)', () => {
         },
       });
     });
+    flushWSThrottle();
 
     const state = store.getState().headlampApi;
     const queryKey = Object.keys(state.queries)[0];
@@ -1054,6 +1081,7 @@ describe('kubeListApi multiplexer cache writes', () => {
         },
       });
     });
+    flushWSThrottle();
 
     // Cache reference should not change
     const stateAfter = store.getState().headlampApi;
@@ -1113,6 +1141,7 @@ describe('kubeListApi multiplexer cache writes', () => {
         },
       });
     });
+    flushWSThrottle();
 
     const state = store.getState().headlampApi;
     const queryKey = Object.keys(state.queries)[0];
@@ -1173,6 +1202,7 @@ describe('kubeListApi multiplexer cache writes', () => {
         object: { metadata: { name: 'pod-x', uid: 'x', namespace: 'ns-a', resourceVersion: '5' } },
       });
     });
+    flushWSThrottle();
 
     // Original cache entry should be unchanged
     const state = store.getState().headlampApi;
@@ -1223,6 +1253,7 @@ describe('kubeListApi multiplexer cache writes', () => {
       updateCallback(undefined);
       updateCallback('not-an-object');
     });
+    flushWSThrottle();
 
     // Cache should be unchanged
     const state = store.getState().headlampApi;
@@ -1534,6 +1565,7 @@ describe('WS cache writes with KubeList optimizations', () => {
         object: { metadata: { resourceVersion: '999' } },
       });
     });
+    flushWSThrottle();
     errSpy.mockRestore();
 
     const stateAfter = store.getState().headlampApi;
@@ -1604,6 +1636,7 @@ describe('WS cache writes with KubeList optimizations', () => {
         },
       });
     });
+    flushWSThrottle();
 
     const stateAfter = store.getState().headlampApi;
     const dataAfter = stateAfter.queries[queryKey]?.data;
@@ -1654,6 +1687,7 @@ describe('WS cache writes with KubeList optimizations', () => {
         connection.onMessage({ type: 'ADDED', object: null });
       });
     }).not.toThrow();
+    flushWSThrottle();
   });
 
   /**
@@ -1700,6 +1734,7 @@ describe('WS cache writes with KubeList optimizations', () => {
         connection.onMessage({ type: 'ADDED', object: { kind: 'Pod' } });
       });
     }).not.toThrow();
+    flushWSThrottle();
   });
 });
 
@@ -2126,6 +2161,7 @@ describe('buildListIndexMap and listKey edge cases', () => {
         object: { metadata: { uid: 'new-uid', resourceVersion: '5' } },
       });
     });
+    flushWSThrottle();
 
     const stateAfter = store.getState().headlampApi;
     const dataAfter = stateAfter.queries[queryKey]?.data as any;
@@ -2328,6 +2364,7 @@ describe('WS cache update correctness', () => {
         },
       });
     });
+    flushWSThrottle();
 
     const state = store.getState().headlampApi;
     const queryKey = Object.keys(state.queries)[0];
@@ -2391,6 +2428,7 @@ describe('WS cache update correctness', () => {
         object: { metadata: { uid: 'uid-1', namespace: 'a', resourceVersion: '20' } },
       });
     });
+    flushWSThrottle();
 
     const state = store.getState().headlampApi;
     const queryKey = Object.keys(state.queries)[0];
@@ -2465,6 +2503,7 @@ describe('WS cache update correctness', () => {
         object: { metadata: { name: 'new-pod-a', uid: 'new-uid-a', resourceVersion: '10' } },
       });
     });
+    flushWSThrottle();
 
     const state = store.getState().headlampApi;
     const queryKey = Object.keys(state.queries)[0];
@@ -2585,6 +2624,7 @@ describe('WS cache update correctness', () => {
         object: { metadata: { uid: 'uid-1', resourceVersion: '50' } },
       });
     });
+    flushWSThrottle();
 
     const stateAfter = store.getState().headlampApi;
     const dataAfter = stateAfter.queries[queryKey]?.data;
