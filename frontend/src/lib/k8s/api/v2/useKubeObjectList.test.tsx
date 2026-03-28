@@ -2062,7 +2062,11 @@ describe('buildListIndexMap and listKey edge cases', () => {
           kubeObjectClass: mockClass,
           lists: [],
           endpoint: { version: 'v1', resource: 'pods' },
-          queryArgs: { kubeObjectClass: mockClass, endpoint: { version: 'v1', resource: 'pods' }, queries: [] },
+          queryArgs: {
+            kubeObjectClass: mockClass,
+            endpoint: { version: 'v1', resource: 'pods' },
+            queries: [],
+          },
         }),
       { wrapper: createTestWrapper(store) }
     );
@@ -2111,9 +2115,7 @@ describe('buildListIndexMap and listKey edge cases', () => {
       { wrapper: createTestWrapper(store) }
     );
 
-    const stateBefore = store.getState().headlampApi;
-    const queryKey = Object.keys(stateBefore.queries)[0];
-    const dataBefore = stateBefore.queries[queryKey]?.data;
+    const queryKey = Object.keys(store.getState().headlampApi.queries)[0];
 
     // Send event — this goes through cluster-a's connection
     // But the update itself is for a UID not in the list, triggering no-op via applyUpdate
@@ -2137,7 +2139,9 @@ describe('kubeListApi queryFn edge cases', () => {
   it('should normalize Error object rejections into ApiError', async () => {
     const store = createTestStore();
 
-    mockClusterFetch.mockImplementationOnce(() => Promise.reject(new TypeError('JSON parse failed')));
+    mockClusterFetch.mockImplementationOnce(() =>
+      Promise.reject(new TypeError('JSON parse failed'))
+    );
 
     const result = await store.dispatch(
       kubeListApi.endpoints.getKubeObjectLists.initiate({
@@ -2286,8 +2290,12 @@ describe('WS cache update correctness', () => {
           {
             list: {
               items: [
-                new mockClass({ metadata: { name: 'pod-1', uid: 'uid-1', namespace: 'a', resourceVersion: '10' } }),
-                new mockClass({ metadata: { name: 'pod-2', uid: 'uid-2', namespace: 'a', resourceVersion: '11' } }),
+                new mockClass({
+                  metadata: { name: 'pod-1', uid: 'uid-1', namespace: 'a', resourceVersion: '10' },
+                }),
+                new mockClass({
+                  metadata: { name: 'pod-2', uid: 'uid-2', namespace: 'a', resourceVersion: '11' },
+                }),
               ],
               metadata: { resourceVersion: '11' },
             },
@@ -2348,8 +2356,12 @@ describe('WS cache update correctness', () => {
           {
             list: {
               items: [
-                new mockClass({ metadata: { name: 'pod-1', uid: 'uid-1', namespace: 'a', resourceVersion: '10' } }),
-                new mockClass({ metadata: { name: 'pod-2', uid: 'uid-2', namespace: 'a', resourceVersion: '11' } }),
+                new mockClass({
+                  metadata: { name: 'pod-1', uid: 'uid-1', namespace: 'a', resourceVersion: '10' },
+                }),
+                new mockClass({
+                  metadata: { name: 'pod-2', uid: 'uid-2', namespace: 'a', resourceVersion: '11' },
+                }),
               ],
               metadata: { resourceVersion: '11' },
             },
@@ -2408,7 +2420,9 @@ describe('WS cache update correctness', () => {
         lists: [
           {
             list: {
-              items: [new mockClass({ metadata: { name: 'pod-a', uid: 'uid-a', resourceVersion: '1' } })],
+              items: [
+                new mockClass({ metadata: { name: 'pod-a', uid: 'uid-a', resourceVersion: '1' } }),
+              ],
               metadata: { resourceVersion: '1' },
             },
             cluster: 'cluster-a',
@@ -2416,7 +2430,9 @@ describe('WS cache update correctness', () => {
           },
           {
             list: {
-              items: [new mockClass({ metadata: { name: 'pod-b', uid: 'uid-b', resourceVersion: '1' } })],
+              items: [
+                new mockClass({ metadata: { name: 'pod-b', uid: 'uid-b', resourceVersion: '1' } }),
+              ],
               metadata: { resourceVersion: '1' },
             },
             cluster: 'cluster-b',
@@ -2532,7 +2548,9 @@ describe('WS cache update correctness', () => {
           {
             list: {
               items: [
-                new mockClass({ metadata: { name: 'pod-1', uid: 'uid-1', namespace: 'a', resourceVersion: '100' } }),
+                new mockClass({
+                  metadata: { name: 'pod-1', uid: 'uid-1', namespace: 'a', resourceVersion: '100' },
+                }),
               ],
               metadata: { resourceVersion: '100' },
             },

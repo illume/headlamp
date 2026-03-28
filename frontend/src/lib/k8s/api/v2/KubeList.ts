@@ -80,9 +80,7 @@ export const KubeList = {
     // Find the target item by UID BEFORE copying the array.
     // On large lists (20K+ items) this avoids a wasteful O(n) array spread
     // when DELETED targets a non-existent UID.
-    const index = list.items.findIndex(
-      item => item.metadata.uid === update.object.metadata.uid
-    );
+    const index = list.items.findIndex(item => item.metadata.uid === update.object.metadata.uid);
 
     // Fast path: DELETED for non-existent UID — skip without copying.
     if (update.type === 'DELETED' && index === -1) {
