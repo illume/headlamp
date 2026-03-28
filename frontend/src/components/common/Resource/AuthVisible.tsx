@@ -17,6 +17,7 @@
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import React, { useEffect } from 'react';
 import { headlampApi } from '../../../lib/api/headlampApi';
+import { getCluster } from '../../../lib/cluster';
 import { KubeObject } from '../../../lib/k8s/KubeObject';
 import { KubeObjectClass } from '../../../lib/k8s/KubeObject';
 
@@ -69,13 +70,9 @@ const authVisibleApi = headlampApi.injectEndpoints({
         item: any;
       }
     >({
-      queryFn: async ({ item, authVerb, subresource, namespace }) => {
+      queryFn: async ({ item, authVerb, subresource, namespace, cluster }) => {
         try {
-          const res = await item.getAuthorization(
-            authVerb,
-            { subresource, namespace },
-            item.cluster
-          );
+          const res = await item.getAuthorization(authVerb, { subresource, namespace }, cluster);
           return { data: res };
         } catch (e: any) {
           return { error: e };
@@ -110,7 +107,7 @@ export default function AuthVisible(props: AuthVisibleProps) {
           authVerb,
           subresource,
           namespace,
-          cluster: (item as KubeObject)?.cluster,
+          cluster: (item as KubeObject)?.cluster ?? getCluster() ?? '',
           item,
         }
       : skipToken

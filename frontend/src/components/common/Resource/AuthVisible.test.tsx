@@ -16,6 +16,7 @@
 
 import { render, screen, waitFor } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as clusterModule from '../../../lib/cluster';
 import { TestContext } from '../../../test';
 import AuthVisible from './AuthVisible';
 
@@ -162,6 +163,82 @@ describe('AuthVisible', () => {
     await waitFor(() => {
       expect(screen.getByText('Create Button')).toBeInTheDocument();
     });
+  });
+
+  it('uses getCluster() fallback for class-based items to get cluster-specific cache keys', async () => {
+    // When item is a class (not instance), item.cluster is undefined.
+    // The fix falls back to getCluster() so that switching clusters
+    // produces separate cache entries instead of reusing stale auth results.
+    const mockClassA = {
+      apiName: 'jobs',
+      apiVersion: 'batch/v1',
+      getAuthorization: vi.fn().mockResolvedValue({
+        status: { allowed: true, reason: 'RBAC: allowed on cluster-a' },
+      }),
+    } as any;
+    const mockClassB = {
+      apiName: 'jobs',
+      apiVersion: 'batch/v1',
+      getAuthorization: vi.fn().mockResolvedValue({
+        status: { allowed: false, reason: 'RBAC: denied on cluster-b' },
+      }),
+    } as any;
+
+    // Mock getCluster to return 'cluster-a' first
+    const getClusterSpy = vi.spyOn(clusterModule, 'getCluster').mockReturnValue('cluster-a');
+
+    const onAuthResultA = vi.fn();
+    const { unmount } = render(
+      <TestContext>
+        <AuthVisible
+          item={mockClassA}
+          authVerb="create"
+          namespace="default"
+          onAuthResult={onAuthResultA}
+        >
+          <div>Create Job</div>
+        </AuthVisible>
+      </TestContext>
+    );
+
+    await waitFor(() => {
+      expect(mockClassA.getAuthorization).toHaveBeenCalledWith(
+        'create',
+        { subresource: undefined, namespace: 'default' },
+        'cluster-a'
+      );
+    });
+
+    unmount();
+
+    // Now switch to cluster-b — the class-based item should produce a new cache entry
+    getClusterSpy.mockReturnValue('cluster-b');
+    const onAuthResultB = vi.fn();
+
+    render(
+      <TestContext>
+        <AuthVisible
+          item={mockClassB}
+          authVerb="create"
+          namespace="default"
+          onAuthResult={onAuthResultB}
+        >
+          <div>Create Job</div>
+        </AuthVisible>
+      </TestContext>
+    );
+
+    await waitFor(() => {
+      expect(mockClassB.getAuthorization).toHaveBeenCalledWith(
+        'create',
+        { subresource: undefined, namespace: 'default' },
+        'cluster-b'
+      );
+    });
+
+    // Both should have been called — cluster-b should not reuse cluster-a's cache
+    expect(mockClassA.getAuthorization).toHaveBeenCalled();
+    expect(mockClassB.getAuthorization).toHaveBeenCalled();
   });
 
   it('uses cluster-specific cache keys for different clusters', async () => {
