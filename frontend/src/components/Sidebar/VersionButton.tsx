@@ -124,7 +124,8 @@ export default function VersionButton() {
       }
       prevVersionRef.current = clusterVersion.gitVersion;
     }
-  }, [clusterVersion, enqueueSnackbar, t]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clusterVersion]);
 
   function handleClose() {
     setOpen(false);

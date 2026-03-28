@@ -386,7 +386,7 @@
                 <p
                   class="MuiTypography-root MuiTypography-body1 MuiTypography-alignCenter css-9ldkza-MuiTypography-root"
                 >
-                  TypeError: Failed to fetch
+                  Error: Failed to fetch
                 </p>
               </div>
             </div>
@@ -431,7 +431,7 @@
                 <p
                   class="MuiTypography-root MuiTypography-body1 MuiTypography-alignCenter css-9ldkza-MuiTypography-root"
                 >
-                  TypeError: Failed to fetch
+                  Error: Failed to fetch
                 </p>
               </div>
             </div>
