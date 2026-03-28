@@ -49,6 +49,25 @@ export const KubeList = {
     itemClass: ObjectClass,
     cluster: string
   ): KubeList<KubeObject<ObjectInterface>> {
+    // Guard: bail out for ERROR/unknown events without copying the items array.
+    // On busy clusters (20K+ items) the array copy is expensive and ERROR events
+    // don't modify the list, so returning the same reference lets the no-op guard
+    // in the WS cache handler (`newList !== draft.lists[idx]!.list`) skip the write.
+    if (update.type === 'ERROR') {
+      console.error('Error in update', update);
+      return list;
+    }
+
+    if (update.type !== 'ADDED' && update.type !== 'MODIFIED' && update.type !== 'DELETED') {
+      console.error('Unknown update type', update);
+      return list;
+    }
+
+    // Guard: skip if the object or its metadata is missing/malformed.
+    if (!update.object?.metadata) {
+      return list;
+    }
+
     // Skip if the update's resource version is older than or equal to what we have
     if (
       list.metadata.resourceVersion &&
@@ -73,13 +92,11 @@ export const KubeList = {
       case 'DELETED':
         if (index !== -1) {
           newItems.splice(index, 1);
+        } else {
+          // Target UID not found — nothing to remove, return same reference.
+          return list;
         }
         break;
-      case 'ERROR':
-        console.error('Error in update', update);
-        break;
-      default:
-        console.error('Unknown update type', update);
     }
 
     return {

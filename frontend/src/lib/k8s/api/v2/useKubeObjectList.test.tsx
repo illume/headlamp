@@ -21,6 +21,7 @@ import { Provider } from 'react-redux';
 import { describe, expect, it, vi } from 'vitest';
 import { headlampApi } from '../../../api/headlampApi';
 import { ApiError } from './ApiError';
+import { KubeList } from './KubeList';
 import {
   kubeListApi,
   kubeObjectListQuery,
@@ -1339,5 +1340,365 @@ describe('getKubeObjectLists error normalization', () => {
     expect(err.message).toBe('network timeout');
     expect(err.cluster).toBe('timeout');
     expect(err.namespace).toBe('ns-b');
+  });
+});
+
+// ================================================================
+// KubeList.applyUpdate: performance and correctness fixes for busy clusters
+// ================================================================
+
+describe('KubeList.applyUpdate busy-cluster optimizations', () => {
+  /**
+   * ERROR events must return the same list reference (no-op) so the WS
+   * cache handler's `newList !== draft.lists[idx].list` guard skips the
+   * cache write.  On a 20K-pod cluster, avoiding the full items-array
+   * copy + Immer produce + React re-render per ERROR event is critical.
+   */
+  it('should return the same reference for ERROR events (no-op)', () => {
+    const items = Array.from({ length: 100 }, (_, i) => ({
+      metadata: { name: `pod-${i}`, uid: `uid-${i}`, resourceVersion: '10' },
+    }));
+
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items,
+      metadata: { resourceVersion: '100' },
+    } as any;
+
+    const errorUpdate = {
+      type: 'ERROR' as const,
+      object: { metadata: { resourceVersion: '200' } },
+    } as any;
+
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const result = KubeList.applyUpdate(list, errorUpdate, mockClass, 'cluster-a');
+    spy.mockRestore();
+
+    expect(result).toBe(list);
+  });
+
+  /**
+   * DELETED events for a UID that doesn't exist in the list must also
+   * return the same reference.  Kubernetes can send DELETED for objects
+   * we don't track (e.g., paginated list, already removed).
+   */
+  it('should return the same reference when DELETED targets a non-existent UID', () => {
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items: [{ metadata: { name: 'pod-1', uid: 'uid-1', resourceVersion: '10' } }],
+      metadata: { resourceVersion: '5' },
+    } as any;
+
+    const deleteUpdate = {
+      type: 'DELETED' as const,
+      object: { metadata: { uid: 'nonexistent-uid', resourceVersion: '200' } },
+    } as any;
+
+    const result = KubeList.applyUpdate(list, deleteUpdate, mockClass, 'cluster-a');
+
+    expect(result).toBe(list);
+  });
+
+  /**
+   * ERROR events must not corrupt the list's resourceVersion metadata.
+   * Previously, the returned list had `resourceVersion: undefined` from
+   * the ERROR object, which broke all future stale-version checks.
+   */
+  it('should preserve metadata on ERROR event with missing resourceVersion', () => {
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items: [{ metadata: { name: 'pod-1', uid: 'uid-1', resourceVersion: '10' } }],
+      metadata: { resourceVersion: '10' },
+    } as any;
+
+    const errorUpdate = {
+      type: 'ERROR' as const,
+      object: { metadata: { resourceVersion: undefined } },
+    } as any;
+
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const result = KubeList.applyUpdate(list, errorUpdate, mockClass, 'cluster-a');
+    spy.mockRestore();
+
+    expect(result).toBe(list);
+    expect(result.metadata.resourceVersion).toBe('10');
+  });
+
+  /**
+   * Updates with null or missing object.metadata must not crash.
+   * Malformed WS events can arrive on real clusters.
+   */
+  it('should return same reference when update.object.metadata is missing', () => {
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items: [],
+      metadata: { resourceVersion: '10' },
+    } as any;
+
+    const result = KubeList.applyUpdate(
+      list,
+      { type: 'ADDED', object: { kind: 'Pod' } } as any,
+      mockClass,
+      'cluster-a'
+    );
+
+    expect(result).toBe(list);
+  });
+
+  it('should return same reference when update.object is null', () => {
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items: [],
+      metadata: { resourceVersion: '10' },
+    } as any;
+
+    const result = KubeList.applyUpdate(
+      list,
+      { type: 'ADDED', object: null } as any,
+      mockClass,
+      'cluster-a'
+    );
+
+    expect(result).toBe(list);
+  });
+});
+
+describe('WS cache writes with KubeList optimizations', () => {
+  beforeEach(() => {
+    vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'false');
+    vi.clearAllMocks();
+  });
+
+  /**
+   * ERROR WS events must not write to cache (no-op).
+   * On busy clusters, ERROR events (e.g., resource version expired) are
+   * common.  Each unnecessary cache write triggers Immer produce on the
+   * full list + React re-render of all consumers.
+   */
+  it('should not write to cache on ERROR WS event', async () => {
+    const spy = vi.spyOn(websocket, 'useWebSockets');
+    const store = createTestStore();
+
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [{ cluster: 'default', namespace: 'a', queryParams: {} }],
+    };
+
+    await store.dispatch(
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: {
+              items: [
+                new mockClass({
+                  metadata: { name: 'pod-1', uid: 'uid-1', namespace: 'a', resourceVersion: '10' },
+                }),
+              ],
+              metadata: { resourceVersion: '10' },
+            },
+            cluster: 'default',
+            namespace: 'a',
+          },
+        ],
+        errors: [],
+      } as any)
+    );
+
+    renderHook(
+      () =>
+        useWatchKubeObjectLists({
+          kubeObjectClass: mockClass,
+          lists: [{ cluster: 'default', resourceVersion: '10', namespace: 'a' }],
+          endpoint,
+          queryArgs,
+        }),
+      { wrapper: createTestWrapper(store) }
+    );
+
+    const stateBefore = store.getState().headlampApi;
+    const queryKey = Object.keys(stateBefore.queries)[0];
+    const dataBefore = stateBefore.queries[queryKey]?.data;
+
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const connection = spy.mock.calls[0][0].connections[0];
+    act(() => {
+      connection.onMessage({
+        type: 'ERROR',
+        object: { metadata: { resourceVersion: '999' } },
+      });
+    });
+    errSpy.mockRestore();
+
+    const stateAfter = store.getState().headlampApi;
+    const dataAfter = stateAfter.queries[queryKey]?.data;
+    expect(dataAfter).toBe(dataBefore);
+  });
+
+  /**
+   * DELETED for non-existent UID must not write to cache.
+   */
+  it('should not write to cache when DELETED targets non-existent UID', async () => {
+    const spy = vi.spyOn(websocket, 'useWebSockets');
+    const store = createTestStore();
+
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [{ cluster: 'default', namespace: 'a', queryParams: {} }],
+    };
+
+    await store.dispatch(
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: {
+              items: [
+                new mockClass({
+                  metadata: { name: 'pod-1', uid: 'uid-1', namespace: 'a', resourceVersion: '10' },
+                }),
+              ],
+              metadata: { resourceVersion: '10' },
+            },
+            cluster: 'default',
+            namespace: 'a',
+          },
+        ],
+        errors: [],
+      } as any)
+    );
+
+    renderHook(
+      () =>
+        useWatchKubeObjectLists({
+          kubeObjectClass: mockClass,
+          lists: [{ cluster: 'default', resourceVersion: '10', namespace: 'a' }],
+          endpoint,
+          queryArgs,
+        }),
+      { wrapper: createTestWrapper(store) }
+    );
+
+    const stateBefore = store.getState().headlampApi;
+    const queryKey = Object.keys(stateBefore.queries)[0];
+    const dataBefore = stateBefore.queries[queryKey]?.data;
+
+    const connection = spy.mock.calls[0][0].connections[0];
+    act(() => {
+      connection.onMessage({
+        type: 'DELETED',
+        object: {
+          metadata: {
+            name: 'ghost-pod',
+            uid: 'nonexistent',
+            namespace: 'a',
+            resourceVersion: '20',
+          },
+        },
+      });
+    });
+
+    const stateAfter = store.getState().headlampApi;
+    const dataAfter = stateAfter.queries[queryKey]?.data;
+    expect(dataAfter).toBe(dataBefore);
+  });
+
+  /**
+   * WS event with null update.object must not crash the onMessage handler.
+   */
+  it('should not crash on WS event with null update.object', async () => {
+    const spy = vi.spyOn(websocket, 'useWebSockets');
+    const store = createTestStore();
+
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [{ cluster: 'default', namespace: 'a', queryParams: {} }],
+    };
+
+    await store.dispatch(
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: { items: [], metadata: { resourceVersion: '0' } },
+            cluster: 'default',
+            namespace: 'a',
+          },
+        ],
+        errors: [],
+      } as any)
+    );
+
+    renderHook(
+      () =>
+        useWatchKubeObjectLists({
+          kubeObjectClass: mockClass,
+          lists: [{ cluster: 'default', resourceVersion: '1', namespace: 'a' }],
+          endpoint,
+          queryArgs,
+        }),
+      { wrapper: createTestWrapper(store) }
+    );
+
+    const connection = spy.mock.calls[0][0].connections[0];
+    expect(() => {
+      act(() => {
+        connection.onMessage({ type: 'ADDED', object: null });
+      });
+    }).not.toThrow();
+  });
+
+  /**
+   * WS event with missing metadata must not crash the onMessage handler.
+   */
+  it('should not crash on WS event with missing metadata', async () => {
+    const spy = vi.spyOn(websocket, 'useWebSockets');
+    const store = createTestStore();
+
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [{ cluster: 'default', namespace: 'a', queryParams: {} }],
+    };
+
+    await store.dispatch(
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: { items: [], metadata: { resourceVersion: '0' } },
+            cluster: 'default',
+            namespace: 'a',
+          },
+        ],
+        errors: [],
+      } as any)
+    );
+
+    renderHook(
+      () =>
+        useWatchKubeObjectLists({
+          kubeObjectClass: mockClass,
+          lists: [{ cluster: 'default', resourceVersion: '1', namespace: 'a' }],
+          endpoint,
+          queryArgs,
+        }),
+      { wrapper: createTestWrapper(store) }
+    );
+
+    const connection = spy.mock.calls[0][0].connections[0];
+    expect(() => {
+      act(() => {
+        connection.onMessage({ type: 'ADDED', object: { kind: 'Pod' } });
+      });
+    }).not.toThrow();
   });
 });
