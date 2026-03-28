@@ -22,7 +22,7 @@ import CssBaseline from '@mui/material/CssBaseline';
 import Link from '@mui/material/Link';
 import { styled } from '@mui/material/styles';
 import { Dispatch, UnknownAction } from '@reduxjs/toolkit';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { headlampApi } from '../../lib/api/headlampApi';
@@ -212,13 +212,20 @@ export default function Layout({}: LayoutProps) {
    * indexDB and then sends the backend to parse it and then updates the parsed value into redux
    * store on an interval.
    * */
+  const [configHasError, setConfigHasError] = useState(false);
   const {
     data: config,
     isLoading,
     error,
   } = layoutApi.useGetConfigQuery(undefined, {
-    pollingInterval: CLUSTER_FETCH_INTERVAL,
+    // Stop polling on error to avoid hammering the backend during outages.
+    // The previous React Query implementation conditionally stopped polling on error.
+    pollingInterval: configHasError ? 0 : CLUSTER_FETCH_INTERVAL,
   });
+
+  useEffect(() => {
+    setConfigHasError(!!error);
+  }, [error]);
 
   // Remove splash screen styles from the body
   // that are added in frontend/index.html

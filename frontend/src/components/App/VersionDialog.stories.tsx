@@ -23,7 +23,10 @@ import VersionDialogComponent from './VersionDialog';
 const store = configureStore({
   middleware: getDefaultMiddleware =>
     getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
-  reducer: (state = { ui: { isVersionDialogOpen: false } }) => state,
+  reducer: {
+    [headlampApi.reducerPath]: headlampApi.reducer,
+    ui: (state = { isVersionDialogOpen: false }) => state,
+  },
   preloadedState: {
     ui: {
       isVersionDialogOpen: true,

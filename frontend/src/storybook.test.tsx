@@ -21,6 +21,8 @@ import { getWorker } from 'msw-storybook-addon';
 import path from 'path';
 import React from 'react';
 import * as previewAnnotations from '../.storybook/preview';
+import { headlampApi } from './lib/api/headlampApi';
+import store from './redux/stores/store';
 
 const annotations = setProjectAnnotations([previewAnnotations, { testingLibraryRender }]);
 beforeAll(annotations.beforeAll!);
@@ -130,6 +132,10 @@ function replaceUseId(node: any) {
 describe('Storybook Tests', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    // Reset RTK Query cache between stories to prevent cross-story state bleed.
+    // Stories using module-level stores may still share cache internally, but
+    // the default app store (used by most stories via TestContext) is cleaned.
+    store.dispatch(headlampApi.util.resetApiState());
   });
   afterEach(() => {
     vi.useRealTimers();

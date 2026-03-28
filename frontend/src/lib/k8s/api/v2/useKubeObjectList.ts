@@ -31,6 +31,91 @@ import { WebSocketManager } from './multiplexer';
 import { BASE_WS_URL, useWebSockets } from './webSocket';
 
 /**
+ * Default interval (in ms) for throttling WebSocket cache updates.
+ * When events stream in from multiple clusters, we batch updates
+ * and flush once per interval to reduce React re-renders.
+ */
+export const WS_THROTTLE_INTERVAL_MS = 250;
+
+interface PendingUpdate<K extends KubeObject> {
+  update: KubeListUpdateEvent<K>;
+  cluster: string;
+  cachedIdx: number;
+}
+
+/**
+ * Hook that batches WebSocket events and flushes them in a single RTK Query
+ * cache write per throttle interval.
+ *
+ * On a busy multi-cluster setup receiving e.g. 100 events/sec from 5 clusters,
+ * this reduces cache writes (and therefore React re-renders) from 100/sec
+ * down to ~4/sec (once per 250ms interval).
+ */
+function useThrottledCacheUpdater<K extends KubeObject>(
+  dispatch: ReturnType<typeof useDispatch<any>>,
+  kubeObjectClass: (new (...args: any) => K) & typeof KubeObject<any>,
+  queryArgsRef: React.MutableRefObject<KubeObjectListsQueryArgs | undefined>
+) {
+  const pendingRef = useRef<PendingUpdate<K>[]>([]);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flush = useCallback(() => {
+    timerRef.current = null;
+    const pending = pendingRef.current;
+    if (pending.length === 0 || !queryArgsRef.current) return;
+    pendingRef.current = [];
+
+    dispatch(
+      kubeListApi.util.updateQueryData(
+        'getKubeObjectLists',
+        queryArgsRef.current,
+        (draft: KubeObjectListsResult<any>) => {
+          for (const { update, cluster, cachedIdx } of pending) {
+            if (cachedIdx < draft.lists.length && draft.lists[cachedIdx]) {
+              const newList = KubeList.applyUpdate(
+                draft.lists[cachedIdx]!.list,
+                update,
+                kubeObjectClass,
+                cluster
+              );
+              if (newList !== draft.lists[cachedIdx]!.list) {
+                draft.lists[cachedIdx] = { ...draft.lists[cachedIdx]!, list: newList };
+              }
+            }
+          }
+        }
+      )
+    );
+  }, [dispatch, kubeObjectClass, queryArgsRef]);
+
+  const enqueue = useCallback(
+    (update: KubeListUpdateEvent<K>, cluster: string, cachedIdx: number) => {
+      pendingRef.current.push({ update, cluster, cachedIdx });
+      if (!timerRef.current) {
+        timerRef.current = setTimeout(flush, WS_THROTTLE_INTERVAL_MS);
+      }
+    },
+    [flush]
+  );
+
+  // Flush remaining events and clear timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+      // Flush any remaining pending events
+      if (pendingRef.current.length > 0 && queryArgsRef.current) {
+        flush();
+      }
+    };
+  }, [flush, queryArgsRef]);
+
+  return enqueue;
+}
+
+/**
  * @returns true if the websocket multiplexer is enabled.
  * defaults to true. This is a feature flag to enable the websocket multiplexer.
  */
@@ -328,6 +413,10 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
   const indexMapRef = useRef<Map<string, number>>(new Map());
   indexMapRef.current = useMemo(() => buildListIndexMap(queryArgs?.queries ?? []), [queryArgs]);
 
+  // Throttled cache updater: batches WS events from multiple clusters
+  // and flushes them in a single cache write per interval to reduce renders.
+  const enqueue = useThrottledCacheUpdater(dispatch, kubeObjectClass, queryArgsRef);
+
   // Create stable update handler to process WebSocket messages
   // Re-create only when dependencies change
   const handleUpdate = useCallback(
@@ -343,33 +432,14 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
         latestResourceVersions.current[key] = update.object.metadata.resourceVersion;
       }
 
-      // Update RTK Query cache
+      // Enqueue for throttled cache update
       if (queryArgsRef.current) {
         const cachedIdx = indexMapRef.current.get(key);
         if (cachedIdx === undefined) return;
-
-        dispatch(
-          kubeListApi.util.updateQueryData(
-            'getKubeObjectLists',
-            queryArgsRef.current,
-            (draft: KubeObjectListsResult<any>) => {
-              if (cachedIdx < draft.lists.length && draft.lists[cachedIdx]) {
-                const newList = KubeList.applyUpdate(
-                  draft.lists[cachedIdx]!.list,
-                  update,
-                  kubeObjectClass,
-                  cluster
-                );
-                if (newList !== draft.lists[cachedIdx]!.list) {
-                  draft.lists[cachedIdx] = { ...draft.lists[cachedIdx]!, list: newList };
-                }
-              }
-            }
-          )
-        );
+        enqueue(update, cluster, cachedIdx);
       }
     },
-    [dispatch, kubeObjectClass, endpoint, stableQueryParams]
+    [endpoint, enqueue]
   );
 
   // Set up WebSocket subscriptions
@@ -445,6 +515,10 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
   // even when some fetches failed and lists only contains successful entries.
   const indexMap = useMemo(() => buildListIndexMap(queryArgs?.queries ?? []), [queryArgs]);
 
+  // Throttled cache updater: batches WS events from multiple clusters
+  // and flushes them in a single cache write per interval to reduce renders.
+  const enqueue = useThrottledCacheUpdater(dispatch, kubeObjectClass, queryArgsRef);
+
   const connections = useMemo(() => {
     if (!endpoint) return [];
 
@@ -462,31 +536,12 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
           if (queryArgsRef.current) {
             const cachedIdx = indexMap.get(listKey(cluster, namespace));
             if (cachedIdx === undefined) return;
-
-            dispatch(
-              kubeListApi.util.updateQueryData(
-                'getKubeObjectLists',
-                queryArgsRef.current,
-                (draft: KubeObjectListsResult<any>) => {
-                  if (cachedIdx < draft.lists.length && draft.lists[cachedIdx]) {
-                    const newList = KubeList.applyUpdate(
-                      draft.lists[cachedIdx]!.list,
-                      update,
-                      kubeObjectClass,
-                      cluster
-                    );
-                    if (newList !== draft.lists[cachedIdx]!.list) {
-                      draft.lists[cachedIdx] = { ...draft.lists[cachedIdx]!, list: newList };
-                    }
-                  }
-                }
-              )
-            );
+            enqueue(update, cluster, cachedIdx);
           }
         },
       };
     });
-  }, [lists, kubeObjectClass, endpoint, indexMap, queryParams]);
+  }, [lists, endpoint, indexMap, queryParams, enqueue]);
 
   useWebSockets<KubeListUpdateEvent<K>>({
     enabled: !!endpoint,
@@ -697,7 +752,7 @@ export function useKubeObjectList<K extends KubeObject>({
     isError: queryResult.isError || !!endpointError || allErrors.length > 0,
     isLoading: queryResult.isLoading,
     isFetching: queryResult.isFetching,
-    isSuccess: queryResult.isSuccess && !endpointError,
+    isSuccess: queryResult.isSuccess && !endpointError && allErrors.length === 0,
     *[Symbol.iterator](): ArrayIterator<ApiError | K[] | null> {
       yield combined.items;
       yield allErrors[0] ?? null;

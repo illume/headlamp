@@ -2631,3 +2631,174 @@ describe('WS cache update correctness', () => {
     expect(dataAfter).toBe(dataBefore);
   });
 });
+
+describe('WS event throttling', () => {
+  beforeEach(() => {
+    mockUseWebSockets.mockReset();
+    mockClusterFetch.mockReset();
+    mockSubscribe.mockReset().mockImplementation(() => Promise.resolve(() => {}));
+  });
+
+  it('should batch multiple WS events into a single cache write', async () => {
+    const store = createTestStore();
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [
+        { cluster: 'cluster-a', namespace: 'ns-a', queryParams: {} },
+        { cluster: 'cluster-b', namespace: 'ns-b', queryParams: {} },
+      ],
+    };
+
+    // Prepopulate cache
+    await store.dispatch(
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: {
+              kind: 'PodList',
+              apiVersion: 'v1',
+              items: [],
+              metadata: { resourceVersion: '0' },
+            },
+            cluster: 'cluster-a',
+            namespace: 'ns-a',
+          },
+          {
+            list: {
+              kind: 'PodList',
+              apiVersion: 'v1',
+              items: [],
+              metadata: { resourceVersion: '0' },
+            },
+            cluster: 'cluster-b',
+            namespace: 'ns-b',
+          },
+        ],
+        errors: [],
+      } as any)
+    );
+
+    const spy = mockUseWebSockets;
+
+    renderHook(
+      () =>
+        useWatchKubeObjectLists({
+          kubeObjectClass: mockClass,
+          lists: [
+            { cluster: 'cluster-a', namespace: 'ns-a', resourceVersion: '1' },
+            { cluster: 'cluster-b', namespace: 'ns-b', resourceVersion: '1' },
+          ],
+          endpoint,
+          queryArgs,
+        }),
+      { wrapper: createTestWrapper(store) }
+    );
+
+    const connA = spy.mock.calls[0][0].connections[0];
+    const connB = spy.mock.calls[0][0].connections[1];
+
+    // Send 3 events rapidly without flushing
+    act(() => {
+      connA.onMessage({
+        type: 'ADDED',
+        object: { metadata: { uid: 'pod-a1', resourceVersion: '10', namespace: 'ns-a' } },
+      });
+      connB.onMessage({
+        type: 'ADDED',
+        object: { metadata: { uid: 'pod-b1', resourceVersion: '20', namespace: 'ns-b' } },
+      });
+      connA.onMessage({
+        type: 'ADDED',
+        object: { metadata: { uid: 'pod-a2', resourceVersion: '11', namespace: 'ns-a' } },
+      });
+    });
+
+    // Cache should NOT be updated yet (events are throttled)
+    const stateBefore = store.getState().headlampApi;
+    const keyBefore = Object.keys(stateBefore.queries)[0];
+    const dataBefore = stateBefore.queries[keyBefore]?.data as any;
+    expect(dataBefore.lists[0].list.items).toHaveLength(0);
+    expect(dataBefore.lists[1].list.items).toHaveLength(0);
+
+    // Now flush the throttle — all 3 events should be applied in ONE cache write
+    flushWSThrottle();
+
+    const stateAfter = store.getState().headlampApi;
+    const dataAfter = stateAfter.queries[keyBefore]?.data as any;
+    expect(dataAfter.lists[0].list.items).toHaveLength(2); // pod-a1 + pod-a2
+    expect(dataAfter.lists[1].list.items).toHaveLength(1); // pod-b1
+  });
+
+  it('should not flush before throttle interval elapses', async () => {
+    const store = createTestStore();
+    const endpoint = { version: 'v1', resource: 'pods' };
+    const queryArgs = {
+      kubeObjectClass: mockClass,
+      endpoint,
+      queries: [{ cluster: 'cluster-a', namespace: 'ns-a', queryParams: {} }],
+    };
+
+    await store.dispatch(
+      kubeListApi.util.upsertQueryData('getKubeObjectLists', queryArgs, {
+        lists: [
+          {
+            list: {
+              kind: 'PodList',
+              apiVersion: 'v1',
+              items: [],
+              metadata: { resourceVersion: '0' },
+            },
+            cluster: 'cluster-a',
+            namespace: 'ns-a',
+          },
+        ],
+        errors: [],
+      } as any)
+    );
+
+    const spy = mockUseWebSockets;
+
+    renderHook(
+      () =>
+        useWatchKubeObjectLists({
+          kubeObjectClass: mockClass,
+          lists: [{ cluster: 'cluster-a', namespace: 'ns-a', resourceVersion: '1' }],
+          endpoint,
+          queryArgs,
+        }),
+      { wrapper: createTestWrapper(store) }
+    );
+
+    const conn = spy.mock.calls[0][0].connections[0];
+
+    act(() => {
+      conn.onMessage({
+        type: 'ADDED',
+        object: { metadata: { uid: 'pod-1', resourceVersion: '10', namespace: 'ns-a' } },
+      });
+    });
+
+    // Advance by less than the throttle interval
+    act(() => {
+      vi.advanceTimersByTime(WS_THROTTLE_INTERVAL_MS - 10);
+    });
+
+    // Cache should still be empty
+    const state = store.getState().headlampApi;
+    const key = Object.keys(state.queries)[0];
+    const data = state.queries[key]?.data as any;
+    expect(data.lists[0].list.items).toHaveLength(0);
+
+    // Now advance past the interval
+    act(() => {
+      vi.advanceTimersByTime(20);
+    });
+
+    // Now cache should be updated
+    const stateAfter = store.getState().headlampApi;
+    const dataAfter = stateAfter.queries[key]?.data as any;
+    expect(dataAfter.lists[0].list.items).toHaveLength(1);
+  });
+});
