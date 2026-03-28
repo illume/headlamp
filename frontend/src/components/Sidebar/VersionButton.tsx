@@ -95,7 +95,7 @@ export default function VersionButton() {
 
   const { data: clusterVersion } = versionApi.useGetClusterVersionQuery(
     { cluster: cluster ?? '' },
-    { pollingInterval: versionFetchInterval }
+    { pollingInterval: versionFetchInterval, skip: !cluster }
   );
 
   const prevVersionRef = React.useRef<string | undefined>();
@@ -124,7 +124,7 @@ export default function VersionButton() {
       }
       prevVersionRef.current = clusterVersion.gitVersion;
     }
-  }, [clusterVersion]);
+  }, [clusterVersion, enqueueSnackbar, t]);
 
   function handleClose() {
     setOpen(false);

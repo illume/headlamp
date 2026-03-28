@@ -164,6 +164,44 @@ describe('AuthVisible', () => {
     });
   });
 
+  it('uses cluster-specific cache keys for different clusters', async () => {
+    // Items with same name/class/verb but different clusters should get separate auth checks
+    const clusterAItem = createMockItem({ allowed: true, cluster: 'cluster-a' });
+    const clusterBItem = createMockItem({ allowed: false, cluster: 'cluster-b' });
+
+    const onAuthResultA = vi.fn();
+    const onAuthResultB = vi.fn();
+
+    const { rerender } = render(
+      <TestContext>
+        <AuthVisible item={clusterAItem} authVerb="get" onAuthResult={onAuthResultA}>
+          <div>Cluster A Content</div>
+        </AuthVisible>
+      </TestContext>
+    );
+
+    await waitFor(() => {
+      expect(onAuthResultA).toHaveBeenCalledWith({ allowed: true, reason: 'RBAC: allowed' });
+    });
+
+    // Now render with cluster B — should get a separate cache entry
+    rerender(
+      <TestContext>
+        <AuthVisible item={clusterBItem} authVerb="get" onAuthResult={onAuthResultB}>
+          <div>Cluster B Content</div>
+        </AuthVisible>
+      </TestContext>
+    );
+
+    await waitFor(() => {
+      expect(onAuthResultB).toHaveBeenCalledWith({ allowed: false, reason: 'RBAC: denied' });
+    });
+
+    // Both items' getAuthorization should have been called (not served from shared cache)
+    expect(clusterAItem.getAuthorization).toHaveBeenCalled();
+    expect(clusterBItem.getAuthorization).toHaveBeenCalled();
+  });
+
   it('calls onError with the latest callback when auth check fails', async () => {
     // This verifies that when onError prop changes, the new callback is used (not stale)
     // Use a unique item name to avoid RTK Query cache collisions with other tests

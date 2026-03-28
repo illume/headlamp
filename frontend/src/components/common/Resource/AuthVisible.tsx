@@ -65,6 +65,7 @@ const authVisibleApi = headlampApi.injectEndpoints({
         authVerb: string;
         subresource?: string;
         namespace?: string;
+        cluster?: string;
         item: any;
       }
     >({
@@ -109,6 +110,7 @@ export default function AuthVisible(props: AuthVisibleProps) {
           authVerb,
           subresource,
           namespace,
+          cluster: (item as KubeObject)?.cluster,
           item,
         }
       : skipToken
