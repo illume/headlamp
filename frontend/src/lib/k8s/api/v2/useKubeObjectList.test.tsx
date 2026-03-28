@@ -20,6 +20,7 @@ import { PropsWithChildren } from 'react';
 import { Provider } from 'react-redux';
 import { describe, expect, it, vi } from 'vitest';
 import { headlampApi } from '../../../api/headlampApi';
+import { ApiError } from './ApiError';
 import {
   kubeListApi,
   kubeObjectListQuery,
@@ -31,6 +32,7 @@ import * as websocket from './webSocket';
 // Mock WebSocket functionality
 const mockUseWebSockets = vi.fn();
 const mockSubscribe = vi.fn().mockImplementation(() => Promise.resolve(() => {}));
+const mockClusterFetch = vi.fn();
 
 vi.mock('./webSocket', () => ({
   useWebSockets: (...args: any[]) => mockUseWebSockets(...args),
@@ -41,6 +43,10 @@ vi.mock('./multiplexer', () => ({
   WebSocketManager: {
     subscribe: (...args: any[]) => mockSubscribe(...args),
   },
+}));
+
+vi.mock('./fetch', () => ({
+  clusterFetch: (...args: any[]) => mockClusterFetch(...args),
 }));
 
 function createTestStore() {
@@ -1222,5 +1228,116 @@ describe('kubeListApi multiplexer cache writes', () => {
     const queryKey = Object.keys(state.queries)[0];
     const cached = state.queries[queryKey]?.data as any;
     expect(cached.lists[0].list.items).toHaveLength(0);
+  });
+});
+
+describe('getKubeObjectLists error normalization', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockClusterFetch.mockReset();
+  });
+
+  it('should normalize non-ApiError rejections into ApiError with cluster/namespace', async () => {
+    const store = createTestStore();
+
+    // First call succeeds, second throws a plain Error (not ApiError)
+    mockClusterFetch
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          json: () =>
+            Promise.resolve({
+              items: [],
+              metadata: { resourceVersion: '1' },
+              kind: 'PodList',
+              apiVersion: 'v1',
+            }),
+        })
+      )
+      .mockImplementationOnce(() => Promise.reject(new TypeError('JSON parse error')));
+
+    const result = await store.dispatch(
+      kubeListApi.endpoints.getKubeObjectLists.initiate({
+        kubeObjectClass: mockClass,
+        endpoint: { version: 'v1', resource: 'pods' },
+        queries: [
+          { cluster: 'cluster-ok', namespace: 'ns-a', queryParams: {} },
+          { cluster: 'cluster-fail', namespace: 'ns-b', queryParams: {} },
+        ],
+      })
+    );
+
+    // Partial success: data should exist with lists and errors
+    expect(result.data).toBeDefined();
+    expect(result.data!.lists).toHaveLength(2);
+    expect(result.data!.lists[0]).not.toBeNull();
+    expect(result.data!.lists[1]).toBeNull();
+
+    // Error should be normalized to ApiError with cluster/namespace
+    expect(result.data!.errors).toHaveLength(1);
+    const err = result.data!.errors[0];
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.message).toBe('JSON parse error');
+    expect(err.cluster).toBe('cluster-fail');
+    expect(err.namespace).toBe('ns-b');
+  });
+
+  it('should preserve ApiError instances from rejections unchanged', async () => {
+    const store = createTestStore();
+
+    mockClusterFetch.mockImplementationOnce(() =>
+      Promise.reject(new ApiError('forbidden', { status: 403, cluster: 'c1', namespace: 'ns1' }))
+    );
+
+    const result = await store.dispatch(
+      kubeListApi.endpoints.getKubeObjectLists.initiate({
+        kubeObjectClass: mockClass,
+        endpoint: { version: 'v1', resource: 'pods' },
+        queries: [{ cluster: 'c1', namespace: 'ns1', queryParams: {} }],
+      })
+    );
+
+    // All queries failed — should be returned as error
+    expect(result.error).toBeDefined();
+    const err = result.error as ApiError;
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.message).toBe('forbidden');
+    expect(err.status).toBe(403);
+  });
+
+  it('should normalize string rejection reasons into ApiError', async () => {
+    const store = createTestStore();
+
+    mockClusterFetch
+      .mockImplementationOnce(() =>
+        Promise.resolve({
+          json: () =>
+            Promise.resolve({
+              items: [],
+              metadata: { resourceVersion: '1' },
+              kind: 'PodList',
+              apiVersion: 'v1',
+            }),
+        })
+      )
+      .mockImplementationOnce(() => Promise.reject('network timeout'));
+
+    const result = await store.dispatch(
+      kubeListApi.endpoints.getKubeObjectLists.initiate({
+        kubeObjectClass: mockClass,
+        endpoint: { version: 'v1', resource: 'pods' },
+        queries: [
+          { cluster: 'ok', namespace: 'ns-a', queryParams: {} },
+          { cluster: 'timeout', namespace: 'ns-b', queryParams: {} },
+        ],
+      })
+    );
+
+    expect(result.data).toBeDefined();
+    expect(result.data!.errors).toHaveLength(1);
+    const err = result.data!.errors[0];
+    expect(err).toBeInstanceOf(ApiError);
+    expect(err.message).toBe('network timeout');
+    expect(err.cluster).toBe('timeout');
+    expect(err.namespace).toBe('ns-b');
   });
 });

@@ -159,9 +159,24 @@ const kubeListApi = headlampApi.injectEndpoints({
             )
           );
           const lists = results.map(r => (r.status === 'fulfilled' ? r.value : null));
-          const errors = results
-            .filter((r): r is PromiseRejectedResult => r.status === 'rejected')
-            .map(r => r.reason as ApiError);
+          const errors: ApiError[] = [];
+          for (let i = 0; i < results.length; i++) {
+            const r = results[i];
+            if (r.status === 'rejected') {
+              const reason = r.reason;
+              if (reason instanceof ApiError) {
+                errors.push(reason);
+              } else {
+                // Normalize non-ApiError exceptions (e.g. JSON parse errors, network failures)
+                errors.push(
+                  new ApiError(reason instanceof Error ? reason.message : String(reason), {
+                    cluster: queries[i]?.cluster,
+                    namespace: queries[i]?.namespace,
+                  })
+                );
+              }
+            }
+          }
           if (errors.length > 0 && errors.length === results.length) {
             // All queries failed — return as error
             return { error: errors[0] };
@@ -542,8 +557,15 @@ export function useKubeObjectList<K extends KubeObject>({
     maybeNamespace
   );
 
-  const cleanedUpQueryParams = Object.fromEntries(
-    Object.entries(queryParams ?? {}).filter(([, value]) => value !== undefined && value !== '')
+  // Memoize cleaned query params so downstream memos (queryConfigs, queryArgs, WS connections)
+  // stay referentially stable when the actual param values haven't changed.
+  const cleanedUpQueryParams = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(queryParams ?? {}).filter(([, value]) => value !== undefined && value !== '')
+      ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [JSON.stringify(queryParams)]
   );
 
   // Build the list of individual queries for the combined endpoint
@@ -672,7 +694,7 @@ export function useKubeObjectList<K extends KubeObject>({
     errors: allErrors.length > 0 ? allErrors : null,
     error: allErrors[0] ?? null,
     clusterResults: combined.clusterResults,
-    isError: queryResult.isError || !!endpointError,
+    isError: queryResult.isError || !!endpointError || allErrors.length > 0,
     isLoading: queryResult.isLoading,
     isFetching: queryResult.isFetching,
     isSuccess: queryResult.isSuccess && !endpointError,
