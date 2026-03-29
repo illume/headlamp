@@ -121,6 +121,14 @@ function replaceUseId(node: any) {
         'xterm-dom-renderer-owner'
       );
     }
+
+    // Replace dynamic xterm owner IDs in <style> element CSS selectors
+    if (node.nodeName === 'STYLE' && node.textContent) {
+      node.textContent = node.textContent.replace(
+        /xterm-dom-renderer-owner-\d+/g,
+        'xterm-dom-renderer-owner'
+      );
+    }
   }
 
   // Recursively update child nodes
@@ -131,7 +139,11 @@ function replaceUseId(node: any) {
 
 describe('Storybook Tests', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
+    // shouldAdvanceTime: true auto-advances fake timers in the background
+    // so setTimeout(fn, 0) callbacks fire promptly. This is required for
+    // RTK Query's middleware, which uses 0-delay timeouts for batching.
+    // Without this, RTK Query responses settle non-deterministically.
+    vi.useFakeTimers({ shouldAdvanceTime: true });
     // Reset RTK Query cache between stories to prevent cross-story state bleed.
     // Stories using module-level stores may still share cache internally, but
     // the default app store (used by most stories via TestContext) is cleaned.
@@ -201,12 +213,25 @@ describe('Storybook Tests', () => {
             await act(() => new Promise(res => process.nextTick(res)));
           }
 
-          // And now we make sure all the requests that have been sent have ended
-          await waitFor(() => {
-            if (requestsSent !== requestsEnded) {
-              throw new Error('waiting');
-            }
-          });
+          // Wait for all MSW requests to complete, then settle RTK Query.
+          // Repeat to handle waterfall requests: e.g. endpoint probing completes
+          // → triggers data fetch → new MSW request. The original React Query
+          // test used `waitFor(() => queryClient.isFetching() === 0)` for this.
+          for (let pass = 0; pass < 3; pass++) {
+            await waitFor(() => {
+              if (requestsSent !== requestsEnded) {
+                throw new Error('waiting');
+              }
+            });
+            // Flush pending timers to let RTK Query middleware process responses.
+            // Use runOnlyPendingTimers (not runAllTimers) to avoid firing polling
+            // intervals repeatedly, then flush microtasks to let dispatched actions
+            // trigger component re-renders and potential waterfall requests.
+            act(() => vi.runOnlyPendingTimers());
+            await act(() => new Promise(res => process.nextTick(res)));
+            // After flushing, if no new requests were triggered we're settled.
+            if (requestsSent === requestsEnded) break;
+          }
 
           expect(
             unhandledRequests,
