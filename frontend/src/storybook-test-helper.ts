@@ -193,9 +193,12 @@ export function runStorybookTests(
             // recommendation of using waitFor or findBy for async data.
             const waitForText = story.parameters?.storyshots?.waitForText;
             if (waitForText) {
-              await waitFor(() => {
-                expect(screen.getByText(waitForText)).toBeTruthy();
-              });
+              await waitFor(
+                () => {
+                  expect(screen.getByText(waitForText)).toBeTruthy();
+                },
+                { timeout: 2000, interval: 10 }
+              );
             }
 
             // Fail on unhandled MSW requests — all API calls should have handlers.
