@@ -18,9 +18,13 @@
  * Shared helper for storybook snapshot tests.
  *
  * The tests are split across multiple test files for vitest parallelism.
- * Each file imports this helper and calls `runStorybookTests()` with its
- * own `import.meta.glob` result (glob must be in each test file because
- * it's a compile-time Vite transform).
+ * Each file imports ALL stories (to avoid circular dependency issues from
+ * partial globs) but only tests its shard based on `shardIndex`/`totalShards`.
+ *
+ * Each file must:
+ * 1. Call `import.meta.glob('./**\/*.stories.tsx', { eager: true })` (full glob)
+ * 2. Set up vi.mock() declarations (must be in each file — hoisted by vitest)
+ * 3. Call `runStorybookTests(globResult, shardIndex, totalShards)`
  */
 
 import { composeStories, type Meta, type StoryFn } from '@storybook/react';
@@ -103,17 +107,24 @@ export function replaceUseId(node: any) {
 /**
  * Runs storybook snapshot tests for the given story files.
  * Call from each test file after setting up mocks (vi.mock calls must be in each file).
+ *
+ * @param storyFiles - All story files from import.meta.glob
+ * @param shardIndex - 0-based shard index for this test file (0..totalShards-1)
+ * @param totalShards - Total number of shards (test files)
  */
 export function runStorybookTests(
   storyFiles: ReturnType<typeof getStoryFiles>,
-  describeName: string
+  shardIndex: number,
+  totalShards: number
 ) {
-  describe(describeName, () => {
+  // Filter to only this shard's stories
+  const myFiles = storyFiles.filter((_, i) => i % totalShards === shardIndex);
+  describe('Storybook Tests', () => {
     afterEach(() => {
       vi.restoreAllMocks();
     });
 
-    storyFiles.forEach(({ storyFile, componentName, storyDir }) => {
+    myFiles.forEach(({ storyFile, componentName, storyDir }) => {
       const meta = storyFile.default;
       const title = meta.title || componentName;
 

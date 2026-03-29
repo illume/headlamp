@@ -15,14 +15,12 @@
  */
 
 /**
- * Storybook snapshot tests — part 3 of 4.
- * Tests components: o* through s* (oidcauth, pod, podDisruptionBudget,
- * priorityClass, project, replicaset, resourceMap, resourceQuota,
- * runtimeClass, secret, service, Sidebar, statefulset, storage).
+ * Storybook snapshot tests — shard 3 of 4.
  */
 
 import 'vitest-canvas-mock';
-import { render as testingLibraryRender, setProjectAnnotations } from '@storybook/react';
+import { setProjectAnnotations } from '@storybook/react';
+import { render as testingLibraryRender } from '@testing-library/react';
 import React from 'react';
 import * as previewAnnotations from '../.storybook/preview';
 import { getStoryFiles, runStorybookTests, type StoryFile } from './storybook-test-helper';
@@ -59,25 +57,7 @@ window.matchMedia = () => ({
 });
 
 const storyFiles = getStoryFiles(
-  import.meta.glob<StoryFile>(
-    [
-      './components/oidcauth/**/*.stories.tsx',
-      './components/pod/**/*.stories.tsx',
-      './components/podDisruptionBudget/**/*.stories.tsx',
-      './components/priorityClass/**/*.stories.tsx',
-      './components/project/**/*.stories.tsx',
-      './components/replicaset/**/*.stories.tsx',
-      './components/resourceMap/**/*.stories.tsx',
-      './components/resourceQuota/**/*.stories.tsx',
-      './components/runtimeClass/**/*.stories.tsx',
-      './components/secret/**/*.stories.tsx',
-      './components/service/**/*.stories.tsx',
-      './components/Sidebar/**/*.stories.tsx',
-      './components/statefulset/**/*.stories.tsx',
-      './components/storage/**/*.stories.tsx',
-    ],
-    { eager: true }
-  )
+  import.meta.glob<StoryFile>('./**/*.stories.tsx', { eager: true })
 );
 
-runStorybookTests(storyFiles, 'Storybook Tests');
+runStorybookTests(storyFiles, 2, 4);

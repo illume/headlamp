@@ -15,14 +15,12 @@
  */
 
 /**
- * Storybook snapshot tests — part 2 of 4.
- * Tests components: e* through n* (endpoints, endpointSlices, gateway,
- * globalSearch, horizontalPodAutoscaler, ingress, job, lease, limitRange,
- * namespace, networkpolicy, node).
+ * Storybook snapshot tests — shard 2 of 4.
  */
 
 import 'vitest-canvas-mock';
-import { render as testingLibraryRender, setProjectAnnotations } from '@storybook/react';
+import { setProjectAnnotations } from '@storybook/react';
+import { render as testingLibraryRender } from '@testing-library/react';
 import React from 'react';
 import * as previewAnnotations from '../.storybook/preview';
 import { getStoryFiles, runStorybookTests, type StoryFile } from './storybook-test-helper';
@@ -59,23 +57,7 @@ window.matchMedia = () => ({
 });
 
 const storyFiles = getStoryFiles(
-  import.meta.glob<StoryFile>(
-    [
-      './components/endpoints/**/*.stories.tsx',
-      './components/endpointSlices/**/*.stories.tsx',
-      './components/gateway/**/*.stories.tsx',
-      './components/globalSearch/**/*.stories.tsx',
-      './components/horizontalPodAutoscaler/**/*.stories.tsx',
-      './components/ingress/**/*.stories.tsx',
-      './components/job/**/*.stories.tsx',
-      './components/lease/**/*.stories.tsx',
-      './components/limitRange/**/*.stories.tsx',
-      './components/namespace/**/*.stories.tsx',
-      './components/networkpolicy/**/*.stories.tsx',
-      './components/node/**/*.stories.tsx',
-    ],
-    { eager: true }
-  )
+  import.meta.glob<StoryFile>('./**/*.stories.tsx', { eager: true })
 );
 
-runStorybookTests(storyFiles, 'Storybook Tests');
+runStorybookTests(storyFiles, 1, 4);

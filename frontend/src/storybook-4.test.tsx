@@ -15,13 +15,12 @@
  */
 
 /**
- * Storybook snapshot tests — part 4 of 4.
- * Tests components: t* through z* (verticalPodAutoscaler, webhookconfiguration,
- * workload) plus i18n and any root-level stories.
+ * Storybook snapshot tests — shard 4 of 4.
  */
 
 import 'vitest-canvas-mock';
-import { render as testingLibraryRender, setProjectAnnotations } from '@storybook/react';
+import { setProjectAnnotations } from '@storybook/react';
+import { render as testingLibraryRender } from '@testing-library/react';
 import React from 'react';
 import * as previewAnnotations from '../.storybook/preview';
 import { getStoryFiles, runStorybookTests, type StoryFile } from './storybook-test-helper';
@@ -58,15 +57,7 @@ window.matchMedia = () => ({
 });
 
 const storyFiles = getStoryFiles(
-  import.meta.glob<StoryFile>(
-    [
-      './components/verticalPodAutoscaler/**/*.stories.tsx',
-      './components/webhookconfiguration/**/*.stories.tsx',
-      './components/workload/**/*.stories.tsx',
-      './i18n/**/*.stories.tsx',
-    ],
-    { eager: true }
-  )
+  import.meta.glob<StoryFile>('./**/*.stories.tsx', { eager: true })
 );
 
-runStorybookTests(storyFiles, 'Storybook Tests');
+runStorybookTests(storyFiles, 3, 4);

@@ -247,7 +247,13 @@ advancement iterations.
 
 The per-test time grows with test count in a single file, confirming cumulative overhead. Splitting into 4 files should keep each file in the ~100-130 test range where per-test cost is moderate, and vitest runs all 4 files in parallel.
 
-**Status:** Code changes are ready (split into 4 files + helper), need to verify tests pass with the split, regenerate snapshots on Node.js 20, then measure the total parallel run time.
+**Status:** Fixed the circular dependency issue by having each test file import ALL stories via the same glob pattern (`./**/*.stories.tsx`) but only test its assigned shard (`i % 4 === shardIndex`). Verified all 4 shards run together: 33 Label/TopBar tests passed across 4 files in 1.84s. Module resolution is consistent because every file loads the same module graph.
+
+**Timing comparison (4 files parallel, Label+TopBar filter):**
+- 4 shards parallel: 33 tests in 1.84s test time, 15.78s wall time (incl. 33s collect across 4 files)
+- 1 file: same 33 tests in ~1.5s test time, 10s wall time (incl. 8.7s collect)
+
+The collect phase (Vite module transform + eager glob) runs per-file, so 4 files = ~33s collect vs ~9s for 1 file. The test execution itself is parallelized. For the full 493 tests, the parallelism savings should outweigh the extra collect overhead because the per-test cumulative GC penalty is the dominant cost factor.
 
 ### Root cause of remaining slowness (vs main's ~54s)
 

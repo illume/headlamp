@@ -15,17 +15,17 @@
  */
 
 /**
- * Storybook snapshot tests — part 1 of 4.
- * Tests components: a* through d* (account, activity, advancedSearch, App,
- * authchooser, cluster, common, configmap, crd, cronjob, daemonset,
- * deployments, DetailsViewSection).
+ * Storybook snapshot tests — shard 1 of 4.
  *
  * Split into multiple files for vitest parallelism to avoid cumulative
- * GC pressure that makes a single-file run ~8× slower.
+ * GC pressure that makes a single-file run ~8× slower per test.
+ * Each file imports ALL stories (for consistent module resolution) but
+ * only tests its shard.
  */
 
 import 'vitest-canvas-mock';
-import { render as testingLibraryRender, setProjectAnnotations } from '@storybook/react';
+import { setProjectAnnotations } from '@storybook/react';
+import { render as testingLibraryRender } from '@testing-library/react';
 import React from 'react';
 import * as previewAnnotations from '../.storybook/preview';
 import { getStoryFiles, runStorybookTests, type StoryFile } from './storybook-test-helper';
@@ -46,10 +46,6 @@ vi.mock('@monaco-editor/react', () => ({
   default: () => <div className="mock-monaco-editor" />,
 }));
 
-// Mock AuthVisible to render children synchronously.
-// The baseMocks MSW handler returns allowed=true for all auth checks, but the
-// RTK Query async pipeline creates non-deterministic timing with fake timers.
-// This mock matches the intended baseMock behavior without the async race.
 vi.mock('./components/common/Resource/AuthVisible', () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -66,24 +62,7 @@ window.matchMedia = () => ({
 });
 
 const storyFiles = getStoryFiles(
-  import.meta.glob<StoryFile>(
-    [
-      './components/account/**/*.stories.tsx',
-      './components/activity/**/*.stories.tsx',
-      './components/advancedSearch/**/*.stories.tsx',
-      './components/App/**/*.stories.tsx',
-      './components/authchooser/**/*.stories.tsx',
-      './components/cluster/**/*.stories.tsx',
-      './components/common/**/*.stories.tsx',
-      './components/configmap/**/*.stories.tsx',
-      './components/crd/**/*.stories.tsx',
-      './components/cronjob/**/*.stories.tsx',
-      './components/daemonset/**/*.stories.tsx',
-      './components/deployments/**/*.stories.tsx',
-      './components/DetailsViewSection/**/*.stories.tsx',
-    ],
-    { eager: true }
-  )
+  import.meta.glob<StoryFile>('./**/*.stories.tsx', { eager: true })
 );
 
-runStorybookTests(storyFiles, 'Storybook Tests');
+runStorybookTests(storyFiles, 0, 4);
