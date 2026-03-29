@@ -16,13 +16,11 @@
 
 import 'vitest-canvas-mock';
 import { composeStories, type Meta, setProjectAnnotations, type StoryFn } from '@storybook/react';
-import { act, render as testingLibraryRender, waitFor } from '@testing-library/react';
+import { act, render as testingLibraryRender } from '@testing-library/react';
 import { getWorker } from 'msw-storybook-addon';
 import path from 'path';
 import React from 'react';
 import * as previewAnnotations from '../.storybook/preview';
-import { headlampApi } from './lib/api/headlampApi';
-import store from './redux/stores/store';
 
 const annotations = setProjectAnnotations([previewAnnotations, { testingLibraryRender }]);
 beforeAll(annotations.beforeAll!);
@@ -167,18 +165,7 @@ describe('Storybook Tests', () => {
         if (story.parameters?.storyshots?.disable) return;
 
         test(name, async () => {
-          // Keep track of sent requests to wait for the to finish
-          let requestsSent = 0;
-          let requestsEnded = 0;
           const worker = getWorker();
-          function onStart() {
-            requestsSent++;
-          }
-          function onEnd() {
-            requestsEnded++;
-          }
-          worker.events.on('request:start', onStart);
-          worker.events.on('request:end', onEnd);
 
           const unhandledRequests: Array<string> = [];
 
@@ -200,8 +187,6 @@ describe('Storybook Tests', () => {
           ).toEqual([]);
 
           // Cleanup listeners
-          worker.events.removeListener('request:start', onStart);
-          worker.events.removeListener('request:end', onEnd);
           worker.events.removeListener('request:unhandled', onUnhandledRequest);
 
           // Put snapshot next to the story
