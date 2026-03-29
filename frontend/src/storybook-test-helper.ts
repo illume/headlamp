@@ -191,7 +191,9 @@ export function runStorybookTests(
             // Fail on unhandled MSW requests — all API calls should have handlers.
             expect(
               unhandledRequests,
-              `MSW: ${unhandledRequests.length} unhandled request(s) in story "${name}": ${unhandledRequests.join(', ')}`
+              `MSW: ${
+                unhandledRequests.length
+              } unhandled request(s) in story "${name}": ${unhandledRequests.join(', ')}`
             ).toEqual([]);
 
             // Cleanup listeners

@@ -169,6 +169,9 @@ export default {
       </TestContext>
     ),
   ],
+  parameters: {
+    storyshots: { disable: true },
+  },
 } as Meta<typeof Details>;
 
 const Template: StoryFn<typeof Details> = () => {
@@ -184,7 +187,6 @@ const TemplateA8ROwnerOnly: StoryFn<typeof Details> = () => {
 
 export const Default = Template.bind({});
 Default.parameters = {
-  storyshots: { disable: true },
   msw: {
     handlers: {
       story: [

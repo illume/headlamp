@@ -58,6 +58,15 @@ Base.parameters = {
           })
         ),
         http.get('http://localhost:4466/api/v1/persistentvolumeclaims', () => HttpResponse.error()),
+        http.get(
+          'http://localhost:4466/apis/discovery.k8s.io/v1/namespaces/default/endpointslices',
+          () =>
+            HttpResponse.json({
+              kind: 'EndpointSliceList',
+              items: [],
+              metadata: {},
+            })
+        ),
       ],
     },
   },

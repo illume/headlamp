@@ -65,7 +65,8 @@ export default {
         storyBase: [
           http.get(
             'http://localhost:4466/apis/apiextensions.k8s.io/v1/customresourcedefinitions',
-            () => HttpResponse.json({ kind: 'CustomResourceDefinitionList', items: [], metadata: {} })
+            () =>
+              HttpResponse.json({ kind: 'CustomResourceDefinitionList', items: [], metadata: {} })
           ),
         ],
       },
