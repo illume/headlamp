@@ -31,6 +31,12 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 
 // Preset icons for cluster appearance
+// i18next-parser: these names are used as translation keys via t(`translation|${name}`)
+// t('translation|Kubernetes') t('translation|Alert Circle') t('translation|Shield Alert')
+// t('translation|Server') t('translation|Code Tags') t('translation|Test Tube')
+// t('translation|Rocket') t('translation|Cloud') t('translation|Database')
+// t('translation|Hexagon Multiple') t('translation|Lock') t('translation|Key')
+// t('translation|Lightning') t('translation|Star') t('translation|Presentation')
 export const PRESET_ICONS = [
   { name: 'Kubernetes', value: 'mdi:kubernetes' },
   { name: 'Alert Circle', value: 'mdi:alert-circle' },

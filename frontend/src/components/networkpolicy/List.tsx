@@ -42,7 +42,7 @@ export function NetworkPolicyList() {
             return isIngressAvailable && isEgressAvailable
               ? t('translation|Ingress and Egress')
               : isIngressAvailable
-              ? t('glossary|Ingress')
+              ? t('translation|Ingress')
               : isEgressAvailable
               ? t('translation|Egress')
               : t('translation|None');

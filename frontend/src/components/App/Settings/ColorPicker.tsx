@@ -31,6 +31,11 @@ import { useTranslation } from 'react-i18next';
 import { isValidCssColor } from '../../../helpers/clusterAppearance';
 
 // Preset colors for cluster appearance
+// i18next-parser: these names are used as translation keys via t(`translation|${name}`)
+// t('translation|Red') t('translation|Pink') t('translation|Purple') t('translation|Deep Purple')
+// t('translation|Indigo') t('translation|Blue') t('translation|Light Blue') t('translation|Cyan')
+// t('translation|Teal') t('translation|Green') t('translation|Light Green') t('translation|Lime')
+// t('translation|Yellow') t('translation|Amber') t('translation|Orange') t('translation|Deep Orange')
 export const PRESET_COLORS = [
   { name: 'Red', value: '#f44336' },
   { name: 'Pink', value: '#e91e63' },

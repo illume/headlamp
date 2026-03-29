@@ -43,6 +43,14 @@ export function ResourceCategoriesList({
   selectedCategoryName?: string;
   onCategoryClick: (categoryName: string) => void;
 }) {
+  // i18next-parser: category labels and descriptions from ResourceCategory config
+  // t('translation|Workloads') t('translation|Storage') t('translation|Network')
+  // t('translation|Security') t('translation|Configuration')
+  // t('translation|Applications and compute resources')
+  // t('translation|Persistent data storage')
+  // t('translation|Network connectivity and exposure')
+  // t('translation|Role-based access control')
+  // t('translation|Configuration data and secrets')
   const { t } = useTranslation();
   return (
     <Box
