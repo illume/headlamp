@@ -311,7 +311,7 @@ export default {
     },
   ],
   parameters: {
-    storyshots: { disable: true },
+    storyshots: { waitForText: 'gadget' },
     msw: {
       handlers: {
         story: [
