@@ -156,7 +156,7 @@ export function runStorybookTestShard(
           if (story.parameters?.storyshots?.disable) return;
 
           test(name, async () => {
-            // Keep track of sent requests to wait for the to finish
+            // Keep track of sent requests to wait for them to finish
             let requestsSent = 0;
             let requestsEnded = 0;
             const worker = getWorker();
@@ -232,7 +232,7 @@ export function runStorybookTestShard(
               `${componentName}.${name}${options.snapshotExtension}`
             );
 
-            // Get rid of random id's in the ouput
+            // Get rid of random id's in the output
             replaceUseId(document);
 
             document.body.removeAttribute('style');
