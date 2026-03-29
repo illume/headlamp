@@ -134,12 +134,7 @@ export function useGetAllSources(): GraphSource[] {
       id: 'cluster',
       label: 'Cluster',
       icon: (
-        <Icon
-          icon="mdi:server"
-          width="100%"
-          height="100%"
-          color={getKindGroupColor('other')}
-        />
+        <Icon icon="mdi:server" width="100%" height="100%" color={getKindGroupColor('other')} />
       ),
       isEnabledByDefault: false,
       sources: [makeKubeSource(Node)],
