@@ -15,13 +15,10 @@
  */
 
 /**
- * Storybook snapshot tests — part 1 of 4.
- * Tests components: a* through d* (account, activity, advancedSearch, App,
- * authchooser, cluster, common, configmap, crd, cronjob, daemonset,
- * deployments, DetailsViewSection).
- *
- * Split into multiple files for vitest parallelism to avoid cumulative
- * GC pressure that makes a single-file run ~8× slower.
+ * Storybook snapshot tests — part 2 of 4.
+ * Tests components: e* through n* (endpoints, endpointSlices, gateway,
+ * globalSearch, horizontalPodAutoscaler, ingress, job, lease, limitRange,
+ * namespace, networkpolicy, node).
  */
 
 import 'vitest-canvas-mock';
@@ -46,10 +43,6 @@ vi.mock('@monaco-editor/react', () => ({
   default: () => <div className="mock-monaco-editor" />,
 }));
 
-// Mock AuthVisible to render children synchronously.
-// The baseMocks MSW handler returns allowed=true for all auth checks, but the
-// RTK Query async pipeline creates non-deterministic timing with fake timers.
-// This mock matches the intended baseMock behavior without the async race.
 vi.mock('./components/common/Resource/AuthVisible', () => ({
   default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
@@ -68,19 +61,18 @@ window.matchMedia = () => ({
 const storyFiles = getStoryFiles(
   import.meta.glob<StoryFile>(
     [
-      './components/account/**/*.stories.tsx',
-      './components/activity/**/*.stories.tsx',
-      './components/advancedSearch/**/*.stories.tsx',
-      './components/App/**/*.stories.tsx',
-      './components/authchooser/**/*.stories.tsx',
-      './components/cluster/**/*.stories.tsx',
-      './components/common/**/*.stories.tsx',
-      './components/configmap/**/*.stories.tsx',
-      './components/crd/**/*.stories.tsx',
-      './components/cronjob/**/*.stories.tsx',
-      './components/daemonset/**/*.stories.tsx',
-      './components/deployments/**/*.stories.tsx',
-      './components/DetailsViewSection/**/*.stories.tsx',
+      './components/endpoints/**/*.stories.tsx',
+      './components/endpointSlices/**/*.stories.tsx',
+      './components/gateway/**/*.stories.tsx',
+      './components/globalSearch/**/*.stories.tsx',
+      './components/horizontalPodAutoscaler/**/*.stories.tsx',
+      './components/ingress/**/*.stories.tsx',
+      './components/job/**/*.stories.tsx',
+      './components/lease/**/*.stories.tsx',
+      './components/limitRange/**/*.stories.tsx',
+      './components/namespace/**/*.stories.tsx',
+      './components/networkpolicy/**/*.stories.tsx',
+      './components/node/**/*.stories.tsx',
     ],
     { eager: true }
   )

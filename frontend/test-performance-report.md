@@ -196,15 +196,18 @@ advancement iterations.
 
 ## Implementation Progress (2026-03-29)
 
-### Changes made to `storybook.test.tsx`
+### Round 1: Remove fake timers (commits ddcdca1, 08a25f5)
+
+**What was tried:**
 
 1. **Removed `vi.useFakeTimers()` / `vi.useRealTimers()`** from beforeEach/afterEach — RTK Query works with real timers
 2. **Removed tick advancement loop** (`tickSkipCount = 10` × `advanceTimersByTime(100)`) — replaced with a single `await act(async () => {})` microtask yield
 3. **Removed RTK Query idle detection waitFor** — was adding ~1000ms per test polling overhead
 4. **Removed `resetApiState()` from beforeEach** — not needed since stories use independent MSW handlers
 5. **Kept MSW request tracking** for unhandled request detection (no waitFor, just assertion)
+6. **Removed unused imports** (`waitFor`, `headlampApi`, `store`) and variables (`requestsSent`, `requestsEnded`)
 
-### Profiling results
+**Profiling results (single-file approach):**
 
 | Configuration | Tests completed in 90s | Avg per test | Est. total for 493 tests |
 |---|---|---|---|
@@ -213,17 +216,48 @@ advancement iterations.
 | tickSkipCount=1 + waitFor | ~138 | ~1009ms | ~497s |
 | tickSkipCount=1 + waitFor(interval:10) | ~115 | ~879ms | ~433s |
 | setTimeout(50) no waitFor | ~114 | ~914ms | ~450s |
-| Minimal yield (current) | ~115 | ~870ms | ~429s |
+| Minimal yield only | ~115 | ~870ms | ~429s |
 | Main branch (fake timers + React Query) | 499 | ~87ms | ~54s |
 
-### Root cause of remaining slowness
+**Result:** Eliminated the 23× slowdown from fake timers. But the "minimal yield only" approach had a critical problem: components that fetch data via RTK Query + MSW were snapshotted in their loading state (showing `<CircularProgress>` spinners) instead of with loaded data, because there was no wait for MSW requests to complete.
 
-The remaining ~8× gap vs main is NOT from RTK Query or fake timers. Individual tests run at ~37ms when run alone. The slowdown is **cumulative overhead from running 493 tests sequentially in a single vitest file**:
+### Round 2: Add MSW request completion wait + file splitting (in progress)
+
+**What was tried:**
+
+1. **Re-added MSW request tracking** (`request:start` / `request:end` counters) with `waitFor` to wait for all in-flight requests to finish before snapshotting. Uses real timers so resolves quickly (~10-50ms per test instead of ~1000ms with fake timers). Interval reduced to 10ms. Skipped entirely for tests with zero requests.
+2. **Split storybook.test.tsx into 4 test files** for vitest parallelism:
+   - `storybook.test.tsx` — components a\* through d\* (~130 stories)
+   - `storybook-2.test.tsx` — components e\* through n\* (~75 stories)
+   - `storybook-3.test.tsx` — components o\* through s\* (~100 stories)
+   - `storybook-4.test.tsx` — components t\* through z\* + i18n (~45 stories)
+   - Shared logic in `storybook-test-helper.ts`
+3. **Verified per-test timing** with subsets:
+   - 23 Label tests: 863ms total (~37ms/test) — simple UI, no MSW
+   - 40 mixed tests (Label+TopBar+Ingress): 2670ms total (~67ms/test) — some MSW
+   - 138 data-heavy tests: 67,956ms total (~493ms/test) — cumulative overhead visible
+
+**Profiling results (with MSW wait + file split):**
+
+| Subset | Tests | Total time | Avg per test |
+|---|---|---|---|
+| Label only (23 tests, 1 file) | 23 | 863ms | ~37ms |
+| Mixed (40 tests, 1 file) | 40 | 2670ms | ~67ms |
+| Data-heavy (138 tests, 1 file) | 138 | 67,956ms | ~493ms |
+
+The per-test time grows with test count in a single file, confirming cumulative overhead. Splitting into 4 files should keep each file in the ~100-130 test range where per-test cost is moderate, and vitest runs all 4 files in parallel.
+
+**Status:** Code changes are ready (split into 4 files + helper), need to verify tests pass with the split, regenerate snapshots on Node.js 20, then measure the total parallel run time.
+
+### Root cause of remaining slowness (vs main's ~54s)
+
+The remaining gap vs main is **cumulative overhead from running many tests sequentially in a single vitest file**:
 
 - Each `act()` call in jsdom environment has ~5-10ms overhead
 - MSW request interception adds per-test setup/teardown cost
 - vitest snapshot file I/O grows linearly with test count
 - React/Redux store initialization per render accumulates GC pressure
+- Individual tests run at ~37ms in isolation, so the overhead is not per-test but cumulative
 
 ### Remaining flaky tests (already disabled)
 
@@ -236,9 +270,11 @@ These were disabled in previous commits due to non-deterministic async timing:
 
 Terminal stories (`TerminalShellNotFoundTryNext` etc.) produce an unhandled error from xterm's `requestAnimationFrame` callback after test cleanup. This is a pre-existing issue unrelated to RTK Query. Snapshots need regeneration after timing changes.
 
-### Recommendations for further improvement
+### What to try next
 
-1. **Split storybook.test.tsx into multiple files** — enables vitest parallelism across workers
-2. **Use `vitest --pool forks`** — separate processes avoid GC pressure accumulation
-3. **Reduce snapshot file I/O** — batch snapshot writes or use in-memory snapshots
-4. **Profile jsdom overhead** — consider switching to happy-dom for lighter render
+1. **Verify the 4-file split runs correctly** — all glob patterns cover all stories, no duplicates, no gaps
+2. **Measure total parallel run time** — with 4 files vitest should use 4 workers, reducing wall-clock time by ~3-4×
+3. **Regenerate snapshots on Node.js 20** — must match CI; Node.js 24 produces different async render timing
+4. **Verify snapshot stability** — run twice and confirm no diff
+5. **If still slow:** consider `vitest --pool forks` for process-level isolation (avoids GC accumulation), or further splitting into more files
+6. **If still slow:** profile jsdom overhead — consider switching to `happy-dom` for lighter render weight
