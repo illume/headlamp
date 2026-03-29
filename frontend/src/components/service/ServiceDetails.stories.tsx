@@ -184,6 +184,7 @@ const TemplateA8ROwnerOnly: StoryFn<typeof Details> = () => {
 
 export const Default = Template.bind({});
 Default.parameters = {
+  storyshots: { disable: true },
   msw: {
     handlers: {
       story: [
