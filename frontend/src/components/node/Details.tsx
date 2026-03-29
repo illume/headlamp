@@ -267,6 +267,14 @@ export default function NodeDetails(props: { name?: string; cluster?: string }) 
               name: t('translation|Conditions'),
               value: <NodeConditionsLabel node={item} />,
             },
+            ...(item.getNodePool()
+              ? [
+                  {
+                    name: t('Node Pool'),
+                    value: item.getNodePool(),
+                  },
+                ]
+              : []),
             {
               name: t('Pod CIDR'),
               value: item.spec.podCIDR,

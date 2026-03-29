@@ -110,6 +110,21 @@ class Node extends KubeObject<KubeNode> {
   getInternalIP(): string {
     return this.status.addresses?.find(address => address.type === 'InternalIP')?.address || '';
   }
+
+  /**
+   * Returns the node pool name from well-known cloud provider labels.
+   * Supports GKE, AKS, EKS, and kOps.
+   */
+  getNodePool(): string {
+    const labels = this.metadata.labels ?? {};
+    return (
+      labels['cloud.google.com/gke-nodepool'] ??
+      labels['kubernetes.azure.com/agentpool'] ??
+      labels['eks.amazonaws.com/nodegroup'] ??
+      labels['kops.k8s.io/instancegroup'] ??
+      ''
+    );
+  }
 }
 
 export default Node;

@@ -36,6 +36,7 @@ import Job from '../../../../lib/k8s/job';
 import { KubeObjectClass } from '../../../../lib/k8s/KubeObject';
 import MutatingWebhookConfiguration from '../../../../lib/k8s/mutatingWebhookConfiguration';
 import NetworkPolicy from '../../../../lib/k8s/networkpolicy';
+import Node from '../../../../lib/k8s/node';
 import PersistentVolumeClaim from '../../../../lib/k8s/persistentVolumeClaim';
 import Pod from '../../../../lib/k8s/pod';
 import ReferenceGrant from '../../../../lib/k8s/referenceGrant';
@@ -128,6 +129,20 @@ export function useGetAllSources(): GraphSource[] {
         <Icon icon="mdi:database" width="100%" height="100%" color={getKindGroupColor('storage')} />
       ),
       sources: [makeKubeSource(PersistentVolumeClaim)],
+    },
+    {
+      id: 'cluster',
+      label: 'Cluster',
+      icon: (
+        <Icon
+          icon="mdi:server"
+          width="100%"
+          height="100%"
+          color={getKindGroupColor('other')}
+        />
+      ),
+      isEnabledByDefault: false,
+      sources: [makeKubeSource(Node)],
     },
     {
       id: 'network',

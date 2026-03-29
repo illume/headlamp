@@ -104,6 +104,14 @@ export default function NodeList() {
           },
         },
         {
+          id: 'nodePool',
+          label: t('Node Pool'),
+          gridTemplate: 'minmax(150px, .5fr)',
+          getValue: node => node.getNodePool(),
+          filterVariant: 'multi-select',
+          show: false,
+        },
+        {
           id: 'internalIP',
           label: t('translation|Internal IP'),
           getValue: node => node.getInternalIP(),

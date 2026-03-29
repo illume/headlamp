@@ -29,7 +29,9 @@ export const NODE_DUMMY_DATA = [
       namespace: 'default',
       creationTimestamp,
       uid: '123',
-      labels: {},
+      labels: {
+        'cloud.google.com/gke-nodepool': 'default-pool',
+      },
     },
     spec: {
       podCIDR: '',
