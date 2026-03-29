@@ -212,7 +212,7 @@ export function ProjectResourcesTab({
                   fontSize: 16,
                 }}
               />
-              {healthText}
+              {t(healthText)}
             </StatusLabel>
           );
         },

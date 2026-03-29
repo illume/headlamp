@@ -205,7 +205,7 @@ export default function HTTPRouteDetails(props: { name?: string; namespace?: str
       extraInfo={httpRoute =>
         httpRoute && [
           {
-            name: 'Hostnames',
+            name: t('glossary|Hostnames'),
             value: <LabelListItem labels={httpRoute.hostnames.map(tls => `${tls}`)} />,
           },
         ]

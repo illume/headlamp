@@ -44,7 +44,7 @@ interface SettingsProps {
 
 export default function NodeShellSettings(props: SettingsProps) {
   const { cluster } = props;
-  const { t } = useTranslation(['translation']);
+  const { t } = useTranslation(['translation', 'glossary']);
   const theme = useTheme();
   const [clusterSettings, setClusterSettings] = useState<ClusterSettings | null>(null);
   const [userNamespace, setUserNamespace] = useState('');
@@ -181,7 +181,7 @@ export default function NodeShellSettings(props: SettingsProps) {
       <NameValueTable
         rows={[
           {
-            name: <Typography id={nodeShellLabelID}>Enable Node Shell</Typography>,
+            name: <Typography id={nodeShellLabelID}>{t('translation|Enable Node Shell')}</Typography>,
             value: (
               <Switch
                 inputProps={{ 'aria-labelledby': nodeShellLabelID }}
@@ -194,7 +194,7 @@ export default function NodeShellSettings(props: SettingsProps) {
             ),
           },
           {
-            name: 'Linux Image',
+            name: t('translation|Linux Image'),
             value: (
               <TextField
                 onChange={event => {
@@ -228,7 +228,7 @@ export default function NodeShellSettings(props: SettingsProps) {
             ),
           },
           {
-            name: 'Namespace',
+            name: t('glossary|Namespace'),
             value: (
               <TextField
                 onChange={event => {
