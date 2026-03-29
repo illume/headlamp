@@ -253,35 +253,38 @@ export default function NodeDetails(props: { name?: string; cluster?: string }) 
             },
           ];
         }}
-        extraInfo={item =>
-          item && [
-            {
-              name: t('translation|Taints'),
-              value: <NodeTaintsLabel node={item} />,
-            },
-            {
-              name: t('translation|Ready'),
-              value: <NodeReadyLabel node={item} />,
-            },
-            {
-              name: t('translation|Conditions'),
-              value: <NodeConditionsLabel node={item} />,
-            },
-            ...(item.getNodePool()
-              ? [
-                  {
-                    name: t('Node Pool'),
-                    value: item.getNodePool(),
-                  },
-                ]
-              : []),
-            {
-              name: t('Pod CIDR'),
-              value: item.spec.podCIDR,
-            },
-            ...getAddresses(item),
-          ]
-        }
+        extraInfo={item => {
+          const nodePool = item?.getNodePool();
+          return (
+            item && [
+              {
+                name: t('translation|Taints'),
+                value: <NodeTaintsLabel node={item} />,
+              },
+              {
+                name: t('translation|Ready'),
+                value: <NodeReadyLabel node={item} />,
+              },
+              {
+                name: t('translation|Conditions'),
+                value: <NodeConditionsLabel node={item} />,
+              },
+              ...(nodePool
+                ? [
+                    {
+                      name: t('Node Pool'),
+                      value: nodePool,
+                    },
+                  ]
+                : []),
+              {
+                name: t('Pod CIDR'),
+                value: item.spec.podCIDR,
+              },
+              ...getAddresses(item),
+            ]
+          );
+        }}
         extraSections={item =>
           item && [
             {
