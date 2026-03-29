@@ -42,7 +42,7 @@ const compose = (entry: StoryFile) => {
 
 /**
  * Total number of parallel shards for storybook tests.
- * Must match the number of storybook-N projects in vitest.workspace.ts.
+ * Must match the number of storybook-N projects in vitest.config.ts.
  */
 const STORYBOOK_SHARD_COUNT = 10;
 
@@ -61,7 +61,7 @@ function getAllStoryFiles() {
   });
 
   // When running as a shard, only test this shard's subset of stories.
-  // STORYBOOK_SHARD is set by vitest.workspace.ts for parallel execution.
+  // STORYBOOK_SHARD is set by vitest.config.ts workspace projects for parallel execution.
   const shardIndex = Number(import.meta.env.STORYBOOK_SHARD ?? -1);
   if (shardIndex >= 0) {
     return allFiles.filter((_, i) => i % STORYBOOK_SHARD_COUNT === shardIndex);

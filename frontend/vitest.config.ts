@@ -19,6 +19,19 @@ import { defineConfig, mergeConfig } from 'vitest/config';
 import { coverageConfigDefaults } from 'vitest/config';
 import viteConfig from './vite.config';
 
+const STORYBOOK_SHARD_COUNT = 10;
+
+const storybookShards = Array.from({ length: STORYBOOK_SHARD_COUNT }, (_, i) => ({
+  extends: true,
+  test: {
+    name: `storybook-${i}`,
+    include: ['src/storybook.test.tsx'],
+    env: {
+      STORYBOOK_SHARD: String(i),
+    },
+  },
+}));
+
 export default mergeConfig(
   viteConfig,
   defineConfig({
@@ -50,6 +63,17 @@ export default mergeConfig(
       },
       restoreMocks: false,
       setupFiles: ['./src/setupTests.ts'],
+      workspace: [
+        {
+          extends: true,
+          test: {
+            name: 'unit',
+            include: ['src/**/*.test.{ts,tsx}'],
+            exclude: ['**/node_modules/**', '**/dist/**', 'src/storybook.test.tsx'],
+          },
+        },
+        ...storybookShards,
+      ],
     },
   })
 );
