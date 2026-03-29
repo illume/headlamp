@@ -28,7 +28,7 @@
  */
 
 import { composeStories, type Meta, type StoryFn } from '@storybook/react';
-import { act, waitFor } from '@testing-library/react';
+import { act, screen, waitFor } from '@testing-library/react';
 import { getWorker } from 'msw-storybook-addon';
 import path from 'path';
 
@@ -187,6 +187,16 @@ export function runStorybookTests(
 
             // Yield to microtask queue to let React process the responses.
             await act(async () => {});
+
+            // If the story specifies waitForText, use waitFor/findByText to
+            // wait for specific content to appear — following RTK Query docs
+            // recommendation of using waitFor or findBy for async data.
+            const waitForText = story.parameters?.storyshots?.waitForText;
+            if (waitForText) {
+              await waitFor(() => {
+                expect(screen.getByText(waitForText)).toBeTruthy();
+              });
+            }
 
             // Fail on unhandled MSW requests — all API calls should have handlers.
             expect(
