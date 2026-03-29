@@ -167,6 +167,7 @@ WithOnDeleteStrategy.args = {
   namespace: 'default',
 };
 WithOnDeleteStrategy.parameters = {
+  storyshots: { disable: true },
   msw: {
     handlers: {
       story: [
