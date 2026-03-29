@@ -381,64 +381,29 @@
               class="MuiBox-root css-1txv3mw"
             >
               <div
-                class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded MuiTableContainer-root css-onzayo-MuiPaper-root-MuiTableContainer-root"
-                tabindex="0"
+                class="MuiBox-root css-5cned0"
               >
-                <table
-                  class="MuiTable-root css-1ml9dpn-MuiTable-root"
+                <span
+                  aria-label="Loading table data"
+                  class="MuiCircularProgress-root MuiCircularProgress-indeterminate MuiCircularProgress-colorPrimary css-1g0vz9s-MuiCircularProgress-root"
+                  role="progressbar"
+                  style="width: 40px; height: 40px;"
+                  title="Loading table data"
                 >
-                  <thead
-                    class="MuiTableHead-root css-15wwp11-MuiTableHead-root"
+                  <svg
+                    class="MuiCircularProgress-svg css-1idz92c-MuiCircularProgress-svg"
+                    viewBox="22 22 44 44"
                   >
-                    <tr
-                      class="MuiTableRow-root MuiTableRow-head css-13jktim-MuiTableRow-root"
-                    >
-                      <th
-                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
-                        scope="col"
-                      >
-                        Name
-                      </th>
-                      <th
-                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
-                        scope="col"
-                      >
-                        Addresses
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody
-                    class="MuiTableBody-root css-apqrd9-MuiTableBody-root"
-                  >
-                    <tr
-                      class="MuiTableRow-root css-13jktim-MuiTableRow-root"
-                    >
-                      <td
-                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
-                      >
-                        <a
-                          class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineHover css-2ugbm1-MuiTypography-root-MuiLink-root"
-                          href="/"
-                        >
-                          example-service
-                        </a>
-                      </td>
-                      <td
-                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
-                      >
-                        <div
-                          class="MuiBox-root css-j7qwjs"
-                        >
-                          <span
-                            class="MuiTypography-root MuiTypography-body1 css-e06lsu-MuiTypography-root"
-                          >
-                            192.168.1.1:8080
-                          </span>
-                        </div>
-                      </td>
-                    </tr>
-                  </tbody>
-                </table>
+                    <circle
+                      class="MuiCircularProgress-circle MuiCircularProgress-circleIndeterminate css-176wh8e-MuiCircularProgress-circle"
+                      cx="44"
+                      cy="44"
+                      fill="none"
+                      r="20.2"
+                      stroke-width="3.6"
+                    />
+                  </svg>
+                </span>
               </div>
             </div>
           </div>
@@ -477,89 +442,29 @@
               class="MuiBox-root css-1txv3mw"
             >
               <div
-                class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded MuiTableContainer-root css-onzayo-MuiPaper-root-MuiTableContainer-root"
-                tabindex="0"
+                class="MuiBox-root css-5cned0"
               >
-                <table
-                  class="MuiTable-root css-qzmaqi-MuiTable-root"
+                <span
+                  aria-label="Loading table data"
+                  class="MuiCircularProgress-root MuiCircularProgress-indeterminate MuiCircularProgress-colorPrimary css-1g0vz9s-MuiCircularProgress-root"
+                  role="progressbar"
+                  style="width: 40px; height: 40px;"
+                  title="Loading table data"
                 >
-                  <thead
-                    class="MuiTableHead-root css-15wwp11-MuiTableHead-root"
+                  <svg
+                    class="MuiCircularProgress-svg css-1idz92c-MuiCircularProgress-svg"
+                    viewBox="22 22 44 44"
                   >
-                    <tr
-                      class="MuiTableRow-root MuiTableRow-head css-13jktim-MuiTableRow-root"
-                    >
-                      <th
-                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
-                        scope="col"
-                      >
-                        Name
-                      </th>
-                      <th
-                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
-                        scope="col"
-                      >
-                        Addresses
-                      </th>
-                      <th
-                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
-                        scope="col"
-                      >
-                        Ports
-                      </th>
-                      <th
-                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
-                        scope="col"
-                      >
-                        Address Type
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody
-                    class="MuiTableBody-root css-apqrd9-MuiTableBody-root"
-                  >
-                    <tr
-                      class="MuiTableRow-root css-13jktim-MuiTableRow-root"
-                    >
-                      <td
-                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
-                      >
-                        <a
-                          class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineHover css-2ugbm1-MuiTypography-root-MuiLink-root"
-                          href="/"
-                        >
-                          example-service
-                        </a>
-                      </td>
-                      <td
-                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
-                      >
-                        <div
-                          class="MuiBox-root css-j7qwjs"
-                        >
-                          <span
-                            class="MuiTypography-root MuiTypography-body1 css-e06lsu-MuiTypography-root"
-                          >
-                            127.0.0.1
-                          </span>
-                          <span
-                            class="MuiTypography-root MuiTypography-body1 css-e06lsu-MuiTypography-root"
-                          >
-                            127.0.0.2
-                          </span>
-                        </div>
-                      </td>
-                      <td
-                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
-                      >
-                        8080
-                      </td>
-                      <td
-                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
-                      />
-                    </tr>
-                  </tbody>
-                </table>
+                    <circle
+                      class="MuiCircularProgress-circle MuiCircularProgress-circleIndeterminate css-176wh8e-MuiCircularProgress-circle"
+                      cx="44"
+                      cy="44"
+                      fill="none"
+                      r="20.2"
+                      stroke-width="3.6"
+                    />
+                  </svg>
+                </span>
               </div>
             </div>
           </div>

@@ -381,13 +381,64 @@
               class="MuiBox-root css-1txv3mw"
             >
               <div
-                class="MuiBox-root css-19midj6"
+                class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded MuiTableContainer-root css-onzayo-MuiPaper-root-MuiTableContainer-root"
+                tabindex="0"
               >
-                <p
-                  class="MuiTypography-root MuiTypography-body1 MuiTypography-alignCenter css-9ldkza-MuiTypography-root"
+                <table
+                  class="MuiTable-root css-1ml9dpn-MuiTable-root"
                 >
-                  Error: Failed to fetch
-                </p>
+                  <thead
+                    class="MuiTableHead-root css-15wwp11-MuiTableHead-root"
+                  >
+                    <tr
+                      class="MuiTableRow-root MuiTableRow-head css-13jktim-MuiTableRow-root"
+                    >
+                      <th
+                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                        scope="col"
+                      >
+                        Name
+                      </th>
+                      <th
+                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                        scope="col"
+                      >
+                        Addresses
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody
+                    class="MuiTableBody-root css-apqrd9-MuiTableBody-root"
+                  >
+                    <tr
+                      class="MuiTableRow-root css-13jktim-MuiTableRow-root"
+                    >
+                      <td
+                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                      >
+                        <a
+                          class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineHover css-2ugbm1-MuiTypography-root-MuiLink-root"
+                          href="/"
+                        >
+                          example-service
+                        </a>
+                      </td>
+                      <td
+                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                      >
+                        <div
+                          class="MuiBox-root css-j7qwjs"
+                        >
+                          <span
+                            class="MuiTypography-root MuiTypography-body1 css-e06lsu-MuiTypography-root"
+                          >
+                            192.168.1.1:8080
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
