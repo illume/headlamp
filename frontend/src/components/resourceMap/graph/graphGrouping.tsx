@@ -212,6 +212,7 @@ const groupByProperty = (
  * @param nodes - List of nodes
  * @param edges - List of edge
  * @param params.groupBy - group by which property
+ * @param params.groupLabels - Translated display labels for group types. IDs remain stable in English.
  * @returns Graph, a single root node with groups as its' children
  */
 export function groupGraph(
