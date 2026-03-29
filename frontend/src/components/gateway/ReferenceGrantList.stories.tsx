@@ -48,6 +48,13 @@ export default {
                 items: [DEFAULT_REFERENCE_GRANT],
               })
           ),
+          http.get('http://localhost:4466/apis/gateway.networking.k8s.io/v1beta1/gateways', () =>
+            HttpResponse.json({
+              kind: 'GatewayList',
+              metadata: {},
+              items: [],
+            })
+          ),
         ],
       },
     },

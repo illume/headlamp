@@ -278,9 +278,8 @@ Terminal stories (`TerminalShellNotFoundTryNext` etc.) produce an unhandled erro
 
 ### What to try next
 
-1. **Verify the 4-file split runs correctly** — all glob patterns cover all stories, no duplicates, no gaps
-2. **Measure total parallel run time** — with 4 files vitest should use 4 workers, reducing wall-clock time by ~3-4×
-3. **Regenerate snapshots on Node.js 20** — must match CI; Node.js 24 produces different async render timing
-4. **Verify snapshot stability** — run twice and confirm no diff
-5. **If still slow:** consider `vitest --pool forks` for process-level isolation (avoids GC accumulation), or further splitting into more files
-6. **If still slow:** profile jsdom overhead — consider switching to `happy-dom` for lighter render weight
+1. **Add MSW handlers for remaining unhandled requests** — With real timers + waitFor, stories fire more waterfall API requests than with fake timers. Some (e.g. CRD discovery, gateway API lookups, deployment lists) need handlers added to individual story files. 5 handlers were added (CRD v1beta1, gateway classes, reference grants), but more surfaced. Currently logged as warnings.
+2. **Regenerate all snapshots on Node.js 20** — Must match CI environment
+3. **Verify snapshot stability** — Run twice and confirm no diff
+4. **If still slow:** consider `vitest --pool forks` for process-level isolation, or further splitting into more files
+5. **If still slow:** profile jsdom overhead — consider switching to `happy-dom` for lighter render weight

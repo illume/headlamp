@@ -48,6 +48,13 @@ export default {
           http.get('http://localhost:4466/apis/gateway.networking.k8s.io/v1beta1/gateways', () =>
             HttpResponse.error()
           ),
+          http.get('http://localhost:4466/apis/gateway.networking.k8s.io/v1/gatewayclasses', () =>
+            HttpResponse.json({
+              kind: 'GatewayClassList',
+              metadata: {},
+              items: [],
+            })
+          ),
         ],
       },
     },
