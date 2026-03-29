@@ -40,6 +40,12 @@ const compose = (entry: StoryFile) => {
   }
 };
 
+/**
+ * Total number of parallel shards for storybook tests.
+ * Must match the number of storybook-N projects in vitest.config.ts.
+ */
+const STORYBOOK_SHARD_COUNT = 10;
+
 function getAllStoryFiles() {
   // Place the glob you want to match your story files
   const storyFiles = Object.entries(
@@ -48,11 +54,19 @@ function getAllStoryFiles() {
     })
   );
 
-  return storyFiles.map(([filePath, storyFile]) => {
+  const allFiles = storyFiles.map(([filePath, storyFile]) => {
     const storyDir = path.dirname(filePath);
     const componentName = path.basename(filePath).replace(/\.(stories|story)\.[^/.]+$/, '');
     return { filePath, storyFile, componentName, storyDir };
   });
+
+  // When running as a shard, only test this shard's subset of stories.
+  // STORYBOOK_SHARD is set by vitest.config.ts workspace projects for parallel execution.
+  const shardIndex = Number(import.meta.env.STORYBOOK_SHARD ?? -1);
+  if (shardIndex >= 0) {
+    return allFiles.filter((_, i) => i % STORYBOOK_SHARD_COUNT === shardIndex);
+  }
+  return allFiles;
 }
 
 // Recreate similar options to Storyshots. Place your configuration below
