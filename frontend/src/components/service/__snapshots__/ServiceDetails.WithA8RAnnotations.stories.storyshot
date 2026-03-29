@@ -721,17 +721,13 @@
               class="MuiBox-root css-1txv3mw"
             >
               <div
-                class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded css-1guobrs-MuiPaper-root"
+                class="MuiBox-root css-19midj6"
               >
-                <div
-                  class="MuiBox-root css-19midj6"
+                <p
+                  class="MuiTypography-root MuiTypography-body1 MuiTypography-alignCenter css-9ldkza-MuiTypography-root"
                 >
-                  <p
-                    class="MuiTypography-root MuiTypography-body1 MuiTypography-alignCenter css-18lkse1-MuiTypography-root"
-                  >
-                    No data to be shown.
-                  </p>
-                </div>
+                  Error: Failed to fetch
+                </p>
               </div>
             </div>
           </div>
@@ -770,13 +766,17 @@
               class="MuiBox-root css-1txv3mw"
             >
               <div
-                class="MuiBox-root css-19midj6"
+                class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded css-1guobrs-MuiPaper-root"
               >
-                <p
-                  class="MuiTypography-root MuiTypography-body1 MuiTypography-alignCenter css-9ldkza-MuiTypography-root"
+                <div
+                  class="MuiBox-root css-19midj6"
                 >
-                  Error: Failed to fetch
-                </p>
+                  <p
+                    class="MuiTypography-root MuiTypography-body1 MuiTypography-alignCenter css-18lkse1-MuiTypography-root"
+                  >
+                    No data to be shown.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
