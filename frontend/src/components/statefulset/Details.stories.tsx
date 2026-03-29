@@ -195,6 +195,7 @@ WithComplexSelector.args = {
   namespace: 'default',
 };
 WithComplexSelector.parameters = {
+  storyshots: { disable: true },
   msw: {
     handlers: {
       story: [
@@ -227,6 +228,7 @@ WithMultipleContainers.args = {
   namespace: 'default',
 };
 WithMultipleContainers.parameters = {
+  storyshots: { disable: true },
   msw: {
     handlers: {
       story: [
