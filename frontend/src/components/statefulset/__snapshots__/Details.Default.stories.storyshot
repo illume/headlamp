@@ -304,29 +304,17 @@
               class="MuiBox-root css-1txv3mw"
             >
               <div
-                class="MuiBox-root css-5cned0"
+                class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded css-1guobrs-MuiPaper-root"
               >
-                <span
-                  aria-label="Loading table data"
-                  class="MuiCircularProgress-root MuiCircularProgress-indeterminate MuiCircularProgress-colorPrimary css-1g0vz9s-MuiCircularProgress-root"
-                  role="progressbar"
-                  style="width: 40px; height: 40px;"
-                  title="Loading table data"
+                <div
+                  class="MuiBox-root css-19midj6"
                 >
-                  <svg
-                    class="MuiCircularProgress-svg css-1idz92c-MuiCircularProgress-svg"
-                    viewBox="22 22 44 44"
+                  <p
+                    class="MuiTypography-root MuiTypography-body1 MuiTypography-alignCenter css-18lkse1-MuiTypography-root"
                   >
-                    <circle
-                      class="MuiCircularProgress-circle MuiCircularProgress-circleIndeterminate css-176wh8e-MuiCircularProgress-circle"
-                      cx="44"
-                      cy="44"
-                      fill="none"
-                      r="20.2"
-                      stroke-width="3.6"
-                    />
-                  </svg>
-                </span>
+                    No data to be shown.
+                  </p>
+                </div>
               </div>
             </div>
           </div>
@@ -471,9 +459,9 @@
               class="MuiBox-root css-1txv3mw"
             >
               <p
-                class="MuiTypography-root MuiTypography-body2 css-7oje3w-MuiTypography-root"
+                class="MuiTypography-root MuiTypography-body2 css-lf1pl8-MuiTypography-root"
               >
-                No revision history available.
+                Failed to load revision history: Unreachable
               </p>
             </div>
           </div>

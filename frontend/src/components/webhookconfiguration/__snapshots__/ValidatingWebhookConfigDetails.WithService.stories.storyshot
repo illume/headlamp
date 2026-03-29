@@ -274,19 +274,16 @@
                 <dt
                   class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-3 MuiGrid-grid-md-2 css-9i4s51-MuiGrid-root"
                 >
-                  Client Config: Service
+                  Client Config: URL
                 </dt>
                 <dd
                   class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-9 MuiGrid-grid-md-10 css-1dbzfsd-MuiGrid-root"
                 >
-                  <a
-                    class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineHover css-2ugbm1-MuiTypography-root-MuiLink-root"
-                    href="/"
+                  <span
+                    class="MuiTypography-root MuiTypography-body1 css-e06lsu-MuiTypography-root"
                   >
-                    Service: my-namespace/my-service
-                  </a>
-                  <br />
-                  Path: /validate-nodes:443
+                    https://localhost:8443/validate-nodes
+                  </span>
                 </dd>
                 <dt
                   class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-3 MuiGrid-grid-md-2 css-9i4s51-MuiGrid-root"

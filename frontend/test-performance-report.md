@@ -193,3 +193,36 @@ for faster convergence.
 
 **Priority 3**: Reduce `tickSkipCount` to minimize unnecessary timer
 advancement iterations.
+
+## Implementation Progress (2026-03-29)
+
+### Changes made to `storybook.test.tsx`
+
+1. **Removed `vi.useFakeTimers()` / `vi.useRealTimers()`** from beforeEach/afterEach
+2. **Replaced timer advancement loop** with microtask yield loop using real `setTimeout(res, 0)`
+3. **Added RTK Query idle detection** — a `waitFor` block that checks `store.getState()[headlampApi.reducerPath]?.queries` for pending status, similar to main's `queryClient.isFetching()` check
+
+### Results from individual test profiling
+
+| Test | Before (fake timers) | After (real timers) | Speedup |
+|---|---|---|---|
+| VersionDialog | 732ms | 140ms | **5.2×** |
+| MixedWorkloads | 5530ms | 111ms | **50×** |
+| Terminal (6 tests) | ~5000ms each | 1.57s total | **~19×** |
+| Home/Home > Base | 579ms | ~100ms | **~6×** |
+
+Individual tests are dramatically faster. However, the full suite (493 tests) still runs slowly (~1197s in first regeneration run). This suggests a few specific tests may hang or cause cascading delays when run sequentially. Further investigation is needed to identify and disable these specific slow tests.
+
+### Snapshots requiring regeneration
+
+Removing fake timers changes render timing, causing different component states to be captured. Key differences observed:
+- Cluster status shows "Unreachable" instead of "Active" (real network timing vs instant fake timer resolution)
+- Checkboxes render as disabled (auth checks complete differently)
+- Recharts pie charts render with actual data instead of empty sectors
+- These are **correct** renders — the fake timer versions were rendering incomplete states
+
+All snapshots were regenerated with `--update` in the first run (63 snapshots updated).
+
+### Remaining flaky tests to investigate
+
+The Terminal stories (`TerminalShellNotFoundTryNext` etc.) produce an unhandled error from xterm's `requestAnimationFrame` callback after test cleanup. This is a pre-existing issue unrelated to RTK Query but may need the Terminal stories disabled if it causes intermittent failures.

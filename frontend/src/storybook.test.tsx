@@ -139,14 +139,12 @@ function replaceUseId(node: any) {
 
 describe('Storybook Tests', () => {
   beforeEach(() => {
-    vi.useFakeTimers();
     // Reset RTK Query cache between stories to prevent cross-story state bleed.
     // Stories using module-level stores may still share cache internally, but
     // the default app store (used by most stories via TestContext) is cleaned.
     store.dispatch(headlampApi.util.resetApiState());
   });
   afterEach(() => {
-    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -199,20 +197,26 @@ describe('Storybook Tests', () => {
             await story.run();
           });
 
-          // There are a bunch of waterfall requests in the stories
-          // So to make sure all requests are sent we need to skip over some ticks
+          // Let waterfall requests settle by yielding to the microtask queue.
+          // RTK Query works with real timers — no fake timer advancement needed.
           const tickSkipCount = 10;
           for (let i = 0; i < tickSkipCount; i++) {
-            // Advance timers enough for stuff to appear
-            // but not too much that things like notifications/toasts are hidden
-            act(() => vi.advanceTimersByTime(100));
-            await act(() => new Promise(res => process.nextTick(res)));
+            await act(() => new Promise(res => setTimeout(res, 0)));
           }
 
           // And now we make sure all the requests that have been sent have ended
           await waitFor(() => {
             if (requestsSent !== requestsEnded) {
               throw new Error('waiting');
+            }
+          });
+
+          // Wait for RTK Query to finish processing (cache updates, etc.)
+          await waitFor(() => {
+            const queries = store.getState()[headlampApi.reducerPath]?.queries ?? {};
+            const hasPending = Object.values(queries).some(q => q?.status === 'pending');
+            if (hasPending) {
+              throw new Error('RTK Query still fetching');
             }
           });
 
