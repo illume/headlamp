@@ -16,6 +16,19 @@
 
 import { defineWorkspace } from 'vitest/config';
 
+const STORYBOOK_SHARD_COUNT = 10;
+
+const storybookShards = Array.from({ length: STORYBOOK_SHARD_COUNT }, (_, i) => ({
+  extends: './vitest.config.ts',
+  test: {
+    name: `storybook-${i}`,
+    include: ['src/storybook.test.tsx'],
+    env: {
+      STORYBOOK_SHARD: String(i),
+    },
+  },
+}));
+
 export default defineWorkspace([
   {
     extends: './vitest.config.ts',
@@ -25,15 +38,9 @@ export default defineWorkspace([
       exclude: [
         '**/node_modules/**',
         '**/dist/**',
-        'src/storybook.test.shard-*.tsx',
+        'src/storybook.test.tsx',
       ],
     },
   },
-  {
-    extends: './vitest.config.ts',
-    test: {
-      name: 'storybook',
-      include: ['src/storybook.test.shard-*.tsx'],
-    },
-  },
+  ...storybookShards,
 ]);
