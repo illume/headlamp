@@ -19,6 +19,7 @@ import Box from '@mui/material/Box';
 import Fade from '@mui/material/Fade';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
+import { TFunction } from 'i18next';
 import { ApiError } from '../../lib/k8s/api/v2/ApiError';
 import { KubeContainerStatus } from '../../lib/k8s/cluster';
 import Pod from '../../lib/k8s/pod';
@@ -128,7 +129,7 @@ function getReadinessGatesStatus(pods: Pod) {
 
 function getContainerDisplayStatus(
   container: KubeContainerStatus,
-  t?: (key: string, options?: Record<string, string>) => string
+  t?: TFunction
 ) {
   const state = container.state || {};
   let color = 'grey';
@@ -192,7 +193,7 @@ function getContainerDisplayStatus(
     if (container.restartCount > 0) {
       tooltipLines.push(
         t
-          ? t('translation|Restarts: {{ count }}', { count: String(container.restartCount) })
+          ? t('translation|Restarts: {{ count }}', { count: container.restartCount })
           : `Restarts: ${container.restartCount}`
       );
     }
@@ -211,7 +212,7 @@ function getContainerDisplayStatus(
     if (container.restartCount > 0) {
       tooltipLines.push(
         t
-          ? t('translation|Restarts: {{ count }}', { count: String(container.restartCount) })
+          ? t('translation|Restarts: {{ count }}', { count: container.restartCount })
           : `Restarts: ${container.restartCount}`
       );
     }

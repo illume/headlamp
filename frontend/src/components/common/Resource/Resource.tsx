@@ -34,6 +34,7 @@ import _, { ceil, has } from 'lodash';
 import { useSnackbar } from 'notistack';
 import React, { PropsWithChildren, ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { TFunction } from 'i18next';
 import { generatePath, NavLinkProps, useLocation } from 'react-router-dom';
 import YAML from 'yaml';
 import { labelSelectorToQuery, ResourceClasses, useCluster } from '../../../lib/k8s';
@@ -804,7 +805,7 @@ function buildEnvironmentVariables(
   pod: KubePod,
   container: KubeContainer,
   containerStartTimestamp: string | undefined,
-  t: (key: string) => string
+  t: TFunction
 ): EnvironmentVariable[] {
   const variables = new Map<string, Omit<EnvironmentVariable, 'key'>>();
 
