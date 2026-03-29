@@ -91,7 +91,7 @@
                                 <desc />
                                 <defs>
                                   <clippath
-                                    id="recharts33-clip"
+                                    id="recharts-id"
                                   >
                                     <rect
                                       height="102"
@@ -207,7 +207,7 @@
                                 <desc />
                                 <defs>
                                   <clippath
-                                    id="recharts35-clip"
+                                    id="recharts-id"
                                   >
                                     <rect
                                       height="102"
@@ -388,7 +388,7 @@
                                 <desc />
                                 <defs>
                                   <clippath
-                                    id="recharts37-clip"
+                                    id="recharts-id"
                                   >
                                     <rect
                                       height="102"
