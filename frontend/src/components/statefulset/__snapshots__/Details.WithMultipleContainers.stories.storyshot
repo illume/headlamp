@@ -471,9 +471,9 @@
               class="MuiBox-root css-1txv3mw"
             >
               <p
-                class="MuiTypography-root MuiTypography-body2 css-lf1pl8-MuiTypography-root"
+                class="MuiTypography-root MuiTypography-body2 css-7oje3w-MuiTypography-root"
               >
-                Failed to load revision history: Unreachable
+                No revision history available.
               </p>
             </div>
           </div>
