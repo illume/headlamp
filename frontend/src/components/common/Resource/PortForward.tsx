@@ -270,7 +270,7 @@ function PortForwardContent(props: PortForwardProps) {
         localStorage.setItem(PORT_FORWARDS_STORAGE_KEY, JSON.stringify(parsedPortForwards));
       })
       .catch(error => {
-        setError(error?.message ?? 'An unexpected error occurred.');
+        setError(error?.message ?? t('translation|An unexpected error occurred.'));
         setLoading(false);
         setPortForward(null);
       });

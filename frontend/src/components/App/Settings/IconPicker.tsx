@@ -81,7 +81,7 @@ export default function IconPicker({ open, currentIcon, onClose, onSelectIcon }:
         <Box sx={{ pt: 1 }}>
           <Box display="flex" flexWrap="wrap" gap={1}>
             {PRESET_ICONS.map(iconOption => (
-              <Tooltip key={iconOption.value} title={iconOption.name}>
+              <Tooltip key={iconOption.value} title={t(`translation|${iconOption.name}`)}>
                 <ToggleButton
                   value={iconOption.value}
                   selected={currentIcon === iconOption.value && !useCustomIcon}

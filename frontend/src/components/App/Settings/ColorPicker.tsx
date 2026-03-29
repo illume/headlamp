@@ -99,7 +99,7 @@ export default function ColorPicker({
         <Box sx={{ pt: 1 }}>
           <Box display="flex" flexWrap="wrap" gap={1}>
             {PRESET_COLORS.map(color => (
-              <Tooltip key={color.value} title={color.name}>
+              <Tooltip key={color.value} title={t(`translation|${color.name}`)}>
                 <ToggleButton
                   value={color.value}
                   selected={currentColor === color.value && !useCustomColor}

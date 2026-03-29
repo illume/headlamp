@@ -238,7 +238,7 @@ export default function Settings() {
                 onClick={() => dispatch(setTheme(it.name))}
               >
                 <ThemePreview theme={it} size={110} />
-                <Box sx={{ mt: 1 }}>{capitalize(it.name)}</Box>
+                <Box sx={{ mt: 1 }}>{t(`translation|${capitalize(it.name)}`)}</Box>
               </Box>
             ))}
           </Box>

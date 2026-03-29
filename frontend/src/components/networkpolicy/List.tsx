@@ -40,12 +40,12 @@ export function NetworkPolicyList() {
             const isEgressAvailable =
               networkpolicy.jsonData.spec.egress && networkpolicy.jsonData.spec.egress.length > 0;
             return isIngressAvailable && isEgressAvailable
-              ? 'Ingress and Egress'
+              ? t('translation|Ingress and Egress')
               : isIngressAvailable
-              ? 'Ingress'
+              ? t('glossary|Ingress')
               : isEgressAvailable
-              ? 'Egress'
-              : 'None';
+              ? t('translation|Egress')
+              : t('translation|None');
           },
         },
         {

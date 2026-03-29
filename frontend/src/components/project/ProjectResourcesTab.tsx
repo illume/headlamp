@@ -299,7 +299,7 @@ export function ProjectResourcesTab({
             : null;
           const ageText = createdDate
             ? Math.floor((Date.now() - createdDate.getTime()) / (1000 * 60 * 60 * 24)) + 'd'
-            : 'Unknown';
+            : t('Unknown');
           return (
             <Typography variant="caption" color="text.secondary">
               {ageText}

@@ -483,7 +483,7 @@ export default function EditorDialog(props: EditorDialogProps) {
             onConfirm={onUndo}
             confirmTitle={t('translation|Are you sure?')}
             confirmDescription={t(
-              'This will discard your changes in the editor. Do you want to proceed?'
+              'translation|This will discard your changes in the editor. Do you want to proceed?'
             )}
             // @todo: aria-controls should point to the textarea id
           >

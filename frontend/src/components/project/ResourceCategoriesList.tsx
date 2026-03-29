@@ -24,6 +24,7 @@ import {
   Typography,
 } from '@mui/material';
 import { Box } from '@mui/system';
+import { useTranslation } from 'react-i18next';
 import { KubeObject } from '../../lib/k8s/KubeObject';
 import { ResourceCategory } from '../../lib/k8s/ResourceCategory';
 import { KubeObjectStatus } from '../resourceMap/nodes/KubeObjectStatus';
@@ -42,6 +43,7 @@ export function ResourceCategoriesList({
   selectedCategoryName?: string;
   onCategoryClick: (categoryName: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <Box
       sx={{
@@ -70,7 +72,7 @@ export function ResourceCategoriesList({
                 <ListItemIcon>
                   <Icon icon={category.icon} style={{ fontSize: 32 }} />
                 </ListItemIcon>
-                <ListItemText primary={category.label} secondary={category.description} />
+                <ListItemText primary={t(`translation|${category.label}`)} secondary={t(`translation|${category.description}`)} />
                 <ListItemIcon sx={{ justifyContent: 'flex-end' }}>
                   <Box display="flex" alignItems="center" gap={0.5}>
                     <Typography
