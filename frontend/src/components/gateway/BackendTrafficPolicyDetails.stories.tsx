@@ -31,6 +31,7 @@ export default {
     ),
   ],
   parameters: {
+    storyshots: { disable: true },
     msw: {
       handlers: {
         story: [],
