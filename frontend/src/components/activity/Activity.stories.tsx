@@ -16,6 +16,7 @@
 
 import { Box } from '@mui/material';
 import { Meta, StoryFn } from '@storybook/react';
+import { http, HttpResponse } from 'msw';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import store from '../../redux/stores/store';
@@ -58,6 +59,18 @@ export default {
       </Provider>
     ),
   ],
+  parameters: {
+    msw: {
+      handlers: {
+        storyBase: [
+          http.get(
+            'http://localhost:4466/apis/apiextensions.k8s.io/v1/customresourcedefinitions',
+            () => HttpResponse.json({ kind: 'CustomResourceDefinitionList', items: [], metadata: {} })
+          ),
+        ],
+      },
+    },
+  },
 } as Meta;
 
 const makeActivity = (activity: Partial<Activity>): Activity => ({

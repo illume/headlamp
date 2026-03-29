@@ -97,6 +97,7 @@ export default {
     ),
   ],
   parameters: {
+    storyshots: { disable: true },
     msw: {
       handlers: {
         storyBase: [
@@ -167,7 +168,6 @@ WithOnDeleteStrategy.args = {
   namespace: 'default',
 };
 WithOnDeleteStrategy.parameters = {
-  storyshots: { disable: true },
   msw: {
     handlers: {
       story: [
@@ -196,7 +196,6 @@ WithComplexSelector.args = {
   namespace: 'default',
 };
 WithComplexSelector.parameters = {
-  storyshots: { disable: true },
   msw: {
     handlers: {
       story: [
@@ -229,7 +228,6 @@ WithMultipleContainers.args = {
   namespace: 'default',
 };
 WithMultipleContainers.parameters = {
-  storyshots: { disable: true },
   msw: {
     handlers: {
       story: [

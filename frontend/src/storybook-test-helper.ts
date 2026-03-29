@@ -188,16 +188,11 @@ export function runStorybookTests(
             // Yield to microtask queue to let React process the responses.
             await act(async () => {});
 
-            // Log unhandled requests as warnings instead of failing.
-            // With real timers + waitFor, stories fire more waterfall requests
-            // than with fake timers. Some API discovery requests lack MSW handlers
-            // but don't affect the rendered snapshot.
-            if (unhandledRequests.length > 0) {
-              console.warn(
-                `MSW: ${unhandledRequests.length} unhandled request(s):`,
-                unhandledRequests
-              );
-            }
+            // Fail on unhandled MSW requests — all API calls should have handlers.
+            expect(
+              unhandledRequests,
+              `MSW: ${unhandledRequests.length} unhandled request(s) in story "${name}": ${unhandledRequests.join(', ')}`
+            ).toEqual([]);
 
             // Cleanup listeners
             worker.events.removeListener('request:start', onStart);
