@@ -216,7 +216,9 @@ export default function PortForwardingList() {
     }
     return (
       <StatusLabel status={portforward.status === PORT_FORWARD_RUNNING_STATUS ? 'success' : ''}>
-        {portforward.status}
+        {portforward.status === PORT_FORWARD_RUNNING_STATUS
+          ? t('translation|Running')
+          : t('translation|Stopped')}
       </StatusLabel>
     );
   }

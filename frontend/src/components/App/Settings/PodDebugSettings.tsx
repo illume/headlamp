@@ -138,7 +138,7 @@ export default function PodDebugSettings(props: SettingsProps) {
           {
             name: (
               <HoverInfoLabel
-                label={<span id={podDebugLabelID}>Enable Pod Debug</span>}
+                label={<span id={podDebugLabelID}>{t('translation|Enable Pod Debug')}</span>}
                 hoverInfo={t(
                   'translation|Ephemeral debug containers cannot be removed via Kubernetes API. They will remain in the pod specification even after the terminal closes. To remove them, the pod must be recreated.'
                 )}
@@ -156,7 +156,7 @@ export default function PodDebugSettings(props: SettingsProps) {
             ),
           },
           {
-            name: 'Debug Image',
+            name: t('translation|Debug Image'),
             value: (
               <TextField
                 onChange={event => {

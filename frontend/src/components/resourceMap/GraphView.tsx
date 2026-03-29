@@ -127,7 +127,7 @@ function GraphViewContent({
   defaultSources = useGetAllSources(),
   defaultFilters = defaultFiltersValue,
 }: GraphViewContentProps) {
-  const { t } = useTranslation();
+  const { t } = useTranslation(['translation', 'glossary']);
   const dispatch = useDispatch();
 
   // List of selected namespaces
@@ -197,6 +197,11 @@ function GraphViewContent({
       groupBy,
       namespaces: allNamespaces ?? [],
       k8sNodes: allNodes ?? [],
+      groupLabels: {
+        namespace: t('glossary|Namespace'),
+        node: t('glossary|Node'),
+        instance: t('translation|Instance'),
+      },
     });
 
     const visibleGraph = collapseGraph(graph, { selectedNodeId, expandAll });

@@ -319,7 +319,7 @@ export function PodLogViewer(props: PodLogViewerProps) {
                 {i}
               </MenuItem>
             ))}
-            <MenuItem value={-1}>All</MenuItem>
+            <MenuItem value={-1}>{t('translation|All')}</MenuItem>
           </Select>
         </FormControl>,
         <LightTooltip

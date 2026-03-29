@@ -170,9 +170,11 @@ const groupByProperty = (
   nodes: GraphNode[],
   accessor: (n: GraphNode) => string | null | undefined,
   {
+    idPrefix,
     label,
     allowSingleMemberGroup = false,
   }: {
+    idPrefix: string;
     label: string;
     allowSingleMemberGroup?: boolean;
   }
@@ -183,7 +185,7 @@ const groupByProperty = (
     })
   ).map(
     ([property, components]): GraphNode => ({
-      id: label + '-' + property,
+      id: idPrefix + '-' + property,
       nodes: components,
       edges: [],
       subtitle: label,
@@ -210,6 +212,7 @@ const groupByProperty = (
  * @param nodes - List of nodes
  * @param edges - List of edge
  * @param params.groupBy - group by which property
+ * @param params.groupLabels - Translated display labels for group types. IDs remain stable in English.
  * @returns Graph, a single root node with groups as its' children
  */
 export function groupGraph(
@@ -219,7 +222,13 @@ export function groupGraph(
     groupBy,
     namespaces,
     k8sNodes,
-  }: { groupBy?: GroupBy; namespaces: Namespace[]; k8sNodes: Node[] }
+    groupLabels,
+  }: {
+    groupBy?: GroupBy;
+    namespaces: Namespace[];
+    k8sNodes: Node[];
+    groupLabels?: Record<GroupBy, string>;
+  }
 ): GraphNode {
   const root: GraphNode = {
     id: 'root',
@@ -240,7 +249,7 @@ export function groupGraph(
         }
         return component.kubeObject?.metadata?.namespace;
       },
-      { label: 'Namespace', allowSingleMemberGroup: true }
+      { idPrefix: 'Namespace', label: groupLabels?.namespace ?? 'Namespace', allowSingleMemberGroup: true }
     );
 
     components.forEach(component => {
@@ -267,7 +276,7 @@ export function groupGraph(
 
         return (component.kubeObject as Pod)?.spec?.nodeName;
       },
-      { label: 'Node', allowSingleMemberGroup: true }
+      { idPrefix: 'Node', label: groupLabels?.node ?? 'Node', allowSingleMemberGroup: true }
     );
 
     components.forEach(component => {
@@ -293,7 +302,7 @@ export function groupGraph(
         }
         return node.kubeObject?.metadata?.labels?.['app.kubernetes.io/instance'];
       },
-      { label: 'Instance' }
+      { idPrefix: 'Instance', label: groupLabels?.instance ?? 'Instance' }
     );
   }
 

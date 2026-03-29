@@ -191,13 +191,15 @@ export default function ClusterTable({
   function getOrigin(cluster: Cluster): string {
     if (cluster?.meta_data?.source === 'kubeconfig') {
       const sourcePath = cluster?.meta_data?.origin?.kubeconfig;
-      return sourcePath ? `Kubeconfig: ${sourcePath}` : 'Kubeconfig';
+      return sourcePath
+        ? t('translation|Kubeconfig: {{ path }}', { path: sourcePath })
+        : t('translation|Kubeconfig');
     } else if (cluster?.meta_data?.source === 'dynamic_cluster') {
       return t('translation|Plugin');
     } else if (cluster?.meta_data?.source === 'in_cluster') {
       return t('translation|In-cluster');
     }
-    return 'Unknown';
+    return t('translation|Unknown');
   }
   const viewClusters = t('View Clusters');
 

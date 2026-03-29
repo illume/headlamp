@@ -18,6 +18,7 @@ import Box from '@mui/material/Box';
 import DialogContent from '@mui/material/DialogContent';
 import _ from 'lodash';
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import {
   DEFAULT_NODE_SHELL_LINUX_IMAGE,
   DEFAULT_NODE_SHELL_NAMESPACE,
@@ -134,6 +135,7 @@ async function shell(item: Node, onExec: StreamResultsCb) {
 
 export function NodeShellTerminal(props: NodeShellTerminalProps) {
   const { item, onClose } = props;
+  const { t } = useTranslation();
   const [terminalContainerRef, setTerminalContainerRef] = useState<HTMLElement | null>(null);
   const exitSentRef = useRef(false);
   const pendingExitRef = useRef(false);
@@ -141,7 +143,7 @@ export function NodeShellTerminal(props: NodeShellTerminalProps) {
   const { xtermRef, streamRef, send } = useTerminalStream({
     containerRef: terminalContainerRef,
     connectStream: async onDataCallback => {
-      xtermRef.current?.xterm.writeln('Trying to open a shell');
+      xtermRef.current?.xterm.writeln(t('translation|Trying to open a shell'));
       const { stream } = await shell(item, onDataCallback);
       return {
         stream,
@@ -231,7 +233,7 @@ export function NodeShellTerminal(props: NodeShellTerminalProps) {
   function shellConnectFailed(xtermc: XTerminalConnected) {
     const xterm = xtermc.xterm;
     xterm.clear();
-    xterm.write('Failed to connect…\r\n');
+    xterm.write(t('translation|Failed to connect…') + '\r\n');
   }
 
   useEffect(() => {
