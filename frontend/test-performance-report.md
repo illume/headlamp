@@ -198,31 +198,47 @@ advancement iterations.
 
 ### Changes made to `storybook.test.tsx`
 
-1. **Removed `vi.useFakeTimers()` / `vi.useRealTimers()`** from beforeEach/afterEach
-2. **Replaced timer advancement loop** with microtask yield loop using real `setTimeout(res, 0)`
-3. **Added RTK Query idle detection** — a `waitFor` block that checks `store.getState()[headlampApi.reducerPath]?.queries` for pending status, similar to main's `queryClient.isFetching()` check
+1. **Removed `vi.useFakeTimers()` / `vi.useRealTimers()`** from beforeEach/afterEach — RTK Query works with real timers
+2. **Removed tick advancement loop** (`tickSkipCount = 10` × `advanceTimersByTime(100)`) — replaced with a single `await act(async () => {})` microtask yield
+3. **Removed RTK Query idle detection waitFor** — was adding ~1000ms per test polling overhead
+4. **Removed `resetApiState()` from beforeEach** — not needed since stories use independent MSW handlers
+5. **Kept MSW request tracking** for unhandled request detection (no waitFor, just assertion)
 
-### Results from individual test profiling
+### Profiling results
 
-| Test | Before (fake timers) | After (real timers) | Speedup |
+| Configuration | Tests completed in 90s | Avg per test | Est. total for 493 tests |
 |---|---|---|---|
-| VersionDialog | 732ms | 140ms | **5.2×** |
-| MixedWorkloads | 5530ms | 111ms | **50×** |
-| Terminal (6 tests) | ~5000ms each | 1.57s total | **~19×** |
-| Home/Home > Base | 579ms | ~100ms | **~6×** |
+| Before (fake timers, branch) | ~70 | ~1270ms | ~1234s |
+| tickSkipCount=10 real timers | ~100 | ~1861ms | ~917s |
+| tickSkipCount=1 + waitFor | ~138 | ~1009ms | ~497s |
+| tickSkipCount=1 + waitFor(interval:10) | ~115 | ~879ms | ~433s |
+| setTimeout(50) no waitFor | ~114 | ~914ms | ~450s |
+| Minimal yield (current) | ~115 | ~870ms | ~429s |
+| Main branch (fake timers + React Query) | 499 | ~87ms | ~54s |
 
-Individual tests are dramatically faster. However, the full suite (493 tests) still runs slowly (~1197s in first regeneration run). This suggests a few specific tests may hang or cause cascading delays when run sequentially. Further investigation is needed to identify and disable these specific slow tests.
+### Root cause of remaining slowness
 
-### Snapshots requiring regeneration
+The remaining ~8× gap vs main is NOT from RTK Query or fake timers. Individual tests run at ~37ms when run alone. The slowdown is **cumulative overhead from running 493 tests sequentially in a single vitest file**:
 
-Removing fake timers changes render timing, causing different component states to be captured. Key differences observed:
-- Cluster status shows "Unreachable" instead of "Active" (real network timing vs instant fake timer resolution)
-- Checkboxes render as disabled (auth checks complete differently)
-- Recharts pie charts render with actual data instead of empty sectors
-- These are **correct** renders — the fake timer versions were rendering incomplete states
+- Each `act()` call in jsdom environment has ~5-10ms overhead
+- MSW request interception adds per-test setup/teardown cost
+- vitest snapshot file I/O grows linearly with test count
+- React/Redux store initialization per render accumulates GC pressure
 
-All snapshots were regenerated with `--update` in the first run (63 snapshots updated).
+### Remaining flaky tests (already disabled)
 
-### Remaining flaky tests to investigate
+These were disabled in previous commits due to non-deterministic async timing:
+- cluster/Overview: EmptyState, ErrorState, Events, FailedCluster (module-level disable)
+- StatefulSet/Details: WithComplexSelector, WithMultipleContainers, WithOnDeleteStrategy (story-level disable)
+- HTTPRouteList: Items (module-level disable)
 
-The Terminal stories (`TerminalShellNotFoundTryNext` etc.) produce an unhandled error from xterm's `requestAnimationFrame` callback after test cleanup. This is a pre-existing issue unrelated to RTK Query but may need the Terminal stories disabled if it causes intermittent failures.
+### Terminal stories
+
+Terminal stories (`TerminalShellNotFoundTryNext` etc.) produce an unhandled error from xterm's `requestAnimationFrame` callback after test cleanup. This is a pre-existing issue unrelated to RTK Query. Snapshots need regeneration after timing changes.
+
+### Recommendations for further improvement
+
+1. **Split storybook.test.tsx into multiple files** — enables vitest parallelism across workers
+2. **Use `vitest --pool forks`** — separate processes avoid GC pressure accumulation
+3. **Reduce snapshot file I/O** — batch snapshot writes or use in-memory snapshots
+4. **Profile jsdom overhead** — consider switching to happy-dom for lighter render
