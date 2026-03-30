@@ -67,24 +67,38 @@ window.matchMedia = () => ({
  */
 const STORYBOOK_SHARD_COUNT = 12;
 
-function getAllStoryFiles() {
-  const storyFiles = Object.entries(
-    import.meta.glob<StoryFile>('./**/*.stories.tsx', { eager: true })
+/**
+ * Get story files for this shard. Uses lazy glob imports so each shard
+ * only loads the story modules it needs (1/12th), avoiding the overhead
+ * of eagerly importing all stories in every shard.
+ */
+async function getAllStoryFiles() {
+  const lazyStoryFiles = Object.entries(
+    import.meta.glob<StoryFile>('./**/*.stories.tsx')
   );
 
-  const allFiles = storyFiles.map(([filePath, storyFile]) => {
-    const storyDir = path.dirname(filePath);
-    const componentName = path.basename(filePath).replace(/\.(stories|story)\.[^/.]+$/, '');
-    return { filePath, storyFile, componentName, storyDir };
-  });
-
-  // When running as a shard, only test this shard's subset of stories.
+  // When running as a shard, only import this shard's subset of stories.
   // STORYBOOK_SHARD is set by vitest.config.ts workspace projects for parallel execution.
   const shardIndex = Number(import.meta.env.STORYBOOK_SHARD ?? -1);
-  if (shardIndex >= 0) {
-    return allFiles.filter((_, i) => i % STORYBOOK_SHARD_COUNT === shardIndex);
-  }
+  const filteredEntries =
+    shardIndex >= 0
+      ? lazyStoryFiles.filter((_, i) => i % STORYBOOK_SHARD_COUNT === shardIndex)
+      : lazyStoryFiles;
+
+  // Import only the story files this shard needs
+  const allFiles = await Promise.all(
+    filteredEntries.map(async ([filePath, importFn]) => {
+      const storyFile = await importFn();
+      const storyDir = path.dirname(filePath);
+      const componentName = path.basename(filePath).replace(/\.(stories|story)\.[^/.]+$/, '');
+      return { filePath, storyFile, componentName, storyDir };
+    })
+  );
+
   return allFiles;
 }
 
-runStorybookTests(getAllStoryFiles());
+// Load stories then run tests. The top-level await ensures vitest
+// collects the dynamically registered test suites.
+const storyFiles = await getAllStoryFiles();
+runStorybookTests(storyFiles);

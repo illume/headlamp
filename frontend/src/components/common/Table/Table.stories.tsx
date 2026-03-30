@@ -269,8 +269,12 @@ const TemplateWithFilter: StoryFn<{
         filter: { namespaces: new Set<string>(), search: '' },
         config: { settings: { tableRowsPerPageOptions: [10, 20, 50, 100] } },
         shortcuts: { ...shortcutsReducer(undefined, { type: '' }) },
-      }
-    ) => state,
+      },
+      action: any
+    ) => ({
+      ...state,
+      [headlampApi.reducerPath]: headlampApi.reducer(state[headlampApi.reducerPath], action),
+    }),
     preloadedState: {
       filter: {
         namespaces: new Set(namespaces),

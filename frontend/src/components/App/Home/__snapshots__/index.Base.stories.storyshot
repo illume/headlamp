@@ -765,14 +765,17 @@
                       class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1nchbpl-MuiTableCell-root"
                     >
                       <span
+                        aria-disabled="true"
                         aria-label="Toggle select row"
-                        class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall css-1li6ni2-MuiButtonBase-root-MuiCheckbox-root"
+                        class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall Mui-disabled PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall Mui-disabled MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall css-1li6ni2-MuiButtonBase-root-MuiCheckbox-root"
                         data-mui-internal-clone-element="true"
+                        tabindex="-1"
                       >
                         <input
                           aria-label="Toggle select row"
                           class="PrivateSwitchBase-input css-1m9pwf3"
                           data-indeterminate="false"
+                          disabled=""
                           type="checkbox"
                         />
                         <svg
@@ -826,9 +829,9 @@
                         >
                           <p
                             class="MuiTypography-root MuiTypography-body2 css-ab4e19-MuiTypography-root"
-                            style="margin-left: 8px; color: rgb(16, 124, 16);"
+                            style="margin-left: 8px; color: rgb(198, 40, 40);"
                           >
-                            Active
+                            Unreachable
                           </p>
                         </div>
                       </div>
