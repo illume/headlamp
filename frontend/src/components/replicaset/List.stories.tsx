@@ -248,7 +248,7 @@ export default {
     },
   ],
   parameters: {
-    storyshots: { disable: true },
+    
   },
 } as Meta;
 
@@ -262,7 +262,7 @@ const Template: StoryFn = () => {
 
 export const ReplicaSets = Template.bind({});
 ReplicaSets.parameters = {
-  storyshots: { disable: true },
+  
   msw: {
     handlers: {
       story: [

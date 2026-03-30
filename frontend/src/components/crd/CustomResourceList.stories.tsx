@@ -32,7 +32,7 @@ export default {
   argTypes: {},
   decorators: [Story => <Story />],
   parameters: {
-    storyshots: { disable: true },
+    
     msw: {
       handlers: {
         storyBase: [
