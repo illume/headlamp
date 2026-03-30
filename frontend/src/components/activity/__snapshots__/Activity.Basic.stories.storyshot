@@ -36,19 +36,31 @@
               tabindex="0"
               title="Window"
               type="button"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </button>
             <button
               class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
               tabindex="0"
               title="Minimize"
               type="button"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </button>
             <button
               class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
               tabindex="0"
               title="Close"
               type="button"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </button>
           </div>
           <div
             class="MuiBox-root css-wqatdk"
@@ -83,19 +95,31 @@
               tabindex="0"
               title="Window"
               type="button"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </button>
             <button
               class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
               tabindex="0"
               title="Minimize"
               type="button"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </button>
             <button
               class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
               tabindex="0"
               title="Close"
               type="button"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </button>
           </div>
           <div
             class="MuiBox-root css-wqatdk"
@@ -134,7 +158,11 @@
             class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-182yqqz-MuiButtonBase-root-MuiIconButton-root"
             tabindex="0"
             type="button"
-          />
+          >
+            <span
+              data-testid="mock-icon"
+            />
+          </button>
         </div>
         <div
           class="MuiBox-root css-15k1pc3"
@@ -163,7 +191,11 @@
             class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-182yqqz-MuiButtonBase-root-MuiIconButton-root"
             tabindex="0"
             type="button"
-          />
+          >
+            <span
+              data-testid="mock-icon"
+            />
+          </button>
         </div>
         <div
           class="MuiBox-root css-a9us1r"
@@ -174,7 +206,11 @@
             data-mui-internal-clone-element="true"
             tabindex="0"
             type="button"
-          />
+          >
+            <span
+              data-testid="mock-icon"
+            />
+          </button>
         </div>
       </div>
     </div>

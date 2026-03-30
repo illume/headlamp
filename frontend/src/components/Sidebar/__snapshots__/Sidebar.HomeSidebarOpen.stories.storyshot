@@ -30,7 +30,11 @@
                   >
                     <div
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                     <div
                       class="MuiListItemText-root css-tlelie-MuiListItemText-root"
                     >
@@ -53,7 +57,11 @@
                   >
                     <div
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                     <div
                       class="MuiListItemText-root css-tlelie-MuiListItemText-root"
                     >
@@ -76,7 +84,11 @@
                   >
                     <div
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                     <div
                       class="MuiListItemText-root css-tlelie-MuiListItemText-root"
                     >
@@ -195,7 +207,11 @@
                         data-mui-internal-clone-element="true"
                         tabindex="0"
                         type="button"
-                      />
+                      >
+                        <span
+                          data-testid="mock-icon"
+                        />
+                      </button>
                     </div>
                   </div>
                 </div>

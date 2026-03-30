@@ -16,7 +16,11 @@
           >
             <span
               class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </span>
             <p
               class="MuiTypography-root MuiTypography-body1 css-1ezega9-MuiTypography-root"
               style="padding-top: 3px;"
@@ -55,7 +59,11 @@
                     data-mui-internal-clone-element="true"
                     tabindex="0"
                     type="button"
-                  />
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
                 </div>
               </div>
             </div>
@@ -80,7 +88,11 @@
                     data-mui-internal-clone-element="true"
                     tabindex="0"
                     type="button"
-                  />
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
                 </div>
                 <div
                   class="MuiGrid-root MuiGrid-item css-13i4rnv-MuiGrid-root"
@@ -91,7 +103,11 @@
                     data-mui-internal-clone-element="true"
                     tabindex="0"
                     type="button"
-                  />
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
                   <div />
                 </div>
               </div>
@@ -353,7 +369,11 @@
                           class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
                           tabindex="0"
                           type="button"
-                        />
+                        >
+                          <span
+                            data-testid="mock-icon"
+                          />
+                        </button>
                       </th>
                       <th
                         class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-d9iroo-MuiTableCell-root"
@@ -365,7 +385,11 @@
                           class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
                           tabindex="0"
                           type="button"
-                        />
+                        >
+                          <span
+                            data-testid="mock-icon"
+                          />
+                        </button>
                       </th>
                       <th
                         class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-d9iroo-MuiTableCell-root"
@@ -377,7 +401,11 @@
                           class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
                           tabindex="0"
                           type="button"
-                        />
+                        >
+                          <span
+                            data-testid="mock-icon"
+                          />
+                        </button>
                       </th>
                     </tr>
                   </thead>

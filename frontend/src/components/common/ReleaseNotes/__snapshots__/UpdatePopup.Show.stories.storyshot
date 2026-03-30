@@ -43,7 +43,11 @@
                 style="color: rgb(255, 242, 0);"
                 tabindex="0"
                 type="button"
-              />
+              >
+                <span
+                  data-testid="mock-icon"
+                />
+              </button>
             </div>
             <div
               class="MuiBox-root css-0"

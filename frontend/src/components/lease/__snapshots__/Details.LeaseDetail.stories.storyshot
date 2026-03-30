@@ -16,7 +16,11 @@
           >
             <span
               class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </span>
             <p
               class="MuiTypography-root MuiTypography-body1 css-1ezega9-MuiTypography-root"
               style="padding-top: 3px;"
@@ -55,7 +59,11 @@
                     data-mui-internal-clone-element="true"
                     tabindex="0"
                     type="button"
-                  />
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
                 </div>
               </div>
             </div>
@@ -80,7 +88,11 @@
                     data-mui-internal-clone-element="true"
                     tabindex="0"
                     type="button"
-                  />
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
                 </div>
                 <div
                   class="MuiGrid-root MuiGrid-item css-13i4rnv-MuiGrid-root"
@@ -91,7 +103,11 @@
                     data-mui-internal-clone-element="true"
                     tabindex="0"
                     type="button"
-                  />
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
                   <div />
                 </div>
               </div>
@@ -200,6 +216,9 @@
                       data-mui-internal-clone-element="true"
                     >
                       3 months
+                      <span
+                        data-testid="mock-icon"
+                      />
                     </p>
                   </dd>
                 </dl>

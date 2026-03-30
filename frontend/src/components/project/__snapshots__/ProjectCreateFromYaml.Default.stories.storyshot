@@ -265,7 +265,11 @@
                       >
                         <span
                           class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeMedium css-1d6wzja-MuiButton-startIcon"
-                        />
+                        >
+                          <span
+                            data-testid="mock-inline-icon"
+                          />
+                        </span>
                         Choose Files
                       </button>
                     </div>

@@ -87,6 +87,9 @@
                   type="text"
                   value=""
                 />
+                <span
+                  data-testid="mock-icon"
+                />
                 <fieldset
                   aria-hidden="true"
                   class="MuiOutlinedInput-notchedOutline css-1d3z3hw-MuiOutlinedInput-notchedOutline"
@@ -133,6 +136,9 @@
                   placeholder="default"
                   type="text"
                   value=""
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"

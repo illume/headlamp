@@ -7,7 +7,11 @@
     >
       <span
         class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-      />
+      >
+        <span
+          data-testid="mock-icon"
+        />
+      </span>
       <p
         class="MuiTypography-root MuiTypography-body1 css-1ezega9-MuiTypography-root"
         style="padding-top: 3px;"
@@ -162,7 +166,11 @@
                   >
                     <span
                       class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </span>
                     Change Color
                   </button>
                   <button
@@ -170,7 +178,11 @@
                     class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
                     tabindex="0"
                     type="button"
-                  />
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
                 </div>
               </div>
               <div
@@ -185,6 +197,9 @@
                 <div
                   class="MuiBox-root css-axw7ok"
                 >
+                  <span
+                    data-testid="mock-icon"
+                  />
                   <button
                     aria-labelledby="cluster-appearance-label icon-picker-button"
                     class="MuiButtonBase-root MuiButton-root MuiButton-outlined MuiButton-outlinedPrimary MuiButton-sizeSmall MuiButton-outlinedSizeSmall MuiButton-colorPrimary MuiButton-disableElevation MuiButton-root MuiButton-outlined MuiButton-outlinedPrimary MuiButton-sizeSmall MuiButton-outlinedSizeSmall MuiButton-colorPrimary MuiButton-disableElevation css-irzb5y-MuiButtonBase-root-MuiButton-root"
@@ -194,7 +209,11 @@
                   >
                     <span
                       class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </span>
                     Change Icon
                   </button>
                   <button
@@ -202,7 +221,11 @@
                     class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
                     tabindex="0"
                     type="button"
-                  />
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
                 </div>
               </div>
               <div
@@ -247,6 +270,9 @@
                   placeholder="default"
                   type="text"
                   value="my-app"
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"
@@ -308,7 +334,11 @@
                   disabled=""
                   tabindex="-1"
                   type="button"
-                />
+                >
+                  <span
+                    data-testid="mock-inline-icon"
+                  />
+                </button>
                 <fieldset
                   aria-hidden="true"
                   class="MuiOutlinedInput-notchedOutline css-1d3z3hw-MuiOutlinedInput-notchedOutline"
@@ -492,6 +522,9 @@
                   type="text"
                   value="busybox:1.28"
                 />
+                <span
+                  data-testid="mock-icon"
+                />
                 <fieldset
                   aria-hidden="true"
                   class="MuiOutlinedInput-notchedOutline css-1d3z3hw-MuiOutlinedInput-notchedOutline"
@@ -538,6 +571,9 @@
                   placeholder="default"
                   type="text"
                   value="kube-system"
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"
@@ -607,6 +643,9 @@
               >
                 Enable Pod Debug
               </span>
+              <span
+                data-testid="mock-icon"
+              />
             </p>
           </dt>
           <dd
@@ -655,6 +694,9 @@
                   placeholder="docker.io/library/busybox:latest"
                   type="text"
                   value="docker.io/library/busybox:latest"
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"

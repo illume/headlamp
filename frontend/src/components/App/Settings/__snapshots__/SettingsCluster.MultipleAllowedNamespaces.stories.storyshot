@@ -7,7 +7,11 @@
     >
       <span
         class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-      />
+      >
+        <span
+          data-testid="mock-icon"
+        />
+      </span>
       <p
         class="MuiTypography-root MuiTypography-body1 css-1ezega9-MuiTypography-root"
         style="padding-top: 3px;"
@@ -159,7 +163,11 @@
                   >
                     <span
                       class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </span>
                     Choose Color
                   </button>
                 </div>
@@ -185,7 +193,11 @@
                   >
                     <span
                       class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </span>
                     Choose Icon
                   </button>
                 </div>
@@ -232,6 +244,9 @@
                   placeholder="default"
                   type="text"
                   value="default"
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"
@@ -293,7 +308,11 @@
                   disabled=""
                   tabindex="-1"
                   type="button"
-                />
+                >
+                  <span
+                    data-testid="mock-inline-icon"
+                  />
+                </button>
                 <fieldset
                   aria-hidden="true"
                   class="MuiOutlinedInput-notchedOutline css-1d3z3hw-MuiOutlinedInput-notchedOutline"
@@ -543,6 +562,9 @@
                   type="text"
                   value=""
                 />
+                <span
+                  data-testid="mock-icon"
+                />
                 <fieldset
                   aria-hidden="true"
                   class="MuiOutlinedInput-notchedOutline css-1d3z3hw-MuiOutlinedInput-notchedOutline"
@@ -589,6 +611,9 @@
                   placeholder="default"
                   type="text"
                   value=""
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"
@@ -658,6 +683,9 @@
               >
                 Enable Pod Debug
               </span>
+              <span
+                data-testid="mock-icon"
+              />
             </p>
           </dt>
           <dd
@@ -706,6 +734,9 @@
                   placeholder="docker.io/library/busybox:latest"
                   type="text"
                   value=""
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"

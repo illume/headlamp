@@ -7,6 +7,10 @@
       class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-whz9ym-MuiButtonBase-root-MuiIconButton-root"
       tabindex="0"
       type="button"
-    />
+    >
+      <span
+        data-testid="mock-icon"
+      />
+    </button>
   </div>
 </body>

@@ -6,6 +6,9 @@
       data-mui-internal-clone-element="true"
     >
       3mo
+      <span
+        data-testid="mock-icon"
+      />
     </p>
   </div>
 </body>

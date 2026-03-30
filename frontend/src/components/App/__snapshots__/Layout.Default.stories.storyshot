@@ -42,6 +42,9 @@
                       >
                         ​
                       </span>
+                      <span
+                        data-testid="mock-icon"
+                      />
                     </div>
                     <input
                       aria-invalid="false"

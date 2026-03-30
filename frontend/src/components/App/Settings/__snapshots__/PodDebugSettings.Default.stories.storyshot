@@ -42,6 +42,9 @@
               >
                 Enable Pod Debug
               </span>
+              <span
+                data-testid="mock-icon"
+              />
             </p>
           </dt>
           <dd
@@ -90,6 +93,9 @@
                   placeholder="docker.io/library/busybox:latest"
                   type="text"
                   value=""
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"

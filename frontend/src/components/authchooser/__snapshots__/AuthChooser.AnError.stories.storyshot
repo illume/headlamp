@@ -62,7 +62,11 @@
                   class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
                   tabindex="0"
                   type="button"
-                />
+                >
+                  <span
+                    data-testid="mock-inline-icon"
+                  />
+                </button>
               </div>
             </div>
           </div>
@@ -136,7 +140,11 @@
             >
               <div
                 class="MuiBox-root css-37urdo"
-              />
+              >
+                <span
+                  data-testid="mock-inline-icon"
+                />
+              </div>
               <div
                 class="MuiBox-root css-1kuy7z7"
                 style="text-transform: uppercase;"

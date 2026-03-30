@@ -94,6 +94,9 @@
               <div
                 class="MuiStack-root css-1qxw92a-MuiStack-root"
               >
+                <span
+                  data-testid="mock-icon"
+                />
                  
                 Pods
                  
@@ -113,6 +116,9 @@
               role="button"
               tabindex="0"
             >
+              <span
+                data-testid="mock-icon"
+              />
               <span
                 class="MuiChip-label MuiChip-labelMedium css-6od3lo-MuiChip-label"
               >
@@ -249,20 +255,32 @@
                     tabindex="0"
                     title="Zoom in"
                     type="button"
-                  />
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
                   <button
                     class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButtonGroup-grouped MuiButtonGroup-groupedVertical MuiButtonGroup-groupedContained MuiButtonGroup-groupedContainedVertical MuiButtonGroup-groupedContainedPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButtonGroup-grouped MuiButtonGroup-groupedVertical MuiButtonGroup-groupedContained MuiButtonGroup-groupedContainedVertical MuiButtonGroup-groupedContainedPrimary MuiButtonGroup-lastButton css-14951ov-MuiButtonBase-root-MuiButton-root"
                     tabindex="0"
                     title="Zoom out"
                     type="button"
-                  />
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
                 </div>
                 <button
                   class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-14951ov-MuiButtonBase-root-MuiButton-root"
                   tabindex="0"
                   title="Fit to screen"
                   type="button"
-                />
+                >
+                  <span
+                    data-testid="mock-icon"
+                  />
+                </button>
                 <button
                   class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary css-14951ov-MuiButtonBase-root-MuiButton-root"
                   tabindex="0"

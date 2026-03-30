@@ -48,7 +48,11 @@
               </div>
               <div
                 class="MuiAccordionSummary-expandIconWrapper css-yw020d-MuiAccordionSummary-expandIconWrapper"
-              />
+              >
+                <span
+                  data-testid="mock-icon"
+                />
+              </div>
             </div>
             <div
               class="MuiCollapse-root MuiCollapse-vertical MuiCollapse-hidden css-bz4dnt-MuiCollapse-root"

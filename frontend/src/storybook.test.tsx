@@ -34,8 +34,10 @@ const annotations = setProjectAnnotations([previewAnnotations, { testingLibraryR
 beforeAll(annotations.beforeAll!);
 
 vi.mock('@iconify/react', () => ({
-  Icon: () => null,
-  InlineIcon: () => null,
+  Icon: React.forwardRef((props: any, ref: any) => <span ref={ref} data-testid="mock-icon" />),
+  InlineIcon: React.forwardRef((props: any, ref: any) => (
+    <span ref={ref} data-testid="mock-inline-icon" />
+  )),
   addCollection: () => {},
 }));
 
@@ -75,9 +77,9 @@ const STORYBOOK_SHARD_COUNT = 12;
 async function loadStoryFiles() {
   // Sort entries by path to ensure consistent shard distribution
   // across different systems and glob implementations.
-  const lazyStoryFiles = Object.entries(
-    import.meta.glob<StoryFile>('./**/*.stories.tsx')
-  ).sort(([a], [b]) => a.localeCompare(b));
+  const lazyStoryFiles = Object.entries(import.meta.glob<StoryFile>('./**/*.stories.tsx')).sort(
+    ([a], [b]) => a.localeCompare(b)
+  );
 
   // When running as a shard, only import this shard's subset of stories.
   // STORYBOOK_SHARD is set by vitest.config.ts workspace projects for parallel execution.

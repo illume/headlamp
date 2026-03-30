@@ -6,6 +6,10 @@
       data-mui-internal-clone-element="true"
       tabindex="0"
       type="button"
-    />
+    >
+      <span
+        data-testid="mock-icon"
+      />
+    </button>
   </div>
 </body>

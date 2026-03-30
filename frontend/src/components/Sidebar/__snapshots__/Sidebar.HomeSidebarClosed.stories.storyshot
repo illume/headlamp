@@ -33,7 +33,11 @@
                       aria-label="Home"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                   </a>
                 </li>
                 <li
@@ -50,7 +54,11 @@
                       aria-label="Notifications"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                   </a>
                 </li>
                 <li
@@ -67,7 +75,11 @@
                       aria-label="Settings"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                   </a>
                 </li>
                 <li
@@ -177,7 +189,11 @@
                         data-mui-internal-clone-element="true"
                         tabindex="0"
                         type="button"
-                      />
+                      >
+                        <span
+                          data-testid="mock-icon"
+                        />
+                      </button>
                     </div>
                   </div>
                 </div>

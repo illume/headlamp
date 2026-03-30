@@ -18,7 +18,11 @@
             >
               <div
                 class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
-              />
+              >
+                <span
+                  data-testid="mock-icon"
+                />
+              </div>
               <div
                 class="MuiListItemText-root css-tlelie-MuiListItemText-root"
               >

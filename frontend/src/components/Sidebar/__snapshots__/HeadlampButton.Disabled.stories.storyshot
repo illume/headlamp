@@ -13,6 +13,9 @@
           tabindex="-1"
           type="button"
         >
+          <span
+            data-testid="mock-icon"
+          />
           <div
             class="MuiBox-root css-19midj6"
           />

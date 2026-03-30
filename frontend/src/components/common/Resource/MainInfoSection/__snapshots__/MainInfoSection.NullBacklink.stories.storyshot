@@ -26,7 +26,11 @@
                 data-mui-internal-clone-element="true"
                 tabindex="0"
                 type="button"
-              />
+              >
+                <span
+                  data-testid="mock-icon"
+                />
+              </button>
             </div>
           </div>
         </div>
@@ -51,7 +55,11 @@
                 data-mui-internal-clone-element="true"
                 tabindex="0"
                 type="button"
-              />
+              >
+                <span
+                  data-testid="mock-icon"
+                />
+              </button>
             </div>
             <div
               class="MuiGrid-root MuiGrid-item css-13i4rnv-MuiGrid-root"
@@ -62,7 +70,11 @@
                 data-mui-internal-clone-element="true"
                 tabindex="0"
                 type="button"
-              />
+              >
+                <span
+                  data-testid="mock-icon"
+                />
+              </button>
               <div />
             </div>
           </div>

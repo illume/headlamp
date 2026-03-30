@@ -16,10 +16,10 @@
 
 import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
-import { headlampApi } from '../../../../redux/headlampApi';
 import { initialState as CONFIG_INITIAL_STATE } from '../../../../redux/configSlice';
 import { drawerModeSlice } from '../../../../redux/drawerModeSlice';
 import { initialState as FILTER_INITIAL_STATE } from '../../../../redux/filterSlice';
+import { headlampApi } from '../../../../redux/headlampApi';
 import { uiSlice } from '../../../../redux/uiSlice';
 import { TestContext } from '../../../../test';
 import { loadNotifications, Notification, storeNotifications } from '../notificationsSlice';

@@ -11,6 +11,9 @@
         <div
           class="MuiCardContent-root css-d64700-MuiCardContent-root"
         >
+          <span
+            data-testid="mock-icon"
+          />
           <p
             class="MuiTypography-root MuiTypography-body1 MuiTypography-gutterBottom css-qscjxq-MuiTypography-root"
             title="Some label"

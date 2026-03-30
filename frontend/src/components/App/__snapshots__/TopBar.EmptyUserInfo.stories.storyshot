@@ -65,7 +65,11 @@
           class="MuiButtonBase-root MuiIconButton-root MuiIconButton-colorInherit MuiIconButton-sizeMedium css-1jcv3fz-MuiButtonBase-root-MuiIconButton-root"
           tabindex="0"
           type="button"
-        />
+        >
+          <span
+            data-testid="mock-icon"
+          />
+        </button>
       </div>
     </nav>
   </div>

@@ -22,7 +22,11 @@
               >
                 <div
                   class="MuiListItemIcon-root css-cveggr-MuiListItemIcon-root"
-                />
+                >
+                  <span
+                    data-testid="mock-icon"
+                  />
+                </div>
                 <div
                   class="MuiListItemText-root MuiListItemText-dense MuiListItemText-multiline css-konndc-MuiListItemText-root"
                 >
@@ -48,6 +52,9 @@
                     >
                       6
                     </h6>
+                    <span
+                      data-testid="mock-icon"
+                    />
                   </div>
                 </div>
               </div>

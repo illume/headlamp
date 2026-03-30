@@ -16,10 +16,10 @@
 
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import React, { useEffect } from 'react';
-import { headlampApi } from '../../../redux/headlampApi';
 import { getCluster } from '../../../lib/cluster';
 import { KubeObject } from '../../../lib/k8s/KubeObject';
 import { KubeObjectClass } from '../../../lib/k8s/KubeObject';
+import { headlampApi } from '../../../redux/headlampApi';
 
 /** List of valid request verbs. See https://kubernetes.io/docs/reference/access-authn-authz/authorization/#determine-the-request-verb. */
 const VALID_AUTH_VERBS = [

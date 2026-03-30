@@ -19,7 +19,11 @@
             </p>
             <div
               class="MuiContainer-root MuiContainer-maxWidthLg css-64uahr-MuiContainer-root"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </div>
           </div>
           <p
             class="MuiTypography-root MuiTypography-body1 MuiTypography-gutterBottom css-7142su-MuiTypography-root"

@@ -5,6 +5,9 @@
       data-mui-internal-clone-element="true"
     >
       Some label
+      <span
+        data-testid="mock-icon"
+      />
     </p>
   </div>
 </body>

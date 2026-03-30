@@ -19,7 +19,11 @@
             class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-z81te2-MuiButtonBase-root-MuiIconButton-root"
             tabindex="0"
             type="button"
-          />
+          >
+            <span
+              data-testid="mock-icon"
+            />
+          </button>
         </span>
       </div>
     </div>

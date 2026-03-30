@@ -115,7 +115,11 @@
                   class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
                   tabindex="0"
                   type="button"
-                />
+                >
+                  <span
+                    data-testid="mock-inline-icon"
+                  />
+                </button>
               </div>
             </div>
           </div>
@@ -170,6 +174,9 @@
                       <div
                         class="MuiCardContent-root css-d64700-MuiCardContent-root"
                       >
+                        <span
+                          data-testid="mock-icon"
+                        />
                         <p
                           class="MuiTypography-root MuiTypography-body1 MuiTypography-gutterBottom css-18vfeyy-MuiTypography-root"
                           title="only-cluster"
@@ -194,6 +201,9 @@
                       <div
                         class="MuiCardContent-root css-d64700-MuiCardContent-root"
                       >
+                        <span
+                          data-testid="mock-icon"
+                        />
                         <p
                           class="MuiTypography-root MuiTypography-body1 MuiTypography-gutterBottom css-18vfeyy-MuiTypography-root"
                           title="only-cluster"

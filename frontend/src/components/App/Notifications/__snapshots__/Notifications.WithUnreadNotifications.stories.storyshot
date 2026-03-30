@@ -12,6 +12,9 @@
         class="MuiBadge-root css-1c32n2y-MuiBadge-root"
       >
         <span
+          data-testid="mock-icon"
+        />
+        <span
           class="MuiBadge-badge MuiBadge-dot MuiBadge-anchorOriginTopRight MuiBadge-anchorOriginTopRightRectangular MuiBadge-overlapRectangular MuiBadge-colorError css-jco5a1-MuiBadge-badge"
         />
       </span>

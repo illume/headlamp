@@ -33,7 +33,11 @@
                       aria-label="Home"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                   </a>
                 </li>
                 <li
@@ -50,7 +54,11 @@
                       aria-label="Cluster"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                   </a>
                 </li>
                 <li
@@ -148,7 +156,11 @@
                       aria-label="Map"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                   </a>
                 </li>
                 <li
@@ -165,7 +177,11 @@
                       aria-label="Workloads"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                   </a>
                 </li>
                 <li
@@ -343,7 +359,11 @@
                       aria-label="Storage"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                   </a>
                 </li>
                 <li
@@ -441,7 +461,11 @@
                       aria-label="Network"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                   </a>
                 </li>
                 <li
@@ -599,7 +623,11 @@
                       aria-label="Gateway (beta)"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                   </a>
                 </li>
                 <li
@@ -777,7 +805,11 @@
                       aria-label="Security"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                   </a>
                 </li>
                 <li
@@ -875,7 +907,11 @@
                       aria-label="Configuration"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                   </a>
                 </li>
                 <li
@@ -1153,7 +1189,11 @@
                       aria-label="Custom Resources"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                   </a>
                 </li>
                 <li
@@ -1214,7 +1254,11 @@
                     data-mui-internal-clone-element="true"
                     tabindex="0"
                     type="button"
-                  />
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
                   <div
                     class="MuiBox-root css-1h413jj"
                   >
@@ -1233,7 +1277,11 @@
                           data-mui-internal-clone-element="true"
                           tabindex="0"
                           type="button"
-                        />
+                        >
+                          <span
+                            data-testid="mock-icon"
+                          />
+                        </button>
                       </div>
                     </div>
                   </div>
