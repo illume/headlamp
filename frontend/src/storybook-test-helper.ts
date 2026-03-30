@@ -195,7 +195,7 @@ export function runStorybookTests(
             if (waitForText) {
               await waitFor(
                 () => {
-                  expect(screen.getAllByText(waitForText).length).toBeGreaterThan(0);
+                  screen.getAllByText(waitForText);
                 },
                 { timeout: 2000, interval: 10 }
               );
