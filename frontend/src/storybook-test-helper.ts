@@ -208,7 +208,23 @@ export function runStorybookTests(
   }>
 ) {
   describe('Storybook Tests', () => {
+    // Suppress React act() warnings that fire from RTK Query cache updates,
+    // MUI transitions, and other async effects during test teardown. These are
+    // well-known false positives in React 18 testing — the state updates happen
+    // outside our control (e.g., during React Testing Library's automatic
+    // cleanup) and don't affect snapshot correctness.
+    let originalConsoleError: typeof console.error;
+    beforeEach(() => {
+      originalConsoleError = console.error;
+      console.error = (...args: unknown[]) => {
+        if (typeof args[0] === 'string' && args[0].includes('not wrapped in act(')) {
+          return;
+        }
+        originalConsoleError(...args);
+      };
+    });
     afterEach(() => {
+      console.error = originalConsoleError;
       vi.restoreAllMocks();
     });
 
@@ -316,6 +332,10 @@ export function runStorybookTests(
                 if (explicitWaitForText) throw e;
               }
             }
+
+            // Flush remaining React state updates from RTK Query responses
+            // and other async effects to suppress act() warnings.
+            await act(async () => {});
 
             // Fail on unhandled MSW requests — all API calls should have handlers.
             expect(
