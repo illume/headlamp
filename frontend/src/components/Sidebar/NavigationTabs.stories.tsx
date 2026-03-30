@@ -16,11 +16,11 @@
 
 import { configureStore, createSlice } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import React from 'react';
 import { Provider } from 'react-redux';
 import { BrowserRouter, Route } from 'react-router-dom';
+import { headlampApi } from '../../lib/api/headlampApi';
 import { initialState as configInitialState } from '../../redux/configSlice';
 import { TestContext } from '../../test';
 import NavigationTabs from './NavigationTabs';
@@ -118,6 +118,8 @@ const createMockStoryStore = (sidebarConfig: Partial<SidebarState>) => {
   };
 
   return configureStore({
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: {
       sidebar: createSlice({ name: 'sidebar', initialState: fullSidebarState, reducers: {} })
         .reducer,
@@ -126,6 +128,7 @@ const createMockStoryStore = (sidebarConfig: Partial<SidebarState>) => {
       routes: (state = { routes: {}, routeFilters: [] }) => state,
       ui: (state = { functionsToOverride: {} }) => state,
       projects: (state = { projects: {} }) => state,
+      [headlampApi.reducerPath]: headlampApi.reducer,
     },
   });
 };
@@ -136,18 +139,15 @@ export default {
   decorators: [
     (Story, context: { args: { mockSidebarState?: Partial<SidebarState> } }) => {
       const store = createMockStoryStore(context.args.mockSidebarState || {});
-      const queryClient = new QueryClient();
       return (
         <Provider store={store}>
           <BrowserRouter>
             <TestContext store={store}>
-              <QueryClientProvider client={queryClient}>
-                <Route path="/">
-                  <div style={{ padding: '20px', backgroundColor: '#f5f5f5' }}>
-                    <Story />
-                  </div>
-                </Route>
-              </QueryClientProvider>
+              <Route path="/">
+                <div style={{ padding: '20px', backgroundColor: '#f5f5f5' }}>
+                  <Story />
+                </div>
+              </Route>
             </TestContext>
           </BrowserRouter>
         </Provider>

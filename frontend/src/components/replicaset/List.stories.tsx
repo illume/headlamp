@@ -247,6 +247,9 @@ export default {
       );
     },
   ],
+  parameters: {
+    
+  },
 } as Meta;
 
 const Template: StoryFn = () => {
@@ -259,6 +262,7 @@ const Template: StoryFn = () => {
 
 export const ReplicaSets = Template.bind({});
 ReplicaSets.parameters = {
+  
   msw: {
     handlers: {
       story: [

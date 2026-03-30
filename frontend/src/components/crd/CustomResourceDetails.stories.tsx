@@ -25,6 +25,7 @@ export default {
   component: CustomResourceDetails,
   argTypes: {},
   parameters: {
+    storyshots: { disable: true },
     msw: {
       handlers: {
         storyBase: [

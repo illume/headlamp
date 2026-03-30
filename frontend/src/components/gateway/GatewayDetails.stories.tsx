@@ -18,7 +18,7 @@ import { Meta, StoryFn } from '@storybook/react';
 import { http, HttpResponse } from 'msw';
 import { TestContext } from '../../test';
 import GatewayDetails from './GatewayDetails';
-import { DEFAULT_GATEWAY } from './storyHelper';
+import { DEFAULT_GATEWAY, DEFAULT_GATEWAY_CLASS } from './storyHelper';
 
 export default {
   title: 'Gateway/DetailsView',
@@ -34,6 +34,7 @@ export default {
     },
   ],
   parameters: {
+    
     msw: {
       handlers: {
         story: [],
@@ -43,6 +44,10 @@ export default {
           ),
           http.get('http://localhost:4466/apis/gateway.networking.k8s.io/v1beta1/gateways', () =>
             HttpResponse.error()
+          ),
+          http.get(
+            'http://localhost:4466/apis/gateway.networking.k8s.io/v1/gatewayclasses/default-gateway-class',
+            () => HttpResponse.json(DEFAULT_GATEWAY_CLASS)
           ),
           http.get('http://localhost:4466/api/v1/namespaces/default/events', () =>
             HttpResponse.json({

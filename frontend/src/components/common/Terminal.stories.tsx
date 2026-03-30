@@ -162,6 +162,7 @@ export default {
   ],
   parameters: {
     layout: 'fullscreen',
+    storyshots: { disable: true },
   },
 } as Meta<typeof Terminal>;
 

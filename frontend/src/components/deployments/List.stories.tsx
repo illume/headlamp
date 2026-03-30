@@ -208,6 +208,10 @@ Deployments.parameters = {
             metadata: {},
           })
         ),
+        http.get(
+          'http://localhost:4466/apis/apiextensions.k8s.io/v1/customresourcedefinitions/mydefinition.phonyresources.io',
+          () => HttpResponse.json({})
+        ),
       ],
     },
   },
