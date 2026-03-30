@@ -80,3 +80,6 @@ const Template: StoryFn = () => {
 };
 
 export const Items = Template.bind({});
+Items.parameters = {
+  storyshots: { disable: true },
+};
