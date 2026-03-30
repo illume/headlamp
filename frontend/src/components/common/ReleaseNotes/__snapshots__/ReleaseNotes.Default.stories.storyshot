@@ -34,9 +34,6 @@
                 type="button"
               >
                 Read more
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
               </button>
             </div>
             <div
@@ -48,11 +45,7 @@
                 style="color: rgb(255, 242, 0);"
                 tabindex="0"
                 type="button"
-              >
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
-              </button>
+              />
             </div>
             <div
               class="MuiBox-root css-0"
@@ -64,9 +57,6 @@
                 type="button"
               >
                 Dismiss
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
               </button>
             </div>
           </div>
@@ -127,11 +117,7 @@
                   class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-whz9ym-MuiButtonBase-root-MuiIconButton-root"
                   tabindex="0"
                   type="button"
-                >
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
-                </button>
+                />
               </div>
             </div>
           </div>

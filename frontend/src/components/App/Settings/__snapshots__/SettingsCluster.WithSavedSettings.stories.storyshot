@@ -14,9 +14,6 @@
       >
         Back
       </p>
-      <span
-        class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-      />
     </button>
     <div
       class="MuiBox-root css-j1fy4m"
@@ -167,20 +164,13 @@
                       class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
                     />
                     Change Color
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </button>
                   <button
                     aria-label="Clear accent color"
                     class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
                     tabindex="0"
                     type="button"
-                  >
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
-                  </button>
+                  />
                 </div>
               </div>
               <div
@@ -206,20 +196,13 @@
                       class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
                     />
                     Change Icon
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </button>
                   <button
                     aria-label="Clear cluster icon"
                     class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
                     tabindex="0"
                     type="button"
-                  >
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
-                  </button>
+                  />
                 </div>
               </div>
               <div
@@ -231,9 +214,6 @@
                   type="button"
                 >
                   Apply
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
                 </button>
                 <div />
               </div>
@@ -482,9 +462,6 @@
                 <span
                   class="MuiSwitch-thumb css-jsexje-MuiSwitch-thumb"
                 />
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
               </span>
               <span
                 class="MuiSwitch-track css-1yjjitx-MuiSwitch-track"
@@ -649,9 +626,6 @@
                 />
                 <span
                   class="MuiSwitch-thumb css-jsexje-MuiSwitch-thumb"
-                />
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
                 />
               </span>
               <span

@@ -34,9 +34,6 @@
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
                     />
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </a>
                 </li>
                 <li
@@ -53,9 +50,6 @@
                       aria-label="Cluster"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
                     />
                   </a>
                 </li>
@@ -93,9 +87,6 @@
                                   Namespaces
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -116,9 +107,6 @@
                                   Nodes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -139,9 +127,6 @@
                                   Advanced Search (Beta)
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -164,9 +149,6 @@
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
                     />
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </a>
                 </li>
                 <li
@@ -183,9 +165,6 @@
                       aria-label="Workloads"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
                     />
                   </a>
                 </li>
@@ -223,9 +202,6 @@
                                   Pods
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -246,9 +222,6 @@
                                   Deployments
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -269,9 +242,6 @@
                                   Stateful Sets
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -292,9 +262,6 @@
                                   Daemon Sets
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -315,9 +282,6 @@
                                   Replica Sets
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -338,9 +302,6 @@
                                   Jobs
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -361,9 +322,6 @@
                                   CronJobs
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -385,9 +343,6 @@
                       aria-label="Storage"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
                     />
                   </a>
                 </li>
@@ -425,9 +380,6 @@
                                   Persistent Volume Claims
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -448,9 +400,6 @@
                                   Persistent Volumes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -471,9 +420,6 @@
                                   Storage Classes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -495,9 +441,6 @@
                       aria-label="Network"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
                     />
                   </a>
                 </li>
@@ -535,9 +478,6 @@
                                   Services
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -558,9 +498,6 @@
                                   Endpoints
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -581,9 +518,6 @@
                                   Endpoint Slices
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -604,9 +538,6 @@
                                   Ingresses
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -627,9 +558,6 @@
                                   Ingress Classes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -650,9 +578,6 @@
                                   Network Policies
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -674,9 +599,6 @@
                       aria-label="Gateway (beta)"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
                     />
                   </a>
                 </li>
@@ -714,9 +636,6 @@
                                   Gateways
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -737,9 +656,6 @@
                                   Gateway Classes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -760,9 +676,6 @@
                                   HTTP Routes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -783,9 +696,6 @@
                                   GRPC Routes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -806,9 +716,6 @@
                                   Reference Grants
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -829,9 +736,6 @@
                                   BackendTLSPolicies
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -852,9 +756,6 @@
                                   BackendTrafficPolicies
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -876,9 +777,6 @@
                       aria-label="Security"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
                     />
                   </a>
                 </li>
@@ -916,9 +814,6 @@
                                   Service Accounts
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -939,9 +834,6 @@
                                   Roles
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -962,9 +854,6 @@
                                   Role Bindings
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -986,9 +875,6 @@
                       aria-label="Configuration"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
                     />
                   </a>
                 </li>
@@ -1026,9 +912,6 @@
                                   Config Maps
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1049,9 +932,6 @@
                                   Secrets
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1072,9 +952,6 @@
                                   HPAs
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1095,9 +972,6 @@
                                   VPAs
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1118,9 +992,6 @@
                                   Pod Disruption Budgets
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1141,9 +1012,6 @@
                                   Resource Quotas
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1164,9 +1032,6 @@
                                   Limit Ranges
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1187,9 +1052,6 @@
                                   Priority Classes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1210,9 +1072,6 @@
                                   Runtime Classes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1233,9 +1092,6 @@
                                   Leases
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1256,9 +1112,6 @@
                                   Mutating Webhook Configurations
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1279,9 +1132,6 @@
                                   Validating Webhook Configurations
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -1303,9 +1153,6 @@
                       aria-label="Custom Resources"
                       class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
                       data-mui-internal-clone-element="true"
-                    />
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
                     />
                   </a>
                 </li>
@@ -1343,9 +1190,6 @@
                                   Instances
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -1370,11 +1214,7 @@
                     data-mui-internal-clone-element="true"
                     tabindex="0"
                     type="button"
-                  >
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
-                  </button>
+                  />
                   <div
                     class="MuiBox-root css-1h413jj"
                   >
@@ -1393,11 +1233,7 @@
                           data-mui-internal-clone-element="true"
                           tabindex="0"
                           type="button"
-                        >
-                          <span
-                            class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                          />
-                        </button>
+                        />
                       </div>
                     </div>
                   </div>

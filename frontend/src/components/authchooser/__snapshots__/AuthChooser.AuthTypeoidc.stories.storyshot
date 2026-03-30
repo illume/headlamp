@@ -62,11 +62,7 @@
                   class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
                   tabindex="0"
                   type="button"
-                >
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
-                </button>
+                />
               </div>
             </div>
           </div>
@@ -111,9 +107,6 @@
                   type="button"
                 >
                   Sign In
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
                 </button>
               </div>
               <div
@@ -125,9 +118,6 @@
                   type="button"
                 >
                   Use A Token
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
                 </button>
               </div>
               <div

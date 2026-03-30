@@ -29,11 +29,7 @@
                   data-mui-internal-clone-element="true"
                   tabindex="0"
                   type="button"
-                >
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
-                </button>
+                />
               </div>
             </div>
           </div>
@@ -102,9 +98,6 @@
                                 d="M7 10l5 5 5-5z"
                               />
                             </svg>
-                            <span
-                              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                            />
                           </button>
                         </div>
                         <fieldset

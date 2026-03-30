@@ -28,9 +28,6 @@
                 Cluster
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </a>
         </li>
         <li
@@ -67,9 +64,6 @@
                           Namespaces
                         </span>
                       </div>
-                      <span
-                        class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                      />
                     </a>
                   </li>
                 </ul>

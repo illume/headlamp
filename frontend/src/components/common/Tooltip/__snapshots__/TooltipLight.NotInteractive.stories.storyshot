@@ -6,10 +6,6 @@
       data-mui-internal-clone-element="true"
       tabindex="0"
       type="button"
-    >
-      <span
-        class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-      />
-    </button>
+    />
   </div>
 </body>

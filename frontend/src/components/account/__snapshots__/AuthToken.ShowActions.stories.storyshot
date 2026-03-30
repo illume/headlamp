@@ -66,11 +66,7 @@
                   class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
                   tabindex="0"
                   type="button"
-                >
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
-                </button>
+                />
               </div>
             </div>
           </div>
@@ -187,9 +183,6 @@
               type="button"
             >
               Cancel
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
             </button>
             <div
               style="flex: 1 0 0px;"
@@ -200,9 +193,6 @@
               type="button"
             >
               Authenticate
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
             </button>
           </div>
         </div>

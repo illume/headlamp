@@ -32,11 +32,7 @@
               class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-qsifm6-MuiButtonBase-root-MuiIconButton-root"
               tabindex="0"
               type="button"
-            >
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
-            </button>
+            />
           </div>
         </div>
       </div>
@@ -55,9 +51,6 @@
               type="button"
             >
               Configure
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
             </button>
           </div>
         </div>

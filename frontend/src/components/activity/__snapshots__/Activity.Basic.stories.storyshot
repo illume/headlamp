@@ -36,31 +36,19 @@
               tabindex="0"
               title="Window"
               type="button"
-            >
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
-            </button>
+            />
             <button
               class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
               tabindex="0"
               title="Minimize"
               type="button"
-            >
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
-            </button>
+            />
             <button
               class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
               tabindex="0"
               title="Close"
               type="button"
-            >
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
-            </button>
+            />
           </div>
           <div
             class="MuiBox-root css-wqatdk"
@@ -95,31 +83,19 @@
               tabindex="0"
               title="Window"
               type="button"
-            >
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
-            </button>
+            />
             <button
               class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
               tabindex="0"
               title="Minimize"
               type="button"
-            >
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
-            </button>
+            />
             <button
               class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-hvz71z-MuiButtonBase-root-MuiIconButton-root"
               tabindex="0"
               title="Close"
               type="button"
-            >
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
-            </button>
+            />
           </div>
           <div
             class="MuiBox-root css-wqatdk"
@@ -152,20 +128,13 @@
                 Something
               </div>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </button>
           <button
             aria-label="Close"
             class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-182yqqz-MuiButtonBase-root-MuiIconButton-root"
             tabindex="0"
             type="button"
-          >
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
-          </button>
+          />
         </div>
         <div
           class="MuiBox-root css-15k1pc3"
@@ -188,20 +157,13 @@
                 Something
               </div>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </button>
           <button
             aria-label="Close"
             class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-182yqqz-MuiButtonBase-root-MuiIconButton-root"
             tabindex="0"
             type="button"
-          >
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
-          </button>
+          />
         </div>
         <div
           class="MuiBox-root css-a9us1r"
@@ -212,11 +174,7 @@
             data-mui-internal-clone-element="true"
             tabindex="0"
             type="button"
-          >
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
-          </button>
+          />
         </div>
       </div>
     </div>

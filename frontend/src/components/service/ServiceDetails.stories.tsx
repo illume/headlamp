@@ -170,7 +170,7 @@ export default {
     ),
   ],
   parameters: {
-    storyshots: { disable: true },
+    
   },
 } as Meta<typeof Details>;
 

@@ -158,11 +158,23 @@ const options = {
 };
 
 /**
- * Recursively walks the tree and replaces any usage of useId
+ * Recursively walks the tree, normalizes non-deterministic attributes,
+ * and removes elements that render inconsistently between runs.
  */
 export function replaceUseId(node: any) {
   const attributesToReplace = ['id', 'for', 'aria-describedby', 'aria-labelledby', 'aria-controls'];
   if (node.nodeType === Node.ELEMENT_NODE) {
+    // Remove MuiTouchRipple elements — they appear non-deterministically
+    // depending on React rendering timing, causing snapshot instability.
+    if (
+      node.className &&
+      typeof node.className === 'string' &&
+      node.className.includes('MuiTouchRipple-root')
+    ) {
+      node.remove();
+      return;
+    }
+
     for (const attr of node.attributes) {
       if (attributesToReplace.includes(attr.name)) {
         if (attr.value.includes(':')) {
@@ -192,9 +204,9 @@ export function replaceUseId(node: any) {
     }
   }
 
-  // Recursively update child nodes
-  for (const child of node.childNodes) {
-    replaceUseId(child);
+  // Recursively update child nodes (iterate backwards since we may remove nodes)
+  for (let i = node.childNodes.length - 1; i >= 0; i--) {
+    replaceUseId(node.childNodes[i]);
   }
 }
 

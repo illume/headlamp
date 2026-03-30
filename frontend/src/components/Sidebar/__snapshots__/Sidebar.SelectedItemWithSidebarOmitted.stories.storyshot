@@ -40,9 +40,6 @@
                         Home
                       </span>
                     </div>
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </a>
                 </li>
                 <li
@@ -66,9 +63,6 @@
                         Cluster
                       </span>
                     </div>
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </a>
                 </li>
                 <li
@@ -105,9 +99,6 @@
                                   Namespaces
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -128,9 +119,6 @@
                                   Nodes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -151,9 +139,6 @@
                                   Advanced Search (Beta)
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -182,9 +167,6 @@
                         Map
                       </span>
                     </div>
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </a>
                 </li>
                 <li
@@ -208,9 +190,6 @@
                         Workloads
                       </span>
                     </div>
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </a>
                 </li>
                 <li
@@ -247,9 +226,6 @@
                                   Pods
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -270,9 +246,6 @@
                                   Deployments
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -293,9 +266,6 @@
                                   Stateful Sets
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -316,9 +286,6 @@
                                   Daemon Sets
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -339,9 +306,6 @@
                                   Replica Sets
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -362,9 +326,6 @@
                                   Jobs
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -385,9 +346,6 @@
                                   CronJobs
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -416,9 +374,6 @@
                         Storage
                       </span>
                     </div>
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </a>
                 </li>
                 <li
@@ -455,9 +410,6 @@
                                   Persistent Volume Claims
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -478,9 +430,6 @@
                                   Persistent Volumes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -501,9 +450,6 @@
                                   Storage Classes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -532,9 +478,6 @@
                         Network
                       </span>
                     </div>
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </a>
                 </li>
                 <li
@@ -571,9 +514,6 @@
                                   Services
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -594,9 +534,6 @@
                                   Endpoints
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -617,9 +554,6 @@
                                   Endpoint Slices
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -640,9 +574,6 @@
                                   Ingresses
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -663,9 +594,6 @@
                                   Ingress Classes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -686,9 +614,6 @@
                                   Network Policies
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -717,9 +642,6 @@
                         Gateway (beta)
                       </span>
                     </div>
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </a>
                 </li>
                 <li
@@ -756,9 +678,6 @@
                                   Gateways
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -779,9 +698,6 @@
                                   Gateway Classes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -802,9 +718,6 @@
                                   HTTP Routes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -825,9 +738,6 @@
                                   GRPC Routes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -848,9 +758,6 @@
                                   Reference Grants
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -871,9 +778,6 @@
                                   BackendTLSPolicies
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -894,9 +798,6 @@
                                   BackendTrafficPolicies
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -925,9 +826,6 @@
                         Security
                       </span>
                     </div>
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </a>
                 </li>
                 <li
@@ -964,9 +862,6 @@
                                   Service Accounts
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -987,9 +882,6 @@
                                   Roles
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1010,9 +902,6 @@
                                   Role Bindings
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -1041,9 +930,6 @@
                         Configuration
                       </span>
                     </div>
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </a>
                 </li>
                 <li
@@ -1080,9 +966,6 @@
                                   Config Maps
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1103,9 +986,6 @@
                                   Secrets
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1126,9 +1006,6 @@
                                   HPAs
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1149,9 +1026,6 @@
                                   VPAs
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1172,9 +1046,6 @@
                                   Pod Disruption Budgets
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1195,9 +1066,6 @@
                                   Resource Quotas
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1218,9 +1086,6 @@
                                   Limit Ranges
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1241,9 +1106,6 @@
                                   Priority Classes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1264,9 +1126,6 @@
                                   Runtime Classes
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1287,9 +1146,6 @@
                                   Leases
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1310,9 +1166,6 @@
                                   Mutating Webhook Configurations
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -1333,9 +1186,6 @@
                                   Validating Webhook Configurations
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -1364,9 +1214,6 @@
                         Custom Resources
                       </span>
                     </div>
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </a>
                 </li>
                 <li
@@ -1403,9 +1250,6 @@
                                   Instances
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -1433,9 +1277,6 @@
                       class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeLarge css-htszrh-MuiButton-startIcon"
                     />
                     Create
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </button>
                   <div
                     class="MuiBox-root css-phsv6y"
@@ -1455,11 +1296,7 @@
                           data-mui-internal-clone-element="true"
                           tabindex="0"
                           type="button"
-                        >
-                          <span
-                            class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                          />
-                        </button>
+                        />
                       </div>
                     </div>
                   </div>

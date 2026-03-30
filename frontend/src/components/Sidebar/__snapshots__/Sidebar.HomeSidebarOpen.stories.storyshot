@@ -40,9 +40,6 @@
                         Home
                       </span>
                     </div>
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </a>
                 </li>
                 <li
@@ -66,9 +63,6 @@
                         Notifications
                       </span>
                     </div>
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </a>
                 </li>
                 <li
@@ -92,9 +86,6 @@
                         Settings
                       </span>
                     </div>
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </a>
                 </li>
                 <li
@@ -131,9 +122,6 @@
                                   General
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -154,9 +142,6 @@
                                   Plugins
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                           <li
@@ -177,9 +162,6 @@
                                   Cluster
                                 </span>
                               </div>
-                              <span
-                                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                              />
                             </a>
                           </li>
                         </ul>
@@ -213,11 +195,7 @@
                         data-mui-internal-clone-element="true"
                         tabindex="0"
                         type="button"
-                      >
-                        <span
-                          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                        />
-                      </button>
+                      />
                     </div>
                   </div>
                 </div>
