@@ -317,3 +317,6 @@ FormattingLogs.args = {
   formatJsonValues: true,
   logType: 'formatting',
 };
+FormattingLogs.parameters = {
+  storyshots: { disable: true },
+};
