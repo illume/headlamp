@@ -54,7 +54,10 @@ const Template: StoryFn<AppLogoProps> = args => {
   const store = configureStore({
     middleware: getDefaultMiddleware =>
       getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
-    reducer: (state = getMockState(themeName)) => state,
+    reducer: (state = getMockState(themeName), action: any) => ({
+      ...state,
+      [headlampApi.reducerPath]: headlampApi.reducer(state[headlampApi.reducerPath], action),
+    }),
     preloadedState: getMockState(themeName),
   });
 

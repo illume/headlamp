@@ -62,8 +62,12 @@ const TemplateWithFilter: StoryFn<{
         ui: { ...uiSlice.getInitialState() },
         drawerMode: { isDetailDrawerEnabled: false },
         shortcuts: { ...shortcutsReducer(undefined, { type: '' }) },
-      }
-    ) => state,
+      },
+      action: any
+    ) => ({
+      ...state,
+      [headlampApi.reducerPath]: headlampApi.reducer(state[headlampApi.reducerPath], action),
+    }),
     preloadedState: {
       ui: { ...uiSlice.getInitialState() },
       filter: {

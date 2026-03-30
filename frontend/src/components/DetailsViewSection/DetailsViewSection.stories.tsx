@@ -43,7 +43,13 @@ export default {
             store={configureStore({
               middleware: getDefaultMiddleware =>
                 getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
-              reducer: (state = ourState) => state,
+              reducer: (state = ourState, action: any) => ({
+                ...state,
+                [headlampApi.reducerPath]: headlampApi.reducer(
+                  state[headlampApi.reducerPath],
+                  action
+                ),
+              }),
               preloadedState: ourState,
             })}
           >

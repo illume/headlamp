@@ -262,8 +262,12 @@ const TemplateWithFilter: StoryFn<{
       state = {
         filter: { namespaces: new Set<string>() },
         config: { settings: { tableRowsPerPageOptions: [10, 20, 50, 100] } },
-      }
-    ) => state,
+      },
+      action: any
+    ) => ({
+      ...state,
+      [headlampApi.reducerPath]: headlampApi.reducer(state[headlampApi.reducerPath], action),
+    }),
     preloadedState: {
       filter: {
         namespaces: new Set(namespaces),

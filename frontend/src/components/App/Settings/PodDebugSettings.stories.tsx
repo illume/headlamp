@@ -62,7 +62,10 @@ const Template: StoryFn<typeof PodDebugSettings> = args => {
   const store = configureStore({
     middleware: getDefaultMiddleware =>
       getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
-    reducer: (state = getMockState()) => state,
+    reducer: (state = getMockState(), action: any) => ({
+      ...state,
+      [headlampApi.reducerPath]: headlampApi.reducer(state[headlampApi.reducerPath], action),
+    }),
     preloadedState: getMockState(),
   });
 
