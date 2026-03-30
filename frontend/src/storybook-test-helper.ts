@@ -270,6 +270,10 @@ export function runStorybookTests(
             const unhandledRequests: Array<string> = [];
 
             function onUnhandledRequest(e: { request: Request }) {
+              // Skip watch requests — they are long-lived streaming connections
+              // that may leak across test boundaries from previous stories.
+              const url = new URL(e.request.url, 'http://localhost');
+              if (url.searchParams.get('watch') === '1') return;
               unhandledRequests.push(e.request.url);
             }
             worker.events.on('request:unhandled', onUnhandledRequest);
