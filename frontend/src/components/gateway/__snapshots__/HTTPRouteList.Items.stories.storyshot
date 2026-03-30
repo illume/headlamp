@@ -15,46 +15,18 @@
             <h1
               class="MuiTypography-root MuiTypography-h1 MuiTypography-noWrap css-yeaech-MuiTypography-root"
             >
-              Secrets
+              HttpRoutes
             </h1>
             <div
               class="MuiBox-root css-ldp2l3"
             >
               <button
-                aria-label="Create Secret"
+                aria-label="Create HTTPRoute"
                 class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-whz9ym-MuiButtonBase-root-MuiIconButton-root"
                 data-mui-internal-clone-element="true"
                 tabindex="0"
                 type="button"
               />
-              <label
-                class="MuiFormControlLabel-root MuiFormControlLabel-labelPlacementEnd css-b28cjl-MuiFormControlLabel-root"
-              >
-                <span
-                  class="MuiSwitch-root MuiSwitch-sizeMedium css-julti5-MuiSwitch-root"
-                >
-                  <span
-                    class="MuiButtonBase-root MuiSwitch-switchBase MuiSwitch-colorPrimary Mui-checked PrivateSwitchBase-root MuiSwitch-switchBase MuiSwitch-colorPrimary Mui-checked Mui-checked css-1emuodk-MuiButtonBase-root-MuiSwitch-switchBase"
-                  >
-                    <input
-                      checked=""
-                      class="PrivateSwitchBase-input MuiSwitch-input css-1m9pwf3"
-                      type="checkbox"
-                    />
-                    <span
-                      class="MuiSwitch-thumb css-jsexje-MuiSwitch-thumb"
-                    />
-                  </span>
-                  <span
-                    class="MuiSwitch-track css-1yjjitx-MuiSwitch-track"
-                  />
-                </span>
-                <span
-                  class="MuiTypography-root MuiTypography-body1 MuiFormControlLabel-label css-1ezega9-MuiTypography-root"
-                >
-                  Hide Helm Secrets
-                </span>
-              </label>
             </div>
           </div>
         </div>
@@ -264,7 +236,7 @@
           </div>
         </div>
         <table
-          class="MuiTable-root css-1tyiahi-MuiTable-root"
+          class="MuiTable-root css-1cl9dip-MuiTable-root"
         >
           <thead
             class="MuiTableHead-root css-1tmrira-MuiTableHead-root"
@@ -430,7 +402,7 @@
               </th>
               <th
                 aria-sort="none"
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-alignLeft MuiTableCell-sizeMedium css-r91bqi-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1eg4gnf-MuiTableCell-root"
                 colspan="1"
                 data-can-sort="true"
                 data-index="-1"
@@ -445,15 +417,15 @@
                     <div
                       class="Mui-TableHeadCell-Content-Wrapper MuiBox-root css-lapokc"
                     >
-                      Type
+                      Hostnames
                     </div>
                     <span
-                      aria-label="Sort by Type ascending"
+                      aria-label="Sort by Hostnames ascending"
                       class="MuiBadge-root css-1c32n2y-MuiBadge-root"
                       data-mui-internal-clone-element="true"
                     >
                       <span
-                        aria-label="Sort by Type ascending"
+                        aria-label="Sort by Hostnames ascending"
                         class="MuiButtonBase-root MuiTableSortLabel-root Mui-active css-542clt-MuiButtonBase-root-MuiTableSortLabel-root"
                         role="button"
                         tabindex="0"
@@ -485,7 +457,7 @@
               </th>
               <th
                 aria-sort="none"
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-alignLeft MuiTableCell-sizeMedium css-5asjyv-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-head MuiTableCell-alignLeft MuiTableCell-sizeMedium css-vo886j-MuiTableCell-root"
                 colspan="1"
                 data-can-sort="true"
                 data-index="-1"
@@ -500,15 +472,15 @@
                     <div
                       class="Mui-TableHeadCell-Content-Wrapper MuiBox-root css-lapokc"
                     >
-                      Data
+                      rules
                     </div>
                     <span
-                      aria-label="Sort by Data descending"
+                      aria-label="Sort by rules descending"
                       class="MuiBadge-root css-1c32n2y-MuiBadge-root"
                       data-mui-internal-clone-element="true"
                     >
                       <span
-                        aria-label="Sort by Data descending"
+                        aria-label="Sort by rules descending"
                         class="MuiButtonBase-root MuiTableSortLabel-root Mui-active css-542clt-MuiButtonBase-root-MuiTableSortLabel-root"
                         role="button"
                         tabindex="0"
@@ -660,7 +632,7 @@
                   class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineHover css-2ugbm1-MuiTypography-root-MuiLink-root"
                   href="/"
                 >
-                  my-pvc
+                  default-httproute
                 </a>
               </td>
               <td
@@ -674,20 +646,26 @@
                 </a>
               </td>
               <td
-                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-16zklhw-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-gg1y71-MuiTableCell-root"
               >
-                bla
+                <span
+                  aria-label="test"
+                  class=""
+                  data-mui-internal-clone-element="true"
+                >
+                  test
+                </span>
               </td>
               <td
-                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1usmkbk-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-iosblu-MuiTableCell-root"
               >
-                0
+                2
               </td>
               <td
                 class="MuiTableCell-root MuiTableCell-alignRight MuiTableCell-sizeMedium css-14i1ub9-MuiTableCell-root"
               >
                 <p
-                  aria-label="2023-04-27T20:31:27.000Z"
+                  aria-label="2023-07-19T09:48:42.000Z"
                   class="MuiTypography-root MuiTypography-body1 css-1d0cpfm-MuiTypography-root"
                   data-mui-internal-clone-element="true"
                 >
@@ -756,7 +734,7 @@
                   class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineHover css-2ugbm1-MuiTypography-root-MuiLink-root"
                   href="/"
                 >
-                  my-pvc
+                  default-httproute
                 </a>
               </td>
               <td
@@ -770,20 +748,18 @@
                 </a>
               </td>
               <td
-                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-16zklhw-MuiTableCell-root"
-              >
-                test
-              </td>
+                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-gg1y71-MuiTableCell-root"
+              />
               <td
-                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1usmkbk-MuiTableCell-root"
+                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-iosblu-MuiTableCell-root"
               >
-                3
+                0
               </td>
               <td
                 class="MuiTableCell-root MuiTableCell-alignRight MuiTableCell-sizeMedium css-14i1ub9-MuiTableCell-root"
               >
                 <p
-                  aria-label="2023-04-27T20:31:27.000Z"
+                  aria-label="2023-07-19T09:48:42.000Z"
                   class="MuiTypography-root MuiTypography-body1 css-1d0cpfm-MuiTypography-root"
                   data-mui-internal-clone-element="true"
                 >

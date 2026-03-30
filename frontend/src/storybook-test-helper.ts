@@ -37,12 +37,7 @@ import path from 'path';
  * waitForText — they often appear in support handlers (namespace lists, etc.)
  * rather than being the primary data the component renders.
  */
-const GENERIC_K8S_NAMES = new Set([
-  'default',
-  'kube-system',
-  'kube-public',
-  'kube-node-lease',
-]);
+const GENERIC_K8S_NAMES = new Set(['default', 'kube-system', 'kube-public', 'kube-node-lease']);
 
 /**
  * Try to automatically derive a waitForText value from MSW handler responses.
@@ -349,9 +344,19 @@ export function runStorybookTests(
             // Get rid of random id's in the ouput
             replaceUseId(document);
 
-            document.body.removeAttribute('style');
+            // Clone the body SYNCHRONOUSLY after cleanup to prevent React's async
+            // scheduler from re-adding MuiTouchRipple elements during the awaited
+            // snapshot serialization. The clone is disconnected from React's tree.
+            const bodyClone = document.body.cloneNode(true) as HTMLElement;
 
-            await expect(document.body).toMatchFileSnapshot(snapshotPath);
+            // Strip MuiTouchRipple from the clone — catches any elements that were
+            // present in the DOM at clone time. Since the clone is disconnected from
+            // React, no new ripple elements can be added during snapshot serialization.
+            bodyClone.querySelectorAll('[class*="MuiTouchRipple"]').forEach(el => el.remove());
+
+            bodyClone.removeAttribute('style');
+
+            await expect(bodyClone).toMatchFileSnapshot(snapshotPath);
           });
         });
       });

@@ -66,9 +66,7 @@ export default {
       );
     },
   ],
-  parameters: {
-    storyshots: { disable: true },
-  },
+  parameters: {},
 } as Meta;
 
 const Template: StoryFn = () => {

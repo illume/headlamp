@@ -169,9 +169,7 @@ export default {
       </TestContext>
     ),
   ],
-  parameters: {
-    storyshots: { disable: true },
-  },
+  parameters: {},
 } as Meta<typeof Details>;
 
 const Template: StoryFn<typeof Details> = () => {
