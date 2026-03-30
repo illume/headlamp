@@ -34,7 +34,6 @@ export default {
     },
   ],
   parameters: {
-    
     msw: {
       handlers: {
         baseStory: [

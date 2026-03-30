@@ -143,12 +143,9 @@ export default {
           }
         ),
         // Mock the watch request for the pod
-        http.get(
-          'http://localhost:4466/clusters/default/api/v1/namespaces/default/pods',
-          () => {
-            return HttpResponse.json(mockPod.jsonData);
-          }
-        ),
+        http.get('http://localhost:4466/clusters/default/api/v1/namespaces/default/pods', () => {
+          return HttpResponse.json(mockPod.jsonData);
+        }),
       ],
     },
   },

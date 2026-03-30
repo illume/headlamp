@@ -32,7 +32,6 @@ export default {
   argTypes: {},
   decorators: [Story => <Story />],
   parameters: {
-    
     msw: {
       handlers: {
         storyBase: [

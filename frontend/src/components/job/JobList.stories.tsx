@@ -82,7 +82,6 @@ export default {
     },
   ],
   parameters: {
-    
     msw: {
       handlers: {
         story: [

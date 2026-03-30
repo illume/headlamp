@@ -25,7 +25,6 @@ export default {
   component: CustomResourceDetails,
   argTypes: {},
   parameters: {
-    
     msw: {
       handlers: {
         storyBase: [
