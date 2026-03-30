@@ -24,7 +24,7 @@ export default {
   component: EndpointDetails,
   argTypes: {},
   parameters: {
-    storyshots: { disable: true },
+    storyshots: { waitForText: 'my-endpoint' },
     msw: {
       handlers: {
         storyBase: [
