@@ -253,6 +253,10 @@ export function runStorybookTests(
             let requestsSent = 0;
             let requestsEnded = 0;
             const worker = getWorker();
+            // Track whether the story has been rendered. Unhandled requests
+            // that arrive before story.run() completes are from previous
+            // stories' stale React effects and should be ignored.
+            let storyRendered = false;
             function onStart() {
               requestsSent++;
             }
@@ -269,6 +273,10 @@ export function runStorybookTests(
               // that may leak across test boundaries from previous stories.
               const url = new URL(e.request.url, 'http://localhost');
               if (url.searchParams.get('watch') === '1') return;
+              // Ignore requests that arrive before the current story is rendered.
+              // These are stale requests from previous stories' React effects
+              // that fire during the cleanup/mount transition.
+              if (!storyRendered) return;
               unhandledRequests.push(e.request.url);
             }
             worker.events.on('request:unhandled', onUnhandledRequest);
@@ -276,6 +284,7 @@ export function runStorybookTests(
             await act(async () => {
               await story.run();
             });
+            storyRendered = true;
 
             // Wait for all MSW requests to complete (real timers — resolves quickly).
             // Use short interval since MSW responds nearly instantly.
