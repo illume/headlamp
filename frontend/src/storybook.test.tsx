@@ -68,14 +68,16 @@ window.matchMedia = () => ({
 const STORYBOOK_SHARD_COUNT = 12;
 
 /**
- * Get story files for this shard. Uses lazy glob imports so each shard
+ * Load story files for this shard. Uses lazy glob imports so each shard
  * only loads the story modules it needs (1/12th), avoiding the overhead
  * of eagerly importing all stories in every shard.
  */
-async function getAllStoryFiles() {
+async function loadStoryFiles() {
+  // Sort entries by path to ensure consistent shard distribution
+  // across different systems and glob implementations.
   const lazyStoryFiles = Object.entries(
     import.meta.glob<StoryFile>('./**/*.stories.tsx')
-  );
+  ).sort(([a], [b]) => a.localeCompare(b));
 
   // When running as a shard, only import this shard's subset of stories.
   // STORYBOOK_SHARD is set by vitest.config.ts workspace projects for parallel execution.
@@ -100,5 +102,5 @@ async function getAllStoryFiles() {
 
 // Load stories then run tests. The top-level await ensures vitest
 // collects the dynamically registered test suites.
-const storyFiles = await getAllStoryFiles();
+const storyFiles = await loadStoryFiles();
 runStorybookTests(storyFiles);
