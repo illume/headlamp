@@ -130,6 +130,7 @@
   "Uncordon": "Uncordon",
   "Cordon": "Cordon",
   "Drain": "Drain",
+  "Node Pool": "Node Pool",
   "Pod CIDR": "Pod CIDR",
   "Uptime": "Uptime",
   "System Info": "System Info",
