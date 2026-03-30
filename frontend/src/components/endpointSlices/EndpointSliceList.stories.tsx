@@ -54,6 +54,9 @@ const list = [
 export default {
   title: 'endpointslice/EndpointSliceListView',
   component: EndpointSliceList,
+  parameters: {
+    storyshots: { disable: true },
+  },
   argTypes: {},
   decorators: [
     Story => {

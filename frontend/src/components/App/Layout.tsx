@@ -25,7 +25,7 @@ import { Dispatch, UnknownAction } from '@reduxjs/toolkit';
 import { useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
-import { headlampApi } from '../../lib/api/headlampApi';
+import { headlampApi } from '../../redux/headlampApi';
 import { getCluster } from '../../lib/cluster';
 import { getSelectedClusters } from '../../lib/cluster';
 import { useCluster, useClustersConf } from '../../lib/k8s';

@@ -16,7 +16,7 @@
 
 import { skipToken } from '@reduxjs/toolkit/query/react';
 import React, { useEffect } from 'react';
-import { headlampApi } from '../../../lib/api/headlampApi';
+import { headlampApi } from '../../../redux/headlampApi';
 import { getCluster } from '../../../lib/cluster';
 import { KubeObject } from '../../../lib/k8s/KubeObject';
 import { KubeObjectClass } from '../../../lib/k8s/KubeObject';

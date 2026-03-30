@@ -18,7 +18,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
-import { headlampApi } from '../../../lib/api/headlampApi';
+import { headlampApi } from '../../../redux/headlampApi';
 import { initialState } from '../../../redux/configSlice';
 import shortcutsReducer from '../../../redux/shortcutsSlice';
 import Home from '.';

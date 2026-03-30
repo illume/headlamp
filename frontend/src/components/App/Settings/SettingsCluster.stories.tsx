@@ -19,7 +19,7 @@ import { Meta, StoryFn } from '@storybook/react';
 import { screen } from '@testing-library/react';
 import React from 'react';
 import { expect, userEvent, waitFor } from 'storybook/test';
-import { headlampApi } from '../../../lib/api/headlampApi';
+import { headlampApi } from '../../../redux/headlampApi';
 import { TestContext } from '../../../test';
 import SettingsCluster from './SettingsCluster';
 

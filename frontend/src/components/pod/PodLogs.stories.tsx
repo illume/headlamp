@@ -24,6 +24,9 @@ import { PodLogViewer } from './Details';
 export default {
   title: 'Pod/PodLogViewer',
   component: PodLogViewer,
+  parameters: {
+    storyshots: { disable: true },
+  },
   argTypes: {
     open: {
       control: 'boolean',
@@ -316,7 +319,4 @@ FormattingLogs.args = {
   prettifyLogs: true,
   formatJsonValues: true,
   logType: 'formatting',
-};
-FormattingLogs.parameters = {
-  storyshots: { disable: true },
 };

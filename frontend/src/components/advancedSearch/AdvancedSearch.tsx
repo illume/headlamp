@@ -17,7 +17,7 @@
 import { Box } from '@mui/material';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { headlampApi } from '../../lib/api/headlampApi';
+import { headlampApi } from '../../redux/headlampApi';
 import { useSelectedClusters } from '../../lib/k8s';
 import { apiDiscovery } from '../../lib/k8s/api/v2/apiDiscovery';
 import { apiResourceId } from '../../lib/k8s/api/v2/ApiResource';

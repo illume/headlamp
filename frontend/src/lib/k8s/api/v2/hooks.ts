@@ -16,7 +16,7 @@
 
 import { useCallback, useMemo, useRef } from 'react';
 import { useDispatch } from 'react-redux';
-import { headlampApi } from '../../../api/headlampApi';
+import { headlampApi } from '../../../../redux/headlampApi';
 import { getCluster } from '../../../cluster';
 import type { QueryParameters } from '../../api/v1/queryParameters';
 import type { ApiError } from '../../api/v2/ApiError';

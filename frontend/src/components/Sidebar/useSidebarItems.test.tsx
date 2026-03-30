@@ -19,7 +19,7 @@ import { renderHook } from '@testing-library/react';
 import React from 'react';
 import { Provider } from 'react-redux';
 import App from '../../App';
-import { headlampApi } from '../../lib/api/headlampApi';
+import { headlampApi } from '../../redux/headlampApi';
 import reducers from '../../redux/reducers/reducers';
 import { TestContext } from '../../test';
 import { DefaultSidebars, SidebarEntry } from './sidebarSlice';

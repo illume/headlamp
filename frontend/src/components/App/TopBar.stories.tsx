@@ -21,7 +21,7 @@ import { http, HttpResponse } from 'msw';
 import { PropsWithChildren } from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
-import { headlampApi } from '../../lib/api/headlampApi';
+import { headlampApi } from '../../redux/headlampApi';
 import { AppBarActionsProcessor } from '../../redux/actionButtonsSlice';
 import { uiSlice } from '../../redux/uiSlice';
 import { initialState as themeInitialState } from './themeSlice';

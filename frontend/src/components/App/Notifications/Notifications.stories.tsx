@@ -21,7 +21,7 @@ import React from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { getTestDate } from '../../../helpers/testHelpers';
-import { headlampApi } from '../../../lib/api/headlampApi';
+import { headlampApi } from '../../../redux/headlampApi';
 import Notifications from './Notifications';
 import { Notification } from './notificationsSlice';
 

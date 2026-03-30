@@ -17,14 +17,10 @@
 /**
  * Shared helper for storybook snapshot tests.
  *
- * The tests are split across multiple test files for vitest parallelism.
- * Each file imports ALL stories (to avoid circular dependency issues from
- * partial globs) but only tests its shard based on `shardIndex`/`totalShards`.
- *
- * Each file must:
- * 1. Call `import.meta.glob('./**\/*.stories.tsx', { eager: true })` (full glob)
- * 2. Set up vi.mock() declarations (must be in each file — hoisted by vitest)
- * 3. Call `runStorybookTests(globResult, shardIndex, totalShards)`
+ * The test file (storybook.test.tsx) is run in parallel via vitest workspace
+ * projects. Each project sets a STORYBOOK_SHARD env var so the test file
+ * selects a different subset of story files. See vitest.config.ts for the
+ * workspace configuration.
  */
 
 import { composeStories, type Meta, type StoryFn } from '@storybook/react';
@@ -137,14 +133,6 @@ const compose = (entry: StoryFile) => {
   }
 };
 
-export function getStoryFiles(globResult: Record<string, StoryFile>) {
-  return Object.entries(globResult).map(([filePath, storyFile]) => {
-    const storyDir = path.dirname(filePath);
-    const componentName = path.basename(filePath).replace(/\.(stories|story)\.[^/.]+$/, '');
-    return { filePath, storyFile, componentName, storyDir };
-  });
-}
-
 // Recreate similar options to Storyshots. Place your configuration below
 const options = {
   storyKindRegex: /^.*?DontTest$/,
@@ -207,25 +195,24 @@ export function replaceUseId(node: any) {
 
 /**
  * Runs storybook snapshot tests for the given story files.
- * Call from each test file after setting up mocks (vi.mock calls must be in each file).
+ * Call from the test file after setting up mocks (vi.mock calls must be in the test file).
  *
- * @param storyFiles - All story files from import.meta.glob
- * @param shardIndex - 0-based shard index for this test file (0..totalShards-1)
- * @param totalShards - Total number of shards (test files)
+ * @param storyFiles - Story files to test (already filtered by shard if applicable)
  */
 export function runStorybookTests(
-  storyFiles: ReturnType<typeof getStoryFiles>,
-  shardIndex: number,
-  totalShards: number
+  storyFiles: Array<{
+    filePath: string;
+    storyFile: StoryFile;
+    componentName: string;
+    storyDir: string;
+  }>
 ) {
-  // Filter to only this shard's stories
-  const myFiles = storyFiles.filter((_, i) => i % totalShards === shardIndex);
   describe('Storybook Tests', () => {
     afterEach(() => {
       vi.restoreAllMocks();
     });
 
-    myFiles.forEach(({ storyFile, componentName, storyDir }) => {
+    storyFiles.forEach(({ storyFile, componentName, storyDir }) => {
       const meta = storyFile.default;
       const title = meta.title || componentName;
 

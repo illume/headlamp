@@ -34,7 +34,7 @@ export default {
     },
   ],
   parameters: {
-    storyshots: {},
+    storyshots: { disable: true },
     msw: {
       handlers: {
         story: [
@@ -80,6 +80,3 @@ const Template: StoryFn = () => {
 };
 
 export const Items = Template.bind({});
-Items.parameters = {
-  storyshots: { disable: true },
-};

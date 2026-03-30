@@ -94,16 +94,16 @@ describe('auth resetApiState', () => {
     // We mock the fetch layer to prevent actual network calls and spy on
     // store.dispatch to count resetApiState dispatches. setToken dispatches it
     // once; if logout had its own dispatch we would see two.
-    const fetchModule = await import('../k8s/api/v2/fetch');
+    const fetchModule = await import('../lib/k8s/api/v2/fetch');
     const fetchSpy = vi
       .spyOn(fetchModule, 'backendFetch')
       .mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
 
-    const storeModule = await import('../../redux/stores/store');
+    const storeModule = await import('./stores/store');
     const dispatchSpy = vi.spyOn(storeModule.default, 'dispatch');
 
     try {
-      const auth = await import('../auth');
+      const auth = await import('../lib/auth');
       await auth.logout('test-cluster');
 
       // Count how many times resetApiState was dispatched

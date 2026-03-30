@@ -14,8 +14,19 @@
  * limitations under the License.
  */
 
+import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
+
 /**
- * @deprecated Import from '../../redux/headlampApi' instead.
- * This re-export exists for backward compatibility.
+ * Base RTK Query API slice for Headlamp.
+ *
+ * Endpoints are injected via `headlampApi.injectEndpoints()` in the modules
+ * that own the corresponding data-fetching logic.
  */
-export { headlampApi } from '../../redux/headlampApi';
+export const headlampApi = createApi({
+  reducerPath: 'headlampApi',
+  baseQuery: fakeBaseQuery(),
+  keepUnusedDataFor: 180,
+  refetchOnFocus: false,
+  refetchOnReconnect: false,
+  endpoints: () => ({}),
+});

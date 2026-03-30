@@ -16,7 +16,7 @@
 
 import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
-import { headlampApi } from '../../../../lib/api/headlampApi';
+import { headlampApi } from '../../../../redux/headlampApi';
 import { initialState as CONFIG_INITIAL_STATE } from '../../../../redux/configSlice';
 import { drawerModeSlice } from '../../../../redux/drawerModeSlice';
 import { initialState as FILTER_INITIAL_STATE } from '../../../../redux/filterSlice';

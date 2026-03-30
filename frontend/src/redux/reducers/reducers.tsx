@@ -19,7 +19,7 @@ import { activityReducer } from '../../components/activity/activitySlice';
 import notificationsReducer from '../../components/App/Notifications/notificationsSlice';
 import themeReducer from '../../components/App/themeSlice';
 import graphViewReducer from '../../components/resourceMap/graphViewSlice';
-import { headlampApi } from '../../lib/api/headlampApi';
+import { headlampApi } from '../headlampApi';
 import pluginsReducer from '../../plugin/pluginsSlice';
 import actionButtons from '../actionButtonsSlice';
 import clusterAction from '../clusterActionSlice';

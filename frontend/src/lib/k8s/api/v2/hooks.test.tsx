@@ -19,7 +19,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { PropsWithChildren } from 'react';
 import { Provider } from 'react-redux';
 import { describe, expect, it, vi } from 'vitest';
-import { headlampApi } from '../../../api/headlampApi';
+import { headlampApi } from '../../../../redux/headlampApi';
 import { kubeObjectApi, useEndpoints, useKubeObject } from './hooks';
 import * as websocket from './webSocket';
 

@@ -20,7 +20,7 @@ import { http, HttpResponse } from 'msw';
 import React from 'react';
 import { Provider } from 'react-redux';
 import { BrowserRouter, Route } from 'react-router-dom';
-import { headlampApi } from '../../lib/api/headlampApi';
+import { headlampApi } from '../../redux/headlampApi';
 import { initialState as configInitialState } from '../../redux/configSlice';
 import { TestContext } from '../../test';
 import NavigationTabs from './NavigationTabs';

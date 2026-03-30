@@ -18,7 +18,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
 import { Provider } from 'react-redux';
-import { headlampApi } from '../../../lib/api/headlampApi';
+import { headlampApi } from '../../../redux/headlampApi';
 import NodeShellSettings from './NodeShellSettings';
 
 const mockClusterName = 'mock-cluster';

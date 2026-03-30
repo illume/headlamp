@@ -15,7 +15,7 @@
  */
 
 import { configureStore } from '@reduxjs/toolkit';
-import { headlampApi } from '../../lib/api/headlampApi';
+import { headlampApi } from '../headlampApi';
 import { initialState as CLUSTER_ACTIONS_INITIAL_STATE } from '../clusterActionSlice';
 import { initialState as CLUSTER_PROVIDER_INITIAL_STATE } from '../clusterProviderSlice';
 import { initialState as CONFIG_INITIAL_STATE } from '../configSlice';

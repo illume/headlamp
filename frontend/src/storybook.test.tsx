@@ -15,20 +15,20 @@
  */
 
 /**
- * Storybook snapshot tests — shard 1 of 4.
+ * Storybook snapshot tests.
  *
- * Split into multiple files for vitest parallelism to avoid cumulative
- * GC pressure that makes a single-file run ~8× slower per test.
- * Each file imports ALL stories (for consistent module resolution) but
- * only tests its shard.
+ * Parallelized via vitest workspace projects: each project sets a
+ * STORYBOOK_SHARD env var so this single file runs a different subset
+ * of stories per project. See vitest.config.ts for the workspace config.
  */
 
 import 'vitest-canvas-mock';
 import { setProjectAnnotations } from '@storybook/react';
 import { render as testingLibraryRender } from '@testing-library/react';
+import path from 'path';
 import React from 'react';
 import * as previewAnnotations from '../.storybook/preview';
-import { getStoryFiles, runStorybookTests, type StoryFile } from './storybook-test-helper';
+import { runStorybookTests, type StoryFile } from './storybook-test-helper';
 
 const annotations = setProjectAnnotations([previewAnnotations, { testingLibraryRender }]);
 beforeAll(annotations.beforeAll!);
@@ -61,8 +61,30 @@ window.matchMedia = () => ({
   dispatchEvent: () => true,
 });
 
-const storyFiles = getStoryFiles(
-  import.meta.glob<StoryFile>('./**/*.stories.tsx', { eager: true })
-);
+/**
+ * Total number of parallel shards for storybook tests.
+ * Must match the number of storybook-N projects in vitest.config.ts.
+ */
+const STORYBOOK_SHARD_COUNT = 12;
 
-runStorybookTests(storyFiles, 0, 4);
+function getAllStoryFiles() {
+  const storyFiles = Object.entries(
+    import.meta.glob<StoryFile>('./**/*.stories.tsx', { eager: true })
+  );
+
+  const allFiles = storyFiles.map(([filePath, storyFile]) => {
+    const storyDir = path.dirname(filePath);
+    const componentName = path.basename(filePath).replace(/\.(stories|story)\.[^/.]+$/, '');
+    return { filePath, storyFile, componentName, storyDir };
+  });
+
+  // When running as a shard, only test this shard's subset of stories.
+  // STORYBOOK_SHARD is set by vitest.config.ts workspace projects for parallel execution.
+  const shardIndex = Number(import.meta.env.STORYBOOK_SHARD ?? -1);
+  if (shardIndex >= 0) {
+    return allFiles.filter((_, i) => i % STORYBOOK_SHARD_COUNT === shardIndex);
+  }
+  return allFiles;
+}
+
+runStorybookTests(getAllStoryFiles());

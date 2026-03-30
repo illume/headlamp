@@ -19,7 +19,7 @@ import { Meta, StoryFn } from '@storybook/react';
 import { http, HttpResponse } from 'msw';
 import { SnackbarProvider } from 'notistack';
 import { initialState as THEME_INITIAL_STATE } from '../../components/App/themeSlice';
-import { headlampApi } from '../../lib/api/headlampApi';
+import { headlampApi } from '../../redux/headlampApi';
 import { initialState as CONFIG_INITIAL_STATE } from '../../redux/configSlice';
 import { initialState as FILTER_INITIAL_STATE } from '../../redux/filterSlice';
 import { uiSlice } from '../../redux/uiSlice';

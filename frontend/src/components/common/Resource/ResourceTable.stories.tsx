@@ -20,7 +20,7 @@ import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { createStore } from 'redux';
 import { useMockListQuery } from '../../../helpers/testHelpers';
-import { headlampApi } from '../../../lib/api/headlampApi';
+import { headlampApi } from '../../../redux/headlampApi';
 import Pod, { KubePod } from '../../../lib/k8s/pod';
 import reducers from '../../../redux/reducers/reducers';
 import shortcutsReducer from '../../../redux/shortcutsSlice';
