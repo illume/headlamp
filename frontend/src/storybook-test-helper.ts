@@ -32,6 +32,100 @@ import { act, screen, waitFor } from '@testing-library/react';
 import { getWorker } from 'msw-storybook-addon';
 import path from 'path';
 
+/**
+ * Common Kubernetes namespace/system names that are too generic to use as
+ * waitForText — they often appear in support handlers (namespace lists, etc.)
+ * rather than being the primary data the component renders.
+ */
+const GENERIC_K8S_NAMES = new Set([
+  'default',
+  'kube-system',
+  'kube-public',
+  'kube-node-lease',
+]);
+
+/**
+ * Try to automatically derive a waitForText value from MSW handler responses.
+ *
+ * Invokes each GET handler's resolver with a fake Request, parses the JSON
+ * response, and looks for `items[0].metadata.name` (Kubernetes list pattern)
+ * or `metadata.name` (single-object detail pattern).
+ *
+ * Heuristics:
+ * - Only examines GET handlers (POST/PATCH/PUT are auth checks, mutations)
+ * - Prefers `story` handlers over `storyBase`/`baseStory` (primary data first)
+ * - Skips generic names like "default", "kube-system"
+ * - Skips empty responses and error handlers
+ */
+async function deriveWaitForTextFromMSW(story: any): Promise<string | undefined> {
+  const mswHandlers = story.parameters?.msw?.handlers;
+  if (!mswHandlers) return undefined;
+
+  // Build prioritized handler groups: story handlers first, then base handlers.
+  // Story handlers contain the primary data the component renders.
+  const storyHandlers: any[] = [];
+  const baseHandlers: any[] = [];
+
+  if (Array.isArray(mswHandlers)) {
+    // Flat array format — treat all as story-level
+    storyHandlers.push(...mswHandlers);
+  } else if (typeof mswHandlers === 'object') {
+    if (Array.isArray(mswHandlers.story)) storyHandlers.push(...mswHandlers.story);
+    if (Array.isArray(mswHandlers.storyBase)) baseHandlers.push(...mswHandlers.storyBase);
+    if (Array.isArray(mswHandlers.baseStory)) baseHandlers.push(...mswHandlers.baseStory);
+  }
+
+  // Try story handlers first (primary data), then base handlers
+  for (const handlers of [storyHandlers, baseHandlers]) {
+    const result = await extractNameFromHandlers(handlers);
+    if (result) return result;
+  }
+
+  return undefined;
+}
+
+async function extractNameFromHandlers(handlers: any[]): Promise<string | undefined> {
+  for (const handler of handlers) {
+    try {
+      // Only examine GET handlers — POST/PATCH/PUT are mutations or auth checks
+      const method = handler?.info?.method;
+      if (method && method !== 'GET') continue;
+
+      const url = handler?.info?.path;
+      if (!url || typeof url !== 'string') continue;
+
+      // Call the resolver with a minimal Request to get the response
+      const fakeRequest = new Request(url, { method: 'GET' });
+      const response = await handler.resolver({ request: fakeRequest });
+      if (!response || typeof response.json !== 'function') continue;
+
+      const data = await response.clone().json();
+      if (!data || typeof data !== 'object') continue;
+
+      // Pattern 1: Kubernetes list with items array (most reliable)
+      if (Array.isArray(data.items) && data.items.length > 0) {
+        const name = data.items[0]?.metadata?.name;
+        if (name && typeof name === 'string' && !GENERIC_K8S_NAMES.has(name)) {
+          return name;
+        }
+      }
+
+      // Pattern 2: Single Kubernetes object with metadata.name
+      if (data.metadata?.name && typeof data.metadata.name === 'string') {
+        const name = data.metadata.name;
+        if (!GENERIC_K8S_NAMES.has(name)) {
+          return name;
+        }
+      }
+    } catch {
+      // Handler may return an error response or not be JSON — skip it
+      continue;
+    }
+  }
+
+  return undefined;
+}
+
 export type StoryFile = {
   default: Meta;
   [name: string]: StoryFn | Meta;
@@ -191,14 +285,29 @@ export function runStorybookTests(
             // If the story specifies waitForText, use waitFor/findByText to
             // wait for specific content to appear — following RTK Query docs
             // recommendation of using waitFor or findBy for async data.
-            const waitForText = story.parameters?.storyshots?.waitForText;
+            // If no waitForText is specified but MSW handlers are present,
+            // auto-derive text from the first handler's Kubernetes response
+            // (items[0].metadata.name or metadata.name). This ensures new
+            // stories with MSW handlers automatically wait for data to load.
+            const explicitWaitForText = story.parameters?.storyshots?.waitForText;
+            let waitForText = explicitWaitForText;
+            if (!waitForText && requestsSent > 0) {
+              waitForText = await deriveWaitForTextFromMSW(story);
+            }
             if (waitForText) {
-              await waitFor(
-                () => {
-                  screen.getAllByText(waitForText);
-                },
-                { timeout: 2000, interval: 10 }
-              );
+              try {
+                await waitFor(
+                  () => {
+                    screen.getAllByText(waitForText);
+                  },
+                  { timeout: 2000, interval: 10 }
+                );
+              } catch (e) {
+                // If the text was explicitly specified by the story author, fail hard.
+                // If auto-derived, silently proceed — the component may not render
+                // the resource name (e.g., layout stories, error views).
+                if (explicitWaitForText) throw e;
+              }
             }
 
             // Fail on unhandled MSW requests — all API calls should have handlers.

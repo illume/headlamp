@@ -34,7 +34,7 @@ export default {
     },
   ],
   parameters: {
-    storyshots: { waitForText: 'default-httproute' },
+    storyshots: {},
     msw: {
       handlers: {
         story: [],

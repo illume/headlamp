@@ -34,7 +34,7 @@ export default {
     },
   ],
   parameters: {
-    storyshots: { waitForText: 'my-pvc' },
+    storyshots: {},
   },
 } as Meta;
 

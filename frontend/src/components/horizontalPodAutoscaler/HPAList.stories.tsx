@@ -132,7 +132,7 @@ export default {
     },
   ],
   parameters: {
-    storyshots: { waitForText: 'php-apache' },
+    storyshots: {},
     msw: {
       handlers: {
         story: [

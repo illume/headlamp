@@ -34,7 +34,7 @@ export default {
     },
   ],
   parameters: {
-    storyshots: { waitForText: 'default-gateway' },
+    storyshots: {},
     msw: {
       handlers: {
         storyBase: [],

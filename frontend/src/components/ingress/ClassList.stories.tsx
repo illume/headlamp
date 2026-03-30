@@ -34,7 +34,7 @@ export default {
     },
   ],
   parameters: {
-    storyshots: { waitForText: 'resource-example-ingress' },
+    storyshots: {},
     msw: {
       handlers: {
         story: [

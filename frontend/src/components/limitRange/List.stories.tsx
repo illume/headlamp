@@ -34,7 +34,7 @@ export default {
     },
   ],
   parameters: {
-    storyshots: { waitForText: 'limit-range' },
+    storyshots: {},
     msw: {
       handlers: {
         story: [

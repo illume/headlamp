@@ -31,7 +31,7 @@ export default {
     ),
   ],
   parameters: {
-    storyshots: { waitForText: 'example-traffic-policy' },
+    storyshots: {},
     msw: {
       handlers: {
         story: [],

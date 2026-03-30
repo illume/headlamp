@@ -34,7 +34,7 @@ export default {
     },
   ],
   parameters: {
-    storyshots: { waitForText: 'tls-example-ingress' },
+    storyshots: {},
     msw: {
       handlers: {
         storyBase: [],

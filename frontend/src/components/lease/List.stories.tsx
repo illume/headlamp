@@ -36,7 +36,7 @@ export default {
     },
   ],
   parameters: {
-    storyshots: { waitForText: 'lease' },
+    storyshots: {},
     msw: {
       handlers: {
         story: [

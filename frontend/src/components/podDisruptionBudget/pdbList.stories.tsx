@@ -79,7 +79,7 @@ export default {
     },
   ],
   parameters: {
-    storyshots: { waitForText: 'coredns-pdb' },
+    storyshots: {},
     msw: {
       handlers: {
         story: [

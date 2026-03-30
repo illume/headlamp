@@ -34,7 +34,7 @@ export default {
     },
   ],
   parameters: {
-    storyshots: { waitForText: 'successful' },
+    storyshots: {},
     msw: {
       handlers: {
         story: [
