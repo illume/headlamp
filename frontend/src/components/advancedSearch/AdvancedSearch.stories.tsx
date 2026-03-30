@@ -25,6 +25,7 @@ export default {
   component: AdvancedSearch,
   argTypes: {},
   parameters: {
+    storyshots: { waitForText: 'Select Resources' },
     msw: {
       handlers: {
         storyBase: [
