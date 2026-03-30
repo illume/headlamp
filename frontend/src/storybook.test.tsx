@@ -63,7 +63,7 @@ window.matchMedia = () => ({
 
 /**
  * Total number of parallel shards for storybook tests.
- * Must match the number of storybook-N projects in vitest.config.ts.
+ * Must match STORYBOOK_SHARD_COUNT in vitest.config.ts.
  */
 const STORYBOOK_SHARD_COUNT = 12;
 
