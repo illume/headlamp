@@ -56,18 +56,6 @@ export default {
   component: EndpointSliceList,
   parameters: {
     storyshots: { disable: true },
-  },
-  argTypes: {},
-  decorators: [
-    Story => {
-      return (
-        <TestContext>
-          <Story />
-        </TestContext>
-      );
-    },
-  ],
-  parameters: {
     msw: {
       handlers: {
         story: [
@@ -82,6 +70,16 @@ export default {
       },
     },
   },
+  argTypes: {},
+  decorators: [
+    Story => {
+      return (
+        <TestContext>
+          <Story />
+        </TestContext>
+      );
+    },
+  ],
 } as Meta;
 
 const Template: StoryFn = () => {
