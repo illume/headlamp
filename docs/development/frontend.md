@@ -61,6 +61,63 @@ current or future stories:
 </TestContext>
 ```
 
+### Storybook Snapshot Tests and MSW
+
+Storybook snapshot tests capture the rendered HTML of each story and compare it against
+a stored snapshot file. Stories that fetch data via MSW (Mock Service Worker) handlers
+need special handling because RTK Query fetches data asynchronously.
+
+**Automatic MSW detection:** The test helper (`storybook-test-helper.ts`) automatically
+detects stories with MSW handlers and waits for async data to load before snapshotting.
+It does this by:
+
+1. Tracking all MSW requests and waiting for them to complete
+2. Auto-deriving a `waitForText` value from MSW handler responses using
+   `deriveWaitForTextFromMSW()` — it extracts `items[0].metadata.name` (list pattern)
+   or `metadata.name` (detail pattern) from GET handler responses
+3. Waiting for that text to appear in the DOM before taking the snapshot
+
+**For most stories with MSW handlers, no extra configuration is needed.**
+The auto-derivation handles list views, detail views, and other standard
+Kubernetes resource patterns.
+
+**Explicit waitForText:** If auto-derivation doesn't work for your story
+(e.g., the component doesn't render the resource name), you can specify
+text to wait for explicitly:
+
+```tsx
+export const MyStory = Template.bind({});
+MyStory.parameters = {
+  storyshots: { waitForText: 'expected-text-in-rendered-output' },
+  msw: {
+    handlers: { /* ... */ },
+  },
+};
+```
+
+**Disabling snapshots:** If a story produces non-deterministic output that
+cannot be stabilized, disable its snapshot test:
+
+```tsx
+// Disable for entire story file (in default export)
+export default {
+  parameters: {
+    storyshots: { disable: true },
+  },
+} as Meta;
+
+// Or disable for a specific story
+MyStory.parameters = {
+  storyshots: { disable: true },
+};
+```
+
+**Tips for stable snapshots:**
+- All API calls in MSW-backed stories must have handlers — unhandled requests fail the test
+- MuiTouchRipple elements are automatically stripped from snapshots (non-deterministic)
+- Recharts IDs and React `useId` values are normalized automatically
+- Snapshots must be regenerated with Node.js 20.x (matching CI)
+
 ## Accessibility (a11y)
 
 ### Developer console warnings and errors
