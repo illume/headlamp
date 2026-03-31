@@ -107,7 +107,7 @@ export default function AuthVisible(props: AuthVisibleProps) {
           authVerb,
           subresource,
           namespace,
-          cluster: (item as KubeObject)?.cluster ?? getCluster() ?? undefined,
+          cluster: (item as KubeObject)?.cluster ?? getCluster() ?? '',
           item,
         }
       : skipToken
@@ -128,7 +128,7 @@ export default function AuthVisible(props: AuthVisibleProps) {
         reason: data.status?.reason ?? '',
       });
     }
-  }, [data]);
+  }, [data, onAuthResult, visible]);
 
   if (!visible) {
     return null;
