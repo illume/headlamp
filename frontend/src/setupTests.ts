@@ -184,3 +184,14 @@ beforeEach(() => {
     originalConsoleDebug(...args);
   };
 }
+
+// Suppress jsdom's reportException for intentional error boundary throws.
+// The RouteSwitcher story throws { message: 'Oh no! I just crashed!' } to test
+// error boundary rendering — jsdom reports it to stderr as "Uncaught" unless
+// the error event is preventDefault'd.
+window.addEventListener('error', event => {
+  const err = event.error;
+  if (err && typeof err === 'object' && err.message === 'Oh no! I just crashed!') {
+    event.preventDefault();
+  }
+});
