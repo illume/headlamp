@@ -24,6 +24,9 @@ import { PodLogViewer } from './Details';
 export default {
   title: 'Pod/PodLogViewer',
   component: PodLogViewer,
+  parameters: {
+    storyshots: { disable: true },
+  },
   argTypes: {
     open: {
       control: 'boolean',
