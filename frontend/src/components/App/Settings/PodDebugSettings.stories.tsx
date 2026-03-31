@@ -23,6 +23,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
 import { Provider } from 'react-redux';
+import { queryApi } from '../../../redux/queryApi';
 import PodDebugSettings from './PodDebugSettings';
 
 const mockClusterName = 'mock-cluster';
@@ -59,7 +60,12 @@ export default {
 /** Story template with Redux Provider. */
 const Template: StoryFn<typeof PodDebugSettings> = args => {
   const store = configureStore({
-    reducer: (state = getMockState()) => state,
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(queryApi.middleware),
+    reducer: (state = getMockState(), action: any) => ({
+      ...state,
+      [queryApi.reducerPath]: queryApi.reducer(state[queryApi.reducerPath], action),
+    }),
     preloadedState: getMockState(),
   });
 
