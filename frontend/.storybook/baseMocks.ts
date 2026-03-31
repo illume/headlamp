@@ -27,8 +27,8 @@ import { NODE_DUMMY_DATA } from '../src/components/node/storyHelper';
 export const baseMocks = [
   http.get('http://localhost:4466/wsMultiplexer', () => HttpResponse.error()),
   http.get('https://api.iconify.design/mdi.json', () => HttpResponse.json({})),
-  http.post('http://localhost:4466/apis/authorization.k8s.io/v1/selfsubjectaccessreviews', () =>
-    HttpResponse.json({ status: { allowed: true, reason: '', code: 200 } })
+  http.post('*/apis/authorization.k8s.io/v1/selfsubjectaccessreviews', () =>
+    HttpResponse.json({ status: { allowed: true, reason: '', code: 200 } }),
   ),
   http.get('http://localhost:4466/api/v1/namespaces', () =>
     HttpResponse.json({
@@ -51,7 +51,7 @@ export const baseMocks = [
         },
       ],
       metadata: {},
-    })
+    }),
   ),
   http.get('http://localhost:4466/clusters/cluster0/version', () => HttpResponse.json({})),
   http.get('http://localhost:4466/clusters/cluster1/version', () => HttpResponse.json({})),
@@ -61,21 +61,21 @@ export const baseMocks = [
       kind: 'EventList',
       items: [],
       metadata: {},
-    })
+    }),
   ),
   http.get('http://localhost:4466/clusters/cluster1/api/v1/events', () =>
     HttpResponse.json({
       kind: 'EventList',
       items: [],
       metadata: {},
-    })
+    }),
   ),
   http.get('http://localhost:4466/clusters/cluster2/api/v1/events', () =>
     HttpResponse.json({
       kind: 'EventList',
       items: [],
       metadata: {},
-    })
+    }),
   ),
   http.get('http://localhost:4466/version', () => HttpResponse.json({})),
   http.get('http://localhost:4466/api/v1/events', () =>
@@ -83,14 +83,14 @@ export const baseMocks = [
       kind: 'EventList',
       items: [],
       metadata: {},
-    })
+    }),
   ),
   http.get('http://localhost:4466/api/v1/namespaces/kube-system/events', () =>
     HttpResponse.json({
       kind: 'EventList',
       items: [],
       metadata: {},
-    })
+    }),
   ),
   http.get('http://localhost:4466/api/v1/nodes', () =>
     HttpResponse.json({
@@ -100,7 +100,7 @@ export const baseMocks = [
         resourceVersion: '545284',
       },
       items: NODE_DUMMY_DATA,
-    })
+    }),
   ),
   http.get('http://localhost:4466/api/v1/namespaces/default/pods', () =>
     HttpResponse.json({
@@ -108,7 +108,7 @@ export const baseMocks = [
       apiVersion: 'v1',
       metadata: {},
       items: [],
-    })
+    }),
   ),
   http.get('http://localhost:4466/apis/metrics.k8s.io/v1beta1/nodes', () =>
     HttpResponse.json({
@@ -241,6 +241,64 @@ export const baseMocks = [
           reportingInstance: '',
         },
       ],
-    })
+    }),
+  ),
+  // Catch-all handlers for Kubernetes list endpoints that RTK Query may trigger.
+  // These return empty lists so storybook tests don't fail on unhandled requests.
+  http.get('http://localhost:4466/apis/metrics.k8s.io/v1beta1/namespaces/*/pods', () =>
+    HttpResponse.json({
+      apiVersion: 'metrics.k8s.io/v1beta1',
+      kind: 'PodMetricsList',
+      metadata: {},
+      items: [],
+    }),
+  ),
+  http.get('http://localhost:4466/api/v1/namespaces/*/pods', () =>
+    HttpResponse.json({
+      kind: 'PodList',
+      apiVersion: 'v1',
+      metadata: {},
+      items: [],
+    }),
+  ),
+  http.get('http://localhost:4466/api/v1/namespaces/*/limitranges', () =>
+    HttpResponse.json({
+      kind: 'LimitRangeList',
+      apiVersion: 'v1',
+      metadata: {},
+      items: [],
+    }),
+  ),
+  http.get('http://localhost:4466/apis/apps/v1/replicasets', () =>
+    HttpResponse.json({
+      kind: 'ReplicaSetList',
+      apiVersion: 'apps/v1',
+      metadata: {},
+      items: [],
+    }),
+  ),
+  http.get('http://localhost:4466/apis/batch/v1/jobs', () =>
+    HttpResponse.json({
+      kind: 'JobList',
+      apiVersion: 'batch/v1',
+      metadata: {},
+      items: [],
+    }),
+  ),
+  http.get('http://localhost:4466/apis/batch/v1/cronjobs', () =>
+    HttpResponse.json({
+      kind: 'CronJobList',
+      apiVersion: 'batch/v1',
+      metadata: {},
+      items: [],
+    }),
+  ),
+  http.get('http://localhost:4466/apis/my.phonyresources.io/v1/mycustomresources', () =>
+    HttpResponse.json({
+      apiVersion: 'my.phonyresources.io/v1',
+      kind: 'MyCustomResourceList',
+      metadata: {},
+      items: [],
+    }),
   ),
 ];
