@@ -16,6 +16,7 @@
 
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useMemo } from 'react';
+import { queryApi } from '../../../../redux/queryApi';
 import { getCluster } from '../../../cluster';
 import type { QueryParameters } from '../../api/v1/queryParameters';
 import type { ApiError } from '../../api/v2/ApiError';
@@ -94,6 +95,46 @@ export const kubeObjectQueryKey = ({
   name: string;
   queryParams?: QueryParameters;
 }) => ['object', cluster, endpoint, namespace ?? '', name, queryParams ?? {}];
+
+/**
+ * RTK Query endpoints for KubeObject operations.
+ *
+ * These endpoints are used by Link.tsx for cache prepopulation and will
+ * eventually replace the useQuery-based hooks above.
+ */
+export const kubeObjectApi = queryApi.injectEndpoints({
+  endpoints: build => ({
+    getKubeObject: build.query<
+      KubeObject | null,
+      {
+        kubeObjectClass: any;
+        endpoint: KubeObjectEndpoint;
+        namespace?: string;
+        name: string;
+        cluster: string;
+        queryParams: Record<string, any>;
+      }
+    >({
+      queryFn: async ({ kubeObjectClass, endpoint, namespace, name, cluster, queryParams }) => {
+        try {
+          const url = makeUrl([KubeObjectEndpoint.toUrl(endpoint, namespace), name], queryParams);
+          const obj: KubeObjectInterface = await clusterFetch(url, {
+            cluster,
+          }).then(it => it.json());
+          return { data: new kubeObjectClass(obj, cluster) };
+        } catch (error) {
+          return { error };
+        }
+      },
+      serializeQueryArgs: ({ queryArgs }) => {
+        const { kubeObjectClass, ...rest } = queryArgs;
+        void kubeObjectClass;
+        return JSON.stringify(rest);
+      },
+      keepUnusedDataFor: 5, // seconds
+    }),
+  }),
+});
 
 /**
  * Returns a single KubeObject.
