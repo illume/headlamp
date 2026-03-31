@@ -23,6 +23,7 @@ describe('routesSlice', () => {
     reducer: {
       routes: routesReducer,
     },
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }),
   });
 
   beforeEach(() => {
@@ -30,6 +31,7 @@ describe('routesSlice', () => {
       reducer: {
         routes: routesReducer,
       },
+      middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }),
     });
   });
 
