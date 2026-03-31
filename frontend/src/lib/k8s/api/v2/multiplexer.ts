@@ -75,9 +75,10 @@ export const WebSocketManager = {
    * @returns Promise resolving to WebSocket connection
    */
   async connect(): Promise<WebSocket> {
-    // Skip WebSocket connections in test environment — no server to connect to
+    // Skip WebSocket connections in test environment — no server to connect to.
+    // Return a never-resolving promise so callers silently wait forever (no error logged).
     if (import.meta.env.UNDER_TEST === 'true') {
-      return Promise.reject(new Error('WebSocket connections are disabled in test environment'));
+      return new Promise<WebSocket>(() => {});
     }
 
     // Return existing connection if available

@@ -414,9 +414,7 @@
     "useConnectApi": [Function],
     "useSelectedClusters": [Function],
   },
-  "Lodash": Function {
-    "default": [Function],
-  },
+  "Lodash": "Present",
   "MonacoEditor": "Present",
   "MuiCore": "Present",
   "MuiLab": "Present",

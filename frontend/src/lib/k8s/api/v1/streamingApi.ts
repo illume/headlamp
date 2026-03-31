@@ -493,11 +493,15 @@ export async function connectStreamWithParams<T>(
       socket.removeEventListener('error', onError);
     }
 
-    console.warn('Socket closed unexpectedly', { path, args });
+    if (import.meta.env.UNDER_TEST !== 'true') {
+      console.warn('Socket closed unexpectedly', { path, args });
+    }
     onFail();
   }
 
   function onError(err: any) {
-    console.error('Error in api stream', { err, path });
+    if (import.meta.env.UNDER_TEST !== 'true') {
+      console.error('Error in api stream', { err, path });
+    }
   }
 }
