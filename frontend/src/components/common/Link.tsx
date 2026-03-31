@@ -15,11 +15,11 @@
  */
 
 import MuiLink from '@mui/material/Link';
-import { useQueryClient } from '@tanstack/react-query';
 import React from 'react';
+import { useDispatch } from 'react-redux';
 import { Link as RouterLink } from 'react-router-dom';
 import { formatClusterPathParam, getCluster, getSelectedClusters } from '../../lib/cluster';
-import { kubeObjectQueryKey, useEndpoints } from '../../lib/k8s/api/v2/hooks';
+import { kubeObjectApi, useEndpoints } from '../../lib/k8s/api/v2/hooks';
 import type { KubeObject } from '../../lib/k8s/KubeObject';
 import type { RouteURLProps } from '../../lib/router/createRouteURL';
 import { createRouteURL } from '../../lib/router/createRouteURL';
@@ -54,32 +54,48 @@ export interface LinkObjectProps extends LinkBaseProps {
   [prop: string]: any;
 }
 
-function KubeObjectLink(props: {
-  kubeObject: KubeObject;
-  /** if onClick callback is provided navigation is disabled */
-  onClick?: () => void;
-  [prop: string]: any;
-}) {
+const KubeObjectLink = React.forwardRef<
+  HTMLAnchorElement,
+  {
+    kubeObject: KubeObject;
+    /** if onClick callback is provided navigation is disabled */
+    onClick?: () => void;
+    [prop: string]: any;
+  }
+>(function KubeObjectLink(props, ref) {
   const { kubeObject, onClick, ...otherProps } = props;
 
-  const client = useQueryClient();
+  const dispatch = useDispatch<any>();
   const { namespace, name } = kubeObject.metadata;
   const { endpoint } = useEndpoints(kubeObject._class().apiEndpoint.apiInfo, kubeObject.cluster);
 
   return (
     <MuiLink
+      ref={ref}
       onClick={e => {
-        const key = kubeObjectQueryKey({
-          cluster: kubeObject.cluster,
-          endpoint,
-          namespace,
-          name,
-        });
         // prepopulate the query cache with existing object
-        client.setQueryData(key, kubeObject);
-        // and invalidate it (mark as stale)
-        // so that the latest version will be downloaded in the background
-        client.invalidateQueries({ queryKey: key });
+        if (endpoint) {
+          const queryArgs = {
+            kubeObjectClass: kubeObject._class(),
+            endpoint,
+            namespace,
+            name,
+            cluster: kubeObject.cluster,
+            queryParams: {},
+          };
+
+          dispatch(kubeObjectApi.util.upsertQueryData('getKubeObject', queryArgs, kubeObject));
+
+          // Trigger a background refetch so the details page sees fresh data.
+          // Use subscribe: false to avoid accumulating RTK Query subscriptions
+          // on repeated clicks — this is a one-shot fetch, not a long-lived subscription.
+          dispatch(
+            kubeObjectApi.endpoints.getKubeObject.initiate(queryArgs, {
+              forceRefetch: true,
+              subscribe: false,
+            })
+          );
+        }
 
         if (onClick) {
           e.preventDefault();
@@ -93,17 +109,18 @@ function KubeObjectLink(props: {
       {props.children || kubeObject!.getName()}
     </MuiLink>
   );
-}
+});
 
-function PureLink(
-  props: React.PropsWithChildren<LinkProps | LinkObjectProps> & {
+const PureLink = React.forwardRef<
+  HTMLAnchorElement,
+  React.PropsWithChildren<LinkProps | LinkObjectProps> & {
     /** if onClick callback is provided navigation is disabled */
     onClick?: () => void;
   }
-) {
+>(function PureLink(props, ref) {
   if ((props as LinkObjectProps).kubeObject) {
     const { kubeObject, ...otherProps } = props as LinkObjectProps;
-    return <KubeObjectLink kubeObject={kubeObject!} {...otherProps} />;
+    return <KubeObjectLink ref={ref} kubeObject={kubeObject!} {...otherProps} />;
   }
   const {
     routeName,
@@ -124,6 +141,7 @@ function PureLink(
 
   return (
     <MuiLink
+      ref={ref}
       component={RouterLink}
       to={{
         pathname: createRouteURL(routeName, params),
@@ -141,7 +159,7 @@ function PureLink(
       {props.children}
     </MuiLink>
   );
-}
+});
 
 export default function Link(props: React.PropsWithChildren<LinkProps | LinkObjectProps>) {
   const drawerEnabled = useTypedSelector(state => state?.drawerMode?.isDetailDrawerEnabled);
