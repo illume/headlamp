@@ -103,3 +103,14 @@ beforeEach(() => {
   // Jest will wait for this promise to resolve before running tests.
   localStorage.clear();
 });
+
+// Suppress noisy console.log messages from IndexedDB operations during tests.
+// These are informational messages from kubeconfig persistence that spam test output.
+{
+  const originalConsoleLog = console.log;
+  console.log = (...args: unknown[]) => {
+    const msg = typeof args[0] === 'string' ? args[0] : '';
+    if (msg.includes('IndexedDB')) return;
+    originalConsoleLog(...args);
+  };
+}

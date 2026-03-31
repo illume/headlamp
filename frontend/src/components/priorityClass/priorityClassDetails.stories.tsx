@@ -52,6 +52,7 @@ export default {
     },
   ],
   parameters: {
+    storyshots: { disable: true },
     msw: {
       handlers: {
         storyBase: [
@@ -69,7 +70,6 @@ const Template: StoryFn = () => {
 
 export const Default = Template.bind({});
 Default.parameters = {
-  storyshots: { disable: true },
   msw: {
     handlers: {
       story: [
