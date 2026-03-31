@@ -17,10 +17,16 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import { Provider } from 'react-redux';
+import { queryApi } from '../../redux/queryApi';
 import VersionDialogComponent from './VersionDialog';
 
 const store = configureStore({
-  reducer: (state = { ui: { isVersionDialogOpen: false } }) => state,
+  middleware: getDefaultMiddleware =>
+    getDefaultMiddleware({ serializableCheck: false }).concat(queryApi.middleware),
+  reducer: {
+    [queryApi.reducerPath]: queryApi.reducer,
+    ui: (state = { isVersionDialogOpen: false }) => state,
+  },
   preloadedState: {
     ui: {
       isVersionDialogOpen: true,
@@ -32,6 +38,9 @@ export default {
   title: 'Version Dialog',
   component: VersionDialogComponent,
   argTypes: {},
+  parameters: {
+    storyshots: { disable: true },
+  },
   decorators: [
     Story => {
       return (

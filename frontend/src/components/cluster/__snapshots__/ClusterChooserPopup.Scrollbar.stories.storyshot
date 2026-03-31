@@ -102,9 +102,6 @@
                 Current
               </p>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -122,9 +119,6 @@
                 cluster3
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -142,9 +136,6 @@
                 cluster4
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <hr
             class="MuiDivider-root MuiDivider-fullWidth css-9mgopn-MuiDivider-root"
@@ -166,9 +157,6 @@
                 cluster0
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -186,9 +174,6 @@
                 cluster1
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -206,9 +191,6 @@
                 cluster10
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -226,9 +208,6 @@
                 cluster11
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -246,9 +225,6 @@
                 cluster12
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -266,9 +242,6 @@
                 cluster13
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -286,9 +259,6 @@
                 cluster14
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -306,9 +276,6 @@
                 cluster15
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -326,9 +293,6 @@
                 cluster16
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -346,9 +310,6 @@
                 cluster17
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -366,9 +327,6 @@
                 cluster18
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -386,9 +344,6 @@
                 cluster19
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -406,9 +361,6 @@
                 cluster5
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -426,9 +378,6 @@
                 cluster6
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -446,9 +395,6 @@
                 cluster7
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -466,9 +412,6 @@
                 cluster8
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -486,9 +429,6 @@
                 cluster9
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
         </ul>
       </div>

@@ -60,7 +60,7 @@
                   type="button"
                 >
                   <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                    data-testid="mock-icon"
                   />
                 </button>
                 <button
@@ -71,7 +71,7 @@
                   type="button"
                 >
                   <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                    data-testid="mock-icon"
                   />
                 </button>
               </div>
@@ -113,9 +113,6 @@
                         <span
                           class="MuiSwitch-thumb css-jsexje-MuiSwitch-thumb"
                         />
-                        <span
-                          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                        />
                       </span>
                       <span
                         class="MuiSwitch-track css-1yjjitx-MuiSwitch-track"
@@ -133,9 +130,6 @@
                     type="button"
                   >
                     Upload File/URL
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </button>
                 </div>
               </div>
@@ -167,9 +161,6 @@
                   type="button"
                 >
                   Editor
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
                 </button>
                 <button
                   aria-controls="full-width-tabpanel-1-Editor-tabs-id"
@@ -181,9 +172,6 @@
                   type="button"
                 >
                   Documentation
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
                 </button>
               </div>
               <span
@@ -253,9 +241,6 @@
             type="button"
           >
             Close
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </button>
           <button
             class="MuiButtonBase-root MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-disableElevation Mui-disabled MuiButton-root MuiButton-contained MuiButton-containedPrimary MuiButton-sizeMedium MuiButton-containedSizeMedium MuiButton-colorPrimary MuiButton-disableElevation css-gn8fa3-MuiButtonBase-root-MuiButton-root"

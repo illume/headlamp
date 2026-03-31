@@ -130,6 +130,7 @@ describe('apiProxy', () => {
     let errCb: Mock;
 
     beforeEach(() => {
+      vi.stubEnv('UNDER_TEST', '');
       nock(baseApiUrl)
         .persist()
         .get(
@@ -144,13 +145,14 @@ describe('apiProxy', () => {
       cb = vi.fn();
       errCb = vi.fn();
 
-      // vi.spyOn(console, 'warn');
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
     });
 
     afterEach(() => {
       nock.cleanAll();
       WS.clean();
       vi.restoreAllMocks();
+      vi.unstubAllEnvs();
     });
 
     describe('singleApiFactory', () => {
@@ -163,7 +165,6 @@ describe('apiProxy', () => {
         client.list(cb, errCb, {}, clusterName);
 
         await server.connected;
-        console.log('connected');
 
         expect(cb).toHaveBeenNthCalledWith(1, []);
 
@@ -385,6 +386,7 @@ describe('apiProxy', () => {
     let errCb: Mock;
 
     beforeEach(() => {
+      vi.stubEnv('UNDER_TEST', '');
       nock(baseApiUrl)
         .get(`/clusters/${clusterName}${streamResultsUrl}/${mockConfigMap.metadata.name}`)
         .query(true)
@@ -396,13 +398,14 @@ describe('apiProxy', () => {
       mockServer = new WS(`${wsUrl}clusters/${clusterName}${streamResultsUrl}`);
       vi.spyOn(cluster, 'getCluster').mockReturnValue(clusterName);
       vi.spyOn(console, 'error').mockImplementation(() => {});
-      // vi.spyOn(console, 'warn').mockImplementation();
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
     });
 
     afterEach(() => {
       nock.cleanAll();
       WS.clean();
       vi.restoreAllMocks();
+      vi.unstubAllEnvs();
     });
 
     it('Successfully handles ADDED, MODIFIED, and DELETED types', async () => {
@@ -467,6 +470,7 @@ describe('apiProxy', () => {
     let errCb: Mock;
 
     beforeEach(() => {
+      vi.stubEnv('UNDER_TEST', '');
       nock(baseApiUrl)
         .get(`/clusters/${clusterName}${streamResultsUrl}`)
         .query(true)
@@ -478,13 +482,14 @@ describe('apiProxy', () => {
       mockServer = new WS(`${wsUrl}clusters/${clusterName}${streamResultsUrl}`);
       vi.spyOn(cluster, 'getCluster').mockReturnValue(clusterName);
       vi.spyOn(console, 'error').mockImplementation(() => {});
-      // vi.spyOn(console, 'warn').mockImplementation();
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
     });
 
     afterEach(() => {
       nock.cleanAll();
       WS.clean();
       vi.restoreAllMocks();
+      vi.unstubAllEnvs();
     });
 
     describe('streamResults', () => {
@@ -594,18 +599,20 @@ describe('apiProxy', () => {
     let failCb: Mock;
 
     beforeEach(() => {
+      vi.stubEnv('UNDER_TEST', '');
       cb = vi.fn();
       connectCb = vi.fn();
       failCb = vi.fn();
 
       mockServer = new WS(`${wsUrl}clusters/${clusterName}${testPath}`);
       vi.spyOn(cluster, 'getCluster').mockReturnValue(clusterName);
-      // vi.spyOn(console, 'warn').mockImplementation();
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
     });
 
     afterEach(() => {
       WS.clean();
       vi.restoreAllMocks();
+      vi.unstubAllEnvs();
     });
 
     it('Successfully connects to the server and receives messages', () =>
@@ -670,7 +677,6 @@ describe('apiProxy', () => {
         });
 
       vi.spyOn(cluster, 'getCluster').mockReturnValue(clusterName);
-      // vi.spyOn(console, 'warn').mockImplementation();
     });
 
     afterEach(() => {
@@ -738,7 +744,6 @@ describe('apiProxy', () => {
     beforeEach(() => {
       onMetrics = vi.fn();
       onError = vi.fn();
-      // vi.spyOn(console, 'warn').mockImplementation();
     });
 
     afterEach(() => {

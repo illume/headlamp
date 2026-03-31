@@ -16,12 +16,12 @@
 
 import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import { SnackbarProvider } from 'notistack';
 import { initialState as THEME_INITIAL_STATE } from '../../components/App/themeSlice';
 import { initialState as CONFIG_INITIAL_STATE } from '../../redux/configSlice';
 import { initialState as FILTER_INITIAL_STATE } from '../../redux/filterSlice';
+import { queryApi } from '../../redux/queryApi';
 import { uiSlice } from '../../redux/uiSlice';
 import { TestContext } from '../../test';
 import Sidebar, { DefaultSidebars, PureSidebar } from './Sidebar';
@@ -65,43 +65,28 @@ type StoryProps = Partial<SidebarState>;
 
 const Template: StoryFn<StoryProps> = args => {
   const sidebarStore = configureStore({
-    reducer: (
-      state = {
-        ui: { ...uiSlice.getInitialState() },
-      }
-    ) => state,
-    preloadedState: {
-      plugins: {
-        loaded: true,
-      },
-      theme: {
-        ...THEME_INITIAL_STATE,
-      },
-      config: {
-        ...CONFIG_INITIAL_STATE,
-      },
-      filter: {
-        ...FILTER_INITIAL_STATE,
-      },
-      ui: { ...uiSlice.getInitialState() },
-      projects: {
-        projects: {},
-      },
-      sidebar: {
-        ...SIDEBAR_INITIAL_STATE,
-        isVisible: true,
-        ...args,
-      },
+    reducer: {
+      [queryApi.reducerPath]: queryApi.reducer,
+      plugins: (state = { loaded: true }) => state,
+      theme: (state = THEME_INITIAL_STATE) => state,
+      config: (state = CONFIG_INITIAL_STATE) => state,
+      filter: (state = FILTER_INITIAL_STATE) => state,
+      ui: (state = uiSlice.getInitialState()) => state,
+      projects: (state = { projects: {} }) => state,
+      sidebar: (
+        state = {
+          ...SIDEBAR_INITIAL_STATE,
+          isVisible: true,
+          ...args,
+        }
+      ) => state,
     },
+    middleware: getDefault => getDefault({ serializableCheck: false }).concat(queryApi.middleware),
   });
-  const queryClient = new QueryClient();
-
   return (
     <TestContext store={sidebarStore}>
       <SnackbarProvider>
-        <QueryClientProvider client={queryClient}>
-          <Sidebar />
-        </QueryClientProvider>
+        <Sidebar />
       </SnackbarProvider>
     </TestContext>
   );

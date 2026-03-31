@@ -33,9 +33,6 @@
                 type="button"
               >
                 Cluster
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
               </button>
               <button
                 aria-controls="full-width-tabpanel-1-NavigationTabs-tabs-id"
@@ -47,9 +44,6 @@
                 type="button"
               >
                 Namespaces
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
               </button>
               <button
                 aria-controls="full-width-tabpanel-2-NavigationTabs-tabs-id"
@@ -61,9 +55,6 @@
                 type="button"
               >
                 Nodes
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
               </button>
             </div>
             <span

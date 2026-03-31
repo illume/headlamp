@@ -19,7 +19,6 @@ import { initialize, mswLoader } from 'msw-storybook-addon';
 import '../src/index.css';
 import { Title, Subtitle, Description, Primary, Controls } from '@storybook/addon-docs/blocks';
 import { baseMocks } from './baseMocks';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { darkTheme, lightTheme } from '../src/components/App/defaultAppThemes';
 import { createMuiTheme } from '../src/lib/themes';
 import App from '../src/App';
@@ -36,26 +35,13 @@ initialize({
 // And assigning it to a value will make sure it's not tree-shaken and removed
 const DontDeleteMe = App;
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      refetchOnMount: 'always',
-      staleTime: 0,
-      retry: false,
-      gcTime: 0,
-    },
-  },
-});
-
 const withThemeProvider = (Story: any, context: any) => {
   const theme = context.globals.backgrounds?.value === '#1f1f1f' ? darkTheme : lightTheme;
 
   const ourThemeProvider = (
-    <QueryClientProvider client={queryClient}>
-      <ThemeProvider theme={createMuiTheme(theme)}>
-        <Story {...context} />
-      </ThemeProvider>
-    </QueryClientProvider>
+    <ThemeProvider theme={createMuiTheme(theme)}>
+      <Story {...context} />
+    </ThemeProvider>
   );
   return ourThemeProvider;
 };

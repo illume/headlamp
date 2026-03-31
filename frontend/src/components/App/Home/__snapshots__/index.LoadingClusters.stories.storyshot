@@ -56,14 +56,14 @@
                         tabindex="0"
                         type="button"
                       >
+                        <span
+                          data-testid="mock-icon"
+                        />
                         <p
                           class="MuiTypography-root MuiTypography-body1 css-1ezega9-MuiTypography-root"
                         >
                           All Clusters
                         </p>
-                        <span
-                          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                        />
                       </button>
                       <button
                         aria-selected="false"
@@ -72,14 +72,14 @@
                         tabindex="-1"
                         type="button"
                       >
+                        <span
+                          data-testid="mock-icon"
+                        />
                         <p
                           class="MuiTypography-root MuiTypography-body1 css-1ezega9-MuiTypography-root"
                         >
                           Projects
                         </p>
-                        <span
-                          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                        />
                       </button>
                     </div>
                     <span

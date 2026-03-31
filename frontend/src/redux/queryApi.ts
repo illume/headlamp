@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-import { QueryClient } from '@tanstack/react-query';
+import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 3 * 60_000,
-      refetchOnWindowFocus: false,
-    },
-  },
+/**
+ * Base RTK Query API slice for Headlamp.
+ *
+ * Endpoints are injected via `queryApi.injectEndpoints()` in the modules
+ * that own the corresponding data-fetching logic.
+ */
+export const queryApi = createApi({
+  reducerPath: 'queryApi',
+  baseQuery: fakeBaseQuery(),
+  keepUnusedDataFor: 180,
+  refetchOnFocus: false,
+  refetchOnReconnect: false,
+  endpoints: () => ({}),
 });

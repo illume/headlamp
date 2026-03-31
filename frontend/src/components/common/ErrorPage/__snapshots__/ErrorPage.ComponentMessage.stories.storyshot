@@ -19,11 +19,11 @@
         <h2
           class="MuiTypography-root MuiTypography-h2 css-15otqr2-MuiTypography-root"
         >
-          <h3
+          <span
             class="MuiTypography-root MuiTypography-h3 css-3hjpok-MuiTypography-root"
           >
             Not sure what to do!
-          </h3>
+          </span>
         </h2>
       </div>
     </div>

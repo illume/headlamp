@@ -60,7 +60,7 @@ export default function SectionHeader(props: SectionHeaderProps) {
                 variant={titleVariants[headerStyle]}
                 noWrap
                 sx={theme => ({
-                  ...theme.palette.headerStyle[headerStyle || 'normal'],
+                  ...(theme.palette.headerStyle?.[headerStyle || 'normal'] ?? {}),
                   whiteSpace: 'pre-wrap',
                 })}
               >

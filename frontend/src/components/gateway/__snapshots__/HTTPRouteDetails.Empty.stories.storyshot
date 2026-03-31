@@ -16,16 +16,17 @@
           >
             <span
               class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </span>
             <p
               class="MuiTypography-root MuiTypography-body1 css-1ezega9-MuiTypography-root"
               style="padding-top: 3px;"
             >
               Back
             </p>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </button>
         </div>
       </div>
@@ -60,7 +61,7 @@
                     type="button"
                   >
                     <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                      data-testid="mock-icon"
                     />
                   </button>
                 </div>
@@ -89,7 +90,7 @@
                     type="button"
                   >
                     <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                      data-testid="mock-icon"
                     />
                   </button>
                 </div>
@@ -104,7 +105,7 @@
                     type="button"
                   >
                     <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                      data-testid="mock-icon"
                     />
                   </button>
                   <div />
@@ -184,7 +185,15 @@
                   </dt>
                   <dd
                     class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-9 MuiGrid-grid-md-10 css-ui3itl-MuiGrid-root"
-                  />
+                  >
+                    <span
+                      aria-label="test"
+                      class=""
+                      data-mui-internal-clone-element="true"
+                    >
+                      test
+                    </span>
+                  </dd>
                 </dl>
               </div>
             </div>
@@ -223,15 +232,248 @@
             <div
               class="MuiBox-root css-1txv3mw"
             >
-              <div
-                class="MuiBox-root css-19midj6"
+              <dl
+                class="MuiGrid-root MuiGrid-container css-kxuems-MuiGrid-root"
               >
-                <p
-                  class="MuiTypography-root MuiTypography-body1 MuiTypography-alignCenter css-18lkse1-MuiTypography-root"
+                <dt
+                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-12 MuiGrid-grid-md-12 css-gvwr1e-MuiGrid-root"
                 >
-                  No data
-                </p>
-              </div>
+                  test
+                </dt>
+                <dt
+                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-3 MuiGrid-grid-md-2 css-1hrqr1q-MuiGrid-root"
+                >
+                  Matches
+                </dt>
+                <dd
+                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-12 MuiGrid-grid-md-12 css-1cbfx75-MuiGrid-root"
+                >
+                  <div
+                    class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded MuiTableContainer-root css-1sjkwtf-MuiPaper-root-MuiTableContainer-root"
+                    tabindex="0"
+                  >
+                    <table
+                      class="MuiTable-root css-r7i92b-MuiTable-root"
+                    >
+                      <thead
+                        class="MuiTableHead-root css-15wwp11-MuiTableHead-root"
+                      >
+                        <tr
+                          class="MuiTableRow-root MuiTableRow-head css-13jktim-MuiTableRow-root"
+                        >
+                          <th
+                            class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                            scope="col"
+                          >
+                            Path Type
+                          </th>
+                          <th
+                            class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                            scope="col"
+                          >
+                            Path
+                          </th>
+                          <th
+                            class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                            scope="col"
+                          >
+                            Headers
+                          </th>
+                          <th
+                            class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                            scope="col"
+                          >
+                            Query Parameters
+                          </th>
+                          <th
+                            class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                            scope="col"
+                          >
+                            Method
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody
+                        class="MuiTableBody-root css-apqrd9-MuiTableBody-root"
+                      >
+                        <tr
+                          class="MuiTableRow-root css-13jktim-MuiTableRow-root"
+                        >
+                          <td
+                            class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                          >
+                            PathPrefix
+                          </td>
+                          <td
+                            class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                          >
+                            /
+                          </td>
+                          <td
+                            class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                          />
+                          <td
+                            class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                          />
+                          <td
+                            class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                          />
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </dd>
+                <dt
+                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-3 MuiGrid-grid-md-2 css-1hrqr1q-MuiGrid-root"
+                >
+                  Filters
+                </dt>
+                <dd
+                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-12 MuiGrid-grid-md-12 css-v9t693-MuiGrid-root"
+                >
+                  <div
+                    class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded MuiTableContainer-root css-1sjkwtf-MuiPaper-root-MuiTableContainer-root"
+                    tabindex="0"
+                  >
+                    <table
+                      class="MuiTable-root css-d21jum-MuiTable-root"
+                    >
+                      <thead
+                        class="MuiTableHead-root css-15wwp11-MuiTableHead-root"
+                      >
+                        <tr
+                          class="MuiTableRow-root MuiTableRow-head css-13jktim-MuiTableRow-root"
+                        >
+                          <th
+                            class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                            scope="col"
+                          >
+                            Filter Type
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody
+                        class="MuiTableBody-root css-apqrd9-MuiTableBody-root"
+                      >
+                        <tr
+                          class="MuiTableRow-root css-13jktim-MuiTableRow-root"
+                        >
+                          <td
+                            class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                          >
+                            RequestRedirect
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </dd>
+              </dl>
+              <dl
+                class="MuiGrid-root MuiGrid-container css-kxuems-MuiGrid-root"
+              >
+                <dt
+                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-3 MuiGrid-grid-md-2 css-1hrqr1q-MuiGrid-root"
+                >
+                  BackendRefs
+                </dt>
+                <dd
+                  class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-12 MuiGrid-grid-md-12 css-v9t693-MuiGrid-root"
+                >
+                  <div
+                    class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded MuiTableContainer-root css-1sjkwtf-MuiPaper-root-MuiTableContainer-root"
+                    tabindex="0"
+                  >
+                    <table
+                      class="MuiTable-root css-1t02l4h-MuiTable-root"
+                    >
+                      <thead
+                        class="MuiTableHead-root css-15wwp11-MuiTableHead-root"
+                      >
+                        <tr
+                          class="MuiTableRow-root MuiTableRow-head css-13jktim-MuiTableRow-root"
+                        >
+                          <th
+                            class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                            scope="col"
+                          >
+                            Name
+                          </th>
+                          <th
+                            class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                            scope="col"
+                          >
+                            Namespace
+                          </th>
+                          <th
+                            class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                            scope="col"
+                          >
+                            Kind
+                          </th>
+                          <th
+                            class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                            scope="col"
+                          >
+                            Group
+                          </th>
+                          <th
+                            class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                            scope="col"
+                          >
+                            Port
+                          </th>
+                          <th
+                            class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                            scope="col"
+                          >
+                            Weight
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody
+                        class="MuiTableBody-root css-apqrd9-MuiTableBody-root"
+                      >
+                        <tr
+                          class="MuiTableRow-root css-13jktim-MuiTableRow-root"
+                        >
+                          <td
+                            class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                          >
+                            <a
+                              class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineHover css-2ugbm1-MuiTypography-root-MuiLink-root"
+                              href="/"
+                            >
+                              service
+                            </a>
+                          </td>
+                          <td
+                            class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                          />
+                          <td
+                            class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                          >
+                            Service
+                          </td>
+                          <td
+                            class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                          />
+                          <td
+                            class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                          >
+                            8080
+                          </td>
+                          <td
+                            class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                          >
+                            1
+                          </td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </dd>
+              </dl>
             </div>
           </div>
         </div>
@@ -269,17 +511,98 @@
               class="MuiBox-root css-1txv3mw"
             >
               <div
-                class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded css-1guobrs-MuiPaper-root"
+                class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded MuiTableContainer-root css-onzayo-MuiPaper-root-MuiTableContainer-root"
+                tabindex="0"
               >
-                <div
-                  class="MuiBox-root css-19midj6"
+                <table
+                  class="MuiTable-root css-1t02l4h-MuiTable-root"
                 >
-                  <p
-                    class="MuiTypography-root MuiTypography-body1 MuiTypography-alignCenter css-18lkse1-MuiTypography-root"
+                  <thead
+                    class="MuiTableHead-root css-15wwp11-MuiTableHead-root"
                   >
-                    No rules data to be shown.
-                  </p>
-                </div>
+                    <tr
+                      class="MuiTableRow-root MuiTableRow-head css-13jktim-MuiTableRow-root"
+                    >
+                      <th
+                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                        scope="col"
+                      >
+                        Name
+                      </th>
+                      <th
+                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                        scope="col"
+                      >
+                        Namespace
+                      </th>
+                      <th
+                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                        scope="col"
+                      >
+                        Kind
+                      </th>
+                      <th
+                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                        scope="col"
+                      >
+                        Group
+                      </th>
+                      <th
+                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                        scope="col"
+                      >
+                        Section Name
+                      </th>
+                      <th
+                        class="MuiTableCell-root MuiTableCell-head MuiTableCell-sizeSmall css-l4jzay-MuiTableCell-root"
+                        scope="col"
+                      >
+                        Port
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody
+                    class="MuiTableBody-root css-apqrd9-MuiTableBody-root"
+                  >
+                    <tr
+                      class="MuiTableRow-root css-13jktim-MuiTableRow-root"
+                    >
+                      <td
+                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                      >
+                        <a
+                          class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineHover css-2ugbm1-MuiTypography-root-MuiLink-root"
+                          href="/"
+                        >
+                          shared-gateway
+                        </a>
+                      </td>
+                      <td
+                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                      >
+                        envoy-gateway-system
+                      </td>
+                      <td
+                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                      >
+                        Gateway
+                      </td>
+                      <td
+                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                      >
+                        gateway.networking.k8s.io
+                      </td>
+                      <td
+                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                      >
+                        cloud-internal-https
+                      </td>
+                      <td
+                        class="MuiTableCell-root MuiTableCell-body MuiTableCell-sizeSmall css-oh2q4q-MuiTableCell-root"
+                      />
+                    </tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

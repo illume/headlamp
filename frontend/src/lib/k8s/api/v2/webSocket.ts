@@ -99,7 +99,13 @@ export async function openWebSocket<T>(
      */
     onMessage: (data: T) => void;
   }
-) {
+): Promise<WebSocket> {
+  // Skip WebSocket connections in test environment — no server to connect to.
+  // Return a never-resolving promise so callers silently wait forever (no error logged).
+  if (import.meta.env.UNDER_TEST === 'true') {
+    return new Promise<WebSocket>(() => {});
+  }
+
   const path = [url];
   const protocols = ['base64.binary.k8s.io', ...(moreProtocols ?? [])];
 

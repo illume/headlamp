@@ -8,9 +8,6 @@
       type="button"
     >
       Choose Columns
-      <span
-        class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-      />
     </button>
   </div>
   <div
@@ -76,9 +73,6 @@
               Name
             </span>
           </div>
-          <span
-            class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-          />
         </div>
         <div
           class="MuiButtonBase-root MuiListItem-root MuiListItem-dense MuiListItem-gutters MuiListItem-padding MuiListItem-button css-97b0kf-MuiButtonBase-root-MuiListItem-root"
@@ -122,9 +116,6 @@
               Namespace
             </span>
           </div>
-          <span
-            class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-          />
         </div>
         <div
           class="MuiButtonBase-root MuiListItem-root MuiListItem-dense MuiListItem-gutters MuiListItem-padding MuiListItem-button css-97b0kf-MuiButtonBase-root-MuiListItem-root"
@@ -168,9 +159,6 @@
               Age
             </span>
           </div>
-          <span
-            class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-          />
         </div>
         <div
           class="MuiButtonBase-root MuiListItem-root MuiListItem-dense MuiListItem-gutters MuiListItem-padding MuiListItem-button css-97b0kf-MuiButtonBase-root-MuiListItem-root"
@@ -214,9 +202,6 @@
               Status
             </span>
           </div>
-          <span
-            class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-          />
         </div>
         <div
           class="MuiButtonBase-root MuiListItem-root MuiListItem-dense MuiListItem-gutters MuiListItem-padding MuiListItem-button css-97b0kf-MuiButtonBase-root-MuiListItem-root"
@@ -259,9 +244,6 @@
               Ready
             </span>
           </div>
-          <span
-            class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-          />
         </div>
         <div
           class="MuiButtonBase-root MuiListItem-root MuiListItem-dense MuiListItem-gutters MuiListItem-padding MuiListItem-button css-97b0kf-MuiButtonBase-root-MuiListItem-root"
@@ -304,9 +286,6 @@
               Restarts
             </span>
           </div>
-          <span
-            class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-          />
         </div>
         <div
           class="MuiButtonBase-root MuiListItem-root MuiListItem-dense MuiListItem-gutters MuiListItem-padding MuiListItem-button css-97b0kf-MuiButtonBase-root-MuiListItem-root"
@@ -349,9 +328,6 @@
               Node
             </span>
           </div>
-          <span
-            class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-          />
         </div>
         <div
           class="MuiButtonBase-root MuiListItem-root MuiListItem-dense MuiListItem-gutters MuiListItem-padding MuiListItem-button css-97b0kf-MuiButtonBase-root-MuiListItem-root"
@@ -394,9 +370,6 @@
               IP
             </span>
           </div>
-          <span
-            class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-          />
         </div>
         <div
           class="MuiButtonBase-root MuiListItem-root MuiListItem-dense MuiListItem-gutters MuiListItem-padding MuiListItem-button css-97b0kf-MuiButtonBase-root-MuiListItem-root"
@@ -439,9 +412,6 @@
               Labels
             </span>
           </div>
-          <span
-            class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-          />
         </div>
         <div
           class="MuiButtonBase-root MuiListItem-root MuiListItem-dense MuiListItem-gutters MuiListItem-padding MuiListItem-button css-97b0kf-MuiButtonBase-root-MuiListItem-root"
@@ -484,9 +454,6 @@
               Annotations
             </span>
           </div>
-          <span
-            class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-          />
         </div>
       </ul>
     </div>

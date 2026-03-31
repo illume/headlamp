@@ -11,7 +11,7 @@
         class="MuiPaper-root MuiPaper-outlined MuiSnackbarContent-root css-1cboije-MuiPaper-root-MuiSnackbarContent-root"
         direction="up"
         role="alert"
-        style="opacity: 1; transform: none; transition: opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;"
+        style="opacity: 1; transform: scale(1, 1); transition: opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms,transform 150ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;"
       >
         <div
           class="MuiSnackbarContent-message css-1exqwzz-MuiSnackbarContent-message"
@@ -34,9 +34,6 @@
                 type="button"
               >
                 Read more
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
               </button>
             </div>
             <div
@@ -50,7 +47,7 @@
                 type="button"
               >
                 <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                  data-testid="mock-icon"
                 />
               </button>
             </div>
@@ -64,9 +61,6 @@
                 type="button"
               >
                 Dismiss
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
               </button>
             </div>
           </div>
@@ -129,7 +123,7 @@
                   type="button"
                 >
                   <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                    data-testid="mock-icon"
                   />
                 </button>
               </div>

@@ -14,6 +14,10 @@
             class="MuiTypography-root MuiTypography-h1 MuiTypography-noWrap css-yeaech-MuiTypography-root"
           >
             <span
+              data-testid="mock-icon"
+              style="margin-right: 8px; vertical-align: middle;"
+            />
+            <span
               class="MuiTypography-root MuiTypography-inherit css-191i2np-MuiTypography-root"
             >
               Launch Control
