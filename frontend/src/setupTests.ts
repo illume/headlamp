@@ -104,13 +104,20 @@ beforeEach(() => {
   localStorage.clear();
 });
 
-// Suppress noisy console.log messages from IndexedDB operations during tests.
+// Suppress noisy console.log messages from IndexedDB kubeconfig operations during tests.
 // These are informational messages from kubeconfig persistence that spam test output.
+// Restoration is not needed — setupTests.ts runs once per test worker, not per test.
 {
   const originalConsoleLog = console.log;
   console.log = (...args: unknown[]) => {
     const msg = typeof args[0] === 'string' ? args[0] : '';
-    if (msg.includes('IndexedDB')) return;
+    if (
+      msg === 'Kubeconfig added to IndexedDB' ||
+      msg === 'Kubeconfig deleted from IndexedDB' ||
+      msg === 'Kubeconfig updated in IndexedDB'
+    ) {
+      return;
+    }
     originalConsoleLog(...args);
   };
 }
