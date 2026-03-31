@@ -164,7 +164,10 @@ beforeEach(() => {
     if (msg.includes('Failed to load namespaces from Local Storage')) return;
     if (msg.includes('Error setting cookie token')) return;
     if (msg.includes('Unable to parse error json')) return;
-    if (msg.includes('Invalid value for prop') && msg.includes('on <span> tag')) return;
+    // Suppress non-DOM prop warnings — Icon mock forwards all props to <span>,
+    // and MUI's sx prop sometimes leaks to DOM elements. React uses format strings
+    // with %s placeholders so args[0] has "on <%s> tag" not the actual tag name.
+    if (msg.includes('Invalid value for prop')) return;
     if (msg.includes('potentially unsafe when doing server-side rendering')) return;
     if (msg.includes("doesn't accept a Fragment as a child")) return;
     if (msg.includes('The value provided to Autocomplete is invalid')) return;

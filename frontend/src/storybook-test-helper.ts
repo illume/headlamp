@@ -251,8 +251,10 @@ export function runStorybookTests(
         if (msg.includes('Failed to fetch events for object')) return;
         // Suppress React key warnings — pre-existing in list views with mock data
         if (msg.includes('Each child in a list should have a unique "key" prop')) return;
-        // Suppress non-DOM prop warnings — Icon mock forwards all props to <span>
-        if (msg.includes('Invalid value for prop') && msg.includes('on <span> tag')) return;
+        // Suppress non-DOM prop warnings — Icon mock forwards all props to <span>,
+        // and MUI's sx prop sometimes leaks to DOM elements. React uses format strings
+        // with %s placeholders so args[0] has "on <%s> tag" not the actual tag name.
+        if (msg.includes('Invalid value for prop')) return;
         if (suppressBoth.some(s => msg.includes(s))) return;
         originalConsoleError(...args);
       };
