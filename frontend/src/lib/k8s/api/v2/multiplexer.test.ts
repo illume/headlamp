@@ -61,6 +61,7 @@ describe('WebSocket Multiplexer', () => {
   let originalConsoleError: typeof console.error;
 
   beforeEach(() => {
+    vi.stubEnv('UNDER_TEST', '');
     vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'true');
     vi.clearAllMocks();
     onMessage = vi.fn();
