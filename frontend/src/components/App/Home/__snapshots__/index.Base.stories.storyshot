@@ -633,9 +633,9 @@
                           />
                           <p
                             class="MuiTypography-root MuiTypography-body2 css-ab4e19-MuiTypography-root"
-                            style="margin-left: 8px;"
+                            style="margin-left: 8px; color: rgb(16, 124, 16);"
                           >
-                            ⋯
+                            Active
                           </p>
                         </div>
                       </div>
@@ -741,9 +741,9 @@
                           />
                           <p
                             class="MuiTypography-root MuiTypography-body2 css-ab4e19-MuiTypography-root"
-                            style="margin-left: 8px; color: rgb(16, 124, 16);"
+                            style="margin-left: 8px;"
                           >
-                            Active
+                            ⋯
                           </p>
                         </div>
                       </div>

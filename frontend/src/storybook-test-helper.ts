@@ -332,6 +332,29 @@ export function runStorybookTests(
             }
             worker.events.on('request:unhandled', onUnhandledRequest);
 
+            // Reorder MSW handler keys so story-specific handlers get highest
+            // priority. msw-storybook-addon's applyRequestHandlers flattens
+            // Object.values(handlers) into a single array and calls
+            // worker.use(...array). MSW's use() prepends handlers, so the
+            // FIRST element in the array gets checked first and wins for
+            // matching URLs. We reorder keys so story > storyBase > base,
+            // meaning story-specific handlers are checked before base handlers.
+            const mswHandlers = story.parameters?.msw?.handlers;
+            if (mswHandlers && typeof mswHandlers === 'object' && !Array.isArray(mswHandlers)) {
+              const reordered: Record<string, any> = {};
+              // Story-specific handlers first (highest priority — checked first)
+              if ('story' in mswHandlers) reordered.story = mswHandlers.story;
+              if ('storyBase' in mswHandlers) reordered.storyBase = mswHandlers.storyBase;
+              if ('baseStory' in mswHandlers) reordered.baseStory = mswHandlers.baseStory;
+              // Base handlers last (lowest priority — checked after story handlers)
+              if ('base' in mswHandlers) reordered.base = mswHandlers.base;
+              // Copy any other keys
+              for (const key of Object.keys(mswHandlers)) {
+                if (!(key in reordered)) reordered[key] = mswHandlers[key];
+              }
+              story.parameters.msw.handlers = reordered;
+            }
+
             await act(async () => {
               await story.run();
             });
@@ -362,7 +385,7 @@ export function runStorybookTests(
             // stories with MSW handlers automatically wait for data to load.
             const explicitWaitForText = story.parameters?.storyshots?.waitForText;
             let waitForText = explicitWaitForText;
-            if (!waitForText && requestsSent > 0) {
+            if (!waitForText && story.parameters?.msw?.handlers) {
               waitForText = await deriveWaitForTextFromMSW(story);
             }
             if (waitForText) {
