@@ -29,6 +29,7 @@ describe('detailsViewSectionSlice', () => {
     reducer: {
       detailsViewSection: detailsViewSectionReducer,
     },
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }),
   });
 
   beforeEach(() => {
@@ -36,6 +37,7 @@ describe('detailsViewSectionSlice', () => {
       reducer: {
         detailsViewSection: detailsViewSectionReducer,
       },
+      middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }),
     });
   });
 
