@@ -34,7 +34,8 @@ globalThis.indexedDB = indexeddb;
   globalThis.Request = class PatchedRequest extends OriginalRequest {
     constructor(input: RequestInfo | URL, init?: RequestInit) {
       if (init?.signal) {
-        const { signal: _signal, ...rest } = init;
+        const { signal, ...rest } = init;
+        void signal; // stripped — jsdom's AbortSignal fails cross-realm instanceof
         super(input, rest);
       } else {
         super(input, init);
