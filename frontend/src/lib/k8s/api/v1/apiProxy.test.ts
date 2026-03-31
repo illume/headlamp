@@ -677,7 +677,6 @@ describe('apiProxy', () => {
         });
 
       vi.spyOn(cluster, 'getCluster').mockReturnValue(clusterName);
-      // vi.spyOn(console, 'warn').mockImplementation();
     });
 
     afterEach(() => {
@@ -745,7 +744,6 @@ describe('apiProxy', () => {
     beforeEach(() => {
       onMetrics = vi.fn();
       onError = vi.fn();
-      // vi.spyOn(console, 'warn').mockImplementation();
     });
 
     afterEach(() => {
