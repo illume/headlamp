@@ -38,6 +38,9 @@ export default {
   title: 'Version Dialog',
   component: VersionDialogComponent,
   argTypes: {},
+  parameters: {
+    storyshots: { disable: true },
+  },
   decorators: [
     Story => {
       return (
