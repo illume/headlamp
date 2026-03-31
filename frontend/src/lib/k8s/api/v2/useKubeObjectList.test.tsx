@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
+import { configureStore } from '@reduxjs/toolkit';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
+import { Provider } from 'react-redux';
 import { describe, expect, it, vi } from 'vitest';
+import { queryApi } from '../../../../redux/queryApi';
 import {
   kubeObjectListQuery,
   ListResponse,
@@ -40,6 +43,13 @@ vi.mock('./multiplexer', () => ({
     subscribe: (...args: any[]) => mockSubscribe(...args),
   },
 }));
+
+function createTestStore() {
+  return configureStore({
+    reducer: { [queryApi.reducerPath]: queryApi.reducer },
+    middleware: getDefault => getDefault({ serializableCheck: false }).concat(queryApi.middleware),
+  });
+}
 
 describe('makeListRequests', () => {
   describe('for non namespaced resource', () => {
@@ -138,7 +148,9 @@ describe('useWatchKubeObjectLists', () => {
     const queryClient = new QueryClient();
     renderHook(() => useWatchKubeObjectLists({ kubeObjectClass: mockClass, lists: [] }), {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <Provider store={createTestStore()}>
+          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        </Provider>
       ),
     });
     expect(spy).toHaveBeenCalledWith({ enabled: false, connections: [] });
@@ -157,7 +169,9 @@ describe('useWatchKubeObjectLists', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          <Provider store={createTestStore()}>
+            <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -183,7 +197,9 @@ describe('useWatchKubeObjectLists', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          <Provider store={createTestStore()}>
+            <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -241,7 +257,9 @@ describe('useWatchKubeObjectLists', () => {
     // When watching lists
     renderHook(() => useWatchKubeObjectLists({ kubeObjectClass, lists, endpoint }), {
       wrapper: ({ children }) => (
-        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        <Provider store={createTestStore()}>
+          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+        </Provider>
       ),
     });
 
@@ -300,7 +318,9 @@ describe('useKubeObjectList', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          <Provider store={createTestStore()}>
+            <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -332,7 +352,9 @@ describe('useWatchKubeObjectLists (Multiplexer)', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          <Provider store={createTestStore()}>
+            <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -360,7 +382,9 @@ describe('useWatchKubeObjectLists (Multiplexer)', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          <Provider store={createTestStore()}>
+            <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
@@ -394,7 +418,9 @@ describe('useWatchKubeObjectLists (Multiplexer)', () => {
         }),
       {
         wrapper: ({ children }) => (
-          <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          <Provider store={createTestStore()}>
+            <QueryClientProvider client={new QueryClient()}>{children}</QueryClientProvider>
+          </Provider>
         ),
       }
     );
