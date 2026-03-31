@@ -29,6 +29,7 @@ const storybookShards = Array.from({ length: STORYBOOK_SHARD_COUNT }, (_, i) => 
     include: ['src/storybook.test.tsx'],
     env: {
       STORYBOOK_SHARD: String(i),
+      STORYBOOK_SHARD_COUNT: String(STORYBOOK_SHARD_COUNT),
     },
   },
 }));

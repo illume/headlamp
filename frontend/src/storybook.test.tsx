@@ -90,13 +90,14 @@ window.matchMedia = () => ({
 
 /**
  * Total number of parallel shards for storybook tests.
- * Must match STORYBOOK_SHARD_COUNT in vitest.config.ts.
+ * Read from STORYBOOK_SHARD_COUNT env var set by vitest.config.ts
+ * to stay in sync with the workspace project count.
  */
-const STORYBOOK_SHARD_COUNT = 12;
+const STORYBOOK_SHARD_COUNT = Number(import.meta.env.STORYBOOK_SHARD_COUNT || 4);
 
 /**
  * Load story files for this shard. Uses lazy glob imports so each shard
- * only loads the story modules it needs (1/12th), avoiding the overhead
+ * only loads the story modules it needs, avoiding the overhead
  * of eagerly importing all stories in every shard.
  */
 async function loadStoryFiles() {
