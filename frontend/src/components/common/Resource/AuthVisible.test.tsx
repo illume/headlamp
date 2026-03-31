@@ -327,4 +327,53 @@ describe('AuthVisible', () => {
     // Verify the old callback was not called again after rerender
     expect(onError1.mock.calls.length).toBe(onError1CallCount);
   });
+
+  it('calls onAuthResult with the latest callback when auth data arrives', async () => {
+    // This verifies that when onAuthResult prop changes, the new callback is used (not stale)
+    // Use unique item config to avoid cache collisions with other tests
+    const mockItem = {
+      cluster: 'test-cluster',
+      getName: () => 'result-test-resource',
+      _class: () => ({
+        apiName: 'configmaps',
+        apiVersion: 'v1',
+      }),
+      getAuthorization: vi.fn().mockResolvedValue({
+        status: { allowed: true, reason: 'RBAC: allowed' },
+      }),
+    } as any;
+    const onAuthResult1 = vi.fn();
+
+    const { rerender } = render(
+      <TestContext>
+        <AuthVisible item={mockItem} authVerb="watch" onAuthResult={onAuthResult1}>
+          <div>Content</div>
+        </AuthVisible>
+      </TestContext>
+    );
+
+    await waitFor(() => {
+      expect(onAuthResult1).toHaveBeenCalledWith({ allowed: true, reason: 'RBAC: allowed' });
+    });
+
+    // Now re-render with a new onAuthResult callback
+    const onAuthResult1CallCount = onAuthResult1.mock.calls.length;
+    const onAuthResult2 = vi.fn();
+
+    rerender(
+      <TestContext>
+        <AuthVisible item={mockItem} authVerb="watch" onAuthResult={onAuthResult2}>
+          <div>Content</div>
+        </AuthVisible>
+      </TestContext>
+    );
+
+    // The new callback should fire (not the stale one) because data is already present
+    await waitFor(() => {
+      expect(onAuthResult2).toHaveBeenCalledWith({ allowed: true, reason: 'RBAC: allowed' });
+    });
+
+    // Verify the old callback was not called again after rerender
+    expect(onAuthResult1.mock.calls.length).toBe(onAuthResult1CallCount);
+  });
 });
