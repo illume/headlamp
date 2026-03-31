@@ -33,6 +33,10 @@ export default {
             () => HttpResponse.error()
           ),
           http.get(
+            'http://localhost:4466/apis/apiextensions.k8s.io/v1beta1/customresourcedefinitions/:name',
+            () => HttpResponse.error()
+          ),
+          http.get(
             'http://localhost:4466/apis/apiextensions.k8s.io/v1/customresourcedefinitions',
             () => HttpResponse.json({})
           ),
