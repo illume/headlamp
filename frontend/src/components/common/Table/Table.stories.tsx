@@ -21,6 +21,7 @@ import { Meta, StoryFn } from '@storybook/react';
 import { useLocation } from 'react-router-dom';
 import { KubeObjectInterface } from '../../../lib/k8s/KubeObject';
 import { useFilterFunc } from '../../../lib/util';
+import { queryApi } from '../../../redux/queryApi';
 import shortcutsReducer from '../../../redux/shortcutsSlice';
 import { TestContext, TestContextProps } from '../../../test';
 import SectionFilterHeader from '../SectionFilterHeader';
@@ -261,13 +262,19 @@ const TemplateWithFilter: StoryFn<{
   const { tableArgs: simpleTableArgs, search, namespaces = [] } = args;
 
   const storeWithFilterAndSettings = configureStore({
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(queryApi.middleware),
     reducer: (
       state = {
         filter: { namespaces: new Set<string>(), search: '' },
         config: { settings: { tableRowsPerPageOptions: [10, 20, 50, 100] } },
         shortcuts: { ...shortcutsReducer(undefined, { type: '' }) },
-      }
-    ) => state,
+      },
+      action: any
+    ) => ({
+      ...state,
+      [queryApi.reducerPath]: queryApi.reducer(state[queryApi.reducerPath], action),
+    }),
     preloadedState: {
       filter: {
         namespaces: new Set(namespaces),
