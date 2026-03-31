@@ -269,3 +269,224 @@ describe('KubeList.applyUpdate edge cases and correctness', () => {
     expect(result).toBe(list);
   });
 });
+describe('KubeList.applyUpdate new-item and multi-item behavior', () => {
+  // Test 6: Update with undefined resourceVersion should still apply
+  it('should apply update when update has no resourceVersion', () => {
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items: [],
+      metadata: { resourceVersion: '100' },
+    } as any;
+
+    const result = KubeList.applyUpdate(
+      list,
+      {
+        type: 'ADDED',
+        object: { metadata: { name: 'new-pod', uid: 'new-uid' } },
+      } as any,
+      mockClass,
+      'cluster-a'
+    );
+
+    expect(result.items).toHaveLength(1);
+    expect(result).not.toBe(list);
+  });
+
+  // Test 7: Update with resourceVersion "0" should apply when list has "0"
+  it('should skip update with resourceVersion 0 when list also has 0', () => {
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items: [],
+      metadata: { resourceVersion: '0' },
+    } as any;
+
+    const result = KubeList.applyUpdate(
+      list,
+      {
+        type: 'ADDED',
+        object: { metadata: { name: 'pod', uid: 'uid-1', resourceVersion: '0' } },
+      } as any,
+      mockClass,
+      'cluster-a'
+    );
+
+    // parseInt("0") <= parseInt("0") → true → skip
+    expect(result).toBe(list);
+  });
+
+  // Test 8: ADDED to empty list should work
+  it('should add item to empty list', () => {
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items: [],
+      metadata: { resourceVersion: '1' },
+    } as any;
+
+    const result = KubeList.applyUpdate(
+      list,
+      {
+        type: 'ADDED',
+        object: { metadata: { name: 'pod-1', uid: 'uid-1', resourceVersion: '5' } },
+      } as any,
+      mockClass,
+      'cluster-a'
+    );
+
+    expect(result.items).toHaveLength(1);
+    expect(result.items[0].cluster).toBe('cluster-a');
+  });
+
+  // Test 9: Unknown event type like BOOKMARK should not modify list
+  it('should return same reference for BOOKMARK event type', () => {
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items: [{ metadata: { uid: 'uid-1', resourceVersion: '5' } }],
+      metadata: { resourceVersion: '5' },
+    } as any;
+
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const result = KubeList.applyUpdate(
+      list,
+      { type: 'BOOKMARK', object: { metadata: { resourceVersion: '100' } } } as any,
+      mockClass,
+      'cluster-a'
+    );
+    spy.mockRestore();
+
+    expect(result).toBe(list);
+    expect(result.metadata.resourceVersion).toBe('5'); // unchanged
+  });
+
+  // Test 10: MODIFIED preserves other items in the list
+  it('should preserve other items when MODIFIED updates one item', () => {
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items: [
+        { metadata: { name: 'pod-1', uid: 'uid-1', resourceVersion: '5' } },
+        { metadata: { name: 'pod-2', uid: 'uid-2', resourceVersion: '6' } },
+        { metadata: { name: 'pod-3', uid: 'uid-3', resourceVersion: '7' } },
+      ],
+      metadata: { resourceVersion: '7' },
+    } as any;
+
+    const result = KubeList.applyUpdate(
+      list,
+      {
+        type: 'MODIFIED',
+        object: { metadata: { name: 'pod-2-v2', uid: 'uid-2', resourceVersion: '20' } },
+      } as any,
+      mockClass,
+      'cluster-a'
+    );
+
+    expect(result.items).toHaveLength(3);
+    // pod-1 and pod-3 should be unchanged references
+    expect(result.items[0]).toBe(list.items[0]);
+    expect(result.items[2]).toBe(list.items[2]);
+    // pod-2 should be new
+    expect(result.items[1].jsonData.metadata.name).toBe('pod-2-v2');
+  });
+
+  // Test 11: Cluster is passed to constructor for new items
+  it('should pass cluster to itemClass constructor', () => {
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items: [],
+      metadata: { resourceVersion: '1' },
+    } as any;
+
+    const result = KubeList.applyUpdate(
+      list,
+      {
+        type: 'ADDED',
+        object: { metadata: { name: 'pod-1', uid: 'uid-1', resourceVersion: '5' } },
+      } as any,
+      mockClass,
+      'my-cluster'
+    );
+
+    expect(result.items[0].cluster).toBe('my-cluster');
+  });
+
+  // Test 12: DELETED for non-existent UID does NOT copy the array (perf optimization)
+  it('should not copy array when DELETED targets non-existent UID', () => {
+    const items = [{ metadata: { uid: 'uid-1', resourceVersion: '5' } }];
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items,
+      metadata: { resourceVersion: '5' },
+    } as any;
+
+    const result = KubeList.applyUpdate(
+      list,
+      {
+        type: 'DELETED',
+        object: { metadata: { uid: 'nonexistent', resourceVersion: '10' } },
+      } as any,
+      mockClass,
+      'cluster-a'
+    );
+
+    expect(result).toBe(list);
+    // items array should be the exact same reference (not a copy)
+    expect(result.items).toBe(items);
+  });
+
+  // Test 13: Multiple sequential updates maintain correct item count
+  it('should handle sequential ADDED + MODIFIED + DELETED correctly', () => {
+    let list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items: [],
+      metadata: { resourceVersion: '1' },
+    } as any;
+
+    // ADDED
+    list = KubeList.applyUpdate(
+      list,
+      { type: 'ADDED', object: { metadata: { uid: 'a', resourceVersion: '2' } } } as any,
+      mockClass,
+      'c'
+    );
+    expect(list.items).toHaveLength(1);
+
+    // ADDED another
+    list = KubeList.applyUpdate(
+      list,
+      { type: 'ADDED', object: { metadata: { uid: 'b', resourceVersion: '3' } } } as any,
+      mockClass,
+      'c'
+    );
+    expect(list.items).toHaveLength(2);
+
+    // MODIFIED first
+    list = KubeList.applyUpdate(
+      list,
+      {
+        type: 'MODIFIED',
+        object: { metadata: { uid: 'a', resourceVersion: '4', name: 'updated' } },
+      } as any,
+      mockClass,
+      'c'
+    );
+    expect(list.items).toHaveLength(2);
+    expect(list.items[0].jsonData.metadata.name).toBe('updated');
+
+    // DELETED second
+    list = KubeList.applyUpdate(
+      list,
+      { type: 'DELETED', object: { metadata: { uid: 'b', resourceVersion: '5' } } } as any,
+      mockClass,
+      'c'
+    );
+    expect(list.items).toHaveLength(1);
+    expect(list.items[0].metadata.uid).toBe('a');
+  });
+});
