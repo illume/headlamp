@@ -746,6 +746,128 @@
                   class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineHover css-2ugbm1-MuiTypography-root-MuiLink-root"
                   href="/"
                 >
+                  db
+                </a>
+              </td>
+              <td
+                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-2bq9ry-MuiTableCell-root"
+              >
+                <a
+                  class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineHover css-2ugbm1-MuiTypography-root-MuiLink-root"
+                  href="/"
+                >
+                  database
+                </a>
+              </td>
+              <td
+                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1s3kq9u-MuiTableCell-root"
+              >
+                1/1
+              </td>
+              <td
+                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-2v2gbo-MuiTableCell-root"
+              >
+                1
+              </td>
+              <td
+                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-136f0b-MuiTableCell-root"
+              >
+                <span
+                  aria-label="postgres"
+                  class=""
+                  data-mui-internal-clone-element="true"
+                >
+                  postgres
+                </span>
+              </td>
+              <td
+                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1c21yoq-MuiTableCell-root"
+              >
+                <span
+                  aria-label="postgres:15"
+                  class=""
+                  data-mui-internal-clone-element="true"
+                >
+                  postgres:15
+                </span>
+              </td>
+              <td
+                class="MuiTableCell-root MuiTableCell-alignRight MuiTableCell-sizeMedium css-14i1ub9-MuiTableCell-root"
+              >
+                <p
+                  aria-label="2023-05-16T11:00:00.000Z"
+                  class="MuiTypography-root MuiTypography-body1 css-1d0cpfm-MuiTypography-root"
+                  data-mui-internal-clone-element="true"
+                >
+                  3mo
+                  <span
+                    data-testid="mock-icon"
+                    style="margin-right: 0.2rem; margin-left: 0.2rem; align-self: center;"
+                  />
+                </p>
+              </td>
+              <td
+                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-hq12h3-MuiTableCell-root"
+              >
+                <button
+                  aria-label="Row Actions"
+                  class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeSmall css-1cxdeyj-MuiButtonBase-root-MuiIconButton-root"
+                  data-mui-internal-clone-element="true"
+                  tabindex="0"
+                  type="button"
+                >
+                  <svg
+                    aria-hidden="true"
+                    class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium css-i4bv87-MuiSvgIcon-root"
+                    data-testid="MoreVertIcon"
+                    focusable="false"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2m0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2"
+                    />
+                  </svg>
+                </button>
+              </td>
+            </tr>
+            <tr
+              class="css-1ospngb"
+              data-selected="false"
+            >
+              <td
+                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1nchbpl-MuiTableCell-root"
+              >
+                <span
+                  aria-label="Toggle select row"
+                  class="MuiButtonBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall PrivateSwitchBase-root MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall MuiCheckbox-root MuiCheckbox-colorPrimary MuiCheckbox-sizeSmall css-1li6ni2-MuiButtonBase-root-MuiCheckbox-root"
+                  data-mui-internal-clone-element="true"
+                >
+                  <input
+                    aria-label="Toggle select row"
+                    class="PrivateSwitchBase-input css-1m9pwf3"
+                    data-indeterminate="false"
+                    type="checkbox"
+                  />
+                  <svg
+                    aria-hidden="true"
+                    class="MuiSvgIcon-root MuiSvgIcon-fontSizeSmall css-ptiqhd-MuiSvgIcon-root"
+                    data-testid="CheckBoxOutlineBlankIcon"
+                    focusable="false"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"
+                    />
+                  </svg>
+                </span>
+              </td>
+              <td
+                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1adoll5-MuiTableCell-root"
+              >
+                <a
+                  class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineHover css-2ugbm1-MuiTypography-root-MuiLink-root"
+                  href="/"
+                >
                   web
                 </a>
               </td>
