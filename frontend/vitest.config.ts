@@ -15,7 +15,6 @@
  */
 
 /// <reference types="vitest" />
-import { readFileSync } from 'fs';
 import { type Plugin } from 'vite';
 import { defineConfig, mergeConfig } from 'vitest/config';
 import { coverageConfigDefaults } from 'vitest/config';
@@ -40,10 +39,11 @@ function stripBrokenSourceMaps(): Plugin {
   return {
     name: 'strip-broken-source-maps',
     enforce: 'pre',
-    load(id) {
+    async load(id) {
       if (id.includes('node_modules/monaco-editor') && id.endsWith('.js')) {
         try {
-          const code = readFileSync(id, 'utf-8');
+          const { readFile } = await import('fs/promises');
+          const code = await readFile(id, 'utf-8');
           if (code.includes('sourceMappingURL')) {
             return {
               code: code.replace(/\/\/# sourceMappingURL=.*$/m, ''),

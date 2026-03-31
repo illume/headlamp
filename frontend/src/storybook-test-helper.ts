@@ -220,6 +220,14 @@ export function runStorybookTests(
     beforeEach(() => {
       originalConsoleError = console.error;
       originalConsoleWarn = console.warn;
+
+      // Messages suppressed in both console.error and console.warn because different
+      // React/MUI versions emit them through different channels.
+      const suppressBoth = [
+        'Encountered two children with the same key', // React duplicate key warnings
+        'not forwarding its props correctly', // MUI Tooltip prop forwarding
+      ];
+
       console.error = (...args: unknown[]) => {
         const msg = typeof args[0] === 'string' ? args[0] : String(args[0]);
         // Suppress act() warnings — React 18 false positives from async teardown
@@ -243,20 +251,14 @@ export function runStorybookTests(
         if (msg.includes('Failed to fetch events for object')) return;
         // Suppress React key warnings — pre-existing in list views with mock data
         if (msg.includes('Each child in a list should have a unique "key" prop')) return;
-        // Suppress React duplicate key warnings — emitted via console.error in React 18
-        if (msg.includes('Encountered two children with the same key')) return;
-        // Suppress MUI Tooltip prop forwarding warning (emitted via console.error in some versions)
-        if (msg.includes('not forwarding its props correctly')) return;
+        if (suppressBoth.some(s => msg.includes(s))) return;
         originalConsoleError(...args);
       };
       console.warn = (...args: unknown[]) => {
         const msg = typeof args[0] === 'string' ? args[0] : String(args[0]);
         // Suppress MUI Menu fragment warning — pre-existing in ClusterChooser
         if (msg.includes("doesn't accept a Fragment as a child")) return;
-        // Suppress duplicate key warnings — pre-existing in list views with mock data
-        if (msg.includes('Encountered two children with the same key')) return;
-        // Suppress MUI Tooltip prop forwarding warning — pre-existing in TooltipIcon/TileChart
-        if (msg.includes('not forwarding its props correctly')) return;
+        if (suppressBoth.some(s => msg.includes(s))) return;
         originalConsoleWarn(...args);
       };
     });
