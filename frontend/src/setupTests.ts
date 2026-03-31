@@ -121,3 +121,66 @@ beforeEach(() => {
     originalConsoleLog(...args);
   };
 }
+
+// Suppress noisy console.warn messages that spam test output.
+// - react-i18next instance warning: fires when components render before i18n is initialized
+// - deprecated Notification constructor: tested intentionally in notificationsSlice.test.ts
+// - Emotion SSR pseudo class warnings: not relevant in test environment
+// - MUI Autocomplete invalid value: pre-existing in namespace select stories
+// - MUI Menu Fragment: pre-existing in ClusterChooser stories
+{
+  const originalConsoleWarn = console.warn;
+  console.warn = (...args: unknown[]) => {
+    const msg = typeof args[0] === 'string' ? args[0] : '';
+    if (msg.startsWith('react-i18next::')) return;
+    if (msg.includes('Notification constructor with a string arg is deprecated')) return;
+    if (msg.includes('potentially unsafe when doing server-side rendering')) return;
+    if (msg.includes('The value provided to Autocomplete is invalid')) return;
+    if (msg.includes("doesn't accept a Fragment as a child")) return;
+    if (msg.includes('Encountered two children with the same key')) return;
+    if (msg.includes('not forwarding its props correctly')) return;
+    originalConsoleWarn(...args);
+  };
+}
+
+// Suppress noisy console.error messages that spam test output.
+// - Auth component logs rejected promise errors (e.g. { status: 401 }) as expected behavior
+// - "Failed to load namespaces" from storage.ts when testing invalid JSON
+// - "Error setting cookie token" from auth.ts when testing error paths
+// - "Unable to parse error json" from App rendering without backend
+// - Non-DOM prop warnings from Icon mock forwarding all props to <span>
+// - Emotion SSR pseudo class warnings: emitted via console.error, not relevant in tests
+// - MUI Menu Fragment: pre-existing in ClusterChooser stories
+// - MUI Autocomplete invalid value: pre-existing in namespace select stories
+{
+  const originalConsoleError = console.error;
+  console.error = (...args: unknown[]) => {
+    const msg = typeof args[0] === 'string' ? args[0] : '';
+    // Suppress Auth component's catch(err) { console.error(err) } for test auth failures
+    if (args.length === 1 && typeof args[0] === 'object' && args[0] !== null) {
+      const obj = args[0] as Record<string, unknown>;
+      if (obj.status === 401 && obj.message === 'Unauthorized') return;
+    }
+    if (msg.includes('Failed to load namespaces from Local Storage')) return;
+    if (msg.includes('Error setting cookie token')) return;
+    if (msg.includes('Unable to parse error json')) return;
+    if (msg.includes('Invalid value for prop') && msg.includes('on <span> tag')) return;
+    if (msg.includes('potentially unsafe when doing server-side rendering')) return;
+    if (msg.includes("doesn't accept a Fragment as a child")) return;
+    if (msg.includes('The value provided to Autocomplete is invalid')) return;
+    originalConsoleError(...args);
+  };
+}
+
+// Suppress noisy console.debug messages that spam test output.
+// - tableSettings logs empty tableId debug info intentionally tested in tableSettings.test.ts
+// - CronJob cron description failures with mock data
+{
+  const originalConsoleDebug = console.debug;
+  console.debug = (...args: unknown[]) => {
+    const msg = typeof args[0] === 'string' ? args[0] : '';
+    if (msg.includes('tableId is empty')) return;
+    if (msg.includes('Could not describe cron')) return;
+    originalConsoleDebug(...args);
+  };
+}

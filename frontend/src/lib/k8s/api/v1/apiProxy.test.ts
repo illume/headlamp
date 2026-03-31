@@ -165,7 +165,6 @@ describe('apiProxy', () => {
         client.list(cb, errCb, {}, clusterName);
 
         await server.connected;
-        console.log('connected');
 
         expect(cb).toHaveBeenNthCalledWith(1, []);
 

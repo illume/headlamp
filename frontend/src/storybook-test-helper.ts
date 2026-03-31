@@ -251,6 +251,8 @@ export function runStorybookTests(
         if (msg.includes('Failed to fetch events for object')) return;
         // Suppress React key warnings — pre-existing in list views with mock data
         if (msg.includes('Each child in a list should have a unique "key" prop')) return;
+        // Suppress non-DOM prop warnings — Icon mock forwards all props to <span>
+        if (msg.includes('Invalid value for prop') && msg.includes('on <span> tag')) return;
         if (suppressBoth.some(s => msg.includes(s))) return;
         originalConsoleError(...args);
       };
@@ -258,6 +260,10 @@ export function runStorybookTests(
         const msg = typeof args[0] === 'string' ? args[0] : String(args[0]);
         // Suppress MUI Menu fragment warning — pre-existing in ClusterChooser
         if (msg.includes("doesn't accept a Fragment as a child")) return;
+        // Suppress Emotion SSR pseudo class warning — not relevant in tests
+        if (msg.includes('potentially unsafe when doing server-side rendering')) return;
+        // Suppress MUI Autocomplete invalid value — pre-existing in namespace select stories
+        if (msg.includes('The value provided to Autocomplete is invalid')) return;
         if (suppressBoth.some(s => msg.includes(s))) return;
         originalConsoleWarn(...args);
       };
