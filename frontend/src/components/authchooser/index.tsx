@@ -26,11 +26,11 @@ import { getAppUrl } from '../../helpers/getAppUrl';
 import { getCluster, getClusterPrefixedPath } from '../../lib/cluster';
 import { useClustersConf } from '../../lib/k8s';
 import { testAuth } from '../../lib/k8s/api/v1/clusterApi';
-import { queryClient } from '../../lib/queryClient';
 import { createRouteURL } from '../../lib/router/createRouteURL';
 import { getRoute } from '../../lib/router/getRoute';
 import { getRoutePath } from '../../lib/router/getRoutePath';
 import { setConfig } from '../../redux/configSlice';
+import { queryApi } from '../../redux/queryApi';
 import { ClusterDialog } from '../cluster/Chooser';
 import { DialogTitle } from '../common/Dialog';
 import Empty from '../common/EmptyContent';
@@ -208,7 +208,7 @@ function AuthChooser({ children }: AuthChooserProps) {
       clusterAuthType={clusterAuthType}
       handleTryAgain={runTestAuthAgain}
       handleOidcAuth={() => {
-        queryClient.invalidateQueries({ queryKey: ['clusterMe', clusterName], exact: true });
+        dispatch(queryApi.util.resetApiState());
         history.replace(from);
       }}
       handleBackButtonPress={() => {
