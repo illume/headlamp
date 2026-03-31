@@ -34,6 +34,7 @@ export default {
     },
   ],
   parameters: {
+    storyshots: {},
     msw: {
       handlers: {
         story: [],
@@ -54,6 +55,10 @@ export default {
           http.post(
             'http://localhost:4466/apis/authorization.k8s.io/v1/selfsubjectaccessreviews',
             () => HttpResponse.json({ status: { allowed: true, reason: '', code: 200 } })
+          ),
+          http.get(
+            'http://localhost:4466/apis/gateway.networking.k8s.io/v1/grpcroutes/default-grpcroute',
+            () => HttpResponse.json({})
           ),
         ],
       },
