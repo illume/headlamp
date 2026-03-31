@@ -79,6 +79,13 @@ export default {
               metadata: {},
             })
           ),
+          http.get('http://localhost:4466/apis/apps/v1/deployments', () =>
+            HttpResponse.json({
+              kind: 'DeploymentList',
+              items: [],
+              metadata: {},
+            })
+          ),
         ],
       },
     },
