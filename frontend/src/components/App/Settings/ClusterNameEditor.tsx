@@ -216,7 +216,7 @@ export function ClusterNameEditor({
               placeholder={cluster}
               error={!isValidCurrentName || customNameInUse}
               helperText={
-                <Typography>
+                <Typography component="span">
                   {!isValidCurrentName && invalidClusterNameMessage}
                   {customNameInUse &&
                     t(

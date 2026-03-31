@@ -21,6 +21,7 @@
                 ​
               </span>
               <span
+                aria-hidden="true"
                 data-testid="mock-icon"
               />
             </div>

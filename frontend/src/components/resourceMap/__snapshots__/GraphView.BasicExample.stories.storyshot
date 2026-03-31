@@ -117,6 +117,7 @@
               tabindex="0"
             >
               <span
+                class="MuiChip-icon MuiChip-iconMedium MuiChip-iconColorPrimary"
                 data-testid="mock-icon"
               />
               <span

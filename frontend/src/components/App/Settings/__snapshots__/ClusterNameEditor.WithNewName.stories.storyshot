@@ -50,11 +50,11 @@
             class="MuiFormHelperText-root MuiFormHelperText-sizeMedium MuiFormHelperText-filled css-nnd8o8-MuiFormHelperText-root"
             id=":mock-test-id:"
           >
-            <p
+            <span
               class="MuiTypography-root MuiTypography-body1 css-1ezega9-MuiTypography-root"
             >
               The current name of the cluster. You can define a custom name
-            </p>
+            </span>
           </p>
         </div>
       </dd>

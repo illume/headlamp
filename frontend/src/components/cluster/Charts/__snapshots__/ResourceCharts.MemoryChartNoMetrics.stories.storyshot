@@ -21,6 +21,9 @@
               class="MuiContainer-root MuiContainer-maxWidthLg css-64uahr-MuiContainer-root"
             >
               <span
+                aria-label="Install the metrics-server to get usage data."
+                class=""
+                data-mui-internal-clone-element="true"
                 data-testid="mock-icon"
               />
             </div>

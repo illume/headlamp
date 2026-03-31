@@ -15,6 +15,9 @@
           class="MuiContainer-root MuiContainer-maxWidthLg css-64uahr-MuiContainer-root"
         >
           <span
+            aria-label="tooltip"
+            class=""
+            data-mui-internal-clone-element="true"
             data-testid="mock-icon"
           />
         </div>

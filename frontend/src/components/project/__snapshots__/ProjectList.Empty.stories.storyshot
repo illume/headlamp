@@ -5,6 +5,7 @@
     >
       <span
         data-testid="mock-icon"
+        style="font-size: 64px; color: rgb(204, 204, 204); margin-bottom: 16px;"
       />
       <h6
         class="MuiTypography-root MuiTypography-h6 MuiTypography-gutterBottom css-r34k9t-MuiTypography-root"

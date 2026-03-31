@@ -33,13 +33,29 @@ import { runStorybookTests, type StoryFile } from './storybook-test-helper';
 const annotations = setProjectAnnotations([previewAnnotations, { testingLibraryRender }]);
 beforeAll(annotations.beforeAll!);
 
-vi.mock('@iconify/react', () => ({
-  Icon: React.forwardRef((props: any, ref: any) => <span ref={ref} data-testid="mock-icon" />),
-  InlineIcon: React.forwardRef((props: any, ref: any) => (
-    <span ref={ref} data-testid="mock-inline-icon" />
-  )),
-  addCollection: () => {},
-}));
+vi.mock('@iconify/react', () => {
+  // Filter out non-DOM props from Iconify components to avoid React warnings
+  const NON_DOM_PROPS = new Set([
+    'icon', 'width', 'height', 'inline', 'hFlip', 'vFlip',
+    'flip', 'rotate', 'color', 'sx', 'fr',
+  ]);
+  const filterProps = (props: Record<string, unknown>) => {
+    const filtered: Record<string, unknown> = {};
+    for (const key of Object.keys(props)) {
+      if (!NON_DOM_PROPS.has(key)) filtered[key] = props[key];
+    }
+    return filtered;
+  };
+  return {
+    Icon: React.forwardRef((props: any, ref: any) => (
+      <span ref={ref} data-testid="mock-icon" {...filterProps(props)} />
+    )),
+    InlineIcon: React.forwardRef((props: any, ref: any) => (
+      <span ref={ref} data-testid="mock-inline-icon" {...filterProps(props)} />
+    )),
+    addCollection: () => {},
+  };
+});
 
 vi.mock('@monaco-editor/react', () => ({
   Editor: () => <div className="mock-monaco-editor" />,

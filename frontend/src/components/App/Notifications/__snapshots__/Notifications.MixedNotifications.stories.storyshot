@@ -12,6 +12,9 @@
         class="MuiBadge-root css-1c32n2y-MuiBadge-root"
       >
         <span
+          aria-label="You have unread notifications"
+          class=""
+          data-mui-internal-clone-element="true"
           data-testid="mock-icon"
         />
         <span

@@ -25,6 +25,7 @@
                 >
                   <span
                     data-testid="mock-icon"
+                    style="font-size: 32px;"
                   />
                 </div>
                 <div
@@ -54,6 +55,7 @@
                     </h6>
                     <span
                       data-testid="mock-icon"
+                      style="font-size: 20px;"
                     />
                   </div>
                 </div>

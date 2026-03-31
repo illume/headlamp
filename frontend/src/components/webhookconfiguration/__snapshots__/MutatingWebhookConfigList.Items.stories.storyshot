@@ -462,6 +462,7 @@
                     3mo
                     <span
                       data-testid="mock-icon"
+                      style="margin-right: 0.2rem; margin-left: 0.2rem; align-self: center;"
                     />
                   </p>
                 </td>
@@ -546,6 +547,7 @@
                     3mo
                     <span
                       data-testid="mock-icon"
+                      style="margin-right: 0.2rem; margin-left: 0.2rem; align-self: center;"
                     />
                   </p>
                 </td>
@@ -630,6 +632,7 @@
                     3mo
                     <span
                       data-testid="mock-icon"
+                      style="margin-right: 0.2rem; margin-left: 0.2rem; align-self: center;"
                     />
                   </p>
                 </td>
@@ -714,6 +717,7 @@
                     3mo
                     <span
                       data-testid="mock-icon"
+                      style="margin-right: 0.2rem; margin-left: 0.2rem; align-self: center;"
                     />
                   </p>
                 </td>
@@ -798,6 +802,7 @@
                     3mo
                     <span
                       data-testid="mock-icon"
+                      style="margin-right: 0.2rem; margin-left: 0.2rem; align-self: center;"
                     />
                   </p>
                 </td>
@@ -882,6 +887,7 @@
                     3mo
                     <span
                       data-testid="mock-icon"
+                      style="margin-right: 0.2rem; margin-left: 0.2rem; align-self: center;"
                     />
                   </p>
                 </td>
