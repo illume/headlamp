@@ -35,9 +35,6 @@
               type="button"
             >
               Edit
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
             </button>
           </div>
           <div
@@ -49,9 +46,6 @@
               type="button"
             >
               Delete
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
             </button>
           </div>
         </div>

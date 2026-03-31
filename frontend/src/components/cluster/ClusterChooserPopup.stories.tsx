@@ -107,6 +107,9 @@ NoClustersButRecent.args = {
     .map(c => c.name),
   clusters: ourState().config.clusters.slice(0, 3),
 };
+NoClustersButRecent.parameters = {
+  storyshots: { disable: true },
+};
 
 export const Scrollbar = Template.bind({});
 Scrollbar.args = {

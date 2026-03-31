@@ -18,7 +18,11 @@
             >
               <div
                 class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
-              />
+              >
+                <span
+                  data-testid="mock-icon"
+                />
+              </div>
               <div
                 class="MuiListItemText-root MuiListItemText-multiline css-konndc-MuiListItemText-root"
               >
@@ -33,9 +37,6 @@
                   Details about your cluster
                 </p>
               </div>
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
             </a>
           </li>
         </ul>

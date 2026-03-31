@@ -12,7 +12,11 @@
       >
         <div
           class="MuiListItemIcon-root css-cveggr-MuiListItemIcon-root"
-        />
+        >
+          <span
+            data-testid="mock-icon"
+          />
+        </div>
         <div
           class="MuiListItemText-root css-tlelie-MuiListItemText-root"
         >
@@ -22,9 +26,6 @@
             Restart items
           </span>
         </div>
-        <span
-          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-        />
       </li>
     </ul>
   </div>

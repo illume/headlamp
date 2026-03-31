@@ -26,9 +26,6 @@
             type="button"
           >
             tab 1 label
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </button>
           <button
             aria-controls="full-width-tabpanel-1-BasicTabs-tabs-id"
@@ -40,9 +37,6 @@
             type="button"
           >
             tab 2 label
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </button>
         </div>
         <span

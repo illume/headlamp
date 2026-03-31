@@ -29,6 +29,7 @@ import filterReducer from '../filterSlice';
 import eventCallbackReducer from '../headlampEventSlice';
 import overviewChartsReducer from '../overviewChartsSlice';
 import projectsReducer from '../projectsSlice';
+import { queryApi } from '../queryApi';
 import routesReducer from '../routesSlice';
 import shortcutsReducer from '../shortcutsSlice';
 import uiReducer from '../uiSlice';
@@ -60,6 +61,7 @@ const reducers = combineReducers({
   activity: activityReducer,
   projects: projectsReducer,
   shortcuts: shortcutsReducer,
+  [queryApi.reducerPath]: queryApi.reducer,
 });
 
 export type RootState = ReturnType<typeof reducers>;

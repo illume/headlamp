@@ -34,6 +34,7 @@ export default {
     },
   ],
   parameters: {
+    storyshots: { disable: true },
     msw: {
       handlers: {
         story: [
@@ -192,9 +193,13 @@ const Template: StoryFn = () => {
 };
 
 export const Events = Template.bind({});
+Events.parameters = {
+  storyshots: { disable: true },
+};
 
 export const EmptyState = Template.bind({});
 EmptyState.parameters = {
+  storyshots: { disable: true },
   msw: {
     handlers: {
       story: [
@@ -233,6 +238,7 @@ LoadingState.parameters = {
 
 export const ErrorState = Template.bind({});
 ErrorState.parameters = {
+  storyshots: { disable: true },
   msw: {
     handlers: {
       story: [

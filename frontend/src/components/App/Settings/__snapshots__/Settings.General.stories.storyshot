@@ -7,16 +7,17 @@
     >
       <span
         class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-      />
+      >
+        <span
+          data-testid="mock-icon"
+        />
+      </span>
       <p
         class="MuiTypography-root MuiTypography-body1 css-1ezega9-MuiTypography-root"
         style="padding-top: 3px;"
       >
         Back
       </p>
-      <span
-        class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-      />
     </button>
     <div
       class="MuiBox-root css-j1fy4m"
@@ -57,7 +58,7 @@
                 type="button"
               >
                 <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                  data-testid="mock-icon"
                 />
               </button>
             </div>
@@ -162,13 +163,14 @@
                   >
                     <div
                       class="MuiBox-root css-flohcj"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                   </div>
                 </div>
                 Window
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
               </button>
               <button
                 aria-pressed="false"
@@ -190,13 +192,14 @@
                   >
                     <div
                       class="MuiBox-root css-y7640i"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </div>
                   </div>
                 </div>
                 Full page
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
               </button>
             </div>
           </dd>
@@ -319,9 +322,6 @@
                             d="M7 10l5 5 5-5z"
                           />
                         </svg>
-                        <span
-                          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                        />
                       </button>
                     </div>
                     <fieldset
@@ -372,9 +372,6 @@
                 <span
                   class="MuiSwitch-thumb css-jsexje-MuiSwitch-thumb"
                 />
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
               </span>
               <span
                 class="MuiSwitch-track css-1yjjitx-MuiSwitch-track"
@@ -404,9 +401,6 @@
                 />
                 <span
                   class="MuiSwitch-thumb css-jsexje-MuiSwitch-thumb"
-                />
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
                 />
               </span>
               <span
@@ -680,9 +674,6 @@
                         type="button"
                       >
                         /
-                        <span
-                          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                        />
                       </button>
                     </div>
                   </dd>
@@ -716,9 +707,6 @@
                         type="button"
                       >
                         Ctrl + Shift + F
-                        <span
-                          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                        />
                       </button>
                     </div>
                   </dd>
@@ -761,9 +749,6 @@
                         type="button"
                       >
                         Ctrl + Shift + L
-                        <span
-                          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                        />
                       </button>
                     </div>
                   </dd>
@@ -806,9 +791,6 @@
                         type="button"
                       >
                         Alt + Shift + T
-                        <span
-                          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                        />
                       </button>
                     </div>
                   </dd>

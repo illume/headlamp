@@ -27,7 +27,6 @@ import { useTheme } from '@mui/material/styles';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import useMediaQuery from '@mui/material/useMediaQuery';
-import { useQueries } from '@tanstack/react-query';
 import { has } from 'lodash';
 import React, { memo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -45,6 +44,7 @@ import {
   DefaultAppBarAction,
 } from '../../redux/actionButtonsSlice';
 import { useTypedSelector } from '../../redux/hooks';
+import { queryApi } from '../../redux/queryApi';
 import { uiSlice } from '../../redux/uiSlice';
 import { SettingsButton } from '../App/Settings';
 import { ClusterTitle } from '../cluster/Chooser';
@@ -98,6 +98,30 @@ function getUserDisplayName(
   }
   return clusterName;
 }
+
+const topBarApi = queryApi.injectEndpoints({
+  endpoints: build => ({
+    getClusterUserInfoBatch: build.query<
+      Record<string, ClusterUserInfo | undefined>,
+      { clusters: string[] }
+    >({
+      queryFn: async ({ clusters }) => {
+        try {
+          const results = await Promise.allSettled(clusters.map(c => getClusterUserInfo(c)));
+          const map: Record<string, ClusterUserInfo | undefined> = {};
+          clusters.forEach((c, i) => {
+            const r = results[i];
+            map[c] = r.status === 'fulfilled' ? r.value : undefined;
+          });
+          return { data: map };
+        } catch (error) {
+          return { error };
+        }
+      },
+      keepUnusedDataFor: 300,
+    }),
+  }),
+});
 
 export default function TopBar({}: TopBarProps) {
   const dispatch = useDispatch();
@@ -295,21 +319,10 @@ export const PureTopBar = memo(
     const clustersToQuery =
       selectedClusters && selectedClusters.length > 0 ? selectedClusters : cluster ? [cluster] : [];
 
-    const userInfoQueries = useQueries({
-      queries: clustersToQuery.map(clusterName => ({
-        queryKey: ['clusterMe', clusterName],
-        queryFn: () => getClusterUserInfo(clusterName),
-        staleTime: 5 * 60 * 1000,
-        retry: 1,
-      })),
-    });
-
-    const clusterUserInfoMap: Record<string, ClusterUserInfo | undefined> = {};
-    clustersToQuery.forEach((clusterName, index) => {
-      if (userInfoQueries[index]?.data) {
-        clusterUserInfoMap[clusterName] = userInfoQueries[index].data;
-      }
-    });
+    const { data: clusterUserInfoMap = {} } = topBarApi.useGetClusterUserInfoBatchQuery(
+      { clusters: clustersToQuery },
+      { skip: clustersToQuery.length === 0 }
+    );
 
     const showUserMenu = (!!selectedClusters && selectedClusters.length > 0) || isClusterContext;
 

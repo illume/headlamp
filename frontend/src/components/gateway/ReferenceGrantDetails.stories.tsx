@@ -42,6 +42,13 @@ export default {
             'http://localhost:4466/apis/gateway.networking.k8s.io/v1beta1/namespaces/default/referencegrants',
             () => HttpResponse.json({})
           ),
+          http.get('http://localhost:4466/apis/gateway.networking.k8s.io/v1beta1/gateways', () =>
+            HttpResponse.json({
+              kind: 'GatewayList',
+              metadata: {},
+              items: [],
+            })
+          ),
           http.get('http://localhost:4466/api/v1/namespaces/default/events', () =>
             HttpResponse.json({
               kind: 'EventList',
@@ -52,6 +59,10 @@ export default {
           http.post(
             'http://localhost:4466/apis/authorization.k8s.io/v1/selfsubjectaccessreviews',
             () => HttpResponse.json({ status: { allowed: true, reason: '', code: 200 } })
+          ),
+          http.get(
+            'http://localhost:4466/apis/gateway.networking.k8s.io/v1/gateways/default-gateway',
+            () => HttpResponse.json({})
           ),
         ],
       },

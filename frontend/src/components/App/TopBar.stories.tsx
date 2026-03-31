@@ -16,32 +16,27 @@
 
 import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { get } from 'lodash';
 import { http, HttpResponse } from 'msw';
 import { PropsWithChildren } from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { AppBarActionsProcessor } from '../../redux/actionButtonsSlice';
+import { queryApi } from '../../redux/queryApi';
 import { uiSlice } from '../../redux/uiSlice';
 import { initialState as themeInitialState } from './themeSlice';
 import { processAppBarActions, PureTopBar, PureTopBarProps } from './TopBar';
 
 const store = configureStore({
-  reducer: (state = { config: {}, ui: {} }) => state,
-  preloadedState: {
-    config: {},
-    ui: { ...uiSlice.getInitialState() },
-    notifications: {
-      notifications: [],
-    },
-    plugins: {
-      loaded: true,
-    },
-    theme: {
-      ...themeInitialState,
-    },
+  reducer: {
+    [queryApi.reducerPath]: queryApi.reducer,
+    config: (state = {}) => state,
+    ui: (state = uiSlice.getInitialState()) => state,
+    notifications: (state = { notifications: [] }) => state,
+    plugins: (state = { loaded: true }) => state,
+    theme: (state = themeInitialState) => state,
   },
+  middleware: getDefault => getDefault({ serializableCheck: false }).concat(queryApi.middleware),
 });
 
 export default {
@@ -50,21 +45,10 @@ export default {
   argTypes: {},
   decorators: [
     Story => {
-      // Create a fresh QueryClient per story to prevent cache bleeding
-      // between stories (PureTopBar caches ['clusterMe', clusterName] with staleTime).
-      const storyQueryClient = new QueryClient({
-        defaultOptions: {
-          queries: {
-            retry: false,
-          },
-        },
-      });
       return (
         <MemoryRouter>
           <Provider store={store}>
-            <QueryClientProvider client={storyQueryClient}>
-              <Story />
-            </QueryClientProvider>
+            <Story />
           </Provider>
         </MemoryRouter>
       );

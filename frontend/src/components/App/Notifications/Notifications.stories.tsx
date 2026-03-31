@@ -21,6 +21,7 @@ import React from 'react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { getTestDate } from '../../../helpers/testHelpers';
+import { queryApi } from '../../../redux/queryApi';
 import Notifications from './Notifications';
 import { Notification } from './notificationsSlice';
 
@@ -43,9 +44,12 @@ const createTestNotification = (
 
 const createStore = (notifications: Notification[] = [], clusters = {}) =>
   configureStore({
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(queryApi.middleware),
     reducer: {
       notifications: (state = { notifications }) => state,
       config: (state = { clusters }) => state,
+      [queryApi.reducerPath]: queryApi.reducer,
     },
     preloadedState: {
       notifications: { notifications },

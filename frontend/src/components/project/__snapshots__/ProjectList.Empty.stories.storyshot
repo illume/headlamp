@@ -3,6 +3,10 @@
     <div
       class="MuiBox-root css-1pr5e03"
     >
+      <span
+        data-testid="mock-icon"
+        style="font-size: 64px; color: rgb(204, 204, 204); margin-bottom: 16px;"
+      />
       <h6
         class="MuiTypography-root MuiTypography-h6 MuiTypography-gutterBottom css-r34k9t-MuiTypography-root"
       >
@@ -20,11 +24,12 @@
       >
         <span
           class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeMedium css-1d6wzja-MuiButton-startIcon"
-        />
+        >
+          <span
+            data-testid="mock-icon"
+          />
+        </span>
         Create Project
-        <span
-          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-        />
       </button>
     </div>
   </div>

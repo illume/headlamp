@@ -16,7 +16,9 @@
 
 import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
+import { http, HttpResponse } from 'msw';
 import { Provider } from 'react-redux';
+import { queryApi } from '../../../redux/queryApi';
 import { ClusterNameEditor } from './ClusterNameEditor';
 
 const getMockState = () => ({
@@ -37,13 +39,27 @@ const meta: Meta<typeof ClusterNameEditor> = {
   component: ClusterNameEditor,
   parameters: {
     layout: 'centered',
+    msw: {
+      handlers: {
+        storyBase: [
+          http.get('http://localhost:4466/clusters/:cluster/api/v1/events', () =>
+            HttpResponse.json({ kind: 'EventList', items: [], metadata: {} })
+          ),
+        ],
+      },
+    },
   },
 };
 
 export default meta;
 const Template: StoryFn<typeof ClusterNameEditor> = args => {
   const store = configureStore({
-    reducer: (state = getMockState()) => state,
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(queryApi.middleware),
+    reducer: (state = getMockState(), action: any) => ({
+      ...state,
+      [queryApi.reducerPath]: queryApi.reducer(state[queryApi.reducerPath], action),
+    }),
     preloadedState: getMockState(),
   });
 

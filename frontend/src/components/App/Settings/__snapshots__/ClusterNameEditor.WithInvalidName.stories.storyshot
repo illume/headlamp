@@ -51,11 +51,11 @@
             class="MuiFormHelperText-root Mui-error MuiFormHelperText-sizeMedium MuiFormHelperText-filled css-nnd8o8-MuiFormHelperText-root"
             id=":mock-test-id:"
           >
-            <p
+            <span
               class="MuiTypography-root MuiTypography-body1 css-1ezega9-MuiTypography-root"
             >
               Cluster name must contain only lowercase alphanumeric characters or '-', and must start and end with an alphanumeric character.
-            </p>
+            </span>
           </p>
         </div>
       </dd>

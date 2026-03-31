@@ -57,9 +57,6 @@
                 <span
                   class="MuiSwitch-thumb css-jsexje-MuiSwitch-thumb"
                 />
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
               </span>
               <span
                 class="MuiSwitch-track css-1yjjitx-MuiSwitch-track"
@@ -89,6 +86,9 @@
                   placeholder="docker.io/library/busybox:latest"
                   type="text"
                   value=""
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"
@@ -136,6 +136,9 @@
                   placeholder="default"
                   type="text"
                   value=""
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"

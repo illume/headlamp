@@ -15,6 +15,7 @@
  */
 
 import { Meta, StoryFn } from '@storybook/react';
+import { http, HttpResponse } from 'msw';
 import React from 'react';
 import { TestContext } from '../../test';
 import { AdvancedSearch } from './AdvancedSearch';
@@ -23,6 +24,24 @@ export default {
   title: 'AdvancedSearch/AdvancedSearch',
   component: AdvancedSearch,
   argTypes: {},
+  parameters: {
+    storyshots: { waitForText: 'Select Resources' },
+    msw: {
+      handlers: {
+        storyBase: [
+          http.get(
+            'http://localhost:4466/apis/apiextensions.k8s.io/v1/customresourcedefinitions',
+            () =>
+              HttpResponse.json({
+                kind: 'CustomResourceDefinitionList',
+                items: [],
+                metadata: {},
+              })
+          ),
+        ],
+      },
+    },
+  },
 } as Meta;
 
 const Template: StoryFn = args => (

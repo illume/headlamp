@@ -21,9 +21,6 @@
             value="[object Object]"
           >
             cluster0
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </button>
           <button
             aria-pressed="false"
@@ -33,9 +30,6 @@
             value="[object Object]"
           >
             cluster1
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </button>
           <button
             aria-pressed="false"
@@ -45,9 +39,6 @@
             value="[object Object]"
           >
             cluster2
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </button>
         </div>
         <div

@@ -171,11 +171,12 @@
             >
               <span
                 class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-              />
+              >
+                <span
+                  data-testid="mock-icon"
+                />
+              </span>
               Show all labels (+5 more)
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
             </button>
           </div>
         </dd>

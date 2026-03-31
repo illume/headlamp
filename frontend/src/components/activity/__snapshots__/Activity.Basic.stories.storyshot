@@ -38,7 +38,7 @@
               type="button"
             >
               <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                data-testid="mock-icon"
               />
             </button>
             <button
@@ -48,7 +48,7 @@
               type="button"
             >
               <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                data-testid="mock-icon"
               />
             </button>
             <button
@@ -58,7 +58,7 @@
               type="button"
             >
               <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                data-testid="mock-icon"
               />
             </button>
           </div>
@@ -97,7 +97,7 @@
               type="button"
             >
               <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                data-testid="mock-icon"
               />
             </button>
             <button
@@ -107,7 +107,7 @@
               type="button"
             >
               <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                data-testid="mock-icon"
               />
             </button>
             <button
@@ -117,7 +117,7 @@
               type="button"
             >
               <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                data-testid="mock-icon"
               />
             </button>
           </div>
@@ -152,9 +152,6 @@
                 Something
               </div>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </button>
           <button
             aria-label="Close"
@@ -163,7 +160,7 @@
             type="button"
           >
             <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+              data-testid="mock-icon"
             />
           </button>
         </div>
@@ -188,9 +185,6 @@
                 Something
               </div>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </button>
           <button
             aria-label="Close"
@@ -199,7 +193,7 @@
             type="button"
           >
             <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+              data-testid="mock-icon"
             />
           </button>
         </div>
@@ -214,7 +208,7 @@
             type="button"
           >
             <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+              data-testid="mock-icon"
             />
           </button>
         </div>

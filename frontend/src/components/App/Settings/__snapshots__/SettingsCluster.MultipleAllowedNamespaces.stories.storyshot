@@ -7,16 +7,17 @@
     >
       <span
         class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-      />
+      >
+        <span
+          data-testid="mock-icon"
+        />
+      </span>
       <p
         class="MuiTypography-root MuiTypography-body1 css-1ezega9-MuiTypography-root"
         style="padding-top: 3px;"
       >
         Back
       </p>
-      <span
-        class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-      />
     </button>
     <div
       class="MuiBox-root css-j1fy4m"
@@ -162,11 +163,12 @@
                   >
                     <span
                       class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </span>
                     Choose Color
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </button>
                 </div>
               </div>
@@ -191,11 +193,12 @@
                   >
                     <span
                       class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </span>
                     Choose Icon
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </button>
                 </div>
               </div>
@@ -208,9 +211,6 @@
                   type="button"
                 >
                   Apply
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
                 </button>
                 <div />
               </div>
@@ -244,6 +244,9 @@
                   placeholder="default"
                   type="text"
                   value="default"
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"
@@ -305,7 +308,11 @@
                   disabled=""
                   tabindex="-1"
                   type="button"
-                />
+                >
+                  <span
+                    data-testid="mock-inline-icon"
+                  />
+                </button>
                 <fieldset
                   aria-hidden="true"
                   class="MuiOutlinedInput-notchedOutline css-1d3z3hw-MuiOutlinedInput-notchedOutline"
@@ -525,9 +532,6 @@
                 <span
                   class="MuiSwitch-thumb css-jsexje-MuiSwitch-thumb"
                 />
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
               </span>
               <span
                 class="MuiSwitch-track css-1yjjitx-MuiSwitch-track"
@@ -557,6 +561,9 @@
                   placeholder="docker.io/library/busybox:latest"
                   type="text"
                   value=""
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"
@@ -604,6 +611,9 @@
                   placeholder="default"
                   type="text"
                   value=""
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"
@@ -673,6 +683,10 @@
               >
                 Enable Pod Debug
               </span>
+              <span
+                data-testid="mock-icon"
+                style="margin-right: 0.2rem; margin-left: 0.2rem; align-self: center;"
+              />
             </p>
           </dt>
           <dd
@@ -692,9 +706,6 @@
                 />
                 <span
                   class="MuiSwitch-thumb css-jsexje-MuiSwitch-thumb"
-                />
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
                 />
               </span>
               <span
@@ -724,6 +735,9 @@
                   placeholder="docker.io/library/busybox:latest"
                   type="text"
                   value=""
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"

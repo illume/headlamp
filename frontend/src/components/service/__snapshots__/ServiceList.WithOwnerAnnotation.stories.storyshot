@@ -28,7 +28,7 @@
                 type="button"
               >
                 <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                  data-testid="mock-icon"
                 />
               </button>
             </div>
@@ -99,9 +99,6 @@
                               d="M7 10l5 5 5-5z"
                             />
                           </svg>
-                          <span
-                            class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                          />
                         </button>
                       </div>
                       <fieldset
@@ -199,9 +196,6 @@
                       d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14"
                     />
                   </svg>
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
                 </button>
                 <button
                   aria-label="Show/Hide filters"
@@ -221,9 +215,6 @@
                       d="M10 18h4v-2h-4zM3 6v2h18V6zm3 7h12v-2H6z"
                     />
                   </svg>
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
                 </button>
                 <button
                   aria-label="Show/Hide columns"
@@ -243,16 +234,13 @@
                       d="M14.67 5v14H9.33V5zm1 14H21V5h-5.33zm-7.34 0V5H3v14z"
                     />
                   </svg>
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
                 </button>
               </div>
             </div>
           </div>
         </div>
         <table
-          class="MuiTable-root css-19ac5os-MuiTable-root"
+          class="MuiTable-root css-brrsef-MuiTable-root"
         >
           <thead
             class="MuiTableHead-root css-1tmrira-MuiTableHead-root"
@@ -298,9 +286,6 @@
                             d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"
                           />
                         </svg>
-                        <span
-                          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                        />
                       </span>
                     </div>
                   </div>
@@ -390,61 +375,6 @@
                     >
                       <span
                         aria-label="Sort by Namespace ascending"
-                        class="MuiButtonBase-root MuiTableSortLabel-root Mui-active css-542clt-MuiButtonBase-root-MuiTableSortLabel-root"
-                        role="button"
-                        tabindex="0"
-                      >
-                        <svg
-                          aria-hidden="true"
-                          class="MuiSvgIcon-root MuiSvgIcon-fontSizeMedium MuiTableSortLabel-icon MuiTableSortLabel-iconDirectionAsc css-1vweko9-MuiSvgIcon-root-MuiTableSortLabel-icon"
-                          data-testid="SyncAltIcon"
-                          focusable="false"
-                          style="transform: rotate(-90deg) scaleX(0.9) translateX(-1px);"
-                          viewBox="0 0 24 24"
-                        >
-                          <path
-                            d="m18 12 4-4-4-4v3H3v2h15zM6 12l-4 4 4 4v-3h15v-2H6z"
-                          />
-                        </svg>
-                      </span>
-                      <span
-                        class="MuiBadge-badge MuiBadge-standard MuiBadge-invisible MuiBadge-anchorOriginTopRight MuiBadge-anchorOriginTopRightCircular MuiBadge-overlapCircular css-dniquu-MuiBadge-badge"
-                      >
-                        0
-                      </span>
-                    </span>
-                  </div>
-                  <div
-                    class="Mui-TableHeadCell-Content-Actions MuiBox-root css-epvm6"
-                  />
-                </div>
-              </th>
-              <th
-                aria-sort="none"
-                class="MuiTableCell-root MuiTableCell-head MuiTableCell-alignLeft MuiTableCell-sizeMedium css-h2n160-MuiTableCell-root"
-                colspan="1"
-                data-can-sort="true"
-                data-index="-1"
-                scope="col"
-              >
-                <div
-                  class="Mui-TableHeadCell-Content MuiBox-root css-1w86f15"
-                >
-                  <div
-                    class="Mui-TableHeadCell-Content-Labels MuiBox-root css-68rqdf"
-                  >
-                    <div
-                      class="Mui-TableHeadCell-Content-Wrapper MuiBox-root css-lapokc"
-                    >
-                      Owner
-                    </div>
-                    <span
-                      aria-label="Sort by Owner ascending"
-                      class="MuiBadge-root css-1c32n2y-MuiBadge-root"
-                      data-mui-internal-clone-element="true"
-                    >
-                      <span
-                        aria-label="Sort by Owner ascending"
                         class="MuiButtonBase-root MuiTableSortLabel-root Mui-active css-542clt-MuiButtonBase-root-MuiTableSortLabel-root"
                         role="button"
                         tabindex="0"
@@ -862,9 +792,6 @@
                       d="M19 5v14H5V5h14m0-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"
                     />
                   </svg>
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
                 </span>
               </td>
               <td
@@ -874,7 +801,7 @@
                   class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineHover css-2ugbm1-MuiTypography-root-MuiLink-root"
                   href="/"
                 >
-                  owned-service
+                  example-service
                 </a>
               </td>
               <td
@@ -888,11 +815,6 @@
                 </a>
               </td>
               <td
-                class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-mcp5ij-MuiTableCell-root"
-              >
-                platform-team@example.com
-              </td>
-              <td
                 class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-16zklhw-MuiTableCell-root"
               >
                 ClusterIP
@@ -900,22 +822,22 @@
               <td
                 class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-gh78e9-MuiTableCell-root"
               >
-                10.96.0.101
+                10.96.0.100
               </td>
               <td
                 class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-1ofzoa7-MuiTableCell-root"
               >
-                -
+                34.123.45.67
               </td>
               <td
                 class="MuiTableCell-root MuiTableCell-alignLeft MuiTableCell-sizeMedium css-ccolv7-MuiTableCell-root"
               >
                 <span
-                  aria-label="443:8443/TCP"
+                  aria-label="80:8080/TCP"
                   class=""
                   data-mui-internal-clone-element="true"
                 >
-                  443:8443/TCP
+                  80:8080/TCP
                 </span>
               </td>
               <td
@@ -930,7 +852,7 @@
                     <p
                       class="MuiTypography-root MuiTypography-body1 css-1on669h-MuiTypography-root"
                     >
-                      app: owned-app
+                      app: example
                     </p>
                   </div>
                 </div>
@@ -939,11 +861,15 @@
                 class="MuiTableCell-root MuiTableCell-alignRight MuiTableCell-sizeMedium css-14i1ub9-MuiTableCell-root"
               >
                 <p
-                  aria-label="2022-10-26T10:30:00.000Z"
+                  aria-label="2022-10-25T11:48:48.000Z"
                   class="MuiTypography-root MuiTypography-body1 css-1d0cpfm-MuiTypography-root"
                   data-mui-internal-clone-element="true"
                 >
                   3mo
+                  <span
+                    data-testid="mock-icon"
+                    style="margin-right: 0.2rem; margin-left: 0.2rem; align-self: center;"
+                  />
                 </p>
               </td>
               <td
@@ -967,9 +893,6 @@
                       d="M12 8c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2m0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2m0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2"
                     />
                   </svg>
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
                 </button>
               </td>
             </tr>

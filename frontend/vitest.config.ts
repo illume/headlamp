@@ -15,13 +15,54 @@
  */
 
 /// <reference types="vitest" />
+import { type Plugin } from 'vite';
 import { defineConfig, mergeConfig } from 'vitest/config';
 import { coverageConfigDefaults } from 'vitest/config';
 import viteConfig from './vite.config';
 
+const STORYBOOK_SHARD_COUNT = 4;
+
+const storybookShards = Array.from({ length: STORYBOOK_SHARD_COUNT }, (_, i) => ({
+  extends: true,
+  test: {
+    name: `storybook-${i}`,
+    include: ['src/storybook.test.tsx'],
+    env: {
+      STORYBOOK_SHARD: String(i),
+      STORYBOOK_SHARD_COUNT: String(STORYBOOK_SHARD_COUNT),
+    },
+  },
+}));
+
+// Vite plugin that strips broken sourceMappingURL comments from monaco-editor files.
+// The ESM build of marked.js inside monaco-editor references a UMD source map that doesn't exist.
+function stripBrokenSourceMaps(): Plugin {
+  return {
+    name: 'strip-broken-source-maps',
+    enforce: 'pre',
+    async load(id) {
+      if (id.includes('node_modules/monaco-editor') && id.endsWith('.js')) {
+        try {
+          const { readFile } = await import('fs/promises');
+          const code = await readFile(id, 'utf-8');
+          if (code.includes('sourceMappingURL')) {
+            return {
+              code: code.replace(/\/\/# sourceMappingURL=.*$/m, ''),
+              map: null,
+            };
+          }
+        } catch {
+          // fall through to default loading
+        }
+      }
+    },
+  };
+}
+
 export default mergeConfig(
   viteConfig,
   defineConfig({
+    plugins: [stripBrokenSourceMaps()],
     test: {
       globals: true,
       environment: 'jsdom',
@@ -50,6 +91,17 @@ export default mergeConfig(
       },
       restoreMocks: false,
       setupFiles: ['./src/setupTests.ts'],
+      workspace: [
+        {
+          extends: true,
+          test: {
+            name: 'unit',
+            include: ['src/**/*.test.{ts,tsx}'],
+            exclude: ['**/node_modules/**', '**/dist/**', 'src/storybook.test.tsx'],
+          },
+        },
+        ...storybookShards,
+      ],
     },
   })
 );
