@@ -4,6 +4,10 @@
       class="MuiTypography-root MuiTypography-body1 css-1d0cpfm-MuiTypography-root"
       data-mui-internal-clone-element="true"
     >
+      <span
+        data-testid="mock-icon"
+        style="margin-right: 0.2rem; margin-left: 0.2rem; align-self: center;"
+      />
       Some label
     </p>
   </div>

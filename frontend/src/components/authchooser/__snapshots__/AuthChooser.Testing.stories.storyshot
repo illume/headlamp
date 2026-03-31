@@ -64,7 +64,7 @@
                   type="button"
                 >
                   <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                    data-testid="mock-inline-icon"
                   />
                 </button>
               </div>
@@ -135,7 +135,11 @@
             >
               <div
                 class="MuiBox-root css-37urdo"
-              />
+              >
+                <span
+                  data-testid="mock-inline-icon"
+                />
+              </div>
               <div
                 class="MuiBox-root css-1kuy7z7"
                 style="text-transform: uppercase;"

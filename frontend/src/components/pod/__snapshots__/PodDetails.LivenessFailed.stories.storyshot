@@ -16,7 +16,11 @@
           >
             <span
               class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </span>
             <p
               class="MuiTypography-root MuiTypography-body1 css-ahj2mt-MuiTypography-root"
               style="padding-top: 3px;"
@@ -55,7 +59,11 @@
                     data-mui-internal-clone-element="true"
                     tabindex="0"
                     type="button"
-                  />
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
                 </div>
               </div>
             </div>
@@ -74,7 +82,11 @@
                     data-mui-internal-clone-element="true"
                     tabindex="0"
                     type="button"
-                  />
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
                 </div>
                 <div
                   class="MuiGrid-root MuiGrid-item css-13i4rnv-MuiGrid-root"
@@ -85,7 +97,11 @@
                     data-mui-internal-clone-element="true"
                     tabindex="0"
                     type="button"
-                  />
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
                 </div>
                 <div
                   class="MuiGrid-root MuiGrid-item css-13i4rnv-MuiGrid-root"
@@ -96,7 +112,11 @@
                     data-mui-internal-clone-element="true"
                     tabindex="0"
                     type="button"
-                  />
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
                 </div>
                 <div
                   class="MuiGrid-root MuiGrid-item css-13i4rnv-MuiGrid-root"
@@ -107,7 +127,11 @@
                     data-mui-internal-clone-element="true"
                     tabindex="0"
                     type="button"
-                  />
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
                 </div>
                 <div
                   class="MuiGrid-root MuiGrid-item css-13i4rnv-MuiGrid-root"
@@ -117,10 +141,35 @@
                 />
                 <div
                   class="MuiGrid-root MuiGrid-item css-13i4rnv-MuiGrid-root"
-                />
+                >
+                  <button
+                    aria-label="Edit"
+                    class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-78trlr-MuiButtonBase-root-MuiIconButton-root"
+                    data-mui-internal-clone-element="true"
+                    tabindex="0"
+                    type="button"
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
+                </div>
                 <div
                   class="MuiGrid-root MuiGrid-item css-13i4rnv-MuiGrid-root"
-                />
+                >
+                  <button
+                    aria-label="Evict"
+                    class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-78trlr-MuiButtonBase-root-MuiIconButton-root"
+                    data-mui-internal-clone-element="true"
+                    tabindex="0"
+                    type="button"
+                  >
+                    <span
+                      data-testid="mock-icon"
+                    />
+                  </button>
+                  <div />
+                </div>
               </div>
             </div>
           </div>
@@ -166,49 +215,7 @@
       >
         <div
           class="MuiBox-root css-u9lj3c"
-        >
-          <div
-            class="MuiBox-root css-j1fy4m"
-          >
-            <div
-              class="MuiGrid-root MuiGrid-container MuiGrid-spacing-xs-2 css-1ts0dnm-MuiGrid-root"
-            >
-              <div
-                class="MuiGrid-root MuiGrid-item css-13i4rnv-MuiGrid-root"
-              >
-                <div
-                  class="MuiBox-root css-70qvj9"
-                >
-                  <h2
-                    class="MuiTypography-root MuiTypography-h2 MuiTypography-noWrap css-pr05yy-MuiTypography-root"
-                  >
-                    Events
-                  </h2>
-                  <div
-                    class="MuiBox-root css-ldp2l3"
-                  />
-                </div>
-              </div>
-            </div>
-            <div
-              class="MuiBox-root css-1txv3mw"
-            >
-              <div
-                class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded css-172kgz0-MuiPaper-root"
-              >
-                <div
-                  class="MuiBox-root css-19midj6"
-                >
-                  <p
-                    class="MuiTypography-root MuiTypography-body1 MuiTypography-alignCenter css-12wjmzy-MuiTypography-root"
-                  >
-                    No data to be shown.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        />
       </div>
     </div>
   </div>
