@@ -150,3 +150,122 @@ describe('KubeList.applyUpdate busy-cluster optimizations', () => {
     expect(result).toBe(list);
   });
 });
+describe('KubeList.applyUpdate edge cases and correctness', () => {
+  // Test 1: ADDED with same UID as existing item should replace, not duplicate
+  it('should replace (not duplicate) when ADDED targets an existing UID', () => {
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items: [
+        { metadata: { name: 'pod-1', uid: 'uid-1', resourceVersion: '5' } },
+        { metadata: { name: 'pod-2', uid: 'uid-2', resourceVersion: '6' } },
+      ],
+      metadata: { resourceVersion: '6' },
+    } as any;
+
+    const result = KubeList.applyUpdate(
+      list,
+      {
+        type: 'ADDED',
+        object: {
+          metadata: { name: 'pod-1-updated', uid: 'uid-1', resourceVersion: '10' },
+        },
+      } as any,
+      mockClass,
+      'cluster-a'
+    );
+
+    expect(result.items).toHaveLength(2); // not 3
+    expect(result.items[0].jsonData.metadata.name).toBe('pod-1-updated');
+    expect(result.items[1].metadata.uid).toBe('uid-2');
+  });
+
+  // Test 2: MODIFIED should update metadata.resourceVersion on the list
+  it('should update list metadata.resourceVersion after MODIFIED', () => {
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items: [{ metadata: { name: 'pod-1', uid: 'uid-1', resourceVersion: '5' } }],
+      metadata: { resourceVersion: '5' },
+    } as any;
+
+    const result = KubeList.applyUpdate(
+      list,
+      {
+        type: 'MODIFIED',
+        object: { metadata: { name: 'pod-1', uid: 'uid-1', resourceVersion: '20' } },
+      } as any,
+      mockClass,
+      'cluster-a'
+    );
+
+    expect(result.metadata.resourceVersion).toBe('20');
+  });
+
+  // Test 3: DELETED should update list metadata.resourceVersion
+  it('should update list metadata.resourceVersion after DELETED', () => {
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items: [{ metadata: { name: 'pod-1', uid: 'uid-1', resourceVersion: '5' } }],
+      metadata: { resourceVersion: '5' },
+    } as any;
+
+    const result = KubeList.applyUpdate(
+      list,
+      {
+        type: 'DELETED',
+        object: { metadata: { uid: 'uid-1', resourceVersion: '10' } },
+      } as any,
+      mockClass,
+      'cluster-a'
+    );
+
+    expect(result.items).toHaveLength(0);
+    expect(result.metadata.resourceVersion).toBe('10');
+  });
+
+  // Test 4: Stale resourceVersion should be skipped
+  it('should skip update with stale resourceVersion', () => {
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items: [{ metadata: { name: 'pod-1', uid: 'uid-1', resourceVersion: '100' } }],
+      metadata: { resourceVersion: '100' },
+    } as any;
+
+    const result = KubeList.applyUpdate(
+      list,
+      {
+        type: 'MODIFIED',
+        object: { metadata: { uid: 'uid-1', resourceVersion: '50' } },
+      } as any,
+      mockClass,
+      'cluster-a'
+    );
+
+    expect(result).toBe(list); // same reference = no-op
+  });
+
+  // Test 5: Equal resourceVersion should be skipped
+  it('should skip update with equal resourceVersion', () => {
+    const list = {
+      kind: 'PodList',
+      apiVersion: 'v1',
+      items: [{ metadata: { name: 'pod-1', uid: 'uid-1', resourceVersion: '100' } }],
+      metadata: { resourceVersion: '100' },
+    } as any;
+
+    const result = KubeList.applyUpdate(
+      list,
+      {
+        type: 'MODIFIED',
+        object: { metadata: { uid: 'uid-1', resourceVersion: '100' } },
+      } as any,
+      mockClass,
+      'cluster-a'
+    );
+
+    expect(result).toBe(list);
+  });
+});
