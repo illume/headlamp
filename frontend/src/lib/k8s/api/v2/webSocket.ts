@@ -99,7 +99,12 @@ export async function openWebSocket<T>(
      */
     onMessage: (data: T) => void;
   }
-) {
+): Promise<WebSocket> {
+  // Skip WebSocket connections in test environment — no server to connect to
+  if (import.meta.env.UNDER_TEST === 'true') {
+    return Promise.reject(new Error('WebSocket connections are disabled in test environment'));
+  }
+
   const path = [url];
   const protocols = ['base64.binary.k8s.io', ...(moreProtocols ?? [])];
 

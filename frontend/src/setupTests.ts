@@ -21,6 +21,28 @@ import indexeddb from 'fake-indexeddb';
 
 globalThis.indexedDB = indexeddb;
 
+// Fix AbortSignal cross-realm mismatch between jsdom and @mswjs/interceptors.
+// nock v14 uses @mswjs/interceptors to patch globalThis.fetch. The interceptor
+// creates `new Request(input, init)` with the native Request constructor, which
+// rejects jsdom's AbortSignal: "Expected signal to be an instance of AbortSignal".
+// This happens because jsdom provides its own AbortController/AbortSignal classes
+// that are different from Node.js native ones used by the Request constructor.
+// Fix: patch Request constructor to strip the signal before passing to native
+// constructor. Abort timeouts aren't needed in tests — all requests are mocked.
+{
+  const OriginalRequest = globalThis.Request;
+  globalThis.Request = class PatchedRequest extends OriginalRequest {
+    constructor(input: RequestInfo | URL, init?: RequestInit) {
+      if (init?.signal) {
+        const { signal: _signal, ...rest } = init;
+        super(input, rest);
+      } else {
+        super(input, init);
+      }
+    }
+  } as typeof Request;
+}
+
 if (typeof TextDecoder === 'undefined' && typeof require !== 'undefined') {
   (global as any).TextDecoder = require('util').TextDecoder;
 }

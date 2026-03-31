@@ -416,6 +416,11 @@ export async function connectStreamWithParams<T>(
   close: () => void;
   socket: WebSocket | null;
 }> {
+  // Skip WebSocket connections in test environment — no server to connect to
+  if (import.meta.env.UNDER_TEST === 'true') {
+    return { close: () => {}, socket: null };
+  }
+
   const { isJson = false, additionalProtocols = [], cluster = '' } = params || {};
   let isClosing = false;
 

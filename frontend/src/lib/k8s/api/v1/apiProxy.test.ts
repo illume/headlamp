@@ -130,6 +130,7 @@ describe('apiProxy', () => {
     let errCb: Mock;
 
     beforeEach(() => {
+      vi.stubEnv('UNDER_TEST', '');
       nock(baseApiUrl)
         .persist()
         .get(
@@ -151,6 +152,7 @@ describe('apiProxy', () => {
       nock.cleanAll();
       WS.clean();
       vi.restoreAllMocks();
+      vi.unstubAllEnvs();
     });
 
     describe('singleApiFactory', () => {
@@ -385,6 +387,7 @@ describe('apiProxy', () => {
     let errCb: Mock;
 
     beforeEach(() => {
+      vi.stubEnv('UNDER_TEST', '');
       nock(baseApiUrl)
         .get(`/clusters/${clusterName}${streamResultsUrl}/${mockConfigMap.metadata.name}`)
         .query(true)
@@ -403,6 +406,7 @@ describe('apiProxy', () => {
       nock.cleanAll();
       WS.clean();
       vi.restoreAllMocks();
+      vi.unstubAllEnvs();
     });
 
     it('Successfully handles ADDED, MODIFIED, and DELETED types', async () => {
@@ -467,6 +471,7 @@ describe('apiProxy', () => {
     let errCb: Mock;
 
     beforeEach(() => {
+      vi.stubEnv('UNDER_TEST', '');
       nock(baseApiUrl)
         .get(`/clusters/${clusterName}${streamResultsUrl}`)
         .query(true)
@@ -485,6 +490,7 @@ describe('apiProxy', () => {
       nock.cleanAll();
       WS.clean();
       vi.restoreAllMocks();
+      vi.unstubAllEnvs();
     });
 
     describe('streamResults', () => {
@@ -594,6 +600,7 @@ describe('apiProxy', () => {
     let failCb: Mock;
 
     beforeEach(() => {
+      vi.stubEnv('UNDER_TEST', '');
       cb = vi.fn();
       connectCb = vi.fn();
       failCb = vi.fn();
@@ -606,6 +613,7 @@ describe('apiProxy', () => {
     afterEach(() => {
       WS.clean();
       vi.restoreAllMocks();
+      vi.unstubAllEnvs();
     });
 
     it('Successfully connects to the server and receives messages', () =>
