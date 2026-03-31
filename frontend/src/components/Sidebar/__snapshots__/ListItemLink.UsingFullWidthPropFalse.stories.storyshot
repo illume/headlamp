@@ -18,7 +18,11 @@
             >
               <div
                 class="MuiListItemIcon-root css-1blhdvq-MuiListItemIcon-root"
-              />
+              >
+                <span
+                  data-testid="mock-icon"
+                />
+              </div>
               <div
                 class="MuiListItemText-root css-tlelie-MuiListItemText-root"
               >
@@ -28,9 +32,6 @@
                   Full Width False
                 </span>
               </div>
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
             </a>
           </li>
         </ul>

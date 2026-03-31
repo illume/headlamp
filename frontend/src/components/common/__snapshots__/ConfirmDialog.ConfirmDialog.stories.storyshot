@@ -71,9 +71,6 @@
             type="button"
           >
             No
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </button>
           <button
             aria-label="confirm-button"
@@ -82,9 +79,6 @@
             type="button"
           >
             Yes
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </button>
         </div>
       </div>

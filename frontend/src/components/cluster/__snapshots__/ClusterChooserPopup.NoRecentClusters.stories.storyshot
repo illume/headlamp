@@ -96,9 +96,6 @@
                 Current
               </p>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -116,9 +113,6 @@
                 cluster1
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -136,9 +130,6 @@
                 cluster2
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -156,9 +147,6 @@
                 cluster3
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
           <li
             aria-selected="false"
@@ -176,9 +164,6 @@
                 cluster4
               </span>
             </div>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </li>
         </ul>
       </div>

@@ -12,11 +12,12 @@
           tabindex="0"
           type="button"
         >
+          <span
+            class="css-1fc8vz0"
+            data-testid="mock-icon"
+          />
           <div
             class="MuiBox-root css-19midj6"
-          />
-          <span
-            class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
           />
         </button>
       </div>

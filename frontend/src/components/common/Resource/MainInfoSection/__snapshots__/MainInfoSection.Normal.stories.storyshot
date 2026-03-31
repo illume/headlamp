@@ -7,16 +7,17 @@
     >
       <span
         class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-      />
+      >
+        <span
+          data-testid="mock-icon"
+        />
+      </span>
       <p
         class="MuiTypography-root MuiTypography-body1 css-1ezega9-MuiTypography-root"
         style="padding-top: 3px;"
       >
         Back
       </p>
-      <span
-        class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-      />
     </button>
     <div
       class="MuiBox-root css-j1fy4m"
@@ -46,7 +47,7 @@
                 type="button"
               >
                 <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                  data-testid="mock-icon"
                 />
               </button>
             </div>
@@ -75,7 +76,7 @@
                 type="button"
               >
                 <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                  data-testid="mock-icon"
                 />
               </button>
             </div>
@@ -90,7 +91,7 @@
                 type="button"
               >
                 <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                  data-testid="mock-icon"
                 />
               </button>
               <div />

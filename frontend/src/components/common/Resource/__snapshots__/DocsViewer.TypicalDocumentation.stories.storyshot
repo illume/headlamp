@@ -27,7 +27,11 @@
           >
             <div
               class="MuiTreeItem-iconContainer"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </div>
             <div
               class="MuiTreeItem-label"
             >
@@ -61,7 +65,11 @@
           >
             <div
               class="MuiTreeItem-iconContainer"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </div>
             <div
               class="MuiTreeItem-label"
             >
@@ -95,7 +103,11 @@
           >
             <div
               class="MuiTreeItem-iconContainer"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </div>
             <div
               class="MuiTreeItem-label"
             >
@@ -129,7 +141,11 @@
           >
             <div
               class="MuiTreeItem-iconContainer"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </div>
             <div
               class="MuiTreeItem-label"
             >

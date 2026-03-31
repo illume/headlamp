@@ -13,7 +13,14 @@
         </p>
         <div
           class="MuiContainer-root MuiContainer-maxWidthLg css-64uahr-MuiContainer-root"
-        />
+        >
+          <span
+            aria-label="tooltip"
+            class=""
+            data-mui-internal-clone-element="true"
+            data-testid="mock-icon"
+          />
+        </div>
       </div>
       <div
         class="MuiGrid-root MuiGrid-container MuiGrid-item css-dcx4qa-MuiGrid-root"

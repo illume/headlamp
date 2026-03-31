@@ -65,9 +65,6 @@
                           d="M7 10l5 5 5-5z"
                         />
                       </svg>
-                      <span
-                        class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                      />
                     </button>
                   </div>
                   <fieldset
@@ -97,14 +94,14 @@
               <div
                 class="MuiStack-root css-1qxw92a-MuiStack-root"
               >
+                <span
+                  data-testid="mock-icon"
+                />
                  
                 Pods
                  
               </div>
             </span>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </div>
           <div
             class="MuiBox-root css-19ideir"
@@ -120,13 +117,14 @@
               tabindex="0"
             >
               <span
+                class="MuiChip-icon MuiChip-iconMedium MuiChip-iconColorPrimary"
+                data-testid="mock-icon"
+              />
+              <span
                 class="MuiChip-label MuiChip-labelMedium css-6od3lo-MuiChip-label"
               >
                 Namespace
               </span>
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
             </div>
             <div
               class="MuiButtonBase-root MuiChip-root MuiChip-outlined MuiChip-sizeMedium MuiChip-colorDefault MuiChip-clickable MuiChip-clickableColorDefault MuiChip-outlinedDefault css-1b73nf-MuiButtonBase-root-MuiChip-root"
@@ -138,9 +136,6 @@
               >
                 Instance
               </span>
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
             </div>
             <div
               class="MuiButtonBase-root MuiChip-root MuiChip-outlined MuiChip-sizeMedium MuiChip-colorDefault MuiChip-clickable MuiChip-clickableColorDefault MuiChip-outlinedDefault css-1b73nf-MuiButtonBase-root-MuiChip-root"
@@ -152,9 +147,6 @@
               >
                 Node
               </span>
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
             </div>
           </div>
           <div
@@ -167,9 +159,6 @@
             >
               Status: Error or Warning
             </span>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </div>
           <div
             class="MuiButtonBase-root MuiChip-root MuiChip-outlined MuiChip-sizeMedium MuiChip-colorDefault MuiChip-clickable MuiChip-clickableColorDefault MuiChip-outlinedDefault css-1b73nf-MuiButtonBase-root-MuiChip-root"
@@ -181,9 +170,6 @@
             >
               Expand All
             </span>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </div>
         </div>
         <div
@@ -272,7 +258,7 @@
                     type="button"
                   >
                     <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                      data-testid="mock-icon"
                     />
                   </button>
                   <button
@@ -282,7 +268,7 @@
                     type="button"
                   >
                     <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                      data-testid="mock-icon"
                     />
                   </button>
                 </div>
@@ -293,7 +279,7 @@
                   type="button"
                 >
                   <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                    data-testid="mock-icon"
                   />
                 </button>
                 <button
@@ -303,17 +289,38 @@
                   type="button"
                 >
                   100%
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
                 </button>
               </div>
             </div>
-            <p
-              class="MuiTypography-root MuiTypography-body1 css-17ewocx-MuiTypography-root"
+            <div
+              class="MuiBox-root css-3hcm5q"
             >
-              No data to be shown. Try to change filters or select a different namespace.
-            </p>
+              <div
+                class="MuiBox-root css-5cned0"
+              >
+                <span
+                  aria-label="Loading"
+                  class="MuiCircularProgress-root MuiCircularProgress-indeterminate MuiCircularProgress-colorPrimary css-1bxkv7v-MuiCircularProgress-root"
+                  role="progressbar"
+                  style="width: 40px; height: 40px;"
+                  title="Loading"
+                >
+                  <svg
+                    class="MuiCircularProgress-svg css-1idz92c-MuiCircularProgress-svg"
+                    viewBox="22 22 44 44"
+                  >
+                    <circle
+                      class="MuiCircularProgress-circle MuiCircularProgress-circleIndeterminate css-176wh8e-MuiCircularProgress-circle"
+                      cx="44"
+                      cy="44"
+                      fill="none"
+                      r="20.2"
+                      stroke-width="3.6"
+                    />
+                  </svg>
+                </span>
+              </div>
+            </div>
             <div
               class="react-flow__panel top left"
               style="pointer-events: all;"

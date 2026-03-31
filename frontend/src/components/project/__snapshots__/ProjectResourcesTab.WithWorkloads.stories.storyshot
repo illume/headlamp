@@ -22,7 +22,12 @@
               >
                 <div
                   class="MuiListItemIcon-root css-cveggr-MuiListItemIcon-root"
-                />
+                >
+                  <span
+                    data-testid="mock-icon"
+                    style="font-size: 32px;"
+                  />
+                </div>
                 <div
                   class="MuiListItemText-root MuiListItemText-dense MuiListItemText-multiline css-konndc-MuiListItemText-root"
                 >
@@ -48,11 +53,12 @@
                     >
                       6
                     </h6>
+                    <span
+                      data-testid="mock-icon"
+                      style="font-size: 20px;"
+                    />
                   </div>
                 </div>
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
               </div>
             </li>
           </ul>

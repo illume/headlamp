@@ -157,9 +157,6 @@
                   d="M10 18h4v-2h-4zM3 6v2h18V6zm3 7h12v-2H6z"
                 />
               </svg>
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
             </button>
             <button
               aria-label="Show/Hide columns"
@@ -179,9 +176,6 @@
                   d="M14.67 5v14H9.33V5zm1 14H21V5h-5.33zm-7.34 0V5H3v14z"
                 />
               </svg>
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
             </button>
           </div>
         </div>
