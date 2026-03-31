@@ -66,6 +66,7 @@ export default {
       );
     },
   ],
+  parameters: {},
 } as Meta;
 
 const Template: StoryFn = () => {
