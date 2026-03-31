@@ -21,7 +21,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { createStore } from 'redux';
 import { useMockListQuery } from '../../../helpers/testHelpers';
 import Pod, { KubePod } from '../../../lib/k8s/pod';
-import { headlampApi } from '../../../redux/headlampApi';
+import { queryApi } from '../../../redux/queryApi';
 import reducers from '../../../redux/reducers/reducers';
 import shortcutsReducer from '../../../redux/shortcutsSlice';
 import { uiSlice } from '../../../redux/uiSlice';
@@ -54,7 +54,7 @@ const TemplateWithFilter: StoryFn<{
 
   const storeWithFilterAndSettings = configureStore({
     middleware: getDefaultMiddleware =>
-      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+      getDefaultMiddleware({ serializableCheck: false }).concat(queryApi.middleware),
     reducer: (
       state = {
         filter: { namespaces: new Set<string>(), search: '' },
@@ -66,7 +66,7 @@ const TemplateWithFilter: StoryFn<{
       action: any
     ) => ({
       ...state,
-      [headlampApi.reducerPath]: headlampApi.reducer(state[headlampApi.reducerPath], action),
+      [queryApi.reducerPath]: queryApi.reducer(state[queryApi.reducerPath], action),
     }),
     preloadedState: {
       ui: { ...uiSlice.getInitialState() },

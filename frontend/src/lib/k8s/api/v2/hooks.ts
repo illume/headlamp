@@ -16,7 +16,7 @@
 
 import { useCallback, useMemo, useRef } from 'react';
 import { useDispatch } from 'react-redux';
-import { headlampApi } from '../../../../redux/headlampApi';
+import { queryApi } from '../../../../redux/queryApi';
 import { getCluster } from '../../../cluster';
 import type { QueryParameters } from '../../api/v1/queryParameters';
 import type { ApiError } from '../../api/v2/ApiError';
@@ -122,7 +122,7 @@ const getWorkingEndpoint = async (
   });
 };
 
-const injectedApi = headlampApi.injectEndpoints({
+const injectedApi = queryApi.injectEndpoints({
   endpoints: build => ({
     getWorkingEndpoint: build.query<
       KubeObjectEndpoint,

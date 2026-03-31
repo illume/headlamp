@@ -17,7 +17,7 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
-import { headlampApi } from '../../redux/headlampApi';
+import { queryApi } from '../../redux/queryApi';
 import { TestContext } from '../../test';
 import { AppLogo, AppLogoProps } from './AppLogo';
 
@@ -53,10 +53,10 @@ const Template: StoryFn<AppLogoProps> = args => {
   const themeName = args.themeName === 'dark' ? 'dark' : 'light';
   const store = configureStore({
     middleware: getDefaultMiddleware =>
-      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+      getDefaultMiddleware({ serializableCheck: false }).concat(queryApi.middleware),
     reducer: (state = getMockState(themeName), action: any) => ({
       ...state,
-      [headlampApi.reducerPath]: headlampApi.reducer(state[headlampApi.reducerPath], action),
+      [queryApi.reducerPath]: queryApi.reducer(state[queryApi.reducerPath], action),
     }),
     preloadedState: getMockState(themeName),
   });

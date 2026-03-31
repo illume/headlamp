@@ -27,8 +27,8 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import semver from 'semver';
 import { getVersion, useCluster } from '../../lib/k8s';
-import { headlampApi } from '../../redux/headlampApi';
 import { useTypedSelector } from '../../redux/hooks';
+import { queryApi } from '../../redux/queryApi';
 import { NameValueTable } from '../common/SimpleTable';
 
 const versionSnackbarHideTimeout = 5000; // ms
@@ -40,7 +40,7 @@ const VersionIcon = styled(Icon)({
   marginLeft: '5px',
 });
 
-const versionApi = headlampApi.injectEndpoints({
+const versionApi = queryApi.injectEndpoints({
   endpoints: build => ({
     getClusterVersion: build.query<any, { cluster: string }>({
       queryFn: async ({ cluster }) => {

@@ -20,7 +20,7 @@ import { useTranslation } from 'react-i18next';
 import { useSelectedClusters } from '../../lib/k8s';
 import { apiDiscovery } from '../../lib/k8s/api/v2/apiDiscovery';
 import { apiResourceId } from '../../lib/k8s/api/v2/ApiResource';
-import { headlampApi } from '../../redux/headlampApi';
+import { queryApi } from '../../redux/queryApi';
 import { SectionHeader } from '../common';
 import Loader from '../common/Loader';
 import { NamespacesAutocomplete } from '../common/NamespacesAutocomplete';
@@ -38,7 +38,7 @@ export const ADVANCED_SEARCH_QUERY_KEY = 'advanced-search-query';
  * AdvancedSearch component provides an interface for searching Kubernetes resources
  * with advanced filtering capabilities.
  */
-const advancedSearchApi = headlampApi.injectEndpoints({
+const advancedSearchApi = queryApi.injectEndpoints({
   endpoints: build => ({
     getApiDiscovery: build.query<any[], { clusters: string[] }>({
       queryFn: async ({ clusters }) => {

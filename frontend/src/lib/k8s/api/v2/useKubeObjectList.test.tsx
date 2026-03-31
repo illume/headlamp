@@ -19,7 +19,7 @@ import { act, renderHook } from '@testing-library/react';
 import { PropsWithChildren } from 'react';
 import { Provider } from 'react-redux';
 import { describe, expect, it, vi } from 'vitest';
-import { headlampApi } from '../../../../redux/headlampApi';
+import { queryApi } from '../../../../redux/queryApi';
 import { ApiError } from './ApiError';
 import { KubeList } from './KubeList';
 import {
@@ -53,9 +53,8 @@ vi.mock('./fetch', () => ({
 
 function createTestStore() {
   return configureStore({
-    reducer: { [headlampApi.reducerPath]: headlampApi.reducer },
-    middleware: getDefault =>
-      getDefault({ serializableCheck: false }).concat(headlampApi.middleware),
+    reducer: { [queryApi.reducerPath]: queryApi.reducer },
+    middleware: getDefault => getDefault({ serializableCheck: false }).concat(queryApi.middleware),
   });
 }
 
@@ -447,7 +446,7 @@ describe('kubeListApi cache behavior', () => {
     flushWSThrottle();
 
     // Verify cache was updated with new items
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKey = Object.keys(state.queries)[0];
     const cached = state.queries[queryKey]?.data as any;
 
@@ -510,7 +509,7 @@ describe('kubeListApi cache behavior', () => {
     flushWSThrottle();
 
     // Verify the cache was updated
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKey = Object.keys(state.queries)[0];
     const cached = state.queries[queryKey]?.data as any;
 
@@ -547,7 +546,7 @@ describe('kubeListApi cache behavior', () => {
     flushWSThrottle();
 
     // Cache should still be empty since we didn't provide queryArgs
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     expect(Object.keys(state.queries).length).toBe(0);
   });
 });
@@ -607,7 +606,7 @@ describe('kubeListApi serialization', () => {
     );
 
     // Both should hit the same cache entry since kubeObjectClass is excluded from serialization
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKeys = Object.keys(state.queries);
     expect(queryKeys.length).toBe(1);
 
@@ -646,7 +645,7 @@ describe('kubeListApi partial error handling', () => {
       } as any)
     );
 
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKey = Object.keys(state.queries)[0];
     const cached = state.queries[queryKey]?.data as any;
 
@@ -728,7 +727,7 @@ describe('kubeListApi indexMap with partial failures', () => {
 
     // Verify the update went to draft.lists[2] (cluster-c's position in queryArgs.queries)
     // NOT draft.lists[1] (which would be wrong — that's the null/failed entry)
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKey = Object.keys(state.queries)[0];
     const cached = state.queries[queryKey]?.data as any;
 
@@ -802,7 +801,7 @@ describe('kubeListApi indexMap with partial failures', () => {
     flushWSThrottle();
 
     // Verify the update went to draft.lists[2] (cluster-c's position in queryArgs.queries)
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKey = Object.keys(state.queries)[0];
     const cached = state.queries[queryKey]?.data as any;
 
@@ -862,7 +861,7 @@ describe('kubeListApi legacy no-op cache writes', () => {
     );
 
     // Get the state before message
-    const stateBefore = store.getState().headlampApi;
+    const stateBefore = store.getState().queryApi;
     const queryKey = Object.keys(stateBefore.queries)[0];
     const dataBefore = stateBefore.queries[queryKey]?.data;
 
@@ -877,7 +876,7 @@ describe('kubeListApi legacy no-op cache writes', () => {
     flushWSThrottle();
 
     // Cache reference should be unchanged (no-op write skipped by our guard)
-    const stateAfter = store.getState().headlampApi;
+    const stateAfter = store.getState().queryApi;
     const dataAfter = stateAfter.queries[queryKey]?.data;
     expect(dataAfter).toBe(dataBefore);
   });
@@ -946,7 +945,7 @@ describe('kubeListApi cache behavior (MODIFIED / DELETED)', () => {
     });
     flushWSThrottle();
 
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKey = Object.keys(state.queries)[0];
     const cached = state.queries[queryKey]?.data as any;
 
@@ -1014,7 +1013,7 @@ describe('kubeListApi cache behavior (MODIFIED / DELETED)', () => {
     });
     flushWSThrottle();
 
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKey = Object.keys(state.queries)[0];
     const cached = state.queries[queryKey]?.data as any;
 
@@ -1067,7 +1066,7 @@ describe('kubeListApi multiplexer cache writes', () => {
       { wrapper: createTestWrapper(store) }
     );
 
-    const stateBefore = store.getState().headlampApi;
+    const stateBefore = store.getState().queryApi;
     const queryKey = Object.keys(stateBefore.queries)[0];
     const dataBefore = stateBefore.queries[queryKey]?.data;
 
@@ -1084,7 +1083,7 @@ describe('kubeListApi multiplexer cache writes', () => {
     flushWSThrottle();
 
     // Cache reference should not change
-    const stateAfter = store.getState().headlampApi;
+    const stateAfter = store.getState().queryApi;
     const dataAfter = stateAfter.queries[queryKey]?.data;
     expect(dataAfter).toBe(dataBefore);
   });
@@ -1143,7 +1142,7 @@ describe('kubeListApi multiplexer cache writes', () => {
     });
     flushWSThrottle();
 
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKey = Object.keys(state.queries)[0];
     const cached = state.queries[queryKey]?.data as any;
 
@@ -1205,7 +1204,7 @@ describe('kubeListApi multiplexer cache writes', () => {
     flushWSThrottle();
 
     // Original cache entry should be unchanged
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKey = Object.keys(state.queries)[0];
     const cached = state.queries[queryKey]?.data as any;
     expect(cached.lists[0].list.items).toHaveLength(0);
@@ -1256,7 +1255,7 @@ describe('kubeListApi multiplexer cache writes', () => {
     flushWSThrottle();
 
     // Cache should be unchanged
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKey = Object.keys(state.queries)[0];
     const cached = state.queries[queryKey]?.data as any;
     expect(cached.lists[0].list.items).toHaveLength(0);
@@ -1553,7 +1552,7 @@ describe('WS cache writes with KubeList optimizations', () => {
       { wrapper: createTestWrapper(store) }
     );
 
-    const stateBefore = store.getState().headlampApi;
+    const stateBefore = store.getState().queryApi;
     const queryKey = Object.keys(stateBefore.queries)[0];
     const dataBefore = stateBefore.queries[queryKey]?.data;
 
@@ -1568,7 +1567,7 @@ describe('WS cache writes with KubeList optimizations', () => {
     flushWSThrottle();
     errSpy.mockRestore();
 
-    const stateAfter = store.getState().headlampApi;
+    const stateAfter = store.getState().queryApi;
     const dataAfter = stateAfter.queries[queryKey]?.data;
     expect(dataAfter).toBe(dataBefore);
   });
@@ -1618,7 +1617,7 @@ describe('WS cache writes with KubeList optimizations', () => {
       { wrapper: createTestWrapper(store) }
     );
 
-    const stateBefore = store.getState().headlampApi;
+    const stateBefore = store.getState().queryApi;
     const queryKey = Object.keys(stateBefore.queries)[0];
     const dataBefore = stateBefore.queries[queryKey]?.data;
 
@@ -1638,7 +1637,7 @@ describe('WS cache writes with KubeList optimizations', () => {
     });
     flushWSThrottle();
 
-    const stateAfter = store.getState().headlampApi;
+    const stateAfter = store.getState().queryApi;
     const dataAfter = stateAfter.queries[queryKey]?.data;
     expect(dataAfter).toBe(dataBefore);
   });
@@ -2150,7 +2149,7 @@ describe('buildListIndexMap and listKey edge cases', () => {
       { wrapper: createTestWrapper(store) }
     );
 
-    const queryKey = Object.keys(store.getState().headlampApi.queries)[0];
+    const queryKey = Object.keys(store.getState().queryApi.queries)[0];
 
     // Send event — this goes through cluster-a's connection
     // But the update itself is for a UID not in the list, triggering no-op via applyUpdate
@@ -2163,7 +2162,7 @@ describe('buildListIndexMap and listKey edge cases', () => {
     });
     flushWSThrottle();
 
-    const stateAfter = store.getState().headlampApi;
+    const stateAfter = store.getState().queryApi;
     const dataAfter = stateAfter.queries[queryKey]?.data as any;
     // Cache WAS updated because the ADDED event is valid for cluster-a's namespace
     expect(dataAfter.lists[0].list.items).toHaveLength(1);
@@ -2366,7 +2365,7 @@ describe('WS cache update correctness', () => {
     });
     flushWSThrottle();
 
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKey = Object.keys(state.queries)[0];
     const cached = state.queries[queryKey]?.data as any;
 
@@ -2430,7 +2429,7 @@ describe('WS cache update correctness', () => {
     });
     flushWSThrottle();
 
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKey = Object.keys(state.queries)[0];
     const cached = state.queries[queryKey]?.data as any;
 
@@ -2505,7 +2504,7 @@ describe('WS cache update correctness', () => {
     });
     flushWSThrottle();
 
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKey = Object.keys(state.queries)[0];
     const cached = state.queries[queryKey]?.data as any;
 
@@ -2612,7 +2611,7 @@ describe('WS cache update correctness', () => {
       { wrapper: createTestWrapper(store) }
     );
 
-    const stateBefore = store.getState().headlampApi;
+    const stateBefore = store.getState().queryApi;
     const queryKey = Object.keys(stateBefore.queries)[0];
     const dataBefore = stateBefore.queries[queryKey]?.data;
 
@@ -2626,7 +2625,7 @@ describe('WS cache update correctness', () => {
     });
     flushWSThrottle();
 
-    const stateAfter = store.getState().headlampApi;
+    const stateAfter = store.getState().queryApi;
     const dataAfter = stateAfter.queries[queryKey]?.data;
     expect(dataAfter).toBe(dataBefore);
   });
@@ -2716,7 +2715,7 @@ describe('WS event throttling', () => {
     });
 
     // Cache should NOT be updated yet (events are throttled)
-    const stateBefore = store.getState().headlampApi;
+    const stateBefore = store.getState().queryApi;
     const keyBefore = Object.keys(stateBefore.queries)[0];
     const dataBefore = stateBefore.queries[keyBefore]?.data as any;
     expect(dataBefore.lists[0].list.items).toHaveLength(0);
@@ -2725,7 +2724,7 @@ describe('WS event throttling', () => {
     // Now flush the throttle — all 3 events should be applied in ONE cache write
     flushWSThrottle();
 
-    const stateAfter = store.getState().headlampApi;
+    const stateAfter = store.getState().queryApi;
     const dataAfter = stateAfter.queries[keyBefore]?.data as any;
     expect(dataAfter.lists[0].list.items).toHaveLength(2); // pod-a1 + pod-a2
     expect(dataAfter.lists[1].list.items).toHaveLength(1); // pod-b1
@@ -2786,7 +2785,7 @@ describe('WS event throttling', () => {
     });
 
     // Cache should still be empty
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const key = Object.keys(state.queries)[0];
     const data = state.queries[key]?.data as any;
     expect(data.lists[0].list.items).toHaveLength(0);
@@ -2797,7 +2796,7 @@ describe('WS event throttling', () => {
     });
 
     // Now cache should be updated
-    const stateAfter = store.getState().headlampApi;
+    const stateAfter = store.getState().queryApi;
     const dataAfter = stateAfter.queries[key]?.data as any;
     expect(dataAfter.lists[0].list.items).toHaveLength(1);
   });

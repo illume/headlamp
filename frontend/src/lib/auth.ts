@@ -19,7 +19,7 @@
  */
 
 import { getHeadlampAPIHeaders } from '../helpers/getHeadlampAPIHeaders';
-import { headlampApi } from '../redux/headlampApi';
+import { queryApi } from '../redux/queryApi';
 import store from '../redux/stores/store';
 import { backendFetch } from './k8s/api/v2/fetch';
 
@@ -113,7 +113,7 @@ export function setToken(cluster: string, token: string | null) {
 
   return setCookieToken(cluster, token).then(result => {
     // Reset all RTK Query cached data when auth changes
-    store.dispatch(headlampApi.util.resetApiState());
+    store.dispatch(queryApi.util.resetApiState());
 
     return result;
   });

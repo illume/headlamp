@@ -34,8 +34,8 @@ import { getSavedNamespaces } from '../../lib/storage';
 import { setConfig } from '../../redux/configSlice';
 import { ConfigState } from '../../redux/configSlice';
 import { setNamespaceFilter } from '../../redux/filterSlice';
-import { headlampApi } from '../../redux/headlampApi';
 import { useTypedSelector } from '../../redux/hooks';
+import { queryApi } from '../../redux/queryApi';
 import store from '../../redux/stores/store';
 import { useUIPanelsGroupedBySide } from '../../redux/uiSlice';
 import { fetchStatelessClusterKubeConfigs, isEqualClusterConfigs } from '../../stateless/';
@@ -184,7 +184,7 @@ const fetchConfig = (dispatch: Dispatch<UnknownAction>) => {
 
 const disableBackendLoader = true;
 
-const layoutApi = headlampApi.injectEndpoints({
+const layoutApi = queryApi.injectEndpoints({
   endpoints: build => ({
     getConfig: build.query<any, void>({
       queryFn: async (_, { dispatch }) => {

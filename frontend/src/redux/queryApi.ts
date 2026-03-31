@@ -19,11 +19,11 @@ import { createApi, fakeBaseQuery } from '@reduxjs/toolkit/query/react';
 /**
  * Base RTK Query API slice for Headlamp.
  *
- * Endpoints are injected via `headlampApi.injectEndpoints()` in the modules
+ * Endpoints are injected via `queryApi.injectEndpoints()` in the modules
  * that own the corresponding data-fetching logic.
  */
-export const headlampApi = createApi({
-  reducerPath: 'headlampApi',
+export const queryApi = createApi({
+  reducerPath: 'queryApi',
   baseQuery: fakeBaseQuery(),
   keepUnusedDataFor: 180,
   refetchOnFocus: false,

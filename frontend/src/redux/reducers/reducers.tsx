@@ -26,10 +26,10 @@ import clusterProviderReducer from '../clusterProviderSlice';
 import configReducer from '../configSlice';
 import drawerModeSlice from '../drawerModeSlice';
 import filterReducer from '../filterSlice';
-import { headlampApi } from '../headlampApi';
 import eventCallbackReducer from '../headlampEventSlice';
 import overviewChartsReducer from '../overviewChartsSlice';
 import projectsReducer from '../projectsSlice';
+import { queryApi } from '../queryApi';
 import routesReducer from '../routesSlice';
 import shortcutsReducer from '../shortcutsSlice';
 import uiReducer from '../uiSlice';
@@ -61,7 +61,7 @@ const reducers = combineReducers({
   activity: activityReducer,
   projects: projectsReducer,
   shortcuts: shortcutsReducer,
-  [headlampApi.reducerPath]: headlampApi.reducer,
+  [queryApi.reducerPath]: queryApi.reducer,
 });
 
 export type RootState = ReturnType<typeof reducers>;

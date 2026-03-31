@@ -27,14 +27,14 @@ import { getDefaultRoutes } from '../../lib/router/getDefaultRoutes';
 import { getRoutePath } from '../../lib/router/getRoutePath';
 import { getRouteUseClusterURL } from '../../lib/router/getRouteUseClusterURL';
 import { Route as RouteType } from '../../lib/router/Route';
-import { headlampApi } from '../../redux/headlampApi';
 import { useTypedSelector } from '../../redux/hooks';
+import { queryApi } from '../../redux/queryApi';
 import { uiSlice } from '../../redux/uiSlice';
 import ErrorBoundary from '../common/ErrorBoundary';
 import ErrorComponent from '../common/ErrorPage';
 import { useSidebarItem } from '../Sidebar';
 
-const routeSwitcherApi = headlampApi.injectEndpoints({
+const routeSwitcherApi = queryApi.injectEndpoints({
   endpoints: build => ({
     testAuth: build.query<any, { cluster: string }>({
       queryFn: async ({ cluster }) => {

@@ -30,7 +30,7 @@ import { createRouteURL } from '../../lib/router/createRouteURL';
 import { getRoute } from '../../lib/router/getRoute';
 import { getRoutePath } from '../../lib/router/getRoutePath';
 import { setConfig } from '../../redux/configSlice';
-import { headlampApi } from '../../redux/headlampApi';
+import { queryApi } from '../../redux/queryApi';
 import { ClusterDialog } from '../cluster/Chooser';
 import { DialogTitle } from '../common/Dialog';
 import Empty from '../common/EmptyContent';
@@ -208,7 +208,7 @@ function AuthChooser({ children }: AuthChooserProps) {
       clusterAuthType={clusterAuthType}
       handleTryAgain={runTestAuthAgain}
       handleOidcAuth={() => {
-        dispatch(headlampApi.util.resetApiState());
+        dispatch(queryApi.util.resetApiState());
         history.replace(from);
       }}
       handleBackButtonPress={() => {

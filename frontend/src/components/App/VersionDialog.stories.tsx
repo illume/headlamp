@@ -17,14 +17,14 @@
 import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import { Provider } from 'react-redux';
-import { headlampApi } from '../../redux/headlampApi';
+import { queryApi } from '../../redux/queryApi';
 import VersionDialogComponent from './VersionDialog';
 
 const store = configureStore({
   middleware: getDefaultMiddleware =>
-    getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+    getDefaultMiddleware({ serializableCheck: false }).concat(queryApi.middleware),
   reducer: {
-    [headlampApi.reducerPath]: headlampApi.reducer,
+    [queryApi.reducerPath]: queryApi.reducer,
     ui: (state = { isVersionDialogOpen: false }) => state,
   },
   preloadedState: {

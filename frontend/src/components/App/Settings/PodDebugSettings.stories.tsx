@@ -23,7 +23,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
 import { Provider } from 'react-redux';
-import { headlampApi } from '../../../redux/headlampApi';
+import { queryApi } from '../../../redux/queryApi';
 import PodDebugSettings from './PodDebugSettings';
 
 const mockClusterName = 'mock-cluster';
@@ -61,10 +61,10 @@ export default {
 const Template: StoryFn<typeof PodDebugSettings> = args => {
   const store = configureStore({
     middleware: getDefaultMiddleware =>
-      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+      getDefaultMiddleware({ serializableCheck: false }).concat(queryApi.middleware),
     reducer: (state = getMockState(), action: any) => ({
       ...state,
-      [headlampApi.reducerPath]: headlampApi.reducer(state[headlampApi.reducerPath], action),
+      [queryApi.reducerPath]: queryApi.reducer(state[queryApi.reducerPath], action),
     }),
     preloadedState: getMockState(),
   });

@@ -20,7 +20,7 @@ import { defineConfig, mergeConfig } from 'vitest/config';
 import { coverageConfigDefaults } from 'vitest/config';
 import viteConfig from './vite.config';
 
-const STORYBOOK_SHARD_COUNT = 12;
+const STORYBOOK_SHARD_COUNT = 4;
 
 const storybookShards = Array.from({ length: STORYBOOK_SHARD_COUNT }, (_, i) => ({
   extends: true,

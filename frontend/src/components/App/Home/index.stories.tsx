@@ -19,7 +19,7 @@ import { Meta, StoryFn } from '@storybook/react';
 import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { initialState } from '../../../redux/configSlice';
-import { headlampApi } from '../../../redux/headlampApi';
+import { queryApi } from '../../../redux/queryApi';
 import shortcutsReducer from '../../../redux/shortcutsSlice';
 import Home from '.';
 
@@ -59,7 +59,7 @@ const ourState = {
 const createHomeStore = (state: Record<string, any>) =>
   configureStore({
     middleware: getDefaultMiddleware =>
-      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+      getDefaultMiddleware({ serializableCheck: false }).concat(queryApi.middleware),
     reducer: {
       config: (s = state.config) => s,
       filter: (s = state.filter) => s,
@@ -67,7 +67,7 @@ const createHomeStore = (state: Record<string, any>) =>
       clusterProvider: (s = state.clusterProvider) => s,
       drawerMode: (s = state.drawerMode) => s,
       shortcuts: (s = state.shortcuts) => s,
-      [headlampApi.reducerPath]: headlampApi.reducer,
+      [queryApi.reducerPath]: queryApi.reducer,
     },
   });
 

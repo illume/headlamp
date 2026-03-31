@@ -16,7 +16,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { headlampApi } from '../../../../redux/headlampApi';
+import { queryApi } from '../../../../redux/queryApi';
 import type { KubeObject, KubeObjectClass } from '../../KubeObject';
 import type { QueryParameters } from '../v1/queryParameters';
 import { ApiError } from './ApiError';
@@ -233,7 +233,7 @@ interface KubeObjectListsResult<K extends KubeObject> {
   errors: ApiError[];
 }
 
-const kubeListApi = headlampApi.injectEndpoints({
+const kubeListApi = queryApi.injectEndpoints({
   endpoints: build => ({
     getKubeObjectLists: build.query<KubeObjectListsResult<any>, KubeObjectListsQueryArgs>({
       queryFn: async ({ kubeObjectClass, endpoint, queries }) => {

@@ -19,7 +19,7 @@ import { renderHook } from '@testing-library/react';
 import React from 'react';
 import { Provider } from 'react-redux';
 import App from '../../App';
-import { headlampApi } from '../../redux/headlampApi';
+import { queryApi } from '../../redux/queryApi';
 import reducers from '../../redux/reducers/reducers';
 import { TestContext } from '../../test';
 import { DefaultSidebars, SidebarEntry } from './sidebarSlice';
@@ -47,7 +47,7 @@ describe('useSidebarItems', () => {
         },
       },
       middleware: getDefaultMiddleware =>
-        getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+        getDefaultMiddleware({ serializableCheck: false }).concat(queryApi.middleware),
     });
   };
   const wrapper =

@@ -19,7 +19,7 @@ import { act, renderHook, waitFor } from '@testing-library/react';
 import { PropsWithChildren } from 'react';
 import { Provider } from 'react-redux';
 import { describe, expect, it, vi } from 'vitest';
-import { headlampApi } from '../../../../redux/headlampApi';
+import { queryApi } from '../../../../redux/queryApi';
 import { kubeObjectApi, useEndpoints, useKubeObject } from './hooks';
 import * as websocket from './webSocket';
 
@@ -74,9 +74,8 @@ const mockKubeObjectClass = class {
 
 function createTestStore() {
   return configureStore({
-    reducer: { [headlampApi.reducerPath]: headlampApi.reducer },
-    middleware: getDefault =>
-      getDefault({ serializableCheck: false }).concat(headlampApi.middleware),
+    reducer: { [queryApi.reducerPath]: queryApi.reducer },
+    middleware: getDefault => getDefault({ serializableCheck: false }).concat(queryApi.middleware),
   });
 }
 
@@ -110,7 +109,7 @@ describe('useEndpoints', () => {
 
     // With a single endpoint the RTK Query hook is skipped:
     // no query should appear in the store
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKeys = Object.keys(state.queries);
     expect(queryKeys.length).toBe(0);
   });
@@ -128,7 +127,7 @@ describe('useEndpoints', () => {
 
     // With multiple endpoints the hook should fire a query
     await waitFor(() => {
-      const state = store.getState().headlampApi;
+      const state = store.getState().queryApi;
       const queryKeys = Object.keys(state.queries);
       expect(queryKeys.length).toBeGreaterThan(0);
     });
@@ -202,7 +201,7 @@ describe('useKubeObject', () => {
     );
 
     // A query should have been initiated
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKeys = Object.keys(state.queries);
     expect(queryKeys.length).toBeGreaterThan(0);
   });
@@ -596,7 +595,7 @@ describe('kubeObjectApi cache key serialization', () => {
     );
 
     // Should be same cache key → only one query entry
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKeys = Object.keys(state.queries);
     expect(queryKeys.length).toBe(1);
   });
@@ -635,7 +634,7 @@ describe('kubeObjectApi cache key serialization', () => {
       )
     );
 
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     const queryKeys = Object.keys(state.queries);
     expect(queryKeys.length).toBe(2);
   });
@@ -665,7 +664,7 @@ describe('kubeObjectApi cache key serialization', () => {
       )
     );
 
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     expect(Object.keys(state.queries).length).toBe(2);
   });
 
@@ -695,7 +694,7 @@ describe('kubeObjectApi cache key serialization', () => {
       )
     );
 
-    const state = store.getState().headlampApi;
+    const state = store.getState().queryApi;
     expect(Object.keys(state.queries).length).toBe(2);
   });
 });
@@ -775,7 +774,7 @@ describe('useKubeObject multiplexer websocket', () => {
   });
 });
 
-describe('headlampApi resetApiState with cached data', () => {
+describe('queryApi resetApiState with cached data', () => {
   it('should clear all cached queries when resetApiState is dispatched', async () => {
     const store = createTestStore();
     const endpoint = { version: 'v1', resource: 'pods' };
@@ -797,14 +796,14 @@ describe('headlampApi resetApiState with cached data', () => {
     );
 
     // Verify cache has data
-    let state = store.getState().headlampApi;
+    let state = store.getState().queryApi;
     expect(Object.keys(state.queries).length).toBe(1);
 
     // Reset
-    store.dispatch(headlampApi.util.resetApiState());
+    store.dispatch(queryApi.util.resetApiState());
 
     // Cache should be cleared
-    state = store.getState().headlampApi;
+    state = store.getState().queryApi;
     expect(Object.keys(state.queries).length).toBe(0);
   });
 });

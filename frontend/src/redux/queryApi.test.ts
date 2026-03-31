@@ -16,30 +16,29 @@
 
 import { configureStore } from '@reduxjs/toolkit';
 import { describe, expect, it, vi } from 'vitest';
-import { headlampApi } from './headlampApi';
+import { queryApi } from './queryApi';
 
 function createStoreWithApi() {
   return configureStore({
-    reducer: { [headlampApi.reducerPath]: headlampApi.reducer },
-    middleware: getDefault =>
-      getDefault({ serializableCheck: false }).concat(headlampApi.middleware),
+    reducer: { [queryApi.reducerPath]: queryApi.reducer },
+    middleware: getDefault => getDefault({ serializableCheck: false }).concat(queryApi.middleware),
   });
 }
 
-describe('headlampApi', () => {
+describe('queryApi', () => {
   it('should have the correct reducerPath', () => {
-    expect(headlampApi.reducerPath).toBe('headlampApi');
+    expect(queryApi.reducerPath).toBe('queryApi');
   });
 
   it('should be wired into a store without errors', () => {
     const store = createStoreWithApi();
     const state = store.getState();
-    expect(state).toHaveProperty('headlampApi');
+    expect(state).toHaveProperty('queryApi');
   });
 
   it('should initialize with empty queries and mutations state', () => {
     const store = createStoreWithApi();
-    const apiState = store.getState().headlampApi;
+    const apiState = store.getState().queryApi;
     expect(apiState.queries).toEqual({});
     expect(apiState.mutations).toEqual({});
   });
@@ -48,19 +47,19 @@ describe('headlampApi', () => {
     const store = createStoreWithApi();
 
     // Manually seed some data into the state to simulate cached queries
-    const initialState = store.getState().headlampApi;
+    const initialState = store.getState().queryApi;
     expect(initialState.queries).toEqual({});
 
     // Dispatch resetApiState
-    store.dispatch(headlampApi.util.resetApiState());
+    store.dispatch(queryApi.util.resetApiState());
 
-    const resetState = store.getState().headlampApi;
+    const resetState = store.getState().queryApi;
     expect(resetState.queries).toEqual({});
     expect(resetState.mutations).toEqual({});
   });
 
   it('should allow injecting endpoints without error', () => {
-    const extended = headlampApi.injectEndpoints({
+    const extended = queryApi.injectEndpoints({
       endpoints: build => ({
         testEndpoint: build.query<string, void>({
           queryFn: async () => ({ data: 'hello' }),
@@ -73,7 +72,7 @@ describe('headlampApi', () => {
 
   it('should configure keepUnusedDataFor to 180 seconds', () => {
     // Verify indirectly: inject an endpoint and check its config
-    const extended = headlampApi.injectEndpoints({
+    const extended = queryApi.injectEndpoints({
       endpoints: build => ({
         configCheckEndpoint: build.query<string, void>({
           queryFn: async () => ({ data: 'test' }),
@@ -108,7 +107,7 @@ describe('auth resetApiState', () => {
 
       // Count how many times resetApiState was dispatched
       const resetCalls = dispatchSpy.mock.calls.filter(([action]) =>
-        headlampApi.util.resetApiState.match(action)
+        queryApi.util.resetApiState.match(action)
       );
 
       // setToken dispatches resetApiState once. If logout had a redundant call,

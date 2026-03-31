@@ -19,7 +19,7 @@ import React, { useEffect } from 'react';
 import { getCluster } from '../../../lib/cluster';
 import { KubeObject } from '../../../lib/k8s/KubeObject';
 import { KubeObjectClass } from '../../../lib/k8s/KubeObject';
-import { headlampApi } from '../../../redux/headlampApi';
+import { queryApi } from '../../../redux/queryApi';
 
 /** List of valid request verbs. See https://kubernetes.io/docs/reference/access-authn-authz/authorization/#determine-the-request-verb. */
 const VALID_AUTH_VERBS = [
@@ -55,7 +55,7 @@ export interface AuthVisibleProps extends React.PropsWithChildren<{}> {
 /** A component that will only render its children if the user is authorized to perform the specified action on the given resource.
  * @param props The props for the component.
  */
-const authVisibleApi = headlampApi.injectEndpoints({
+const authVisibleApi = queryApi.injectEndpoints({
   endpoints: build => ({
     checkAuthVisible: build.query<
       any,

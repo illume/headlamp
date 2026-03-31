@@ -43,8 +43,8 @@ import {
   AppBarActionType,
   DefaultAppBarAction,
 } from '../../redux/actionButtonsSlice';
-import { headlampApi } from '../../redux/headlampApi';
 import { useTypedSelector } from '../../redux/hooks';
+import { queryApi } from '../../redux/queryApi';
 import { uiSlice } from '../../redux/uiSlice';
 import { SettingsButton } from '../App/Settings';
 import { ClusterTitle } from '../cluster/Chooser';
@@ -99,7 +99,7 @@ function getUserDisplayName(
   return clusterName;
 }
 
-const topBarApi = headlampApi.injectEndpoints({
+const topBarApi = queryApi.injectEndpoints({
   endpoints: build => ({
     getClusterUserInfoBatch: build.query<
       Record<string, ClusterUserInfo | undefined>,

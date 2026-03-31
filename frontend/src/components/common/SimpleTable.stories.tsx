@@ -21,7 +21,7 @@ import { Meta, StoryFn } from '@storybook/react';
 import { useLocation } from 'react-router-dom';
 import { KubeObjectInterface } from '../../lib/k8s/KubeObject';
 import { useFilterFunc } from '../../lib/util';
-import { headlampApi } from '../../redux/headlampApi';
+import { queryApi } from '../../redux/queryApi';
 import { TestContext, TestContextProps } from '../../test';
 import SectionFilterHeader from './SectionFilterHeader';
 import SimpleTable, { SimpleTableProps } from './SimpleTable';
@@ -257,7 +257,7 @@ const TemplateWithFilter: StoryFn<{
 
   const storeWithFilterAndSettings = configureStore({
     middleware: getDefaultMiddleware =>
-      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
+      getDefaultMiddleware({ serializableCheck: false }).concat(queryApi.middleware),
     reducer: (
       state = {
         filter: { namespaces: new Set<string>() },
@@ -266,7 +266,7 @@ const TemplateWithFilter: StoryFn<{
       action: any
     ) => ({
       ...state,
-      [headlampApi.reducerPath]: headlampApi.reducer(state[headlampApi.reducerPath], action),
+      [queryApi.reducerPath]: queryApi.reducer(state[queryApi.reducerPath], action),
     }),
     preloadedState: {
       filter: {
