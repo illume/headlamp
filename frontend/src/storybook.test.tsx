@@ -36,8 +36,17 @@ beforeAll(annotations.beforeAll!);
 vi.mock('@iconify/react', () => {
   // Filter out non-DOM props from Iconify components to avoid React warnings
   const NON_DOM_PROPS = new Set([
-    'icon', 'width', 'height', 'inline', 'hFlip', 'vFlip',
-    'flip', 'rotate', 'color', 'sx', 'fr',
+    'icon',
+    'width',
+    'height',
+    'inline',
+    'hFlip',
+    'vFlip',
+    'flip',
+    'rotate',
+    'color',
+    'sx',
+    'fr',
   ]);
   const filterProps = (props: Record<string, unknown>) => {
     const filtered: Record<string, unknown> = {};
