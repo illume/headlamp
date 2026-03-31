@@ -145,7 +145,7 @@ describe('apiProxy', () => {
       cb = vi.fn();
       errCb = vi.fn();
 
-      // vi.spyOn(console, 'warn');
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
     });
 
     afterEach(() => {
@@ -399,7 +399,7 @@ describe('apiProxy', () => {
       mockServer = new WS(`${wsUrl}clusters/${clusterName}${streamResultsUrl}`);
       vi.spyOn(cluster, 'getCluster').mockReturnValue(clusterName);
       vi.spyOn(console, 'error').mockImplementation(() => {});
-      // vi.spyOn(console, 'warn').mockImplementation();
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
     });
 
     afterEach(() => {
@@ -483,7 +483,7 @@ describe('apiProxy', () => {
       mockServer = new WS(`${wsUrl}clusters/${clusterName}${streamResultsUrl}`);
       vi.spyOn(cluster, 'getCluster').mockReturnValue(clusterName);
       vi.spyOn(console, 'error').mockImplementation(() => {});
-      // vi.spyOn(console, 'warn').mockImplementation();
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
     });
 
     afterEach(() => {
@@ -607,7 +607,7 @@ describe('apiProxy', () => {
 
       mockServer = new WS(`${wsUrl}clusters/${clusterName}${testPath}`);
       vi.spyOn(cluster, 'getCluster').mockReturnValue(clusterName);
-      // vi.spyOn(console, 'warn').mockImplementation();
+      vi.spyOn(console, 'warn').mockImplementation(() => {});
     });
 
     afterEach(() => {

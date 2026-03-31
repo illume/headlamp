@@ -15,6 +15,8 @@
  */
 
 /// <reference types="vitest" />
+import { readFileSync } from 'fs';
+import { type Plugin } from 'vite';
 import { defineConfig, mergeConfig } from 'vitest/config';
 import { coverageConfigDefaults } from 'vitest/config';
 import viteConfig from './vite.config';
@@ -32,9 +34,34 @@ const storybookShards = Array.from({ length: STORYBOOK_SHARD_COUNT }, (_, i) => 
   },
 }));
 
+// Vite plugin that strips broken sourceMappingURL comments from monaco-editor files.
+// The ESM build of marked.js inside monaco-editor references a UMD source map that doesn't exist.
+function stripBrokenSourceMaps(): Plugin {
+  return {
+    name: 'strip-broken-source-maps',
+    enforce: 'pre',
+    load(id) {
+      if (id.includes('node_modules/monaco-editor') && id.endsWith('.js')) {
+        try {
+          const code = readFileSync(id, 'utf-8');
+          if (code.includes('sourceMappingURL')) {
+            return {
+              code: code.replace(/\/\/# sourceMappingURL=.*$/m, ''),
+              map: null,
+            };
+          }
+        } catch {
+          // fall through to default loading
+        }
+      }
+    },
+  };
+}
+
 export default mergeConfig(
   viteConfig,
   defineConfig({
+    plugins: [stripBrokenSourceMaps()],
     test: {
       globals: true,
       environment: 'jsdom',
