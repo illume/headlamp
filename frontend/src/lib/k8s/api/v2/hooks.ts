@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useCallback, useMemo, useRef } from 'react';
+import { useDispatch } from 'react-redux';
 import { queryApi } from '../../../../redux/queryApi';
 import { getCluster } from '../../../cluster';
 import type { QueryParameters } from '../../api/v1/queryParameters';
@@ -97,13 +97,46 @@ export const kubeObjectQueryKey = ({
 }) => ['object', cluster, endpoint, namespace ?? '', name, queryParams ?? {}];
 
 /**
- * RTK Query endpoints for KubeObject operations.
+ * Test different endpoints to see which one is working.
  *
- * These endpoints are used by Link.tsx for cache prepopulation and will
- * eventually replace the useQuery-based hooks above.
+ * @params endpoints - List of possible endpoints
+ * @returns Endpoint that works
+ *
+ * @throws Error
+ * When no endpoints are working
  */
-export const kubeObjectApi = queryApi.injectEndpoints({
+const getWorkingEndpoint = async (
+  endpoints: KubeObjectEndpoint[],
+  cluster: string,
+  namespace?: string
+) => {
+  const promises = endpoints.map(endpoint => {
+    return clusterFetch(KubeObjectEndpoint.toUrl(endpoint, namespace), {
+      method: 'GET',
+      cluster: cluster ?? getCluster() ?? '',
+    }).then(() => endpoint);
+  });
+  return Promise.any(promises).catch((aggregateError: AggregateError) => {
+    // when no endpoint is available, throw an error
+    throw aggregateError.errors[0];
+  });
+};
+
+const injectedApi = queryApi.injectEndpoints({
   endpoints: build => ({
+    getWorkingEndpoint: build.query<
+      KubeObjectEndpoint,
+      { endpoints: KubeObjectEndpoint[]; cluster: string; namespace?: string }
+    >({
+      queryFn: async ({ endpoints, cluster, namespace }) => {
+        try {
+          const result = await getWorkingEndpoint(endpoints, cluster, namespace);
+          return { data: result };
+        } catch (error) {
+          return { error };
+        }
+      },
+    }),
     getKubeObject: build.query<
       KubeObject | null,
       {
@@ -137,6 +170,25 @@ export const kubeObjectApi = queryApi.injectEndpoints({
 });
 
 /**
+ * Checks and returns an endpoint that works from the list
+ *
+ * @params endpoints - List of possible endpoints
+ */
+export const useEndpoints = (
+  endpoints: KubeObjectEndpoint[],
+  cluster: string,
+  namespace?: string
+) => {
+  const { data: endpoint, error } = injectedApi.useGetWorkingEndpointQuery(
+    { endpoints, cluster, namespace },
+    { skip: endpoints.length <= 1 }
+  );
+  if (endpoints.length === 1) return { endpoint: endpoints[0], error: null };
+
+  return { endpoint, error: error as ApiError | undefined };
+};
+
+/**
  * Returns a single KubeObject.
  */
 export function useKubeObject<K extends KubeObject>({
@@ -166,31 +218,37 @@ export function useKubeObject<K extends KubeObject>({
     Object.entries(queryParams ?? {}).filter(([, value]) => value !== undefined && value !== '')
   );
 
-  const queryKey = useMemo(
-    () =>
-      kubeObjectQueryKey({ cluster, name, namespace, endpoint, queryParams: cleanedUpQueryParams }),
-    [endpoint, namespace, name]
+  const stableQueryParams = useMemo(
+    () => cleanedUpQueryParams,
+    [JSON.stringify(cleanedUpQueryParams)]
   );
 
-  const client = useQueryClient();
-  const query = useQuery<Instance | null, ApiError>({
-    enabled: !!endpoint,
-    placeholderData: null,
-    staleTime: 5000,
-    queryKey,
-    queryFn: async () => {
-      const url = makeUrl(
-        [KubeObjectEndpoint.toUrl(endpoint!, namespace), name],
-        cleanedUpQueryParams
-      );
-      const obj: KubeObjectInterface = await clusterFetch(url, {
-        cluster,
-      }).then(it => it.json());
-      return new kubeObjectClass(obj, cluster) as Instance;
-    },
+  const queryArgs = useMemo(
+    () => ({
+      kubeObjectClass,
+      endpoint: endpoint!,
+      namespace,
+      name,
+      cluster,
+      queryParams: stableQueryParams,
+    }),
+    [kubeObjectClass, endpoint, namespace, name, cluster, stableQueryParams]
+  );
+
+  const query = injectedApi.useGetKubeObjectQuery(queryArgs, {
+    skip: !endpoint,
+    // Use 180s stale window (matching React Query's staleTime: 3 * 60_000 on main).
+    // `true` caused cascade refetches: config dispatch → re-render → remount → refetch.
+    refetchOnMountOrArgChange: 180,
   });
 
-  const data: Instance | null = query.error ? null : query.data ?? null;
+  const dispatch = useDispatch<any>();
+
+  const data: Instance | null = query.error ? null : (query.data as Instance) ?? null;
+
+  // Keep ref for queryArgs so the onMessage callback always sees the latest value
+  const queryArgsRef = useRef(queryArgs);
+  queryArgsRef.current = queryArgs;
 
   const connectionsRequests = useMemo(() => {
     if (!endpoint) return [];
@@ -198,38 +256,63 @@ export function useKubeObject<K extends KubeObject>({
     return [
       {
         url: makeUrl([KubeObjectEndpoint.toUrl(endpoint!, namespace)], {
-          ...cleanedUpQueryParams,
+          ...stableQueryParams,
           watch: 1,
           fieldSelector: `metadata.name=${name}`,
         }),
         cluster,
         onMessage(update: KubeListUpdateEvent<K>) {
           if (update.type !== 'ADDED' && update.object) {
-            client.setQueryData(queryKey, new kubeObjectClass(update.object));
+            dispatch(
+              injectedApi.util.upsertQueryData(
+                'getKubeObject',
+                queryArgsRef.current,
+                new kubeObjectClass(update.object, cluster)
+              )
+            );
           }
         },
       },
     ];
-  }, [endpoint]);
+  }, [endpoint, namespace, name, cluster, stableQueryParams, kubeObjectClass, dispatch]);
+
+  // Memoize the url callback so useWebSocket doesn't reconnect on every render.
+  // Uses stableQueryParams (not cleanedUpQueryParams) for stable identity.
+  const multiplexerUrl = useCallback(
+    () =>
+      makeUrl([KubeObjectEndpoint.toUrl(endpoint!, namespace)], {
+        ...stableQueryParams,
+        watch: 1,
+        fieldSelector: `metadata.name=${name}`,
+      }),
+    [endpoint, namespace, name, stableQueryParams]
+  );
+
+  // Memoize onMessage; use queryArgsRef so the callback doesn't change when queryArgs changes
+  const multiplexerOnMessage = useCallback(
+    (update: KubeListUpdateEvent<K>) => {
+      if (update.type !== 'ADDED' && update.object) {
+        dispatch(
+          injectedApi.util.upsertQueryData(
+            'getKubeObject',
+            queryArgsRef.current,
+            new kubeObjectClass(update.object, cluster)
+          )
+        );
+      }
+    },
+    [dispatch, kubeObjectClass, cluster]
+  );
 
   // Breaking rules of hooks here a little but
   // getWebsocketMultiplexerEnabled is a feature toggle
   // and not a variable so this `if` should never change during runtime
   if (getWebsocketMultiplexerEnabled()) {
     useWebSocket<KubeListUpdateEvent<K>>({
-      url: () =>
-        makeUrl([KubeObjectEndpoint.toUrl(endpoint!)], {
-          ...cleanedUpQueryParams,
-          watch: 1,
-          fieldSelector: `metadata.name=${name}`,
-        }),
+      url: multiplexerUrl,
       enabled: !!endpoint && !!data,
       cluster,
-      onMessage(update: KubeListUpdateEvent<K>) {
-        if (update.type !== 'ADDED' && update.object) {
-          client.setQueryData(queryKey, new kubeObjectClass(update.object));
-        }
-      },
+      onMessage: multiplexerOnMessage,
     });
   } else {
     useWebSockets({
@@ -238,64 +321,26 @@ export function useKubeObject<K extends KubeObject>({
     });
   }
 
+  const isLoading = query.isLoading;
+  const isFetching = query.isFetching;
+  const isError = query.isError || !!endpointError;
+  const isSuccess = query.isSuccess && !endpointError;
+  const status: QueryStatus = isError ? 'error' : isSuccess ? 'success' : 'pending';
+
   // @ts-ignore
   return {
     data,
-    error: endpointError ?? query.error,
-    isError: query.isError,
-    isLoading: query.isLoading,
-    isFetching: query.isFetching,
-    isSuccess: query.isSuccess,
-    status: query.status,
+    error: (endpointError ?? query.error ?? null) as ApiError | null,
+    isError,
+    isLoading,
+    isFetching,
+    isSuccess,
+    status,
     *[Symbol.iterator](): ArrayIterator<ApiError | K | null> {
       yield data;
-      yield endpointError ?? query.error;
+      yield (endpointError ?? query.error ?? null) as ApiError | null;
     },
   };
 }
 
-/**
- * Test different endpoints to see which one is working.
- *
- * @params endpoints - List of possible endpoints
- * @returns Endpoint that works
- *
- * @throws Error
- * When no endpoints are working
- */
-const getWorkingEndpoint = async (
-  endpoints: KubeObjectEndpoint[],
-  cluster: string,
-  namespace?: string
-) => {
-  const promises = endpoints.map(endpoint => {
-    return clusterFetch(KubeObjectEndpoint.toUrl(endpoint, namespace), {
-      method: 'GET',
-      cluster: cluster ?? getCluster() ?? '',
-    }).then(() => endpoint);
-  });
-  return Promise.any(promises).catch((aggregateError: AggregateError) => {
-    // when no endpoint is available, throw an error
-    throw aggregateError.errors[0];
-  });
-};
-
-/**
- * Checks and returns an endpoint that works from the list
- *
- * @params endpoints - List of possible endpoints
- */
-export const useEndpoints = (
-  endpoints: KubeObjectEndpoint[],
-  cluster: string,
-  namespace?: string
-) => {
-  const { data: endpoint, error } = useQuery<KubeObjectEndpoint, ApiError>({
-    enabled: endpoints.length > 1,
-    queryKey: ['endpoints', endpoints],
-    queryFn: () => getWorkingEndpoint(endpoints, cluster!, namespace),
-  });
-  if (endpoints.length === 1) return { endpoint: endpoints[0], error: null };
-
-  return { endpoint, error };
-};
+export { injectedApi as kubeObjectApi };
