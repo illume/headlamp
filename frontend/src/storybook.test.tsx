@@ -14,65 +14,67 @@
  * limitations under the License.
  */
 
+/**
+ * Storybook snapshot tests.
+ *
+ * Parallelized via vitest workspace projects: each project sets a
+ * STORYBOOK_SHARD env var so this single file runs a different subset
+ * of stories per project. See vitest.config.ts for the workspace config.
+ */
+
 import 'vitest-canvas-mock';
-import { composeStories, type Meta, setProjectAnnotations, type StoryFn } from '@storybook/react';
-import { act, render as testingLibraryRender, waitFor } from '@testing-library/react';
-import { getWorker } from 'msw-storybook-addon';
+import { setProjectAnnotations } from '@storybook/react';
+import { render as testingLibraryRender } from '@testing-library/react';
 import path from 'path';
+import React from 'react';
 import * as previewAnnotations from '../.storybook/preview';
+import { runStorybookTests, type StoryFile } from './storybook-test-helper';
 
 const annotations = setProjectAnnotations([previewAnnotations, { testingLibraryRender }]);
 beforeAll(annotations.beforeAll!);
 
-type StoryFile = {
-  default: Meta;
-  [name: string]: StoryFn | Meta;
-};
-
-const compose = (entry: StoryFile) => {
-  try {
-    const stories = composeStories(entry);
-    return stories;
-  } catch (e) {
-    throw new Error(
-      `There was an issue composing stories for the module: ${JSON.stringify(entry)}, ${e}`
-    );
-  }
-};
-
-function getAllStoryFiles() {
-  // Place the glob you want to match your story files
-  const storyFiles = Object.entries(
-    import.meta.glob<StoryFile>('./**/*.stories.tsx', {
-      eager: true,
-    })
-  );
-
-  return storyFiles.map(([filePath, storyFile]) => {
-    const storyDir = path.dirname(filePath);
-    const componentName = path.basename(filePath).replace(/\.(stories|story)\.[^/.]+$/, '');
-    return { filePath, storyFile, componentName, storyDir };
-  });
-}
-
-// Recreate similar options to Storyshots. Place your configuration below
-const options = {
-  storyKindRegex: /^.*?DontTest$/,
-  snapshotsDirName: '__snapshots__',
-  snapshotExtension: '.stories.storyshot',
-};
-
-vi.mock('@iconify/react', () => ({
-  Icon: () => null,
-  InlineIcon: () => null,
-  addCollection: () => {},
-}));
+vi.mock('@iconify/react', () => {
+  // Filter out non-DOM props from Iconify components to avoid React warnings
+  const NON_DOM_PROPS = new Set([
+    'icon',
+    'width',
+    'height',
+    'inline',
+    'hFlip',
+    'vFlip',
+    'flip',
+    'rotate',
+    'color',
+    'sx',
+    'fr',
+  ]);
+  const filterProps = (props: Record<string, unknown>) => {
+    const filtered: Record<string, unknown> = {};
+    for (const key of Object.keys(props)) {
+      if (!NON_DOM_PROPS.has(key)) filtered[key] = props[key];
+    }
+    return filtered;
+  };
+  return {
+    Icon: React.forwardRef((props: any, ref: any) => (
+      <span ref={ref} data-testid="mock-icon" {...filterProps(props)} />
+    )),
+    InlineIcon: React.forwardRef((props: any, ref: any) => (
+      <span ref={ref} data-testid="mock-inline-icon" {...filterProps(props)} />
+    )),
+    addCollection: () => {},
+  };
+});
 
 vi.mock('@monaco-editor/react', () => ({
   Editor: () => <div className="mock-monaco-editor" />,
   useMonaco: () => null,
   loader: { config: () => null },
   default: () => <div className="mock-monaco-editor" />,
+}));
+
+vi.mock('./components/common/Resource/AuthVisible', () => ({
+  default: ({ children }: { children: React.ReactNode }) => <>{children}</>,
 }));
 
 window.matchMedia = () => ({
@@ -85,157 +87,48 @@ window.matchMedia = () => ({
   removeEventListener: () => {},
   dispatchEvent: () => true,
 });
+
 /**
- * Recursively walks the tree and replaces any usage of useId
+ * Total number of parallel shards for storybook tests.
+ * Read from STORYBOOK_SHARD_COUNT env var set by vitest.config.ts
+ * to stay in sync with the workspace project count.
  */
-function replaceUseId(node: any) {
-  const attributesToReplace = ['id', 'for', 'aria-describedby', 'aria-labelledby', 'aria-controls'];
-  if (node.nodeType === Node.ELEMENT_NODE) {
-    for (const attr of node.attributes) {
-      if (attributesToReplace.includes(attr.name)) {
-        if (attr.value.includes(':')) {
-          // Handle React useId generated IDs
-          node.setAttribute(attr.name, ':mock-test-id:');
-        } else if (attr.name === 'id' && attr.value.includes('recharts')) {
-          // Handle recharts generated IDs
-          node.setAttribute(attr.name, 'recharts-id');
-        }
-      }
-    }
+const STORYBOOK_SHARD_COUNT = Number(import.meta.env.STORYBOOK_SHARD_COUNT || 4);
 
-    if (node.className && typeof node.className === 'string') {
-      // Replace dynamic xterm owner classes with a fixed value
-      node.className = node.className.replace(
-        /xterm-dom-renderer-owner-\d+/g,
-        'xterm-dom-renderer-owner'
-      );
-    }
-  }
+/**
+ * Load story files for this shard. Uses lazy glob imports so each shard
+ * only loads the story modules it needs, avoiding the overhead
+ * of eagerly importing all stories in every shard.
+ */
+async function loadStoryFiles() {
+  // Sort entries by path to ensure consistent shard distribution
+  // across different systems and glob implementations.
+  const lazyStoryFiles = Object.entries(import.meta.glob<StoryFile>('./**/*.stories.tsx')).sort(
+    ([a], [b]) => a.localeCompare(b)
+  );
 
-  // Recursively update child nodes
-  for (const child of node.childNodes) {
-    replaceUseId(child);
-  }
+  // When running as a shard, only import this shard's subset of stories.
+  // STORYBOOK_SHARD is set by vitest.config.ts workspace projects for parallel execution.
+  const shardIndex = Number(import.meta.env.STORYBOOK_SHARD ?? -1);
+  const filteredEntries =
+    shardIndex >= 0
+      ? lazyStoryFiles.filter((_, i) => i % STORYBOOK_SHARD_COUNT === shardIndex)
+      : lazyStoryFiles;
+
+  // Import only the story files this shard needs
+  const allFiles = await Promise.all(
+    filteredEntries.map(async ([filePath, importFn]) => {
+      const storyFile = await importFn();
+      const storyDir = path.dirname(filePath);
+      const componentName = path.basename(filePath).replace(/\.(stories|story)\.[^/.]+$/, '');
+      return { filePath, storyFile, componentName, storyDir };
+    })
+  );
+
+  return allFiles;
 }
 
-describe('Storybook Tests', () => {
-  beforeEach(() => {
-    vi.useFakeTimers();
-  });
-  afterEach(() => {
-    vi.useRealTimers();
-    vi.restoreAllMocks();
-  });
-
-  getAllStoryFiles().forEach(({ storyFile, componentName, storyDir }) => {
-    const meta = storyFile.default;
-    const title = meta.title || componentName;
-
-    if (options.storyKindRegex.test(title) || meta.parameters?.storyshots?.disable) {
-      // Skip component tests if they are disabled
-      return;
-    }
-
-    describe(title, () => {
-      const stories = Object.entries(compose(storyFile)).map(([name, story]) => ({
-        name,
-        story,
-      }));
-
-      if (stories.length <= 0) {
-        throw new Error(
-          `No stories found for this module: ${title}. Make sure there is at least one valid story for this module, without a disable parameter, or add parameters.storyshots.disable in the default export of this file.`
-        );
-      }
-
-      stories.forEach(({ name, story }) => {
-        if (story.parameters?.storyshots?.disable) return;
-
-        test(name, async () => {
-          // Keep track of sent requests to wait for the to finish
-          let requestsSent = 0;
-          let requestsEnded = 0;
-          const worker = getWorker();
-          function onStart() {
-            requestsSent++;
-          }
-          function onEnd() {
-            requestsEnded++;
-          }
-          worker.events.on('request:start', onStart);
-          worker.events.on('request:end', onEnd);
-
-          const unhandledRequests: Array<string> = [];
-
-          function onUnhandledRequest(e: { request: Request }) {
-            unhandledRequests.push(e.request.url);
-          }
-          worker.events.on('request:unhandled', onUnhandledRequest);
-
-          act(() => {
-            previewAnnotations.queryClient.clear();
-          });
-          await act(async () => {
-            await story.run();
-          });
-
-          // There are a bunch of waterfall requests in the stories
-          // So to make sure all requests are sent we need to skip over some ticks
-          const tickSkipCount = 10;
-          for (let i = 0; i < tickSkipCount; i++) {
-            // Advance timers enough for stuff to appear
-            // but not too much that things like notifications/toasts are hidden
-            act(() => vi.advanceTimersByTime(100));
-            await act(() => new Promise(res => process.nextTick(res)));
-          }
-
-          // And now we make sure all the requests that have been sent have ended
-          await waitFor(() => {
-            if (requestsSent !== requestsEnded) {
-              throw new Error('waiting');
-            }
-          });
-
-          expect(
-            unhandledRequests,
-            'MSW: intercepted a request without a matching request handler. Please create a request handler for it'
-          ).toEqual([]);
-
-          await waitFor(() => {
-            if (previewAnnotations.queryClient.isFetching()) {
-              const pendingQueries = previewAnnotations.queryClient
-                .getQueryCache()
-                .findAll({ fetchStatus: 'fetching' });
-
-              throw new Error(
-                'The react-query is still fetching following queries:\n' +
-                  pendingQueries
-                    .map((it, i) => String(i + 1) + ': ' + JSON.stringify(it.queryKey))
-                    .join('\n')
-              );
-            }
-          });
-
-          // Cleanup listeners
-          worker.events.removeListener('request:start', onStart);
-          worker.events.removeListener('request:end', onEnd);
-          worker.events.removeListener('request:unhandled', onUnhandledRequest);
-
-          // Put snapshot next to the story
-          const snapshotPath = path.join(
-            storyDir,
-            options.snapshotsDirName,
-            `${componentName}.${name}${options.snapshotExtension}`
-          );
-
-          // Get rid of random id's in the ouput
-          replaceUseId(document);
-
-          document.body.removeAttribute('style');
-
-          await expect(document.body).toMatchFileSnapshot(snapshotPath);
-        });
-      });
-    });
-  });
-});
+// Load stories then run tests. The top-level await ensures vitest
+// collects the dynamically registered test suites.
+const storyFiles = await loadStoryFiles();
+runStorybookTests(storyFiles);

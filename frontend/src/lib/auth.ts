@@ -19,9 +19,9 @@
  */
 
 import { getHeadlampAPIHeaders } from '../helpers/getHeadlampAPIHeaders';
+import { queryApi } from '../redux/queryApi';
 import store from '../redux/stores/store';
 import { backendFetch } from './k8s/api/v2/fetch';
-import { queryClient } from './queryClient';
 
 /**
  * Retrieves the authentication token for a given cluster.
@@ -112,11 +112,8 @@ export function setToken(cluster: string, token: string | null) {
   }
 
   return setCookieToken(cluster, token).then(result => {
-    if (token) {
-      queryClient.invalidateQueries({ queryKey: ['clusterMe', cluster], exact: true });
-    } else {
-      queryClient.removeQueries({ queryKey: ['clusterMe', cluster], exact: true });
-    }
+    // Reset all RTK Query cached data when auth changes
+    store.dispatch(queryApi.util.resetApiState());
 
     return result;
   });
@@ -129,10 +126,7 @@ export function setToken(cluster: string, token: string | null) {
  * @throws {Error} When logout request fails
  */
 export async function logout(cluster: string) {
-  return setToken(cluster, null).then(() => {
-    queryClient.removeQueries({ queryKey: ['auth'], exact: false });
-    queryClient.removeQueries({ queryKey: ['clusterMe', cluster], exact: true });
-  });
+  return setToken(cluster, null);
 }
 
 /**

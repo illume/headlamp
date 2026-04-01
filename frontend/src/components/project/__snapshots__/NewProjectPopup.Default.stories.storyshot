@@ -54,7 +54,11 @@
             >
               <div
                 class="MuiBox-root css-n6bg7z"
-              />
+              >
+                <span
+                  data-testid="mock-icon"
+                />
+              </div>
               <div
                 class="MuiBox-root css-0"
               >
@@ -69,9 +73,6 @@
                   Create a new project
                 </p>
               </div>
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
             </button>
             <button
               class="MuiButtonBase-root MuiButton-root MuiButton-text MuiButton-textPrimary MuiButton-sizeMedium MuiButton-textSizeMedium MuiButton-colorPrimary MuiButton-disableElevation MuiButton-root MuiButton-text MuiButton-textPrimary MuiButton-sizeMedium MuiButton-textSizeMedium MuiButton-colorPrimary MuiButton-disableElevation css-qys2hi-MuiButtonBase-root-MuiButton-root"
@@ -80,7 +81,11 @@
             >
               <div
                 class="MuiBox-root css-n6bg7z"
-              />
+              >
+                <span
+                  data-testid="mock-icon"
+                />
+              </div>
               <div
                 class="MuiBox-root css-0"
               >
@@ -95,9 +100,6 @@
                   Deploy a new application from YAML
                 </p>
               </div>
-              <span
-                class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-              />
             </button>
           </div>
         </div>
@@ -110,9 +112,6 @@
             type="button"
           >
             Cancel
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </button>
         </div>
       </div>

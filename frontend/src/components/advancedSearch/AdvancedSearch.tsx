@@ -15,12 +15,12 @@
  */
 
 import { Box } from '@mui/material';
-import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useSelectedClusters } from '../../lib/k8s';
 import { apiDiscovery } from '../../lib/k8s/api/v2/apiDiscovery';
 import { apiResourceId } from '../../lib/k8s/api/v2/ApiResource';
+import { queryApi } from '../../redux/queryApi';
 import { SectionHeader } from '../common';
 import Loader from '../common/Loader';
 import { NamespacesAutocomplete } from '../common/NamespacesAutocomplete';
@@ -38,6 +38,21 @@ export const ADVANCED_SEARCH_QUERY_KEY = 'advanced-search-query';
  * AdvancedSearch component provides an interface for searching Kubernetes resources
  * with advanced filtering capabilities.
  */
+const advancedSearchApi = queryApi.injectEndpoints({
+  endpoints: build => ({
+    getApiDiscovery: build.query<any[], { clusters: string[] }>({
+      queryFn: async ({ clusters }) => {
+        try {
+          const result = await apiDiscovery(clusters);
+          return { data: result };
+        } catch (error) {
+          return { error };
+        }
+      },
+    }),
+  }),
+});
+
 export function AdvancedSearch() {
   const { t } = useTranslation();
   const selectedClusters = useSelectedClusters();
@@ -67,9 +82,8 @@ export function AdvancedSearch() {
     [setRawQueryState]
   );
 
-  const { data: resources, isLoading } = useQuery({
-    queryFn: () => apiDiscovery([...selectedClusters]),
-    queryKey: ['api-discovery', ...selectedClusters],
+  const { data: resources, isLoading } = advancedSearchApi.useGetApiDiscoveryQuery({
+    clusters: [...selectedClusters],
   });
 
   // Select every resource

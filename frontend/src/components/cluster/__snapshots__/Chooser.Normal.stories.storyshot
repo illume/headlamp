@@ -117,7 +117,7 @@
                   type="button"
                 >
                   <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                    data-testid="mock-inline-icon"
                   />
                 </button>
               </div>
@@ -184,6 +184,9 @@
                       <div
                         class="MuiCardContent-root css-d64700-MuiCardContent-root"
                       >
+                        <span
+                          data-testid="mock-icon"
+                        />
                         <p
                           class="MuiTypography-root MuiTypography-body1 MuiTypography-gutterBottom css-18vfeyy-MuiTypography-root"
                           title="cluster1"
@@ -192,9 +195,6 @@
                         </p>
                       </div>
                     </div>
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </button>
                 </div>
                 <div
@@ -211,6 +211,9 @@
                       <div
                         class="MuiCardContent-root css-d64700-MuiCardContent-root"
                       >
+                        <span
+                          data-testid="mock-icon"
+                        />
                         <p
                           class="MuiTypography-root MuiTypography-body1 MuiTypography-gutterBottom css-18vfeyy-MuiTypography-root"
                           title="cluster2"
@@ -219,9 +222,6 @@
                         </p>
                       </div>
                     </div>
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </button>
                 </div>
                 <div
@@ -238,6 +238,9 @@
                       <div
                         class="MuiCardContent-root css-d64700-MuiCardContent-root"
                       >
+                        <span
+                          data-testid="mock-icon"
+                        />
                         <p
                           class="MuiTypography-root MuiTypography-body1 MuiTypography-gutterBottom css-18vfeyy-MuiTypography-root"
                           title="cluster3"
@@ -246,9 +249,6 @@
                         </p>
                       </div>
                     </div>
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </button>
                 </div>
               </div>
@@ -307,9 +307,6 @@
                               d="M7 10l5 5 5-5z"
                             />
                           </svg>
-                          <span
-                            class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                          />
                         </button>
                       </div>
                       <fieldset

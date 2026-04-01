@@ -8,7 +8,7 @@
       type="button"
     >
       <span
-        class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+        data-testid="mock-icon"
       />
     </button>
     <div />

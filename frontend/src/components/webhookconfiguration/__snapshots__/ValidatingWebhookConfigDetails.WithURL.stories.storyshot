@@ -16,16 +16,17 @@
           >
             <span
               class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </span>
             <p
               class="MuiTypography-root MuiTypography-body1 css-1ezega9-MuiTypography-root"
               style="padding-top: 3px;"
             >
               Back
             </p>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </button>
         </div>
       </div>
@@ -60,7 +61,7 @@
                     type="button"
                   >
                     <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                      data-testid="mock-icon"
                     />
                   </button>
                 </div>
@@ -89,7 +90,7 @@
                     type="button"
                   >
                     <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                      data-testid="mock-icon"
                     />
                   </button>
                 </div>
@@ -104,7 +105,7 @@
                     type="button"
                   >
                     <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                      data-testid="mock-icon"
                     />
                   </button>
                   <div />
@@ -274,16 +275,19 @@
                 <dt
                   class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-3 MuiGrid-grid-md-2 css-9i4s51-MuiGrid-root"
                 >
-                  Client Config: URL
+                  Client Config: Service
                 </dt>
                 <dd
                   class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-9 MuiGrid-grid-md-10 css-1dbzfsd-MuiGrid-root"
                 >
-                  <span
-                    class="MuiTypography-root MuiTypography-body1 css-e06lsu-MuiTypography-root"
+                  <a
+                    class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineHover css-2ugbm1-MuiTypography-root-MuiLink-root"
+                    href="/"
                   >
-                    https://localhost:8443/validate-nodes
-                  </span>
+                    Service: my-namespace/my-service
+                  </a>
+                  <br />
+                  Path: /validate-nodes:443
                 </dd>
                 <dt
                   class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-3 MuiGrid-grid-md-2 css-9i4s51-MuiGrid-root"
@@ -307,7 +311,7 @@
                         type="button"
                       >
                         <span
-                          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                          data-testid="mock-icon"
                         />
                       </button>
                       <button
@@ -317,7 +321,7 @@
                         type="button"
                       >
                         <span
-                          class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                          data-testid="mock-icon"
                         />
                       </button>
                     </div>

@@ -1,7 +1,7 @@
 <body>
   <div>
     <div
-      class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded css-1oobngp-MuiPaper-root"
+      class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded css-u96y7l-MuiPaper-root"
     >
       <div
         class="MuiBox-root css-qrw4x1"
@@ -19,7 +19,14 @@
             </p>
             <div
               class="MuiContainer-root MuiContainer-maxWidthLg css-64uahr-MuiContainer-root"
-            />
+            >
+              <span
+                aria-label="Install the metrics-server to get usage data."
+                class=""
+                data-mui-internal-clone-element="true"
+                data-testid="mock-icon"
+              />
+            </div>
           </div>
           <p
             class="MuiTypography-root MuiTypography-body1 MuiTypography-gutterBottom css-7142su-MuiTypography-root"

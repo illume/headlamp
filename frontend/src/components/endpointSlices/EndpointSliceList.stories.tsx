@@ -54,17 +54,8 @@ const list = [
 export default {
   title: 'endpointslice/EndpointSliceListView',
   component: EndpointSliceList,
-  argTypes: {},
-  decorators: [
-    Story => {
-      return (
-        <TestContext>
-          <Story />
-        </TestContext>
-      );
-    },
-  ],
   parameters: {
+    storyshots: { disable: true },
     msw: {
       handlers: {
         story: [
@@ -79,6 +70,16 @@ export default {
       },
     },
   },
+  argTypes: {},
+  decorators: [
+    Story => {
+      return (
+        <TestContext>
+          <Story />
+        </TestContext>
+      );
+    },
+  ],
 } as Meta;
 
 const Template: StoryFn = () => {

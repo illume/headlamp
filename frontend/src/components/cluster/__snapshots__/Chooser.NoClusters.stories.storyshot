@@ -117,7 +117,7 @@
                   type="button"
                 >
                   <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                    data-testid="mock-inline-icon"
                   />
                 </button>
               </div>

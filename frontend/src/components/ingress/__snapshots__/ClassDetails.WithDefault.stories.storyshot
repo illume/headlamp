@@ -16,16 +16,17 @@
           >
             <span
               class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-            />
+            >
+              <span
+                data-testid="mock-icon"
+              />
+            </span>
             <p
               class="MuiTypography-root MuiTypography-body1 css-1ezega9-MuiTypography-root"
               style="padding-top: 3px;"
             >
               Back
             </p>
-            <span
-              class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-            />
           </button>
         </div>
       </div>
@@ -60,7 +61,7 @@
                     type="button"
                   >
                     <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                      data-testid="mock-icon"
                     />
                   </button>
                 </div>
@@ -89,7 +90,7 @@
                     type="button"
                   >
                     <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                      data-testid="mock-icon"
                     />
                   </button>
                 </div>
@@ -104,7 +105,7 @@
                     type="button"
                   >
                     <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                      data-testid="mock-icon"
                     />
                   </button>
                   <div />
@@ -178,28 +179,6 @@
                     </span>
                   </dd>
                   <dt
-                    class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-3 MuiGrid-grid-md-2 css-9i4s51-MuiGrid-root"
-                  >
-                    Annotations
-                  </dt>
-                  <dd
-                    class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-9 MuiGrid-grid-md-10 css-1dbzfsd-MuiGrid-root"
-                  >
-                    <div
-                      class="MuiBox-root css-0"
-                    >
-                      <div
-                        class="MuiBox-root css-yi3mkw"
-                      >
-                        <p
-                          class="MuiTypography-root MuiTypography-body1 css-1on669h-MuiTypography-root"
-                        >
-                          ingressclass.kubernetes.io/is-default-class: true
-                        </p>
-                      </div>
-                    </div>
-                  </dd>
-                  <dt
                     class="MuiGrid-root MuiGrid-item MuiGrid-grid-xs-12 MuiGrid-grid-sm-3 MuiGrid-grid-md-2 css-1hrqr1q-MuiGrid-root"
                   >
                     Default
@@ -210,7 +189,7 @@
                     <span
                       class="MuiTypography-root MuiTypography-body1 css-e06lsu-MuiTypography-root"
                     >
-                      Yes
+                      No
                     </span>
                   </dd>
                 </dl>

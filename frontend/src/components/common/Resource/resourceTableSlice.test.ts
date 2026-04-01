@@ -25,6 +25,7 @@ describe('resourceTableSlice', () => {
     reducer: {
       resourceTable: resourceTableReducer,
     },
+    middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }),
   });
 
   beforeEach(() => {
@@ -32,6 +33,7 @@ describe('resourceTableSlice', () => {
       reducer: {
         resourceTable: resourceTableReducer,
       },
+      middleware: getDefaultMiddleware => getDefaultMiddleware({ serializableCheck: false }),
     });
   });
 

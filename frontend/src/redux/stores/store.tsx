@@ -20,6 +20,7 @@ import { initialState as CLUSTER_PROVIDER_INITIAL_STATE } from '../clusterProvid
 import { initialState as CONFIG_INITIAL_STATE } from '../configSlice';
 import { initialState as FILTER_INITIAL_STATE } from '../filterSlice';
 import { listenerMiddleware } from '../headlampEventSlice';
+import { queryApi } from '../queryApi';
 import reducers from '../reducers/reducers';
 
 const store = configureStore({
@@ -34,7 +35,9 @@ const store = configureStore({
     getDefaultMiddleware({
       serializableCheck: false,
       thunk: true,
-    }).prepend(listenerMiddleware.middleware),
+    })
+      .prepend(listenerMiddleware.middleware)
+      .concat(queryApi.middleware),
 });
 
 export default store;

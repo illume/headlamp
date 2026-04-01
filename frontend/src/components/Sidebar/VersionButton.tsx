@@ -22,14 +22,13 @@ import DialogActions from '@mui/material/DialogActions';
 import DialogContent from '@mui/material/DialogContent';
 import DialogTitle from '@mui/material/DialogTitle';
 import { styled, useTheme } from '@mui/system';
-import { useQuery } from '@tanstack/react-query';
 import { useSnackbar } from 'notistack';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import semver from 'semver';
 import { getVersion, useCluster } from '../../lib/k8s';
-import { StringDict } from '../../lib/k8s/cluster';
 import { useTypedSelector } from '../../redux/hooks';
+import { queryApi } from '../../redux/queryApi';
 import { NameValueTable } from '../common/SimpleTable';
 
 const versionSnackbarHideTimeout = 5000; // ms
@@ -39,6 +38,22 @@ const VersionIcon = styled(Icon)({
   marginTop: '5px',
   marginRight: '5px',
   marginLeft: '5px',
+});
+
+const versionApi = queryApi.injectEndpoints({
+  endpoints: build => ({
+    getClusterVersion: build.query<any, { cluster: string }>({
+      queryFn: async ({ cluster }) => {
+        try {
+          const results = await getVersion(cluster);
+          return { data: results };
+        } catch (error: any) {
+          console.error('Getting the cluster version:', error);
+          return { data: null };
+        }
+      },
+    }),
+  }),
 });
 
 export default function VersionButton() {
@@ -78,43 +93,41 @@ export default function VersionButton() {
     ];
   }
 
-  const { data: clusterVersion } = useQuery({
-    placeholderData: null as any,
-    queryKey: ['version', cluster ?? ''],
-    queryFn: () => {
-      return getVersion()
-        .then((results: StringDict) => {
-          let versionChange = 0;
-          if (clusterVersion && results && results.gitVersion) {
-            versionChange = semver.compare(results.gitVersion, clusterVersion.gitVersion);
+  const { data: clusterVersion } = versionApi.useGetClusterVersionQuery(
+    { cluster: cluster ?? '' },
+    { pollingInterval: versionFetchInterval, skip: !cluster }
+  );
 
-            let msg = '';
-            if (versionChange > 0) {
-              msg = t('translation|Cluster version upgraded to {{ gitVersion }}', {
-                gitVersion: results.gitVersion,
-              });
-            } else if (versionChange < 0) {
-              msg = t('translation|Cluster version downgraded to {{ gitVersion }}', {
-                gitVersion: results.gitVersion,
-              });
-            }
-
-            if (msg) {
-              enqueueSnackbar(msg, {
-                key: 'version',
-                preventDuplicate: true,
-                autoHideDuration: versionSnackbarHideTimeout,
-                variant: 'info',
-              });
-            }
-          }
-
-          return results;
-        })
-        .catch((error: Error) => console.error('Getting the cluster version:', error));
-    },
-    refetchInterval: versionFetchInterval,
-  });
+  const prevVersionRef = React.useRef<string | undefined>();
+  React.useEffect(() => {
+    if (clusterVersion && clusterVersion.gitVersion) {
+      if (prevVersionRef.current && prevVersionRef.current !== clusterVersion.gitVersion) {
+        const versionChange = semver.compare(clusterVersion.gitVersion, prevVersionRef.current);
+        let msg = '';
+        if (versionChange > 0) {
+          msg = t('translation|Cluster version upgraded to {{ gitVersion }}', {
+            gitVersion: clusterVersion.gitVersion,
+          });
+        } else if (versionChange < 0) {
+          msg = t('translation|Cluster version downgraded to {{ gitVersion }}', {
+            gitVersion: clusterVersion.gitVersion,
+          });
+        }
+        if (msg) {
+          enqueueSnackbar(msg, {
+            key: 'version',
+            preventDuplicate: true,
+            autoHideDuration: versionSnackbarHideTimeout,
+            variant: 'info',
+          });
+        }
+      }
+      prevVersionRef.current = clusterVersion.gitVersion;
+    }
+    // Only fire when clusterVersion changes; t and enqueueSnackbar are omitted to avoid
+    // re-triggering the version-change snackbar on language change or provider re-renders.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clusterVersion]);
 
   function handleClose() {
     setOpen(false);

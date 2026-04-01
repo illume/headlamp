@@ -34,6 +34,7 @@ export default {
     },
   ],
   parameters: {
+    storyshots: {},
     msw: {
       handlers: {
         storyBase: [],

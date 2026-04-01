@@ -71,7 +71,6 @@ const dependenciesToNotCopy = [
   'openapi-types',
   'resize-observer-polyfill',
   'vitest-canvas-mock',
-  '@tanstack/react-query-devtools',
 ];
 
 const yargs = require('yargs/yargs');

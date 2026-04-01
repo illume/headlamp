@@ -7,16 +7,17 @@
     >
       <span
         class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-      />
+      >
+        <span
+          data-testid="mock-icon"
+        />
+      </span>
       <p
         class="MuiTypography-root MuiTypography-body1 css-1ezega9-MuiTypography-root"
         style="padding-top: 3px;"
       >
         Back
       </p>
-      <span
-        class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-      />
     </button>
     <div
       class="MuiBox-root css-j1fy4m"
@@ -165,11 +166,12 @@
                   >
                     <span
                       class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </span>
                     Change Color
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </button>
                   <button
                     aria-label="Clear accent color"
@@ -178,7 +180,7 @@
                     type="button"
                   >
                     <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                      data-testid="mock-icon"
                     />
                   </button>
                 </div>
@@ -195,6 +197,9 @@
                 <div
                   class="MuiBox-root css-axw7ok"
                 >
+                  <span
+                    data-testid="mock-icon"
+                  />
                   <button
                     aria-labelledby="cluster-appearance-label icon-picker-button"
                     class="MuiButtonBase-root MuiButton-root MuiButton-outlined MuiButton-outlinedPrimary MuiButton-sizeSmall MuiButton-outlinedSizeSmall MuiButton-colorPrimary MuiButton-disableElevation MuiButton-root MuiButton-outlined MuiButton-outlinedPrimary MuiButton-sizeSmall MuiButton-outlinedSizeSmall MuiButton-colorPrimary MuiButton-disableElevation css-irzb5y-MuiButtonBase-root-MuiButton-root"
@@ -204,11 +209,12 @@
                   >
                     <span
                       class="MuiButton-icon MuiButton-startIcon MuiButton-iconSizeSmall css-y6rp3m-MuiButton-startIcon"
-                    />
+                    >
+                      <span
+                        data-testid="mock-icon"
+                      />
+                    </span>
                     Change Icon
-                    <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                    />
                   </button>
                   <button
                     aria-label="Clear cluster icon"
@@ -217,7 +223,7 @@
                     type="button"
                   >
                     <span
-                      class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                      data-testid="mock-icon"
                     />
                   </button>
                 </div>
@@ -231,9 +237,6 @@
                   type="button"
                 >
                   Apply
-                  <span
-                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                  />
                 </button>
                 <div />
               </div>
@@ -267,6 +270,9 @@
                   placeholder="default"
                   type="text"
                   value="my-app"
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"
@@ -328,7 +334,11 @@
                   disabled=""
                   tabindex="-1"
                   type="button"
-                />
+                >
+                  <span
+                    data-testid="mock-inline-icon"
+                  />
+                </button>
                 <fieldset
                   aria-hidden="true"
                   class="MuiOutlinedInput-notchedOutline css-1d3z3hw-MuiOutlinedInput-notchedOutline"
@@ -482,9 +492,6 @@
                 <span
                   class="MuiSwitch-thumb css-jsexje-MuiSwitch-thumb"
                 />
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
               </span>
               <span
                 class="MuiSwitch-track css-1yjjitx-MuiSwitch-track"
@@ -514,6 +521,9 @@
                   placeholder="docker.io/library/busybox:latest"
                   type="text"
                   value="busybox:1.28"
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"
@@ -561,6 +571,9 @@
                   placeholder="default"
                   type="text"
                   value="kube-system"
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"
@@ -630,6 +643,10 @@
               >
                 Enable Pod Debug
               </span>
+              <span
+                data-testid="mock-icon"
+                style="margin-right: 0.2rem; margin-left: 0.2rem; align-self: center;"
+              />
             </p>
           </dt>
           <dd
@@ -649,9 +666,6 @@
                 />
                 <span
                   class="MuiSwitch-thumb css-jsexje-MuiSwitch-thumb"
-                />
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
                 />
               </span>
               <span
@@ -681,6 +695,9 @@
                   placeholder="docker.io/library/busybox:latest"
                   type="text"
                   value="docker.io/library/busybox:latest"
+                />
+                <span
+                  data-testid="mock-icon"
                 />
                 <fieldset
                   aria-hidden="true"

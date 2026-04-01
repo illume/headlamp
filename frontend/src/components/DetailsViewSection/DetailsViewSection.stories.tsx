@@ -20,6 +20,7 @@ import React from 'react';
 import { Provider } from 'react-redux';
 import { useDispatch } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
+import { queryApi } from '../../redux/queryApi';
 import { makeMockKubeObject } from '../../test/mocker';
 import { SectionBox } from '../common/SectionBox';
 import DetailsViewSection, { DetailsViewSectionProps } from './DetailsViewSection';
@@ -40,7 +41,12 @@ export default {
         <MemoryRouter>
           <Provider
             store={configureStore({
-              reducer: (state = ourState) => state,
+              middleware: getDefaultMiddleware =>
+                getDefaultMiddleware({ serializableCheck: false }).concat(queryApi.middleware),
+              reducer: (state = ourState, action: any) => ({
+                ...state,
+                [queryApi.reducerPath]: queryApi.reducer(state[queryApi.reducerPath], action),
+              }),
               preloadedState: ourState,
             })}
           >

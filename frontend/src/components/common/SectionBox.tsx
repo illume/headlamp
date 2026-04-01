@@ -39,6 +39,10 @@ export function SectionBox(props: SectionBoxProps) {
     ...otherProps
   } = props;
 
+  // Remove non-DOM props that Storybook argTypes inject to avoid React warnings
+  const boxProps = { ...otherProps } as Record<string, unknown>;
+  delete boxProps.onTabChanged;
+
   let titleElem: React.ReactNode;
   // If backLink is a boolean, then we want to use the browser's history if true.
   const actualBackLink = typeof backLink === 'boolean' ? (!!backLink ? '' : undefined) : backLink;
@@ -67,7 +71,7 @@ export function SectionBox(props: SectionBoxProps) {
               paddingRight: 0,
             },
           })}
-          {...otherProps}
+          {...boxProps}
         >
           {React.Children.toArray(children)}
         </Box>

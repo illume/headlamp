@@ -15,11 +15,11 @@
  */
 
 import { configureStore } from '@reduxjs/toolkit';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderHook } from '@testing-library/react';
 import React from 'react';
 import { Provider } from 'react-redux';
 import App from '../../App';
+import { queryApi } from '../../redux/queryApi';
 import reducers from '../../redux/reducers/reducers';
 import { TestContext } from '../../test';
 import { DefaultSidebars, SidebarEntry } from './sidebarSlice';
@@ -46,18 +46,16 @@ describe('useSidebarItems', () => {
           isVisible: true,
         },
       },
+      middleware: getDefaultMiddleware =>
+        getDefaultMiddleware({ serializableCheck: false }).concat(queryApi.middleware),
     });
   };
-  const queryClient = new QueryClient();
-
   const wrapper =
     (store: any) =>
     ({ children }: any) =>
       (
         <TestContext>
-          <Provider store={store}>
-            <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
-          </Provider>
+          <Provider store={store}>{children}</Provider>
         </TestContext>
       );
 
