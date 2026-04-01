@@ -28,6 +28,7 @@ import { KubeIcon } from '../kubeIcon/KubeIcon';
 import { NodeGlance } from '../KubeObjectGlance/NodeGlance';
 import { GroupNodeComponent } from './GroupNode';
 import { getStatus } from './KubeObjectStatus';
+import { usePanToNode } from './usePanToNode';
 
 const Container = styled('div')<{
   isExpanded: boolean;
@@ -147,6 +148,7 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const theme = useTheme();
   const graph = useGraphView();
+  const panToNode = usePanToNode();
 
   const mainNode = node?.nodes ? getMainNode(node.nodes) : undefined;
   const kubeObject = node?.kubeObject ?? mainNode?.kubeObject;
@@ -239,7 +241,21 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
       isSelected={isSelected}
       isExpanded={isExpanded}
       onClick={openDetails}
-      onFocus={() => setHovered(true)}
+      onFocus={e => {
+        setHovered(true);
+        // Bug fix: ReactFlow nodes are positioned with CSS transforms and the canvas
+        // has overflow:hidden, so keyboard-tabbing to an off-canvas node would leave
+        // it invisible. panToNode centres the viewport on the node when it receives
+        // keyboard focus. The :focus-visible guard prevents auto-pan on mouse click.
+        try {
+          if (e.currentTarget.matches(':focus-visible')) {
+            panToNode(id);
+          }
+        } catch (err) {
+          // :focus-visible throws SyntaxError in browsers that don't support it; skip auto-pan.
+          if (!(err instanceof SyntaxError)) throw err;
+        }
+      }}
       onBlur={() => setHovered(false)}
       onPointerEnter={() => setHovered(true)}
       onPointerLeave={() => {
