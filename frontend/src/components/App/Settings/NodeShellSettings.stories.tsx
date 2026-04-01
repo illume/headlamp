@@ -18,6 +18,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
 import { Provider } from 'react-redux';
+import { headlampApi } from '../../../lib/api/headlampApi';
 import NodeShellSettings from './NodeShellSettings';
 
 const mockClusterName = 'mock-cluster';
@@ -53,6 +54,8 @@ export default {
 
 const Template: StoryFn<typeof NodeShellSettings> = args => {
   const store = configureStore({
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: (state = getMockState()) => state,
     preloadedState: getMockState(),
   });

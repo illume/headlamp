@@ -20,6 +20,7 @@ import { Provider } from 'react-redux';
 import { MemoryRouter } from 'react-router-dom';
 import { createStore } from 'redux';
 import { useMockListQuery } from '../../../helpers/testHelpers';
+import { headlampApi } from '../../../lib/api/headlampApi';
 import Pod, { KubePod } from '../../../lib/k8s/pod';
 import reducers from '../../../redux/reducers/reducers';
 import shortcutsReducer from '../../../redux/shortcutsSlice';
@@ -52,6 +53,8 @@ const TemplateWithFilter: StoryFn<{
   const { resourceTableArgs, search, namespaces = [] } = args;
 
   const storeWithFilterAndSettings = configureStore({
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: (
       state = {
         filter: { namespaces: new Set<string>(), search: '' },

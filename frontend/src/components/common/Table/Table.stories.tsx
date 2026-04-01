@@ -19,6 +19,7 @@ import Typography from '@mui/material/Typography';
 import { configureStore } from '@reduxjs/toolkit';
 import { Meta, StoryFn } from '@storybook/react';
 import { useLocation } from 'react-router-dom';
+import { headlampApi } from '../../../lib/api/headlampApi';
 import { KubeObjectInterface } from '../../../lib/k8s/KubeObject';
 import { useFilterFunc } from '../../../lib/util';
 import shortcutsReducer from '../../../redux/shortcutsSlice';
@@ -261,6 +262,8 @@ const TemplateWithFilter: StoryFn<{
   const { tableArgs: simpleTableArgs, search, namespaces = [] } = args;
 
   const storeWithFilterAndSettings = configureStore({
+    middleware: getDefaultMiddleware =>
+      getDefaultMiddleware({ serializableCheck: false }).concat(headlampApi.middleware),
     reducer: (
       state = {
         filter: { namespaces: new Set<string>(), search: '' },
