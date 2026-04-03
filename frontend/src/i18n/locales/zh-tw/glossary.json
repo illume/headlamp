@@ -130,6 +130,7 @@
   "Uncordon": "解除封鎖",
   "Cordon": "封鎖",
   "Drain": "驅逐",
+  "Node Pool": "",
   "Pod CIDR": "Pod CIDR",
   "Uptime": "執行時間",
   "System Info": "系統資訊",

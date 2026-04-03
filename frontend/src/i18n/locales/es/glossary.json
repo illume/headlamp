@@ -130,6 +130,7 @@
   "Uncordon": "Desbloquear",
   "Cordon": "Bloquear",
   "Drain": "Drenar",
+  "Node Pool": "",
   "Pod CIDR": "Pod CIDR",
   "Uptime": "Tiempo de actividad",
   "System Info": "Info. de Sistema",
