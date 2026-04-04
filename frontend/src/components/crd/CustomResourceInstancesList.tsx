@@ -87,7 +87,7 @@ function CrInstancesView({ crds }: { crds: CRD[]; key: string }) {
         </Alert>
       )}
       <ResourceListView
-        title="Custom Resource Instances"
+        title={t('translation|Custom Resource Instances')}
         headerProps={{
           noNamespaceFilter: false,
         }}
@@ -97,7 +97,7 @@ function CrInstancesView({ crds }: { crds: CRD[]; key: string }) {
         data={crInstancesList}
         columns={[
           {
-            label: 'Instance name',
+            label: t('translation|Instance name'),
             getValue: cr => {
               return cr.metadata.name;
             },
@@ -118,7 +118,7 @@ function CrInstancesView({ crds }: { crds: CRD[]; key: string }) {
             },
           },
           {
-            label: 'CRD',
+            label: t('glossary|CRD'),
             filterVariant: 'multi-select',
             getValue: cr => cr.kind,
             render: cr => {
@@ -137,7 +137,7 @@ function CrInstancesView({ crds }: { crds: CRD[]; key: string }) {
           },
           'cluster',
           {
-            label: 'Categories',
+            label: t('translation|Categories'),
             getValue: cr => {
               const categories = getCRDForCR(cr).jsonData.status?.acceptedNames?.categories;
               return categories !== undefined ? categories.toString().split(',').join(', ') : '';

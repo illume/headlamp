@@ -20,6 +20,7 @@ import { useTheme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import React, { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useRef } from 'react';
 import ReactDOM from 'react-dom';
 import {
@@ -57,6 +58,7 @@ export interface PercentageCircleProps {
 
 export function PercentageCircle(props: PercentageCircleProps) {
   const theme = useTheme();
+  const { t } = useTranslation();
   const {
     data,
     size = 200,
@@ -124,7 +126,7 @@ export function PercentageCircle(props: PercentageCircleProps) {
         </Typography>
       )}
       {isLoading ? (
-        <Loader title={`Loading data for ${title}`} />
+        <Loader title={t('translation|Loading data for {{ title }}', { title })} />
       ) : (
         <PieChart
           cx={size / 2}

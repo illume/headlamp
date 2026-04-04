@@ -39,6 +39,9 @@ import { ShortcutsList } from './ShortcutsSettings';
 import { ThemePreview } from './ThemePreview';
 
 export default function Settings() {
+  // i18next-parser: theme names used as translation keys via t(`translation|${capitalize(name)}`)
+  // t('translation|Light') t('translation|Dark') t('translation|Headlamp Classic')
+  // t('translation|Lights Out') t('translation|Monochrome Light')
   const { t } = useTranslation(['translation']);
   const settingsObj = useSettings();
   const storedTimezone = settingsObj.timezone;
@@ -238,7 +241,7 @@ export default function Settings() {
                 onClick={() => dispatch(setTheme(it.name))}
               >
                 <ThemePreview theme={it} size={110} />
-                <Box sx={{ mt: 1 }}>{capitalize(it.name)}</Box>
+                <Box sx={{ mt: 1 }}>{t(`translation|${capitalize(it.name)}`)}</Box>
               </Box>
             ))}
           </Box>
