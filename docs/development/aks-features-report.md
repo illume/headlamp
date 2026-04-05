@@ -333,6 +333,197 @@ are the highest-leverage investments regardless of which strategy is chosen:
 **KServe**, **Karpenter**, **KEDA**, **Prometheus**, and **Kueue**. These should be
 prioritized regardless of strategy choice.
 
+### Venn Diagram: Plugin Coverage Across Goals
+
+The following diagram shows which plugins/projects serve each strategic goal (AKS features,
+startup needs, AI workloads) and where they overlap. Color and shape encode plugin maturity:
+- ◆ 🟢 **Green** = mature plugin (most quality criteria met — see maturity table below)
+- ● 🟠 **Orange** = plugin exists but early-stage
+- ▲ 🔴 **Red** = very immature plugin (score 0–1, or archived)
+- ■ 🔵 **Blue** = no plugin exists
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '14px'}}}%%
+graph TB
+    subgraph legend [" Legend "]
+        direction LR
+        G["◆ Mature plugin"]
+        O["● Early-stage plugin"]
+        RED["▲ Very immature"]
+        B["■ No plugin exists"]
+    end
+
+    subgraph all3 ["⭐ All 3 Goals: AKS + Startup + AI"]
+        P_kserve["■ KServe<br/><i>no plugin</i>"]
+        P_karpenter["● Karpenter<br/><i>0.2.0-alpha</i>"]
+        P_keda["● KEDA<br/><i>0.1.1-beta</i>"]
+        P_prometheus["◆ Prometheus<br/><i>0.8.2</i>"]
+        P_kueue["■ Kueue<br/><i>no plugin</i>"]
+    end
+
+    subgraph aks_ai ["AKS + AI"]
+        P_kaito["▲ KAITO<br/><i>0.0.7</i>"]
+        P_gpu["■ GPU Operator<br/><i>no plugin</i>"]
+    end
+
+    subgraph aks_startup ["AKS + Startup"]
+        P_flux["◆ Flux<br/><i>0.6.0</i>"]
+        P_certmgr["● cert-manager<br/><i>0.1.0</i>"]
+        P_gatekeeper["▲ Gatekeeper<br/><i>0.2.0</i>"]
+        P_opencost["● OpenCost<br/><i>0.1.3</i>"]
+    end
+
+    subgraph startup_ai ["Startup + AI"]
+        P_otel["■ OpenTelemetry<br/><i>no plugin</i>"]
+        P_kubeflow["● Kubeflow<br/><i>plugin exists</i>"]
+    end
+
+    subgraph aks_only ["AKS Only"]
+        P_istio["■ Istio<br/><i>no plugin</i>"]
+        P_dapr["■ Dapr<br/><i>no plugin</i>"]
+        P_keyvault["■ Key Vault CSI<br/><i>no plugin</i>"]
+        P_cilium["■ Cilium<br/><i>no plugin</i>"]
+        P_defender["■ Defender<br/><i>no plugin</i>"]
+        P_inspektor["▲ Inspektor Gadget<br/><i>0.1.0-beta.3</i>"]
+        P_kyverno["▲ Kyverno<br/><i>archived</i>"]
+    end
+
+    subgraph startup_only ["Startup Only"]
+        P_argocd["■ Argo CD<br/><i>no plugin</i>"]
+        P_crossplane["■ Crossplane<br/><i>no plugin</i>"]
+        P_falco["■ Falco<br/><i>no plugin</i>"]
+        P_linkerd["■ Linkerd<br/><i>no plugin</i>"]
+        P_harbor["■ Harbor<br/><i>no plugin</i>"]
+        P_helm["◆ Helm<br/><i>app-catalog 0.8.0</i>"]
+        P_trivy["▲ Trivy<br/><i>0.3.1</i>"]
+        P_kubescape["◆ Kubescape<br/><i>0.10.6</i>"]
+        P_backstage["● Backstage<br/><i>0.1.0-beta-2</i>"]
+        P_strimzi["● Strimzi<br/><i>0.3.9</i>"]
+        P_extsecrets["● External Secrets<br/><i>community</i>"]
+    end
+
+    subgraph ai_only ["AI Workloads Only"]
+        P_kuberay["■ KubeRay<br/><i>no plugin</i>"]
+        P_volcano["● Volcano<br/><i>plugin exists</i>"]
+        P_llmd["■ llm-d<br/><i>no plugin</i>"]
+    end
+
+    style all3 fill:#fff3cd,stroke:#ffc107,stroke-width:3px
+    style aks_ai fill:#e8f4fd,stroke:#0d6efd,stroke-width:2px
+    style aks_startup fill:#e8f4fd,stroke:#0d6efd,stroke-width:2px
+    style startup_ai fill:#f0f9e8,stroke:#198754,stroke-width:2px
+    style aks_only fill:#cfe2ff,stroke:#0d6efd,stroke-width:1px
+    style startup_only fill:#d1e7dd,stroke:#198754,stroke-width:1px
+    style ai_only fill:#e8f4fd,stroke:#0d6efd,stroke-width:1px
+    style legend fill:#f8f9fa,stroke:#6c757d,stroke-width:1px
+
+    style G fill:#198754,color:#fff,stroke:#146c43
+    style O fill:#fd7e14,color:#fff,stroke:#ca6510
+    style RED fill:#dc3545,color:#fff,stroke:#b02a37
+    style B fill:#0d6efd,color:#fff,stroke:#0a58ca
+
+    style P_prometheus fill:#198754,color:#fff,stroke:#146c43
+    style P_flux fill:#198754,color:#fff,stroke:#146c43
+    style P_helm fill:#198754,color:#fff,stroke:#146c43
+    style P_kubescape fill:#198754,color:#fff,stroke:#146c43
+
+    style P_karpenter fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_keda fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_certmgr fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_opencost fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_backstage fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_strimzi fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_kubeflow fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_volcano fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_extsecrets fill:#fd7e14,color:#fff,stroke:#ca6510
+
+    style P_kaito fill:#dc3545,color:#fff,stroke:#b02a37
+    style P_gatekeeper fill:#dc3545,color:#fff,stroke:#b02a37
+    style P_trivy fill:#dc3545,color:#fff,stroke:#b02a37
+    style P_inspektor fill:#dc3545,color:#fff,stroke:#b02a37
+    style P_kyverno fill:#dc3545,color:#fff,stroke:#b02a37
+
+    style P_kserve fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_kueue fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_otel fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_gpu fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_istio fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_dapr fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_keyvault fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_cilium fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_defender fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_argocd fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_crossplane fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_falco fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_linkerd fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_harbor fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_kuberay fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_llmd fill:#0d6efd,color:#fff,stroke:#0a58ca
+```
+
+**Reading the diagram:**
+- The ⭐ **center group** (yellow border) contains the 5 highest-leverage plugins that serve
+  all 3 goals — only ◆ Prometheus is green (mature), the rest are ● orange or ■ blue.
+- **Overlap zones** show plugins serving 2 goals — e.g. ◆ Flux and ● cert-manager serve both
+  AKS and startups.
+- **Edge zones** show single-goal plugins — e.g. ■ Argo CD and ■ Crossplane are startup-only
+  gaps that need new plugins.
+- **Shape + color tells the story:** lots of ■ blue (no plugin) and ● orange (early-stage),
+  several ▲ red (very immature — KAITO, Gatekeeper, Trivy, Inspektor Gadget, Kyverno), very
+  few ◆ green (mature). This confirms the crux: the ecosystem is broad but shallow.
+
+### Plugin Maturity Scorecard
+
+This table scores every existing plugin across 6 quality dimensions. Plugins with **all 6** ✅
+are 🟢 **green** (production-ready), **3-5** ✅ are 🟠 **orange** (needs work), and **0-2** ✅
+are 🔴 **red** (very immature).
+
+Columns:
+- **Tests** — has unit tests, integration tests, or e2e tests
+- **Storybook** — has Storybook stories for visual testing
+- **a11y** — has runtime accessibility testing (axe-core, pa11y), not just lint
+- **i18n** — has full internationalization (multiple language files, not just a script)
+- **≥ 0.5** — version ≥ 0.5.0 (indicates stability beyond early alpha)
+- **Official repo** — lives in [headlamp-k8s/plugins](https://github.com/headlamp-k8s/plugins/)
+  or is the official project-maintained plugin
+
+| Plugin | Tests | Storybook | a11y | i18n | ≥ 0.5 | Official repo | Score | Status |
+|--------|:-----:|:---------:|:----:|:----:|:-----:|:-------------:|:-----:|:------:|
+| ◆ **app-catalog** (0.8.0) | ✅ | ❌ | ❌ | ✅ 19 langs | ✅ | ✅ | 4/6 | 🟠 |
+| ◆ **prometheus** (0.8.2) | ✅ | ❌ | ❌ | ✅ 19 langs | ✅ | ✅ | 4/6 | 🟠 |
+| ◆ **flux** (0.6.0) | ✅ | ❌ | ❌ | ⚠️ script only | ✅ | ✅ | 3/6 | 🟠 |
+| ● **plugin-catalog** (0.4.3) | ✅ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
+| ◆ **Kubescape** (0.10.6) | ✅ | ❌ | ❌ | ✅ | ✅ | ⚠️ project repo | 3/6 | 🟠 |
+| ● **Strimzi** (0.3.9) | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ external | 2/6 | 🔴 |
+| ▲ **Trivy** (0.3.1) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ external | 1/6 | 🔴 |
+| ● **karpenter** (0.2.0-alpha) | ✅ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
+| ● **knative** (0.2.0-alpha) | ✅ | ❌ | ❌ | ⚠️ en only | ❌ | ✅ | 2/6 | 🔴 |
+| ● **ai-assistant** (0.2.0-alpha) | ✅ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
+| ▲ **Gatekeeper** (0.2.0) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ external | 1/6 | 🔴 |
+| ● **opencost** (0.1.3) | ✅ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
+| ● **keda** (0.1.1-beta) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
+| ▲ **Kyverno** (0.1.1) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ archived | 0/6 | 🔴 |
+| ● **cert-manager** (0.1.0) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
+| ● **cluster-api** (0.1.0) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
+| ● **backstage** (0.1.0-beta-2) | ✅ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
+| ▲ **Inspektor Gadget** (0.1.0-beta.3) | ✅ | ❌ | ❌ | ❌ | ❌ | ⚠️ project repo | 1/6 | 🔴 |
+| ▲ **KAITO** (0.0.7) | ✅ | ❌ | ❌ | ❌ | ❌ | ⚠️ project repo | 1/6 | 🔴 |
+| ▲ **KubeVirt** (0.0.1-beta7) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ external | 1/6 | 🔴 |
+| ● **Kubeflow** (plugin exists) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
+| ● **Volcano** (plugin exists) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
+
+**Key findings:**
+- **0 plugins are ◆ 🟢 green** (no plugin meets all 6 criteria)
+- **4 plugins are 🟠 orange** (3-5 criteria): app-catalog, prometheus, flux, Kubescape
+- **12 plugins are ● 🔴 red** with score 2 (early-stage — need Storybook, a11y, i18n work)
+- **6 plugins are ▲ 🔴 red** with score 0-1 (very immature — Trivy, Gatekeeper, Kyverno,
+  Inspektor Gadget, KAITO, KubeVirt)
+- **0 plugins have Storybook stories** — this is a universal gap
+- **0 plugins have runtime a11y tests** — all rely on lint-time jsx-a11y only
+- The **2 best plugins** (app-catalog, prometheus) still lack Storybook and a11y testing
+- This confirms the crux: **making existing plugins production-grade is harder than building
+  new ones**, because even the best plugins are missing 2 of 6 quality dimensions
+
 ---
 
 ## Part 1: Existing Plugin Coverage
