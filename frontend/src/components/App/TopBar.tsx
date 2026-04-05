@@ -195,16 +195,24 @@ function MenuItemIfVisible({ children }: { children: React.ReactNode }) {
   const [hasContent, setHasContent] = React.useState(true);
 
   React.useEffect(() => {
-    if (ref.current) {
-      // Check if the menuitem has any visible child content
-      const hasVisibleContent =
-        ref.current.childNodes.length > 1 ||
-        (ref.current.childNodes.length === 1 &&
-          ref.current.childNodes[0].nodeType !== Node.COMMENT_NODE &&
-          (ref.current.childNodes[0] as HTMLElement).offsetHeight > 0);
-      setHasContent(hasVisibleContent);
+    const el = ref.current;
+    if (!el) return;
+
+    function checkContent() {
+      if (!el) return;
+      // Check if the menuitem has any meaningful child content beyond MUI's internal ripple span
+      const childElements = Array.from(el.children).filter(
+        child => !child.classList.contains('MuiTouchRipple-root')
+      );
+      setHasContent(childElements.length > 0 && childElements.some(c => c.childNodes.length > 0));
     }
-  }, [children]);
+
+    checkContent();
+
+    const observer = new MutationObserver(checkContent);
+    observer.observe(el, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
 
   if (!hasContent) {
     return null;
@@ -441,14 +449,22 @@ export const PureTopBar = memo(
         id: DefaultAppBarAction.USER,
         action: showUserMenu && (
           <Box
-            sx={{ display: 'flex', alignItems: 'center', width: '100%' }}
+            sx={{ display: 'flex', alignItems: 'center', width: '100%', cursor: 'pointer' }}
             role="button"
+            tabIndex={0}
             aria-label={t('Account of current user')}
             aria-controls={userMenuId}
             aria-haspopup="true"
             onClick={event => {
               handleMenuClose();
               handleProfileMenuOpen(event);
+            }}
+            onKeyDown={event => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handleMenuClose();
+                handleProfileMenuOpen(event as unknown as React.MouseEvent<HTMLElement>);
+              }
             }}
           >
             <ListItemIcon>
