@@ -186,6 +186,41 @@ export interface PureTopBarProps {
   onToggleOpen: () => void;
 }
 
+/**
+ * Wrapper that only renders a MenuItem if its children produce visible content.
+ * This prevents empty MenuItems when a component (e.g. ClusterTitle) renders null.
+ */
+function MenuItemIfVisible({ children }: { children: React.ReactNode }) {
+  const ref = React.useRef<HTMLLIElement>(null);
+  const [hasContent, setHasContent] = React.useState(true);
+
+  React.useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+
+    function checkContent() {
+      if (!el) return;
+      // Check if the menuitem has any meaningful child content beyond MUI's internal ripple span
+      const childElements = Array.from(el.children).filter(
+        child => !child.classList.contains('MuiTouchRipple-root')
+      );
+      setHasContent(childElements.length > 0 && childElements.some(c => c.childNodes.length > 0));
+    }
+
+    checkContent();
+
+    const observer = new MutationObserver(checkContent);
+    observer.observe(el, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, []);
+
+  if (!hasContent) {
+    return null;
+  }
+
+  return <MenuItem ref={ref}>{children}</MenuItem>;
+}
+
 function AppBarActionsMenu({
   appBarActions,
 }: {
@@ -198,7 +233,7 @@ function AppBarActionsMenu({
         if (React.isValidElement(Action)) {
           return (
             <ErrorBoundary>
-              <MenuItem>{Action}</MenuItem>
+              <MenuItemIfVisible>{Action}</MenuItemIfVisible>
             </ErrorBoundary>
           );
         } else if (Action === null) {
@@ -207,9 +242,9 @@ function AppBarActionsMenu({
           const ActionComponent = Action as React.FC;
           return (
             <ErrorBoundary>
-              <MenuItem>
+              <MenuItemIfVisible>
                 <ActionComponent />
-              </MenuItem>
+              </MenuItemIfVisible>
             </ErrorBoundary>
           );
         }
@@ -406,24 +441,36 @@ export const PureTopBar = memo(
       },
       {
         id: DefaultAppBarAction.SETTINGS,
-        action: isClusterContext ? <SettingsButton onClickExtra={handleMenuClose} /> : null,
+        action: isClusterContext ? (
+          <SettingsButton onClickExtra={handleMenuClose} showLabel />
+        ) : null,
       },
       {
         id: DefaultAppBarAction.USER,
         action: showUserMenu && (
-          <IconButton
-            aria-label={t('Account of current user')}
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', width: '100%', cursor: 'pointer' }}
+            role="button"
+            tabIndex={0}
             aria-controls={userMenuId}
             aria-haspopup="true"
-            color="inherit"
             onClick={event => {
               handleMenuClose();
               handleProfileMenuOpen(event);
             }}
-            size="medium"
+            onKeyDown={event => {
+              if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                handleMenuClose();
+                setAnchorEl(event.currentTarget as HTMLElement);
+              }
+            }}
           >
-            <Icon icon="mdi:account" />
-          </IconButton>
+            <ListItemIcon>
+              <Icon icon="mdi:account" />
+            </ListItemIcon>
+            <ListItemText>{t('Account of current user')}</ListItemText>
+          </Box>
         ),
       },
     ];
