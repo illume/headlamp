@@ -651,7 +651,8 @@ Columns:
   `storybook.test.tsx` file does **not** count — it only runs Storybook snapshot tests, not
   plugin-specific tests)
 - **Storybook** — has Storybook stories for visual testing
-- **a11y** — has ≥ 5 `aria-*` attributes in src/ (indicating intentional accessibility work)
+- **a11y** — has ≥ 5 source files containing `aria-*` attributes in src/ (indicating intentional
+  accessibility work beyond what MUI provides by default)
 - **i18n** — has full internationalization (multiple language files, not just a script)
 - **≥ 0.5** — version ≥ 0.5.0 (indicates stability beyond early alpha)
 - **Official repo** — lives in [headlamp-k8s/plugins](https://github.com/headlamp-k8s/plugins/)
@@ -696,9 +697,9 @@ Columns:
 - **8 of 22 plugins have Storybook stories** — cert-manager leads with 13 stories, followed by
   knative (9), plugin-catalog (5), app-catalog (3), backstage (2), prometheus (2), opencost (1),
   and minikube (1, not in this table). The remaining 14 plugins have no stories.
-- **8 of 22 plugins have ≥ 5 aria attributes** — ai-assistant leads (27 files), followed by
+- **7 of 22 plugins have ≥ 5 aria attributes** — ai-assistant leads (27 files), followed by
   knative (26), Kubescape (26), Inspektor Gadget (19), prometheus (7), app-catalog (6),
-  flux (5). The remaining 14 plugins have fewer than 5 aria attributes.
+  flux (5). The remaining 15 plugins have fewer than 5 source files with aria attributes.
 - This confirms the crux: **making existing plugins production-grade is harder than building
   new ones**, because only 1 of 22 plugins meets all 6 quality dimensions
 
