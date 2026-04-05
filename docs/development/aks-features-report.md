@@ -490,3 +490,89 @@ Kubescape, KubeVirt, Inspektor Gadget, KAITO). Additionally,
 [AKS desktop](https://github.com/Azure/aks-desktop) (built on Headlamp) has already
 implemented several Azure-specific features (Projects, Deployment Wizard, Workload Identity,
 ACR integration) that could inform future upstream contributions.
+
+---
+
+## Part 7: CNCF Projects Used by Startups
+
+This section maps the CNCF projects that well-funded, high-growth tech startups typically
+adopt at each stage, and identifies Headlamp's current plugin coverage for each. Data is
+based on the [CNCF Annual Survey 2024](https://www.cncf.io/reports/cncf-annual-survey-2024/),
+[CNCF Project Velocity 2025](https://www.cncf.io/blog/2026/02/09/what-cncf-project-velocity-in-2025-reveals-about-cloud-natives-future/),
+the [Argo CD End User Survey 2025](https://www.cncf.io/announcements/2025/07/24/cncf-end-user-survey-finds-argo-cd-as-majority-adopted-gitops-solution-for-kubernetes/),
+and the [State of Dapr Report 2025](https://www.prnewswire.com/news-releases/cloud-native-computing-foundation-releases-2025-state-of-dapr-report-highlighting-adoption-trends-and-ai-innovations-302416413.html).
+
+### Early-Stage Startups (Seed → Series A)
+
+Focus: ship fast, keep complexity low, small team (2–10 engineers).
+
+| CNCF Project | Why Startups Use It | Headlamp Plugin? | Gap |
+|---|---|---|---|
+| **Kubernetes** | Core orchestrator — 93% production adoption (CNCF 2024 survey) | ✅ Core — full support | None |
+| **Helm** | Package manager — used by 75% of K8s users | ✅ [app-catalog](https://github.com/headlamp-k8s/plugins/tree/main/app-catalog) — install charts, manage releases | Desktop only |
+| **Prometheus** | Monitoring and alerting — essential from day one | ✅ [prometheus](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) — workload detail charts | Shipped by default |
+| **cert-manager** | Automated TLS certificates — set-and-forget | ✅ [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) — view/manage certs | None |
+| **Ingress NGINX** | Simple HTTP(S) ingress for web apps | ✅ Core — Ingress/IngressClass fully supported | None |
+| **CoreDNS** | Cluster DNS (managed by K8s) | ✅ Core — ConfigMap viewable, pods visible | None |
+| **containerd** | Container runtime (managed by K8s) | ✅ Core — container info in Pod details | None |
+| **External Secrets Operator** | Sync secrets from Vault/AWS/Azure — avoids hardcoded secrets | ⚠️ [Community plugin](https://github.com/magohl/external-secrets-operator-headlamp-plugin) — ExternalSecret/SecretStore views | Community maintained |
+| **Kustomize** | Environment-specific manifest overlays | ✅ Core — K8s resources fully visible post-apply | N/A (build-time tool) |
+
+**Headlamp coverage: 8/9 projects covered.** External Secrets Operator has a community plugin.
+
+### Growth-Stage Startups (Series A → Series C)
+
+Focus: scale reliability, multi-team workflows, compliance, observability.
+
+| CNCF Project | Why Startups Use It | Headlamp Plugin? | Gap |
+|---|---|---|---|
+| **Argo CD** | GitOps — 60% of K8s clusters use it (CNCF 2025 survey); 97% in production | ❌ No plugin | 🟡 Medium — Application CRD sync dashboard |
+| **Flux** | GitOps alternative — Kustomization/HelmRelease reconciliation | ✅ [flux](https://github.com/headlamp-k8s/plugins/tree/main/flux) — visualize Flux resources | None |
+| **OpenTelemetry** | Unified traces/metrics/logs — fastest-growing CNCF project by contributions | ❌ No plugin | 🟡 Medium — Collector/Instrumentation CRD views |
+| **Cilium** | eBPF networking, security, observability — replacing kube-proxy at scale | ⚠️ CRDs auto-discovered | 🟢 Easy — CiliumNetworkPolicy detail views |
+| **Envoy / Envoy Gateway** | Ingress and API gateway — underpins Istio, Ambassador, Contour | ✅ [Community plugin](https://artifacthub.io/packages/headlamp/headlamp-envoy-gateway/envoy-gateway) — HTTPRoute, auth, retry policies | Community maintained |
+| **Crossplane** | Infrastructure-as-code via K8s APIs — Graduated CNCF (Oct 2025), used by 1000+ orgs | ❌ No plugin | 🟡 Medium — CompositeResource/Claim/Provider views |
+| **Backstage** | Internal developer portal — golden paths, service catalog | ✅ [backstage](https://github.com/headlamp-k8s/plugins/tree/main/backstage) — links to Backstage views | None |
+| **KEDA** | Event-driven autoscaling — scale to zero, respond to queues/events | ✅ [keda](https://github.com/headlamp-k8s/plugins/tree/main/keda) — ScaledObject/ScaledJob views | None |
+| **Karpenter** | Intelligent node autoscaling — cost optimization | ✅ [karpenter](https://github.com/headlamp-k8s/plugins/tree/main/karpenter) — NodePool/NodeClaim dashboard | None |
+| **OPA / Gatekeeper** | Policy enforcement — compliance guardrails | ✅ [Community plugin](https://github.com/sozercan/gatekeeper-headlamp-plugin) — policies, violations | Community maintained |
+| **Falco** | Runtime security — syscall monitoring, threat detection | ❌ No plugin | 🟡 Medium — alert dashboard, rule viewer |
+| **Istio** | Service mesh — mTLS, traffic management, observability | ⚠️ Gateway API supported; CRDs auto-discovered | 🟡 Medium — mesh topology, VirtualService views |
+| **Linkerd** | Lightweight service mesh — simpler alternative to Istio | ❌ No plugin | 🟡 Medium — mesh status, proxy injection views |
+| **Dapr** | Distributed application runtime — state, pub/sub, service invocation | ❌ No plugin | 🟡 Medium — Component/sidecar status views |
+| **OpenCost** | Kubernetes cost monitoring and optimization | ✅ [opencost](https://github.com/headlamp-k8s/plugins/tree/main/opencost) — workload cost visibility | None |
+| **Trivy** | Vulnerability scanning — container images, IaC, SBOM | ✅ [Community plugin](https://github.com/kubebeam/trivy-headlamp-plugin) — compliance/vulnerability reports | Community maintained |
+| **Kubescape** | Security posture — CIS benchmarks, NSA hardening | ✅ [Community plugin](https://github.com/kubescape/headlamp-plugin) — config/vulnerability scanning | Community maintained |
+| **Harbor** | Container registry — vulnerability scanning, signing, replication | ❌ No plugin | 🟡 Medium — registry/repository browser |
+| **Rook** | Ceph storage orchestration — distributed block/object/file | ✅ [Community plugin](https://github.com/privilegedescalation/headlamp-rook-plugin) — CephCluster health, pools, CSI | Community maintained |
+| **Thanos** | Long-term Prometheus storage — multi-cluster metrics | ⚠️ Compatible via [prometheus](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) plugin (Prometheus-compatible API) | None (indirect) |
+| **Kubeflow** | ML workflows — training, serving, pipelines | ✅ [kubeflow](https://github.com/headlamp-k8s/plugins/tree/main/kubeflow) — foundational resource views | Evolving |
+
+**Headlamp coverage: 14/21 projects have plugins (official or community).** Key gaps for
+growth startups are **Argo CD**, **Crossplane**, **Falco**, **Linkerd**, **Dapr**, **Harbor**,
+and **OpenTelemetry**.
+
+### Summary: Startup CNCF Stack Coverage
+
+| Stage | Total Projects | Plugin Coverage | Key Gaps |
+|---|---|---|---|
+| **Early-stage** (Seed–Series A) | 9 | **8 covered** (89%) | External Secrets (community plugin exists) |
+| **Growth-stage** (Series A–C) | 21 | **14 covered** (67%) | Argo CD, Crossplane, Falco, Linkerd, Dapr, Harbor, OpenTelemetry |
+
+### Recommended Startup-Focused Plugin Priorities
+
+These are ordered by impact (how many startups use the project) × feasibility:
+
+1. **Argo CD** — 60% of K8s clusters; most-requested missing plugin. Application sync
+   status, health tree, rollback history.
+2. **Crossplane** — CNCF Graduated (2025); the "Golden Triangle" (Backstage + Argo CD +
+   Crossplane) is the emerging platform engineering standard. CompositeResource/Claim views.
+3. **Falco** — Runtime security is non-negotiable for funded startups with enterprise
+   customers. Alert dashboard, rule viewer, event timeline.
+4. **OpenTelemetry** — Fastest-growing CNCF project; traces/metrics/logs. Collector and
+   Instrumentation CRD views.
+5. **Linkerd** — Simpler mesh alternative gaining share vs Istio. Service mesh status and
+   traffic metrics.
+6. **Harbor** — Container registry management. Image browser, vulnerability results,
+   replication status.
+7. **Dapr** — Official AKS extension; growing AI integration. Component and sidecar views.
