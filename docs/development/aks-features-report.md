@@ -526,7 +526,7 @@ Focus: scale reliability, multi-team workflows, compliance, observability.
 
 | CNCF Project | Why Startups Use It | Headlamp Plugin? | Gap |
 |---|---|---|---|
-| **Argo CD** | GitOps — 60% of K8s clusters use it (CNCF 2025 survey); 97% in production | ❌ No plugin | 🟡 Medium — Application CRD sync dashboard |
+| **Argo CD** | GitOps — 60% of K8s clusters use it (Argo CD End User Survey 2025); 97% in production | ❌ No plugin | 🟡 Medium — Application CRD sync dashboard |
 | **Flux** | GitOps alternative — Kustomization/HelmRelease reconciliation | ✅ [flux](https://github.com/headlamp-k8s/plugins/tree/main/flux) — visualize Flux resources | None |
 | **OpenTelemetry** | Unified traces/metrics/logs — fastest-growing CNCF project by contributions | ❌ No plugin | 🟡 Medium — Collector/Instrumentation CRD views |
 | **Cilium** | eBPF networking, security, observability — replacing kube-proxy at scale | ⚠️ CRDs auto-discovered | 🟢 Easy — CiliumNetworkPolicy detail views |
@@ -565,7 +565,7 @@ These are ordered by impact (how many startups use the project) × feasibility:
 
 1. **Argo CD** — 60% of K8s clusters; most-requested missing plugin. Application sync
    status, health tree, rollback history.
-2. **Crossplane** — CNCF Graduated (2025); the "Golden Triangle" (Backstage + Argo CD +
+2. **Crossplane** — CNCF Graduated (Oct 2025); the "Golden Triangle" (Backstage + Argo CD +
    Crossplane) is the emerging platform engineering standard. CompositeResource/Claim views.
 3. **Falco** — Runtime security is non-negotiable for funded startups with enterprise
    customers. Alert dashboard, rule viewer, event timeline.
