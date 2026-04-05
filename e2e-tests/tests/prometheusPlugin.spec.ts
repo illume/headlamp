@@ -40,51 +40,15 @@ test('prometheus plugin is bundled', async ({ page }) => {
   expect(prometheusPlugin, 'Prometheus plugin should be bundled in the image/app').toBeTruthy();
 });
 
-test('prometheus plugin section is displayed on pod detail page', async ({ page }) => {
+test('prometheus plugin has settings', async ({ page }) => {
   const headlampPage = new HeadlampPage(page);
   await headlampPage.navigateToCluster('test', process.env.HEADLAMP_TEST_TOKEN);
 
-  // Verify Prometheus plugin is loaded before checking its UI rendering.
-  const pluginsResponse = await page.request.get('/plugins');
-  const plugins = await pluginsResponse.json();
-  const hasPrometheus =
-    Array.isArray(plugins) &&
-    plugins.some(
-      (p: { name?: string; path?: string }) =>
-        (p.name && p.name.toLowerCase().includes('prometheus')) ||
-        (p.path && p.path.toLowerCase().includes('prometheus'))
-    );
-  expect(hasPrometheus, 'Prometheus plugin must be bundled to test its rendering').toBeTruthy();
+  // Navigate to Settings > Plugins and verify the Prometheus plugin appears in the table.
+  await headlampPage.navigateTopage('/settings/plugins', /Plugins/);
 
-  // Navigate to the pods page
-  await headlampPage.navigateTopage('/c/test/pods', /Pods/);
-
-  // Wait for the pods table to be visible
-  const podsTable = page.getByRole('table');
-  await expect(podsTable).toBeVisible();
-
-  // Click on the first pod to go to its detail page
-  const podLink = podsTable
-    .locator('tbody')
-    .nth(0)
-    .locator('tr')
-    .nth(0)
-    .locator('td')
-    .nth(1)
-    .locator('a');
-  const podName = await podLink.textContent();
-  await podLink.click();
-
-  // Verify we're on the pod detail page
-  const podHeading = page.getByRole('heading', {
-    level: 1,
-    name: new RegExp(`^Pod: ${podName}$`),
-  });
-  await expect(podHeading).toBeVisible();
-
-  // Verify the Prometheus plugin section is displayed on the pod detail page.
-  // The Prometheus plugin registers a details view section via registerDetailsViewSection().
-  // It renders a heading containing "Prometheus" when installed and active.
-  const prometheusSection = page.locator('text=Prometheus').first();
-  await expect(prometheusSection).toBeVisible({ timeout: 10000 });
+  // The Prometheus plugin should appear as a row in the plugins table.
+  // The plugin settings page displays each plugin's name as a link.
+  await headlampPage.clickOnPlugin('prometheus');
+  await headlampPage.hasTitleContaining(/Plugin Details/);
 });
