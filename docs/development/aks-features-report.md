@@ -685,8 +685,8 @@ Columns:
 **Key findings:**
 - **0 plugins are ◆ 🟢 green** in this scorecard — green here means **all 6 criteria** are met,
   which is stricter than the Venn diagram (where green = score 3+, meaning "most criteria met").
-  The 4 strongest plugins (prometheus, app-catalog, knative, Kubescape) appear green in the Venn
-  diagram because they meet most criteria, but still fall short of the full 6/6 scorecard bar.
+  The 4 plugins with score ≥ 3/6 (prometheus 5/6, app-catalog 4/6, knative 3/6, Kubescape 3/6)
+  appear green in the Venn diagram but still fall short of the full 6/6 scorecard bar.
 - **Only 3 of 22 plugins have real unit/integration tests** — 2 official (prometheus: util.test.ts;
   knative: url, ingress, nullable, time tests) and 1 community (Kubescape: layout.test.ts).
   All other plugins only have the auto-generated `storybook.test.tsx`, which does not count as
@@ -694,11 +694,11 @@ Columns:
 - **7 of 22 plugins have Storybook stories** — cert-manager and knative lead with 9 stories each,
   followed by plugin-catalog (4), app-catalog (2), prometheus (2), backstage (2), and opencost (1).
   The remaining 15 plugins have no stories.
-- **4 plugins are 🟠 orange** (3-5 criteria): prometheus (5/6), app-catalog (4/6), knative (3/6),
+- **4 plugins are 🟠 orange** (score ≥ 3/6): prometheus (5/6), app-catalog (4/6), knative (3/6),
   Kubescape (3/6)
 - **18 plugins are 🔴 red** with score 0-2 (very immature or early-stage)
 - **0 plugins have runtime a11y tests** — all rely on lint-time jsx-a11y only
-- Even the **4 strongest plugins** (prometheus, app-catalog, knative, Kubescape) still lack
+- Even the **4 orange plugins** (prometheus, app-catalog, knative, Kubescape) still lack
   a11y testing — they are the closest to production-grade but not there yet
 - This confirms the crux: **making existing plugins production-grade is harder than building
   new ones**, because no current plugin meets all 6 quality dimensions
