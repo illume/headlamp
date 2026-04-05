@@ -17,23 +17,32 @@
 import { expect, test } from '@playwright/test';
 import { HeadlampPage } from './headlampPage';
 
-test('prometheus plugin is displayed on pod detail page', async ({ page }) => {
+// The Prometheus plugin is bundled in the Docker image via container/build-manifest.json
+// and in the App via app/app-build-manifest.json. These tests verify it is present and working.
+
+test('prometheus plugin is bundled', async ({ page }) => {
   const headlampPage = new HeadlampPage(page);
   await headlampPage.navigateToCluster('test', process.env.HEADLAMP_TEST_TOKEN);
 
-  // Check if the Prometheus plugin is loaded by querying the plugins endpoint.
-  // The CI Docker image only bundles pod-counter by default; skip if Prometheus isn't present.
-  // Use page.request.get() to avoid navigating away from the current page.
+  // Query the plugins endpoint to verify Prometheus is bundled.
+  // The Docker image includes it as a static plugin (container/build-manifest.json).
+  // The App includes it via app/app-build-manifest.json.
+  // If this assertion fails, the plugin is missing from the build — that's a bug.
   const pluginsResponse = await page.request.get('/plugins');
   const plugins = await pluginsResponse.json();
-  const hasPrometheus =
-    Array.isArray(plugins) &&
-    plugins.some(
-      (p: { name?: string; path?: string }) =>
-        (p.name && p.name.toLowerCase().includes('prometheus')) ||
-        (p.path && p.path.toLowerCase().includes('prometheus'))
-    );
-  test.skip(!hasPrometheus, 'Prometheus plugin is not loaded in this environment');
+  expect(Array.isArray(plugins), '/plugins should return an array').toBeTruthy();
+
+  const prometheusPlugin = plugins.find(
+    (p: { name?: string; path?: string }) =>
+      (p.name && p.name.toLowerCase().includes('prometheus')) ||
+      (p.path && p.path.toLowerCase().includes('prometheus'))
+  );
+  expect(prometheusPlugin, 'Prometheus plugin should be bundled in the image/app').toBeTruthy();
+});
+
+test('prometheus plugin section is displayed on pod detail page', async ({ page }) => {
+  const headlampPage = new HeadlampPage(page);
+  await headlampPage.navigateToCluster('test', process.env.HEADLAMP_TEST_TOKEN);
 
   // Navigate to the pods page
   await headlampPage.navigateTopage('/c/test/pods', /Pods/);
