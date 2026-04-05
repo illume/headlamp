@@ -537,8 +537,9 @@ Columns:
   which is stricter than the Venn diagram (where green = score 3+, meaning "most criteria met").
   The 3 strongest plugins (prometheus, app-catalog, Kubescape) appear green in the Venn
   diagram because they meet most criteria, but still fall short of the full 6/6 scorecard bar.
-- **Only 3 of 22 plugins have real unit/integration tests** (prometheus, knative, Kubescape) —
-  all other plugins only have the auto-generated `storybook.test.tsx`, which does not count as
+- **Only 3 of 22 plugins have real unit/integration tests** — 2 official (prometheus: util.test.ts;
+  knative: url, ingress, nullable, time tests) and 1 community (Kubescape: layout.test.ts).
+  All other plugins only have the auto-generated `storybook.test.tsx`, which does not count as
   plugin-specific testing
 - **3 plugins are 🟠 orange** (3-5 criteria): prometheus, app-catalog, Kubescape
 - **19 plugins are 🔴 red** with score 0-2 (very immature or early-stage)
