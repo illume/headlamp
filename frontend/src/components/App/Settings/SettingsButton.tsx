@@ -45,7 +45,6 @@ export default function SettingsButton(props: { onClickExtra?: () => void; showL
         sx={{ display: 'flex', alignItems: 'center', width: '100%', cursor: 'pointer' }}
         role="button"
         tabIndex={0}
-        aria-label={t('translation|Settings')}
         onClick={handleClick}
         onKeyDown={event => {
           if (event.key === 'Enter' || event.key === ' ') {

@@ -452,7 +452,6 @@ export const PureTopBar = memo(
             sx={{ display: 'flex', alignItems: 'center', width: '100%', cursor: 'pointer' }}
             role="button"
             tabIndex={0}
-            aria-label={t('Account of current user')}
             aria-controls={userMenuId}
             aria-haspopup="true"
             onClick={event => {
@@ -463,7 +462,7 @@ export const PureTopBar = memo(
               if (event.key === 'Enter' || event.key === ' ') {
                 event.preventDefault();
                 handleMenuClose();
-                handleProfileMenuOpen(event as unknown as React.MouseEvent<HTMLElement>);
+                setAnchorEl(event.currentTarget as HTMLElement);
               }
             }}
           >
