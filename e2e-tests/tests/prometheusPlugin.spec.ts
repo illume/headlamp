@@ -23,14 +23,16 @@ test('prometheus plugin is displayed on pod detail page', async ({ page }) => {
 
   // Check if the Prometheus plugin is loaded by querying the plugins endpoint.
   // The CI Docker image only bundles pod-counter by default; skip if Prometheus isn't present.
-  const pluginsResponse = await page.goto('/plugins');
-  expect(pluginsResponse).toBeTruthy();
-  const plugins = await pluginsResponse!.json();
-  const hasPrometheus = plugins.some(
-    (p: { name?: string; path?: string }) =>
-      (p.name && p.name.toLowerCase().includes('prometheus')) ||
-      (p.path && p.path.toLowerCase().includes('prometheus'))
-  );
+  // Use page.request.get() to avoid navigating away from the current page.
+  const pluginsResponse = await page.request.get('/plugins');
+  const plugins = await pluginsResponse.json();
+  const hasPrometheus =
+    Array.isArray(plugins) &&
+    plugins.some(
+      (p: { name?: string; path?: string }) =>
+        (p.name && p.name.toLowerCase().includes('prometheus')) ||
+        (p.path && p.path.toLowerCase().includes('prometheus'))
+    );
   test.skip(!hasPrometheus, 'Prometheus plugin is not loaded in this environment');
 
   // Navigate to the pods page
