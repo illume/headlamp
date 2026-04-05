@@ -624,24 +624,46 @@ Many of these have mature Kubernetes operators with CRDs that Headlamp could sur
 plugins. This section covers the most common stacks used by funded startups and how they
 relate to Headlamp.
 
-Sources: Stack Overflow Developer Survey 2025, startup tech stack analyses from VC-backed
-company surveys, OperatorHub.io, and Kubernetes operator documentation.
+### Sources Consulted
+
+- [Stack Overflow Developer Survey 2025](https://survey.stackoverflow.co/2025/technology/) —
+  65,000+ developer respondents; database, language, and framework popularity rankings
+- [Stackcrawler: Top Y Combinator Companies Tech Stack (2025)](https://stackcrawler.com/blog/most-popular-startup-tech-stack) —
+  analysis of tech stacks across 500 latest YC-funded startups
+- [VCBacked: The 2025 Startup Tech Stack](https://www.vcbacked.co/blog/startup-tech-stack-2025) —
+  survey of what funded companies are buying
+- [Zimlon: Languages & Frameworks Used by Y Combinator Companies](https://www.zimlon.com/b/yclanguages-cm386/) —
+  survey of 90+ YC companies on backend language/framework choices
+- [Data on Kubernetes (DoK) 2024 Report / Voice of Kubernetes Experts 2024](https://dok.community/dok-reports/) —
+  527 respondents; 72% run databases on Kubernetes in production
+- [DB-Engines Ranking (April 2025)](https://db-engines.com/en/ranking) — global database
+  popularity index
+- [CNCF CloudNativePG project page](https://www.cncf.io/projects/cloudnativepg/) — adoption
+  stats: 8,000+ GitHub stars, 132M+ downloads, 4,600+ contributors
+- [Strimzi CNCF Incubation announcement (Feb 2024)](https://strimzi.io/blog/2024/02/08/strimzi-incubation/) —
+  5,800+ GitHub stars, 1,600+ contributors, 15+ production adopters
+- [ECK GitHub repository](https://github.com/elastic/cloud-on-k8s) — 2,800+ stars, 500K+
+  Docker pulls
+- [RabbitMQ Cluster Operator](https://github.com/rabbitmq/cluster-operator) — 1,100+ stars,
+  3,000+ commits, official Broadcom-backed project
 
 ### Databases and Data Infrastructure
 
-These are the most common stateful services that startups run on Kubernetes. Each has mature
-operators with rich CRDs — making them good candidates for Headlamp plugins that use standard
-Kubernetes API watches.
+Running databases on Kubernetes is now mainstream: the [Data on Kubernetes (DoK) 2024
+Report](https://dok.community/dok-reports/) found that **72% of organizations run databases
+on Kubernetes in production** (527 respondents, Portworx/Dimensional Research survey). Each
+database below has mature Kubernetes operators with rich CRDs — making them good candidates
+for Headlamp plugins that use standard Kubernetes API watches.
 
 | Technology | Startup Adoption | K8s Operator | Key CRDs | Headlamp Status | Plugin Opportunity |
 |---|---|---|---|---|---|
-| **PostgreSQL** | Most popular DB for startups (Stack Overflow 2025: most admired/desired). Default choice for transactional workloads. | [CloudNativePG](https://cloudnative-pg.io/) (CNCF Sandbox), [Zalando](https://github.com/zalando/postgres-operator), [Crunchy](https://github.com/CrunchyData/postgres-operator), [Percona](https://github.com/percona/percona-postgresql-operator) | `Cluster`, `Backup`, `ScheduledBackup`, `Pooler` (CloudNativePG) | ❌ No plugin | 🟡 Medium — cluster health, backup status, connection pooler views |
-| **MySQL / MariaDB** | Second-most popular relational DB, common in PHP/Laravel stacks | [Percona XtraDB](https://github.com/percona/percona-xtradb-cluster-operator), [Oracle MySQL Operator](https://github.com/mysql/mysql-operator), [MariaDB Operator](https://github.com/mariadb-operator/mariadb-operator) | `PerconaXtraDBCluster`, `InnoDBCluster`, `MariaDB` | ❌ No plugin | 🟡 Medium — cluster topology, replication lag, backup views |
-| **Redis** | Universal caching/queuing layer. Adopted at seed stage for performance. | [Redis Operator](https://github.com/OT-CONTAINER-KIT/redis-operator) (OperatorHub), [Bitnami Helm charts](https://github.com/bitnami/charts) | `Redis`, `RedisCluster`, `RedisSentinel`, `RedisReplication` | ❌ No plugin | 🟢 Easy — cluster status, node roles, memory usage views |
-| **MongoDB** | Popular for document workloads, early-stage MVPs | [MongoDB Community Operator](https://github.com/mongodb/mongodb-kubernetes-operator), [Percona Server for MongoDB](https://github.com/percona/percona-server-mongodb-operator) | `MongoDBCommunity`, `PerconaServerMongoDB` | ❌ No plugin | 🟡 Medium — replica set status, shard topology views |
-| **Elasticsearch / OpenSearch** | Search, logging, analytics. Adopted when full-text search becomes a product need. | [ECK (Elastic Cloud on Kubernetes)](https://github.com/elastic/cloud-on-k8s) — official Elastic operator | `Elasticsearch`, `Kibana`, `Beat`, `Agent`, `Logstash` (10+ CRDs) | ❌ No plugin | 🟡 Medium — cluster health, index stats, node topology, Kibana status |
-| **Apache Kafka** | Event streaming at growth stage. Critical for data pipelines. | [Strimzi](https://strimzi.io/) (CNCF Incubating) | `Kafka`, `KafkaTopic`, `KafkaUser`, `KafkaConnect`, `KafkaMirrorMaker2` | ✅ [Community plugin](https://github.com/krrish-sehgal/strimzi-headlamp-plugin) — topic/user/cluster CRUD | Community maintained |
-| **RabbitMQ** | Message queuing for async workloads and microservices | [RabbitMQ Cluster Operator](https://github.com/rabbitmq/cluster-operator) + [Messaging Topology Operator](https://github.com/rabbitmq/messaging-topology-operator) | `RabbitmqCluster`, `Queue`, `Exchange`, `Binding`, `User`, `Vhost`, `Policy` | ❌ No plugin | 🟡 Medium — cluster health, queue depth, topology views |
+| **PostgreSQL** | #1 database overall ([Stack Overflow 2025](https://survey.stackoverflow.co/2025/technology/): 55.6% usage, most admired). Default for startups per [YC analysis](https://stackcrawler.com/blog/most-popular-startup-tech-stack). #4 globally in [DB-Engines](https://db-engines.com/en/ranking), #1 open-source. | [CloudNativePG](https://cloudnative-pg.io/) ([CNCF Sandbox Jan 2025](https://www.cncf.io/projects/cloudnativepg/), 8K+ ⭐, 132M+ downloads), [Zalando](https://github.com/zalando/postgres-operator), [Crunchy](https://github.com/CrunchyData/postgres-operator), [Percona](https://github.com/percona/percona-postgresql-operator) | `Cluster`, `Backup`, `ScheduledBackup`, `Pooler` (CloudNativePG) | ❌ No plugin | 🟡 Medium — cluster health, backup status, connection pooler views |
+| **MySQL / MariaDB** | #2 database ([Stack Overflow 2025](https://survey.stackoverflow.co/2025/technology/): 40.5% usage). Common in PHP/Laravel stacks per [YC survey](https://www.zimlon.com/b/yclanguages-cm386/). | [Percona XtraDB](https://github.com/percona/percona-xtradb-cluster-operator), [Oracle MySQL Operator](https://github.com/mysql/mysql-operator), [MariaDB Operator](https://github.com/mariadb-operator/mariadb-operator) | `PerconaXtraDBCluster`, `InnoDBCluster`, `MariaDB` | ❌ No plugin | 🟡 Medium — cluster topology, replication lag, backup views |
+| **Redis** | #3 database ([Stack Overflow 2025](https://survey.stackoverflow.co/2025/technology/): 28% usage, +8pp YoY — largest growth). Universal caching/queuing layer at seed stage per [VCBacked](https://www.vcbacked.co/blog/startup-tech-stack-2025). | [Redis Operator](https://github.com/OT-CONTAINER-KIT/redis-operator) (OperatorHub), [Bitnami Helm charts](https://github.com/bitnami/charts) | `Redis`, `RedisCluster`, `RedisSentinel`, `RedisReplication` | ❌ No plugin | 🟢 Easy — cluster status, node roles, memory usage views |
+| **MongoDB** | #4 database ([Stack Overflow 2025](https://survey.stackoverflow.co/2025/technology/): 24% usage). Popular for document workloads and early-stage MVPs. | [MongoDB Community Operator](https://github.com/mongodb/mongodb-kubernetes-operator), [Percona Server for MongoDB](https://github.com/percona/percona-server-mongodb-operator) | `MongoDBCommunity`, `PerconaServerMongoDB` | ❌ No plugin | 🟡 Medium — replica set status, shard topology views |
+| **Elasticsearch / OpenSearch** | Critical for search, logging, analytics. [ECK](https://github.com/elastic/cloud-on-k8s) has 2.8K+ ⭐, 500K+ Docker pulls. Adopted when full-text search becomes a product need. | [ECK (Elastic Cloud on Kubernetes)](https://github.com/elastic/cloud-on-k8s) — official Elastic operator | `Elasticsearch`, `Kibana`, `Beat`, `Agent`, `Logstash` (10+ CRDs) | ❌ No plugin | 🟡 Medium — cluster health, index stats, node topology, Kibana status |
+| **Apache Kafka** | Event streaming at growth stage. [Strimzi](https://strimzi.io/) is CNCF Incubating (Feb 2024), 5.8K+ ⭐, 1,600+ contributors, 15+ production adopters per [CNCF](https://www.cncf.io/blog/2024/02/08/strimzi-joins-the-cncf-incubator/). | [Strimzi](https://strimzi.io/) (CNCF Incubating) | `Kafka`, `KafkaTopic`, `KafkaUser`, `KafkaConnect`, `KafkaMirrorMaker2` | ✅ [Community plugin](https://github.com/krrish-sehgal/strimzi-headlamp-plugin) — topic/user/cluster CRUD | Community maintained |
+| **RabbitMQ** | Message queuing for async workloads. [Cluster Operator](https://github.com/rabbitmq/cluster-operator) has 1.1K+ ⭐, 3K+ commits, official Broadcom backing. | [RabbitMQ Cluster Operator](https://github.com/rabbitmq/cluster-operator) + [Messaging Topology Operator](https://github.com/rabbitmq/messaging-topology-operator) | `RabbitmqCluster`, `Queue`, `Exchange`, `Binding`, `User`, `Vhost`, `Policy` | ❌ No plugin | 🟡 Medium — cluster health, queue depth, topology views |
 | **MinIO** | S3-compatible object storage, common for ML/data workloads | [MinIO Operator](https://github.com/minio/operator) | `Tenant` | ❌ No plugin | 🟢 Easy — tenant status, storage capacity views |
 
 **Key insight:** All these operators use Kubernetes CRDs, which means Headlamp can watch
@@ -650,20 +672,23 @@ build plugins for than cloud-provider-specific services (like Azure Defender, wh
 
 ### Application Frameworks and Languages
 
-Startups commonly deploy applications built with these frameworks on Kubernetes. These
-don't typically have CRDs (apps run as standard Deployments/StatefulSets), but there are
-Kubernetes-native patterns that could enhance the Headlamp experience.
+Startups commonly deploy applications built with these frameworks on Kubernetes. Data below
+is from the [Stack Overflow Developer Survey 2025](https://survey.stackoverflow.co/2025/technology/)
+(65K+ respondents), [Stackcrawler YC analysis](https://stackcrawler.com/blog/most-popular-startup-tech-stack)
+(500 YC startups), and [Zimlon YC survey](https://www.zimlon.com/b/yclanguages-cm386/) (90+
+YC companies). These don't typically have CRDs (apps run as standard Deployments/StatefulSets),
+but there are Kubernetes-native patterns that could enhance the Headlamp experience.
 
 | Framework / Language | Startup Usage | K8s Deployment Pattern | Headlamp Relevance |
 |---|---|---|---|
-| **Next.js** (React) | Dominant frontend framework for funded startups. Used by Vercel, but self-hosted on K8s at scale. | Standard Deployment + Service + Ingress. Often with HPA for autoscaling. | ✅ Already supported — Headlamp natively manages Deployments, Services, Ingress, HPA |
-| **Python (Django / FastAPI / Flask)** | Most popular backend for AI/ML startups, data-heavy products | Deployment + Service. Celery workers as separate Deployments. Database connections via Secrets. | ✅ Already supported — native K8s resource management. Celery monitoring via standard pod logs. |
-| **Node.js (Express / NestJS)** | Dominant for API-first startups, real-time applications | Deployment + Service. Often with Redis sidecars for sessions/caching. | ✅ Already supported — native K8s resource management |
-| **PHP (Laravel)** | Strong in e-commerce, content platforms, rapid MVPs | Deployment + Service. Queue workers (Redis/SQS) as separate Deployments. | ✅ Already supported — native K8s resource management |
-| **Go** | Backend services, infrastructure tools, CLIs | Deployment + Service. Often statically compiled, small images. | ✅ Already supported — native K8s resource management |
-| **Ruby (Rails)** | Still common in established startups (GitHub, Shopify, Stripe) | Deployment + Service. Sidekiq workers as separate Deployments. | ✅ Already supported — native K8s resource management |
-| **Java / Spring Boot** | Enterprise-oriented startups, fintech | Deployment + Service. JVM tuning via resource limits. | ✅ Already supported — native K8s resource management |
-| **Rust** | Growing for performance-critical services | Deployment + Service. Small, efficient containers. | ✅ Already supported — native K8s resource management |
+| **Next.js** (React) | React: 44.7%, Next.js: ~20% usage ([Stack Overflow 2025](https://survey.stackoverflow.co/2025/technology/)). Dominant frontend for YC startups per [Stackcrawler](https://stackcrawler.com/blog/most-popular-startup-tech-stack). | Standard Deployment + Service + Ingress. Often with HPA for autoscaling. | ✅ Already supported — Headlamp natively manages Deployments, Services, Ingress, HPA |
+| **Python (Django / FastAPI / Flask)** | Python: ~58% usage ([Stack Overflow 2025](https://survey.stackoverflow.co/2025/technology/)). Most popular backend for AI/ML startups per [YC survey](https://www.zimlon.com/b/yclanguages-cm386/). | Deployment + Service. Celery workers as separate Deployments. Database connections via Secrets. | ✅ Already supported — native K8s resource management. Celery monitoring via standard pod logs. |
+| **Node.js (Express / NestJS)** | Node.js: 48.7% — #1 web framework ([Stack Overflow 2025](https://survey.stackoverflow.co/2025/technology/)). Dominant for API-first startups per [VCBacked](https://www.vcbacked.co/blog/startup-tech-stack-2025). | Deployment + Service. Often with Redis sidecars for sessions/caching. | ✅ Already supported — native K8s resource management |
+| **PHP (Laravel)** | Strong in e-commerce, content platforms. Laravel common for rapid MVPs per [YC survey](https://www.zimlon.com/b/yclanguages-cm386/). | Deployment + Service. Queue workers (Redis/SQS) as separate Deployments. | ✅ Already supported — native K8s resource management |
+| **Go** | Go: ~16% usage among YC companies per [Zimlon](https://www.zimlon.com/b/yclanguages-cm386/). Favored for infrastructure, fintech, high-performance services. | Deployment + Service. Often statically compiled, small images. | ✅ Already supported — native K8s resource management |
+| **Ruby (Rails)** | Ruby: ~6-7% among YC companies per [Zimlon](https://www.zimlon.com/b/yclanguages-cm386/). Still common at established startups (GitHub, Shopify, Stripe). | Deployment + Service. Sidekiq workers as separate Deployments. | ✅ Already supported — native K8s resource management |
+| **Java / Spring Boot** | Enterprise-oriented startups, fintech. Steady adoption per [Stack Overflow 2025](https://survey.stackoverflow.co/2025/technology/). | Deployment + Service. JVM tuning via resource limits. | ✅ Already supported — native K8s resource management |
+| **Rust** | Growing for performance-critical services. Rising in [Stack Overflow 2025](https://survey.stackoverflow.co/2025/technology/) admiration rankings. | Deployment + Service. Small, efficient containers. | ✅ Already supported — native K8s resource management |
 
 **Key insight:** Application frameworks deploy as standard Kubernetes resources (Deployments,
 Services, Ingress, ConfigMaps, Secrets) which Headlamp already manages natively. No additional
@@ -678,7 +703,7 @@ These complementary services are commonly deployed alongside application code:
 | **Nginx Ingress** | HTTP routing and load balancing | ✅ Core K8s Ingress + IngressClass | ✅ Native Ingress views in Headlamp |
 | **cert-manager** | TLS certificate automation | `Certificate`, `Issuer`, `ClusterIssuer` | ✅ [cert-manager plugin](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) |
 | **External Secrets Operator** | Sync secrets from Vault, AWS SM, etc. | `ExternalSecret`, `SecretStore`, `ClusterSecretStore` | ✅ [Community plugin](https://github.com/Sowmya-Iyer/headlamp-external-secrets) |
-| **Sealed Secrets** | Encrypt secrets for GitOps | `SealedSecret` (Bitnami) | ❌ No plugin | 
+| **Sealed Secrets** | Encrypt secrets for GitOps | `SealedSecret` (Bitnami) | ❌ No plugin |
 | **Grafana** | Dashboards and visualization | Grafana Operator: `Grafana`, `GrafanaDashboard`, `GrafanaDatasource` | ⚠️ Grafana link integration possible — see Part 2 item 12 |
 | **Vault** | Secrets management | Vault Secrets Operator: `VaultStaticSecret`, `VaultDynamicSecret`, `VaultPKISecret` | ❌ No plugin |
 | **Backstage** | Internal developer portal | No K8s CRDs (external app) | ✅ [backstage plugin](https://github.com/headlamp-k8s/plugins/tree/main/backstage) |
@@ -697,13 +722,16 @@ These complementary services are commonly deployed alongside application code:
 
 These are ordered by startup adoption × operator maturity × CRD richness:
 
-1. **PostgreSQL (CloudNativePG)** — Most popular startup DB + CNCF Sandbox operator with
-   rich CRDs (Cluster, Backup, ScheduledBackup, Pooler). Cluster health dashboard, backup
-   status timeline, connection pooler monitoring.
-2. **Redis** — Universal caching layer + simple CRDs (Redis, RedisCluster). Quick to build.
-   Node role visualization, memory usage, sentinel/cluster topology.
-3. **Elasticsearch (ECK)** — Critical for search/logging + 10+ CRDs. Cluster health, node
-   topology, index statistics, Kibana status.
-4. **RabbitMQ** — Common microservices messaging + rich CRDs (Queue, Exchange, Binding).
-   Queue depth monitoring, topology visualization, user management.
-5. **MongoDB** — Popular for document workloads. Replica set status, shard topology views.
+1. **PostgreSQL (CloudNativePG)** — #1 database ([Stack Overflow 2025](https://survey.stackoverflow.co/2025/technology/):
+   55.6%) + CNCF Sandbox operator with 8K+ ⭐ and 132M+ downloads. Rich CRDs (Cluster, Backup,
+   ScheduledBackup, Pooler). Cluster health dashboard, backup status timeline, connection
+   pooler monitoring.
+2. **Redis** — #3 database (28%, fastest growth +8pp YoY) + simple CRDs (Redis, RedisCluster).
+   Quick to build. Node role visualization, memory usage, sentinel/cluster topology.
+3. **Elasticsearch (ECK)** — Critical for search/logging + 10+ CRDs, 2.8K+ ⭐, 500K+ Docker
+   pulls. Cluster health, node topology, index statistics, Kibana status.
+4. **RabbitMQ** — Common microservices messaging + rich CRDs (Queue, Exchange, Binding),
+   1.1K+ ⭐, official Broadcom backing. Queue depth monitoring, topology visualization, user
+   management.
+5. **MongoDB** — #4 database (24%) + community operator. Replica set status, shard topology
+   views.
