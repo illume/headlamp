@@ -73,8 +73,7 @@ NetworkPolicy CRDs would auto-appear via CRD discovery.
 **Difficulty:** 🟢 Easy
 
 **What Headlamp has today:** CRD auto-discovery will list Karpenter CRDs (`nodepools.karpenter.sh`,
-`nodeclaims.karpenter.sh`, `ec2nodeclasses.karpenter.sh` / `aksnodeclasses.karpenter.azure.com`)
-in the sidebar.
+`nodeclaims.karpenter.sh`, `aksnodeclasses.karpenter.azure.com`) in the sidebar.
 
 **What would need to be done:**
 - Build a dedicated Karpenter dashboard view (plugin) showing NodePool configurations,
