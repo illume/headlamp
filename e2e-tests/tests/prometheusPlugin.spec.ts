@@ -44,6 +44,18 @@ test('prometheus plugin section is displayed on pod detail page', async ({ page 
   const headlampPage = new HeadlampPage(page);
   await headlampPage.navigateToCluster('test', process.env.HEADLAMP_TEST_TOKEN);
 
+  // Verify Prometheus plugin is loaded before checking its UI rendering.
+  const pluginsResponse = await page.request.get('/plugins');
+  const plugins = await pluginsResponse.json();
+  const hasPrometheus =
+    Array.isArray(plugins) &&
+    plugins.some(
+      (p: { name?: string; path?: string }) =>
+        (p.name && p.name.toLowerCase().includes('prometheus')) ||
+        (p.path && p.path.toLowerCase().includes('prometheus'))
+    );
+  expect(hasPrometheus, 'Prometheus plugin must be bundled to test its rendering').toBeTruthy();
+
   // Navigate to the pods page
   await headlampPage.navigateTopage('/c/test/pods', /Pods/);
 
