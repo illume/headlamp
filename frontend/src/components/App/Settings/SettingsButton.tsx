@@ -24,10 +24,7 @@ import { getCluster } from '../../../lib/cluster';
 import { createRouteURL } from '../../../lib/router/createRouteURL';
 import ActionButton from '../../common/ActionButton';
 
-export default function SettingsButton(props: {
-  onClickExtra?: () => void;
-  showLabel?: boolean;
-}) {
+export default function SettingsButton(props: { onClickExtra?: () => void; showLabel?: boolean }) {
   const { onClickExtra, showLabel } = props;
   const { t } = useTranslation(['glossary', 'translation']);
   const history = useHistory();
