@@ -324,11 +324,48 @@ visibility. No Azure-specific cost features.
 **What Headlamp has today:** Trivy and Kubescape plugins provide Kubernetes-native
 vulnerability scanning. No Azure Defender integration.
 
+**Architecture — what Defender deploys in-cluster:**
+- **Defender Sensor** — a DaemonSet deployed to the `kube-system` namespace on every node.
+  Uses eBPF to capture runtime telemetry (process activity, network flows, Kubernetes events)
+  and streams it to Azure Defender for Cloud for analysis.
+- **Azure Policy add-on** (optional) — extends OPA Gatekeeper v3 as an admission webhook
+  for cluster-wide policy enforcement and compliance tracking.
+- **Agentless features** — registry vulnerability scanning and posture assessment run
+  outside the cluster and require no in-cluster components.
+
+**Does it have CRDs?** No. Defender for Containers does **not** install Kubernetes CRDs.
+The sensor is a standard DaemonSet with no custom resource types. All security alerts,
+vulnerability assessments, and recommendations live in the Azure Security Center / Defender
+for Cloud control plane, accessible only via Azure REST APIs
+(`Microsoft.Security/assessments`, `Microsoft.Security/alerts`,
+`Microsoft.Security/subAssessments`). The Azure Policy add-on uses Gatekeeper
+ConstraintTemplates (which are CRDs), but those belong to OPA Gatekeeper — already covered
+by the existing [Gatekeeper Headlamp plugin](https://github.com/sozercan/gatekeeper-headlamp-plugin).
+
+**What this means for a Headlamp plugin:**
+- Since there are no CRDs to watch, a plugin cannot use standard Kubernetes API watches.
+  All Defender data must be fetched from Azure REST APIs, which require Azure AD / Entra ID
+  authentication (OAuth2 bearer tokens scoped to the subscription).
+- API endpoints needed:
+  - **Alerts:** `GET /subscriptions/{sub}/providers/Microsoft.Security/alerts?api-version=2022-01-01`
+  - **Assessments:** `GET /subscriptions/{sub}/providers/Microsoft.Security/assessments?api-version=2021-06-01`
+  - **Sub-assessments** (per-image CVEs): `GET .../assessments/{id}/subAssessments`
+  - **Security recommendations:** `GET /subscriptions/{sub}/providers/Microsoft.Security/recommendations`
+- Alerts include MITRE ATT&CK technique mappings and are categorized by severity.
+
 **What would need to be done:**
-- Integrate with Microsoft Defender for Containers API for vulnerability scan results.
-- Display runtime threat detection alerts and security recommendations.
-- Requires Azure Security Center API integration with Azure AD authentication.
-- Rated hard because it depends entirely on Azure-specific APIs outside Kubernetes.
+- Build a Headlamp plugin with an Azure AD OAuth2 login flow (or reuse AKS desktop's
+  existing Azure AD login if running inside aks-desktop).
+- Backend proxy component to forward authenticated requests to Azure REST APIs.
+- Frontend views: security alerts timeline, vulnerability scan results per image/container,
+  compliance posture dashboard, MITRE ATT&CK mapping visualization.
+- Rated hard because it depends entirely on Azure-specific APIs outside Kubernetes, requires
+  Azure AD authentication, and has no Kubernetes-native CRDs to leverage.
+
+**Alternatives:** For Kubernetes-native security scanning without Azure dependencies, the
+existing [Trivy plugin](https://github.com/kubebeam/trivy-headlamp-plugin) and
+[Kubescape plugin](https://github.com/kubescape/headlamp-plugin) already cover image
+vulnerability scanning and CIS/NSA compliance checks using in-cluster CRDs.
 
 ---
 
@@ -442,7 +479,7 @@ the current Headlamp support status is listed.
 | AKS cluster upgrade management | ~10-15 days | Azure ARM API + upgrade safety workflows |
 | Planned maintenance windows | ~8-10 days | Azure ARM API integration |
 | Azure Cost Management integration | ~10-15 days | Azure AD auth + Cost Management API |
-| Defender for Containers dashboard | ~10-15 days | Azure Security Center API integration |
+| Defender for Containers dashboard | ~10-15 days | Azure Security Center REST API + Azure AD auth; no CRDs — all data from Azure APIs |
 
 ---
 
