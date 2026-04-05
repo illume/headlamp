@@ -659,23 +659,23 @@ Columns:
 
 | Plugin | Tests | Storybook | a11y | i18n | ≥ 0.5 | Official repo | Score | Status |
 |--------|:-----:|:---------:|:----:|:----:|:-----:|:-------------:|:-----:|:------:|
-| ◆ **app-catalog** (0.8.0) | ❌ | ❌ | ❌ | ✅ 19 langs | ✅ | ✅ | 3/6 | 🟠 |
-| ◆ **prometheus** (0.8.2) | ✅ | ❌ | ❌ | ✅ 19 langs | ✅ | ✅ | 4/6 | 🟠 |
+| ◆ **app-catalog** (0.8.0) | ❌ | ✅ 2 stories | ❌ | ✅ 19 langs | ✅ | ✅ | 4/6 | 🟠 |
+| ◆ **prometheus** (0.8.2) | ✅ | ✅ 2 stories | ❌ | ✅ 19 langs | ✅ | ✅ | 5/6 | 🟠 |
 | ◆ **flux** (0.6.0) | ❌ | ❌ | ❌ | ⚠️ script only | ✅ | ✅ | 2/6 | 🔴 |
-| ● **plugin-catalog** (0.4.3) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
+| ● **plugin-catalog** (0.4.3) | ❌ | ✅ 4 stories | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
 | ◆ **Kubescape** (0.10.6) | ✅ | ❌ | ❌ | ✅ | ✅ | ⚠️ project repo | 3/6 | 🟠 |
 | ● **Strimzi** (0.3.9) | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ external | 1/6 | 🔴 |
 | ▲ **Trivy** (0.3.1) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ external | 0/6 | 🔴 |
 | ● **karpenter** (0.2.0-alpha) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
-| ● **knative** (0.2.0-alpha) | ✅ | ❌ | ❌ | ⚠️ en only | ❌ | ✅ | 2/6 | 🔴 |
+| ● **knative** (0.2.0-alpha) | ✅ | ✅ 9 stories | ❌ | ⚠️ en only | ❌ | ✅ | 3/6 | 🟠 |
 | ● **ai-assistant** (0.2.0-alpha) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
 | ▲ **Gatekeeper** (0.2.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ external | 0/6 | 🔴 |
-| ● **opencost** (0.1.3) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
+| ● **opencost** (0.1.3) | ❌ | ✅ 1 story | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
 | ● **keda** (0.1.1-beta) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
 | ▲ **Kyverno** (0.1.1) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ archived | 0/6 | 🔴 |
-| ● **cert-manager** (0.1.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
+| ● **cert-manager** (0.1.0) | ❌ | ✅ 9 stories | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
 | ● **cluster-api** (0.1.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
-| ● **backstage** (0.1.0-beta-2) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
+| ● **backstage** (0.1.0-beta-2) | ❌ | ✅ 2 stories | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
 | ▲ **Inspektor Gadget** (0.1.0-beta.3) | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ project repo | 0/6 | 🔴 |
 | ▲ **KAITO** (0.0.7) | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ project repo | 0/6 | 🔴 |
 | ▲ **KubeVirt** (0.0.1-beta7) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ external | 0/6 | 🔴 |
@@ -685,18 +685,21 @@ Columns:
 **Key findings:**
 - **0 plugins are ◆ 🟢 green** in this scorecard — green here means **all 6 criteria** are met,
   which is stricter than the Venn diagram (where green = score 3+, meaning "most criteria met").
-  The 3 strongest plugins (prometheus, app-catalog, Kubescape) appear green in the Venn
+  The 4 strongest plugins (prometheus, app-catalog, knative, Kubescape) appear green in the Venn
   diagram because they meet most criteria, but still fall short of the full 6/6 scorecard bar.
 - **Only 3 of 22 plugins have real unit/integration tests** — 2 official (prometheus: util.test.ts;
   knative: url, ingress, nullable, time tests) and 1 community (Kubescape: layout.test.ts).
   All other plugins only have the auto-generated `storybook.test.tsx`, which does not count as
   plugin-specific testing
-- **3 plugins are 🟠 orange** (3-5 criteria): prometheus, app-catalog, Kubescape
-- **19 plugins are 🔴 red** with score 0-2 (very immature or early-stage)
-- **0 plugins have Storybook stories** — this is a universal gap
+- **7 of 22 plugins have Storybook stories** — cert-manager and knative lead with 9 stories each,
+  followed by plugin-catalog (4), app-catalog (2), prometheus (2), backstage (2), and opencost (1).
+  The remaining 15 plugins have no stories.
+- **4 plugins are 🟠 orange** (3-5 criteria): prometheus (5/6), app-catalog (4/6), knative (3/6),
+  Kubescape (3/6)
+- **18 plugins are 🔴 red** with score 0-2 (very immature or early-stage)
 - **0 plugins have runtime a11y tests** — all rely on lint-time jsx-a11y only
-- Even the **3 strongest plugins** (prometheus, app-catalog, Kubescape) still lack
-  Storybook and a11y testing — they are the closest to production-grade but not there yet
+- Even the **4 strongest plugins** (prometheus, app-catalog, knative, Kubescape) still lack
+  a11y testing — they are the closest to production-grade but not there yet
 - This confirms the crux: **making existing plugins production-grade is harder than building
   new ones**, because no current plugin meets all 6 quality dimensions
 
