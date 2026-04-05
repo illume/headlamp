@@ -34,7 +34,7 @@ specifically**, and **Strategy F targets AI/ML workloads**. Each includes an ord
 of which plugins to develop or polish first.
 
 The analysis uses the "diagnose → guiding policy → coherent action" structure from Richard
-Rumelt's *Good Strategy Bad Strategy* and identifies the **crux** — the single hardest
+Rumelt's *Good Strategy/Bad Strategy* and identifies the **crux** — the single hardest
 challenge whose resolution unlocks the rest.
 
 ### The Crux
@@ -400,6 +400,13 @@ graph TB
         P_backstage["● Backstage<br/><i>0.1.0-beta-2</i>"]
         P_strimzi["● Strimzi<br/><i>0.3.9</i>"]
         P_extsecrets["● External Secrets<br/><i>community</i>"]
+        P_postgres["■ PostgreSQL<br/><i>CloudNativePG — no plugin</i>"]
+        P_redis["■ Redis<br/><i>no plugin</i>"]
+        P_mysql["■ MySQL<br/><i>no plugin</i>"]
+        P_mongodb["■ MongoDB<br/><i>no plugin</i>"]
+        P_elasticsearch["■ Elasticsearch<br/><i>ECK — no plugin</i>"]
+        P_rabbitmq["■ RabbitMQ<br/><i>no plugin</i>"]
+        P_minio["■ MinIO<br/><i>no plugin</i>"]
     end
 
     subgraph ai_only ["AI Workloads Only"]
@@ -459,6 +466,13 @@ graph TB
     style P_harbor fill:#0d6efd,color:#fff,stroke:#0a58ca
     style P_kuberay fill:#0d6efd,color:#fff,stroke:#0a58ca
     style P_llmd fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_postgres fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_redis fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_mysql fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_mongodb fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_elasticsearch fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_rabbitmq fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_minio fill:#0d6efd,color:#fff,stroke:#0a58ca
 ```
 
 **Reading the diagram:**
@@ -468,6 +482,9 @@ graph TB
   AKS and startups.
 - **Edge zones** show single-goal plugins — e.g. ■ Argo CD and ■ Crossplane are startup-only
   gaps that need new plugins.
+- **Startup Only** now includes common application stacks from Part 8 (databases, supporting
+  infra) — ■ PostgreSQL (CloudNativePG), ■ Redis, ■ MySQL, ■ MongoDB, ■ Elasticsearch (ECK),
+  ■ RabbitMQ, ■ MinIO — all blue because no plugins exist yet.
 - **Shape + color tells the story:** lots of ■ blue (no plugin) and ● orange (early-stage),
   several ▲ red (very immature — KAITO, Gatekeeper, Trivy, Inspektor Gadget, Kyverno), very
   few ◆ green (mature). This confirms the crux: the ecosystem is broad but shallow.
@@ -513,16 +530,20 @@ Columns:
 | ● **Volcano** (plugin exists) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
 
 **Key findings:**
-- **0 plugins are ◆ 🟢 green** (no plugin meets all 6 criteria)
+- **0 plugins are ◆ 🟢 green** in this scorecard — green here means **all 6 criteria** are met,
+  which is stricter than the Venn diagram (where green = score 3+, meaning "most criteria met").
+  The 4 strongest plugins (app-catalog, prometheus, flux, Kubescape) appear green in the Venn
+  diagram because they meet most criteria, but still fall short of the full 6/6 scorecard bar.
 - **4 plugins are 🟠 orange** (3-5 criteria): app-catalog, prometheus, flux, Kubescape
 - **12 plugins are ● 🔴 red** with score 2 (early-stage — need Storybook, a11y, i18n work)
 - **6 plugins are ▲ 🔴 red** with score 0-1 (very immature — Trivy, Gatekeeper, Kyverno,
   Inspektor Gadget, KAITO, KubeVirt)
 - **0 plugins have Storybook stories** — this is a universal gap
 - **0 plugins have runtime a11y tests** — all rely on lint-time jsx-a11y only
-- The **2 best plugins** (app-catalog, prometheus) still lack Storybook and a11y testing
+- Even the **4 strongest plugins** (app-catalog, prometheus, flux, Kubescape) still lack
+  Storybook and a11y testing — they are the closest to production-grade but not there yet
 - This confirms the crux: **making existing plugins production-grade is harder than building
-  new ones**, because even the best plugins are missing 2 of 6 quality dimensions
+  new ones**, because no current plugin meets all 6 quality dimensions
 
 ---
 
@@ -1271,7 +1292,7 @@ These complementary services are commonly deployed alongside application code:
 | **cert-manager** | TLS certificate automation | `Certificate`, `Issuer`, `ClusterIssuer` | ✅ [cert-manager plugin](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) |
 | **External Secrets Operator** | Sync secrets from Vault, AWS SM, etc. | `ExternalSecret`, `SecretStore`, `ClusterSecretStore` | ✅ [Community plugin](https://github.com/Sowmya-Iyer/headlamp-external-secrets) |
 | **Sealed Secrets** | Encrypt secrets for GitOps | `SealedSecret` (Bitnami) | ❌ No plugin |
-| **Grafana** | Dashboards and visualization | Grafana Operator: `Grafana`, `GrafanaDashboard`, `GrafanaDatasource` | ⚠️ Grafana link integration possible — see Part 2 item 12 |
+| **Grafana** | Dashboards and visualization | Grafana Operator: `Grafana`, `GrafanaDashboard`, `GrafanaDatasource` | ⚠️ Grafana link integration possible — see Part 2 item 10 |
 | **Vault** | Secrets management | Vault Secrets Operator: `VaultStaticSecret`, `VaultDynamicSecret`, `VaultPKISecret` | ❌ No plugin |
 | **Backstage** | Internal developer portal | No K8s CRDs (external app) | ✅ [backstage plugin](https://github.com/headlamp-k8s/plugins/tree/main/backstage) |
 
