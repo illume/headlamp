@@ -30,35 +30,40 @@ test.describe('App startup performance', () => {
 
   test('app should load within 30 seconds', async () => {
     const startTime = Date.now();
+    let electronApp;
 
-    const electronApp = await _electron.launch({
-      cwd: appPath,
-      executablePath: electronPath,
-      args: ['.'],
-      env: {
-        ...process.env,
-        NODE_ENV: 'development',
-        ELECTRON_DEV: 'true',
-      },
-    });
+    try {
+      electronApp = await _electron.launch({
+        cwd: appPath,
+        executablePath: electronPath,
+        args: ['.'],
+        env: {
+          ...process.env,
+          NODE_ENV: 'development',
+          ELECTRON_DEV: 'true',
+        },
+      });
 
-    const page = await electronApp.firstWindow();
+      const page = await electronApp.firstWindow();
 
-    // Wait for the page to finish loading
-    await page.waitForLoadState('load');
+      // Wait for the page to finish loading
+      await page.waitForLoadState('load');
 
-    // Wait until meaningful content is rendered:
-    // Either the cluster select page, a cluster view, or the authentication page.
-    await expect(
-      page.locator('h1, a[href*="/c/"], button:has-text("Authenticate")').first()
-    ).toBeVisible({ timeout: 30000 });
+      // Wait until meaningful content is rendered:
+      // Either the cluster select page, a cluster view, or the authentication page.
+      await expect(
+        page.locator('h1, a[href*="/c/"], button:has-text("Authenticate")').first()
+      ).toBeVisible({ timeout: 30000 });
 
-    const loadTime = Date.now() - startTime;
-    console.log(`App loaded in ${loadTime}ms`);
+      const loadTime = Date.now() - startTime;
+      console.log(`App loaded in ${loadTime}ms`);
 
-    // Assert startup was within 30 seconds
-    expect(loadTime).toBeLessThan(30000);
-
-    await electronApp.close();
+      // Assert startup was within 30 seconds
+      expect(loadTime).toBeLessThan(30000);
+    } finally {
+      if (electronApp) {
+        await electronApp.close();
+      }
+    }
   });
 });
