@@ -1,87 +1,149 @@
 # AKS Features That Could Be Supported by Headlamp
 
 This report lists Azure Kubernetes Service (AKS) features that Headlamp could support,
-ranked by implementation difficulty. It also covers the CNCF project extensions that AKS
-uses and how Headlamp could integrate with them.
+ranked by implementation difficulty. It also covers CNCF project extensions that AKS uses,
+existing Headlamp plugins that already provide coverage, and what
+[AKS desktop](https://github.com/Azure/aks-desktop) (built on Headlamp) has already
+implemented.
+
+## Sources Consulted
+
+- [headlamp-k8s/plugins](https://github.com/headlamp-k8s/plugins/) — official Headlamp plugins
+- [Artifact Hub — Headlamp plugins](https://artifacthub.io/packages/search?kind=21&sort=relevance) — plugin registry
+- [Azure/aks-desktop](https://github.com/Azure/aks-desktop) — AKS desktop (built on Headlamp)
+- [AKS integrations docs](https://learn.microsoft.com/en-us/azure/aks/integrations) — official AKS add-ons/extensions list
+- [docs/platforms.md](../platforms.md) — Headlamp tested platforms and CNCF integrations
 
 ## Difficulty Scale
 
 | Rating | Meaning |
 |--------|---------|
-| 🟢 Easy | Can be done with existing plugin APIs or small frontend changes; mostly UI work using standard Kubernetes APIs that Headlamp already queries |
-| 🟡 Medium | Requires new frontend components, CRD-aware views, or moderate backend work; may need new API calls or data aggregation |
-| 🔴 Hard | Requires significant backend changes, new external API integrations, or complex UX workflows; may need new protocols or Azure-specific API calls |
+| ✅ Done | Already covered by an existing official or community plugin, or by AKS desktop |
+| 🟢 Easy | Can be done with existing plugin APIs or small frontend changes; mostly UI work using standard Kubernetes APIs |
+| 🟡 Medium | Requires new frontend components, CRD-aware views, or moderate backend work |
+| 🔴 Hard | Requires significant backend changes, new external API integrations, or Azure-specific API calls |
 
 ---
 
-## Part 1: AKS Features
+## Part 1: Existing Plugin Coverage
 
-### 1. Node Pool Visualization & Management
+Many AKS-relevant features are **already covered** by official plugins in
+[headlamp-k8s/plugins](https://github.com/headlamp-k8s/plugins/) or by community plugins.
+These do not need new implementation — they just need to be installed.
+
+### Official Headlamp Plugins (headlamp-k8s/plugins)
+
+| Plugin | AKS Feature Covered | Notes |
+|--------|---------------------|-------|
+| [app-catalog](https://github.com/headlamp-k8s/plugins/tree/main/app-catalog) | **Helm chart management** — install charts, manage releases | Desktop only; shipped by default |
+| [keda](https://github.com/headlamp-k8s/plugins/tree/main/keda) | **KEDA event-driven autoscaling** — view/manage ScaledObjects, ScaledJobs | Supports Prometheus metrics integration |
+| [karpenter](https://github.com/headlamp-k8s/plugins/tree/main/karpenter) | **Karpenter / Node Auto-Provisioning** — NodePool, NodeClaim, NodeClass visualization | Includes pending pod dashboard and real-time metrics |
+| [flux](https://github.com/headlamp-k8s/plugins/tree/main/flux) | **Flux GitOps** — visualize and manage Flux CD resources | Covers GitRepository, Kustomization, HelmRelease |
+| [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) | **cert-manager** — view/manage certificates, issuers, certificate requests | |
+| [opencost](https://github.com/headlamp-k8s/plugins/tree/main/opencost) | **Cost monitoring** — workload cost visibility | Needs OpenCost installed in cluster |
+| [prometheus](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) | **Prometheus metrics** — charts in workload detail views | Shipped by default with desktop and CI builds |
+| [knative](https://github.com/headlamp-k8s/plugins/tree/main/knative) | **Knative serverless** — view/manage Knative resources | |
+| [cluster-api](https://github.com/headlamp-k8s/plugins/tree/main/cluster-api) | **Cluster API** — management cluster visualization | |
+| [backstage](https://github.com/headlamp-k8s/plugins/tree/main/backstage) | **Backstage integration** — links to Backstage resource views | |
+| [ai-assistant](https://github.com/headlamp-k8s/plugins/tree/main/ai-assistant) | **AI capabilities** — AI-powered cluster assistance | |
+| [plugin-catalog](https://github.com/headlamp-k8s/plugins/tree/main/plugin-catalog) | **Plugin discovery** — browse/install plugins from Artifact Hub | Shipped by default |
+
+### Community / External Plugins
+
+| Plugin | AKS Feature Covered | Notes |
+|--------|---------------------|-------|
+| [Gatekeeper](https://github.com/sozercan/gatekeeper-headlamp-plugin) | **OPA Gatekeeper / Azure Policy** — manage policies, violations, community policy library | |
+| [Trivy](https://github.com/kubebeam/trivy-headlamp-plugin) | **Vulnerability scanning** — compliance and vulnerability reports | |
+| [Kyverno](https://github.com/kubebeam/kyverno-headlamp-plugin) | **Kyverno policies** — policy and report views | Archived |
+| [Kubescape](https://github.com/kubescape/headlamp-plugin) | **Security scanning** — configuration and vulnerability scanning | |
+| [KubeVirt](https://github.com/buttahtoast/headlamp-plugins/tree/main/kubevirt) | **VM workloads** — manage KubeVirt virtual machines | |
+| [Inspektor Gadget](https://github.com/inspektor-gadget/headlamp-plugin/) | **eBPF debugging** — run gadgets, visualize observability data | |
+| [KAITO](https://github.com/kaito-project/headlamp-kaito) | **AI model deployment** — KAITO AKS extension UI for model deployment and GPU provisioning | |
+| [Strimzi](https://github.com/cesaroangelo/strimzi-headlamp) | **Apache Kafka** — manage Strimzi resources on Kubernetes | |
+
+### AKS Desktop (Built on Headlamp)
+
+[Azure/aks-desktop](https://github.com/Azure/aks-desktop) is Microsoft's desktop application
+built directly on Headlamp. It already implements several AKS-specific features as Headlamp
+plugins that could inform or be upstreamed to the open-source project:
+
+| Feature | Description |
+|---------|-------------|
+| **Projects** | Groups related workloads, services, and configs into logical units with namespace isolation, resource quotas, and access controls |
+| **Guided Deployment Wizard** | Step-by-step application deployment with auto-generated K8s manifests following AKS best practices |
+| **Azure AD Login & Cluster Import** | Sign in with Azure account, merge AKS credentials into kubeconfig |
+| **Workload Identity** | Integration with Azure Workload Identity for secure cloud resource access |
+| **ACR Integration** | Deploy container images from Azure Container Registry |
+| **GitHub Pipelines** | Pipeline deployment and GitHub authentication for DevOps workflows |
+| **Resource Quota Awareness** | Deployment wizard warns when exceeding namespace resource quotas |
+| **Developer Mode** (preview) | Heroku-like experience for deploying from source repositories |
+| **Multi-tenancy** | Enhanced authentication handling for multi-tenant AKS setups |
+
+---
+
+## Part 2: AKS Features Not Yet Covered
+
+These features are **not yet covered** by any existing plugin or AKS desktop feature and
+would need new work.
+
+### 1. Node Pool Visualization & Grouping
 
 **Difficulty:** 🟢 Easy
 
 **What Headlamp has today:** Node list with CPU/memory metrics, OS/architecture info, and
-status. Headlamp already detects AKS node names (e.g. `aks-agentpool-*-vmss*`) and Windows
-OS icons.
+status. Headlamp already detects AKS node names (e.g. `aks-agentpool-*-vmss*`) and shows
+Windows OS icons.
 
 **What would need to be done:**
-- Group nodes by node pool using the `agentpool` label that AKS adds to every node
-  (`kubernetes.azure.com/agentpool`).
+- Group nodes by node pool using the `kubernetes.azure.com/agentpool` label that AKS adds
+  to every node.
 - Show node pool summary cards (node count, total CPU/memory, VM SKU) in the Node list view.
-- This only requires frontend changes to the existing Node list component to read and group
-  by labels that are already available via the standard Kubernetes API.
+- This only requires frontend changes to read and group by labels already available via the
+  standard Kubernetes API.
 
 ---
 
-### 2. KEDA ScaledObject / ScaledJob Visualization
-
-**Difficulty:** 🟢 Easy
-
-**What Headlamp has today:** CRD auto-discovery already lists KEDA CRDs
-(`scaledobjects.keda.sh`, `scaledjobs.keda.sh`, `triggerauthentications.keda.sh`) in the
-sidebar and shows their YAML. HPA resources are fully supported.
-
-**What would need to be done:**
-- Build a dedicated KEDA detail view (plugin or core) that shows ScaledObject trigger
-  configuration, current metrics, and the linked HPA in a human-readable format instead of
-  raw YAML.
-- Show the relationship between ScaledObject → HPA → Deployment in the resource map.
-- This is straightforward because KEDA CRDs are standard Kubernetes resources; the work is
-  purely UI/UX to present the data more clearly.
-
----
-
-### 3. Network Policy Visualization for Azure CNI / Cilium
+### 2. Network Policy Visualization
 
 **Difficulty:** 🟢 Easy
 
 **What Headlamp has today:** Full NetworkPolicy list and detail views. Cilium
-NetworkPolicy CRDs would auto-appear via CRD discovery.
+NetworkPolicy CRDs auto-appear via CRD discovery.
 
 **What would need to be done:**
-- Add a visual representation of NetworkPolicy rules (ingress/egress allow/deny diagram)
-  to the existing detail view.
-- For Cilium-specific CiliumNetworkPolicy CRDs, create a plugin or detail view section
-  that renders the Cilium-specific fields (endpoint selectors, L7 rules) in a readable
-  format.
+- Add a visual diagram of NetworkPolicy rules (ingress/egress allow/deny) to the existing
+  detail view.
+- For Cilium-specific CiliumNetworkPolicy CRDs, render endpoint selectors and L7 rules
+  in a readable format.
 - All data comes from standard Kubernetes APIs; this is frontend visualization work.
 
 ---
 
-### 4. Karpenter (Node Auto-Provisioning) NodePool & NodeClaim Views
+### 3. VPA (Vertical Pod Autoscaler) Recommendations View
 
 **Difficulty:** 🟢 Easy
 
-**What Headlamp has today:** CRD auto-discovery will list Karpenter CRDs (`nodepools.karpenter.sh`,
-`nodeclaims.karpenter.sh`, `aksnodeclasses.karpenter.azure.com`) in the sidebar.
+**What Headlamp has today:** VPA resources are listed and viewable with a basic detail view.
 
 **What would need to be done:**
-- Build a dedicated Karpenter dashboard view (plugin) showing NodePool configurations,
-  active NodeClaims, and their mapped Nodes.
-- Show provisioning status, disruption budgets, and consolidation policies in a
-  human-readable format.
-- Add Karpenter NodePool → NodeClaim → Node relationships to the resource map.
-- All data is available via CRD APIs; the work is frontend components.
+- Prominently show recommendations (target, lower bound, upper bound, uncapped target)
+  per container.
+- Show a comparison table: current resource requests/limits vs VPA recommendations.
+- Highlight containers where current requests differ significantly from recommendations.
+- All data is in the VPA status subresource via standard K8s API. Purely frontend work.
+
+---
+
+### 4. Virtual Node Indicators
+
+**Difficulty:** 🟢 Easy
+
+**What Headlamp has today:** Nodes are fully supported with status, capacity, and conditions.
+
+**What would need to be done:**
+- Detect virtual nodes by their taint (`virtual-kubelet.io/provider: azure`) and label.
+- Show virtual nodes with a distinct icon or badge indicating they are ACI-backed.
+- All data is available from the standard Node API. Small frontend enhancement.
 
 ---
 
@@ -89,128 +151,45 @@ NetworkPolicy CRDs would auto-appear via CRD discovery.
 
 **Difficulty:** 🟡 Medium
 
-**What Headlamp has today:** Headlamp supports Gateway API resources (Gateway, HTTPRoute,
-GRPCRoute, etc.) which Istio can use. CRD discovery shows Istio CRDs
-(`virtualservices.networking.istio.io`, `destinationrules.networking.istio.io`, etc.).
+**What Headlamp has today:** Gateway API resources (Gateway, HTTPRoute, GRPCRoute, etc.)
+are supported. Istio CRDs auto-appear via CRD discovery. The Prometheus plugin already
+provides workload-level metrics.
 
 **What would need to be done:**
 - Create dedicated views for Istio resources: VirtualService, DestinationRule,
   ServiceEntry, AuthorizationPolicy, PeerAuthentication.
 - Build a service mesh topology view showing traffic flow between services with
   mTLS status indicators.
-- To show live traffic metrics (request rate, error rate, latency), would need to
-  query the Prometheus API or Istio's built-in metrics endpoint, which requires
-  backend proxy support for Prometheus queries.
-- Rated medium because while CRD data is easy, the traffic topology and metrics
-  visualization requires Prometheus integration and non-trivial graph layout work.
+- For live traffic metrics (request rate, error rate, latency), leverage the existing
+  Prometheus plugin or add Istio-specific PromQL queries.
+- Rated medium because while CRD data is easy, the traffic topology visualization
+  requires non-trivial graph layout work.
 
 ---
 
-### 6. Flux GitOps Status Dashboard
-
-**Difficulty:** 🟡 Medium
-
-**What Headlamp has today:** Flux is listed as a known integration on the platforms page.
-CRD discovery shows Flux CRDs (`kustomizations.kustomize.toolkit.fluxcd.io`,
-`gitrepositories.source.toolkit.fluxcd.io`, `helmreleases.helm.toolkit.fluxcd.io`, etc.).
-
-**What would need to be done:**
-- Create a GitOps dashboard view showing all Flux sources (GitRepository, OCIRepository,
-  HelmRepository) with their sync status and last reconciliation time.
-- Show Kustomization and HelmRelease reconciliation status with health indicators
-  (ready/not-ready/suspended).
-- Display dependency graphs between Flux resources (e.g., HelmRelease depends on
-  HelmRepository).
-- Add Flux conditions (Ready, Reconciling, Stalled) as first-class status indicators.
-- Rated medium because it requires multiple CRD queries, status aggregation, and a new
-  multi-resource dashboard; but no external API integration beyond standard K8s APIs.
-
----
-
-### 7. Azure Workload Identity Visualization
+### 6. Azure Workload Identity Visualization
 
 **Difficulty:** 🟡 Medium
 
 **What Headlamp has today:** Full ServiceAccount views with annotations and labels.
+AKS desktop already supports Workload Identity during deployment.
 
 **What would need to be done:**
 - Detect Azure Workload Identity annotations on ServiceAccounts
   (`azure.workload.identity/client-id`, `azure.workload.identity/tenant-id`).
 - Show which pods are using workload identity and what Azure identity they map to.
-- Display the trust relationship: ServiceAccount → Federated Identity Credential →
+- Display the relationship: ServiceAccount → Federated Identity Credential →
   Azure Managed Identity.
-- Rated medium because while the K8s-side data (ServiceAccount annotations, pod
-  projected volumes) is available via standard APIs, showing the full trust chain
-  requires understanding Azure-specific annotation conventions and rendering them
-  meaningfully.
+- Rated medium because showing the full trust chain requires understanding Azure-specific
+  annotation conventions.
 
 ---
 
-### 8. OPA Gatekeeper / Azure Policy Constraint Visualization
+### 7. Dapr (Distributed Application Runtime) Views
 
 **Difficulty:** 🟡 Medium
 
-**What Headlamp has today:** CRD discovery shows Gatekeeper CRDs
-(`constrainttemplates.templates.gatekeeper.sh`, various constraint CRDs). Mutating and
-Validating webhook configurations are supported.
-
-**What would need to be done:**
-- Create a policy dashboard showing all ConstraintTemplates and their instantiated
-  Constraints.
-- Display constraint violations with links to the offending resources.
-- Show audit results from Gatekeeper's status subresource (total violations, violation
-  details per constraint).
-- Render Rego policy snippets in ConstraintTemplate details with syntax highlighting.
-- Rated medium because it requires aggregating data across multiple CRD types
-  (ConstraintTemplate + each dynamically-generated Constraint CRD) and rendering
-  violation details in a useful way.
-
----
-
-### 9. Helm Release Management
-
-**Difficulty:** 🟡 Medium
-
-**What Headlamp has today:** No native Helm support. Helm releases are stored as
-Kubernetes Secrets (type `helm.sh/release.v1`), which Headlamp can list.
-
-**What would need to be done:**
-- Parse Helm release Secrets to extract release metadata (name, chart, version, status,
-  values).
-- Show a Helm releases list view with release name, namespace, chart, version, revision,
-  and status.
-- Show release detail with deployed values, computed values, and release notes.
-- Optionally, show the rendered manifests and link to the K8s resources they created.
-- For install/upgrade/rollback operations, would need backend integration with the Helm
-  SDK or CLI.
-- Rated medium because read-only viewing of releases can be done by parsing Secrets
-  (frontend only), but full lifecycle management requires backend Helm SDK integration.
-
----
-
-### 10. VPA (Vertical Pod Autoscaler) Recommendations View
-
-**Difficulty:** 🟢 Easy
-
-**What Headlamp has today:** VPA resources are listed and viewable. Basic detail view
-exists.
-
-**What would need to be done:**
-- Enhance the VPA detail view to prominently show recommendations (target, lower bound,
-  upper bound, uncapped target) for each container.
-- Show a comparison table: current resource requests/limits vs VPA recommendations.
-- Highlight containers where current requests differ significantly from recommendations.
-- All data is in the VPA status subresource, available via standard K8s API. This is
-  purely frontend UI improvement.
-
----
-
-### 11. Dapr (Distributed Application Runtime) Integration
-
-**Difficulty:** 🟡 Medium
-
-**What Headlamp has today:** CRD discovery shows Dapr CRDs if installed
-(`components.dapr.io`, `configurations.dapr.io`, `subscriptions.dapr.io`).
+**What Headlamp has today:** Dapr CRDs auto-appear via CRD discovery.
 
 **What would need to be done:**
 - Create dedicated views for Dapr Components (state stores, pub/sub, bindings, secret
@@ -219,33 +198,76 @@ exists.
   annotation on pods/deployments).
 - Display Dapr Configuration resources with tracing, metrics, and middleware pipeline
   settings.
-- Add Dapr sidecar status indicators to Pod views.
-- Rated medium because while CRD data is available, understanding Dapr's component
-  model and sidecar injection patterns requires dedicated UI components.
+- Rated medium because understanding Dapr's component model and sidecar injection
+  patterns requires dedicated UI components.
 
 ---
 
-### 12. Managed Prometheus & Grafana Dashboard Links
+### 8. OpenTelemetry Collector & Instrumentation Views
 
 **Difficulty:** 🟡 Medium
 
-**What Headlamp has today:** Basic pod/node metrics via the `metrics.k8s.io` API.
-Prometheus is listed as a known integration.
+**What Headlamp has today:** OpenTelemetry CRDs auto-appear via CRD discovery if
+the operator is installed.
 
 **What would need to be done:**
-- Add a backend proxy endpoint for Prometheus queries (`/api/v1/query`,
-  `/api/v1/query_range`) to enable richer metrics visualization.
-- Build time-series charts for key metrics (CPU, memory, network, disk I/O) using
-  PromQL queries.
-- Allow configuring a Prometheus endpoint URL (auto-detect from known AKS monitoring
-  add-on configurations).
-- Optionally link to Azure Managed Grafana dashboards from resource detail views.
-- Rated medium because it requires new backend proxy configuration and frontend charting
-  components, but Prometheus has a well-documented HTTP API.
+- Build views for OpenTelemetryCollector and Instrumentation CRDs showing pipeline
+  configuration (receivers, processors, exporters).
+- Display instrumentation status per namespace/workload.
+- Rated medium because the OpenTelemetry Operator CRDs have complex nested pipeline
+  configurations that need meaningful visualization.
 
 ---
 
-### 13. Container Insights / Azure Monitor Log Integration
+### 9. Azure Key Vault Secrets Provider (Secrets Store CSI Driver)
+
+**Difficulty:** 🟡 Medium
+
+**What Headlamp has today:** Full Secret and ConfigMap views. SecretProviderClass CRDs
+auto-appear via CRD discovery.
+
+**What would need to be done:**
+- Create a dedicated SecretProviderClass detail view showing which Key Vault secrets
+  are being synced, their sync status, and rotation configuration.
+- Show the relationship: SecretProviderClass → Pod (via volume mount) → Kubernetes
+  Secret (if syncSecret is enabled).
+- Display SecretProviderClassPodStatus resources showing per-pod sync status.
+
+---
+
+### 10. Grafana Dashboard Deep Links
+
+**Difficulty:** 🟡 Medium
+
+**What Headlamp has today:** The Prometheus plugin provides workload-level charts.
+No Grafana linking.
+
+**What would need to be done:**
+- Allow configuring a Grafana base URL (auto-detect from known AKS managed Grafana
+  configurations).
+- Add "Open in Grafana" links from resource detail views to pre-filtered Grafana
+  dashboards.
+- Rated medium because it requires configurable URL templating and detection logic.
+
+---
+
+### 11. eTag-Based Conflict Detection for Resource Edits
+
+**Difficulty:** 🟡 Medium
+
+**What Headlamp has today:** YAML editor for resources with apply/update functionality.
+
+**What would need to be done:**
+- Implement optimistic concurrency control using Kubernetes `resourceVersion`.
+- Show a conflict resolution UI when a resource has been modified by another user
+  between read and write (409 Conflict response handling).
+- Display a diff between the user's changes and the current server state.
+- Rated medium because the Kubernetes API already supports this; the work is in
+  building the conflict detection and resolution UI.
+
+---
+
+### 12. Container Insights / Azure Monitor Log Integration
 
 **Difficulty:** 🔴 Hard
 
@@ -256,15 +278,13 @@ integration.
 - Integrate with Azure Monitor REST API to query Container Insights logs
   (KQL queries against Log Analytics workspace).
 - Build a log explorer UI that supports KQL-based filtering and aggregation.
-- This requires Azure authentication (OAuth2 with Azure AD tokens), which is a
-  separate auth flow from Kubernetes authentication.
-- Would need backend support for Azure Resource Manager API calls.
+- Requires Azure AD OAuth2 authentication, separate from Kubernetes auth.
 - Rated hard because it requires a completely new Azure-specific authentication and
   API integration path outside the Kubernetes API.
 
 ---
 
-### 14. AKS Cluster Upgrade & Maintenance Management
+### 13. AKS Cluster Upgrade & Maintenance Management
 
 **Difficulty:** 🔴 Hard
 
@@ -274,200 +294,147 @@ integration.
 - Show available Kubernetes version upgrades for the cluster.
 - Display planned maintenance windows and their schedules.
 - Show node image upgrade status across node pools.
-- To get this data, would need to call the Azure Resource Manager API
-  (`Microsoft.ContainerService/managedClusters`) which requires Azure AD authentication.
-- Optionally trigger upgrades via the ARM API.
-- Rated hard because it requires Azure ARM API integration, Azure AD authentication,
-  and the upgrade workflow has serious production safety implications.
+- Requires Azure ARM API calls (`Microsoft.ContainerService/managedClusters`) with
+  Azure AD authentication.
+- Rated hard because it requires Azure ARM API integration and upgrade workflows have
+  serious production safety implications.
 
 ---
 
-### 15. Azure Key Vault Secrets Provider (Secrets Store CSI Driver)
-
-**Difficulty:** 🟡 Medium
-
-**What Headlamp has today:** Full Secret and ConfigMap views. CRD discovery shows
-SecretProviderClass CRDs if the CSI driver is installed.
-
-**What would need to be done:**
-- Create a dedicated SecretProviderClass detail view showing which Key Vault secrets
-  are being synced, their sync status, and rotation configuration.
-- Show the relationship: SecretProviderClass → Pod (via volume mount) → Kubernetes
-  Secret (if syncSecret is enabled).
-- Display SecretProviderClassPodStatus resources showing per-pod sync status.
-- All data is available via CRD APIs. Rated medium because it requires understanding
-  the CSI driver's CRD schema and building a relationship view.
-
----
-
-### 16. AKS Cost Analysis & Resource Optimization
+### 14. Azure Cost Management Integration
 
 **Difficulty:** 🔴 Hard
 
-**What Headlamp has today:** OpenCost listed as a known plugin integration. No native
-cost features.
+**What Headlamp has today:** The OpenCost plugin provides Kubernetes-native cost
+visibility. No Azure-specific cost features.
 
 **What would need to be done:**
-- Integrate with OpenCost API or Azure Cost Management API to show per-namespace,
-  per-workload cost breakdowns.
-- Build cost dashboard with trends, projections, and optimization recommendations.
-- For Azure Cost Management, requires Azure AD authentication and ARM API calls.
-- For OpenCost, requires configuring the OpenCost API endpoint and building a
-  dashboard UI.
-- Rated hard for Azure Cost Management (Azure API dependency); would be medium if
-  using OpenCost exclusively (standard Kubernetes API pattern).
+- Integrate with Azure Cost Management API for per-namespace, per-workload Azure
+  billing data.
+- Requires Azure AD authentication and ARM API calls.
+- Rated hard due to Azure API dependency. Note: for Kubernetes-native cost analysis,
+  the existing OpenCost plugin is the recommended approach.
 
 ---
 
-### 17. AKS Security Dashboard (Microsoft Defender for Containers)
+### 15. AKS Security Dashboard (Microsoft Defender for Containers)
 
 **Difficulty:** 🔴 Hard
 
-**What Headlamp has today:** No security scanning or compliance features natively.
+**What Headlamp has today:** Trivy and Kubescape plugins provide Kubernetes-native
+vulnerability scanning. No Azure Defender integration.
 
 **What would need to be done:**
-- Integrate with Microsoft Defender for Containers API to show vulnerability scan
-  results for container images.
+- Integrate with Microsoft Defender for Containers API for vulnerability scan results.
 - Display runtime threat detection alerts and security recommendations.
-- Show compliance status against security benchmarks (CIS, Azure Security Benchmark).
 - Requires Azure Security Center API integration with Azure AD authentication.
 - Rated hard because it depends entirely on Azure-specific APIs outside Kubernetes.
 
 ---
 
-### 18. Virtual Node (Virtual Kubelet / ACI Burst)
-
-**Difficulty:** 🟢 Easy
-
-**What Headlamp has today:** Nodes are fully supported with status, capacity, and
-conditions.
-
-**What would need to be done:**
-- Detect virtual nodes by their taint (`virtual-kubelet.io/provider: azure`) and label.
-- Show virtual nodes with a distinct icon or badge indicating they are ACI-backed.
-- Display ACI-specific capacity info (pods scheduled, burst status).
-- All data is available from the standard Node API. This is a small frontend
-  enhancement to the existing Node views.
-
----
-
-### 19. Planned Maintenance Windows
-
-**Difficulty:** 🔴 Hard
-
-**What Headlamp has today:** No maintenance window management.
-
-**What would need to be done:**
-- Query Azure ARM API for AKS maintenance configurations
-  (`Microsoft.ContainerService/managedClusters/maintenanceConfigurations`).
-- Display scheduled maintenance windows with timing details.
-- Allow creating/editing maintenance schedules via the ARM API.
-- Rated hard because it requires Azure ARM API integration and authentication.
-
----
-
-### 20. eTag-Based Conflict Detection for Resource Edits
-
-**Difficulty:** 🟡 Medium
-
-**What Headlamp has today:** YAML editor for resources with apply/update functionality.
-
-**What would need to be done:**
-- Implement optimistic concurrency control using Kubernetes resource versions
-  (the `resourceVersion` field already serves this purpose in the Kubernetes API).
-- Show a conflict resolution UI when a resource has been modified by another user
-  between read and write (412 Conflict response handling).
-- Display a diff between the user's changes and the current server state.
-- Rated medium because the Kubernetes API already supports this via `resourceVersion`;
-  the work is in building the conflict detection and resolution UI.
-
----
-
-## Part 2: CNCF Project Extensions Used by AKS
+## Part 3: CNCF Project Extensions Used by AKS
 
 The following CNCF projects are officially integrated with or supported by AKS. For each,
-the current Headlamp support status and what could be done is listed.
+the current Headlamp support status is listed.
 
 ### Graduated CNCF Projects
 
-| # | Project | AKS Integration | Headlamp Status | Difficulty |
-|---|---------|----------------|-----------------|------------|
-| 1 | **Kubernetes** | Core platform | ✅ Full support | N/A |
-| 2 | **Prometheus** | Azure Managed Prometheus add-on for metrics collection | ⚠️ Basic metrics via metrics API; no PromQL | 🟡 Medium — add Prometheus query proxy and time-series charts |
-| 3 | **Flux** | GitOps extension for continuous delivery | ⚠️ CRDs auto-discovered; community plugin exists | 🟡 Medium — build dedicated GitOps dashboard with sync status |
-| 4 | **OPA (Gatekeeper)** | Azure Policy add-on for policy enforcement | ⚠️ CRDs auto-discovered; raw YAML only | 🟡 Medium — build policy dashboard with violation details |
-| 5 | **Istio** | Managed Istio service mesh add-on | ⚠️ Gateway API supported; Istio CRDs auto-discovered | 🟡 Medium — build service mesh topology and traffic views |
-| 6 | **Helm** | Used internally by AKS for add-on/extension deployment | ❌ No Helm support | 🟡 Medium — parse Helm Secrets for read-only release view |
-| 7 | **CoreDNS** | Cluster DNS (managed by AKS) | ✅ ConfigMap viewable; CoreDNS pods visible | 🟢 Easy — no action needed |
-| 8 | **containerd** | Container runtime (managed by AKS) | ✅ Container info visible in Pod details | 🟢 Easy — no action needed |
-| 9 | **etcd** | Backing store (managed by AKS control plane) | N/A — not accessible in managed AKS | N/A |
+| # | Project | AKS Integration | Headlamp Status | Gap |
+|---|---------|----------------|-----------------|-----|
+| 1 | **Kubernetes** | Core platform | ✅ Full support | None |
+| 2 | **Prometheus** | Azure Managed Prometheus | ✅ [prometheus plugin](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) — charts in workload details | Plugin could add more AKS-specific dashboards |
+| 3 | **Flux** | GitOps extension | ✅ [flux plugin](https://github.com/headlamp-k8s/plugins/tree/main/flux) — Flux resource visualization | None |
+| 4 | **OPA (Gatekeeper)** | Azure Policy add-on | ✅ [Gatekeeper plugin](https://github.com/sozercan/gatekeeper-headlamp-plugin) — policies, violations, community library | None (community plugin) |
+| 5 | **Istio** | Managed Istio service mesh | ⚠️ Gateway API supported; Istio CRDs auto-discovered; no dedicated plugin | 🟡 Medium — Istio-specific views needed |
+| 6 | **Helm** | Add-on/extension deployment | ✅ [app-catalog plugin](https://github.com/headlamp-k8s/plugins/tree/main/app-catalog) — Helm chart install & release management | Desktop only |
+| 7 | **CoreDNS** | Cluster DNS (managed) | ✅ ConfigMap viewable; pods visible | None |
+| 8 | **containerd** | Container runtime (managed) | ✅ Container info visible in Pod details | None |
+| 9 | **etcd** | Backing store (managed) | N/A — not user-accessible in managed AKS | N/A |
 
 ### Incubating CNCF Projects
 
-| # | Project | AKS Integration | Headlamp Status | Difficulty |
-|---|---------|----------------|-----------------|------------|
-| 1 | **KEDA** | Managed add-on for event-driven autoscaling | ⚠️ CRDs auto-discovered; raw YAML only | 🟢 Easy — build ScaledObject/ScaledJob detail views |
-| 2 | **Dapr** | Extension for distributed application runtime | ⚠️ CRDs auto-discovered; raw YAML only | 🟡 Medium — build component and sidecar status views |
-| 3 | **Karpenter** | Node Auto-Provisioning (NAP) for dynamic scaling | ⚠️ CRDs auto-discovered; raw YAML only | 🟢 Easy — build NodePool/NodeClaim dashboard |
-| 4 | **Cilium** | Azure CNI with Cilium dataplane for networking | ⚠️ CRDs auto-discovered; raw YAML only | 🟢 Easy — add CiliumNetworkPolicy detail views |
-| 5 | **OpenTelemetry** | Application monitoring auto-instrumentation | ⚠️ CRDs auto-discovered if operator installed | 🟡 Medium — build collector and instrumentation views |
-| 6 | **Virtual Kubelet** | Virtual Nodes (ACI burst) | ⚠️ Virtual nodes visible as regular nodes | 🟢 Easy — add virtual node badge and ACI indicators |
-| 7 | **Secrets Store CSI Driver** | Azure Key Vault secrets provider | ⚠️ CRDs auto-discovered; raw YAML only | 🟡 Medium — build SecretProviderClass status views |
-| 8 | **Grafana** | Azure Managed Grafana for dashboards | ❌ No integration | 🟡 Medium — add deep links to Grafana dashboards |
-| 9 | **Argo CD** | User-installable GitOps alternative to Flux | ⚠️ CRDs auto-discovered; raw YAML only | 🟡 Medium — build Application sync status dashboard |
-| 10 | **OpenCost** | Cost analysis and FinOps | ⚠️ Listed as known integration (plugin) | 🟡 Medium — build cost dashboard via OpenCost API |
+| # | Project | AKS Integration | Headlamp Status | Gap |
+|---|---------|----------------|-----------------|-----|
+| 1 | **KEDA** | Managed autoscaling add-on | ✅ [keda plugin](https://github.com/headlamp-k8s/plugins/tree/main/keda) — ScaledObject/ScaledJob UI with Prometheus metrics | None |
+| 2 | **Dapr** | Extension for microservices | ⚠️ CRDs auto-discovered; no dedicated plugin | 🟡 Medium — Dapr component & sidecar views needed |
+| 3 | **Karpenter** | Node Auto-Provisioning | ✅ [karpenter plugin](https://github.com/headlamp-k8s/plugins/tree/main/karpenter) — NodePool, NodeClaim, pending pod dashboard | None |
+| 4 | **Cilium** | Azure CNI dataplane | ⚠️ CRDs auto-discovered; no dedicated plugin | 🟢 Easy — CiliumNetworkPolicy views |
+| 5 | **OpenTelemetry** | Auto-instrumentation | ⚠️ CRDs auto-discovered; no dedicated plugin | 🟡 Medium — collector & instrumentation views |
+| 6 | **Virtual Kubelet** | Virtual Nodes (ACI) | ⚠️ Nodes visible but not distinguished | 🟢 Easy — badge/icon for virtual nodes |
+| 7 | **Secrets Store CSI** | Key Vault secrets | ⚠️ CRDs auto-discovered; no dedicated plugin | 🟡 Medium — SecretProviderClass views |
+| 8 | **Argo CD** | User-installable GitOps | ⚠️ CRDs auto-discovered; no dedicated plugin | 🟡 Medium — Application sync dashboard |
+| 9 | **OpenCost** | Cost analysis | ✅ [opencost plugin](https://github.com/headlamp-k8s/plugins/tree/main/opencost) — workload cost visibility | None |
+| 10 | **Knative** | User-installable serverless | ✅ [knative plugin](https://github.com/headlamp-k8s/plugins/tree/main/knative) — Knative resource management | None |
 
 ### Sandbox / Other CNCF Projects
 
-| # | Project | AKS Integration | Headlamp Status | Difficulty |
-|---|---------|----------------|-----------------|------------|
-| 1 | **Inspektor Gadget** | eBPF-based debugging and tracing | ⚠️ Listed as known integration | 🟡 Medium — build trace visualization views |
-| 2 | **KubeVirt** | VM workloads on Kubernetes | ⚠️ Listed as known integration | 🟡 Medium — build VM lifecycle management views |
-| 3 | **Kyverno** | Policy engine (alternative to OPA) | ⚠️ CRDs auto-discovered; raw YAML only | 🟡 Medium — build policy and report views |
-| 4 | **Trivy** | Vulnerability scanning | ⚠️ Listed as known integration | 🟡 Medium — build vulnerability report dashboard |
-| 5 | **NGINX Ingress** | Web Application Routing add-on | ✅ Ingress/IngressClass fully supported | 🟢 Easy — already supported |
-| 6 | **cert-manager** | Certificate management (user-installed) | ⚠️ CRDs auto-discovered; raw YAML only | 🟢 Easy — build Certificate status views |
+| # | Project | AKS Integration | Headlamp Status | Gap |
+|---|---------|----------------|-----------------|-----|
+| 1 | **Inspektor Gadget** | eBPF debugging | ✅ [plugin](https://github.com/inspektor-gadget/headlamp-plugin/) — gadget execution & visualization | None (community plugin) |
+| 2 | **KubeVirt** | VM workloads | ✅ [plugin](https://github.com/buttahtoast/headlamp-plugins/tree/main/kubevirt) — VM management | None (community plugin) |
+| 3 | **Kyverno** | Policy engine | ⚠️ [plugin](https://github.com/kubebeam/kyverno-headlamp-plugin) exists but is archived | 🟡 Medium — needs maintainer or replacement |
+| 4 | **Trivy** | Vulnerability scanning | ✅ [plugin](https://github.com/kubebeam/trivy-headlamp-plugin) — compliance & vulnerability reports | None (community plugin) |
+| 5 | **Kubescape** | Security scanning | ✅ [plugin](https://github.com/kubescape/headlamp-plugin) — configuration & vulnerability scanning | None (community plugin) |
+| 6 | **NGINX Ingress** | Web App Routing add-on | ✅ Ingress/IngressClass fully supported in core | None |
+| 7 | **cert-manager** | Certificate management | ✅ [cert-manager plugin](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) — certificate & issuer UI | None |
+
+### Other AKS-Relevant Projects (Not CNCF)
+
+| # | Project | AKS Integration | Headlamp Status | Gap |
+|---|---------|----------------|-----------------|-----|
+| 1 | **KAITO** | AI/ML model deployment | ✅ [KAITO plugin](https://github.com/kaito-project/headlamp-kaito) — model deployment & GPU provisioning UI | None (community plugin) |
+| 2 | **Grafana** | Azure Managed Grafana | ❌ No integration | 🟡 Medium — deep links to dashboards |
+| 3 | **Volcano** | Batch scheduling | ✅ [volcano plugin](https://github.com/headlamp-k8s/plugins/tree/main/volcano) — Volcano job management | None |
 
 ---
 
-## Part 3: Summary Ranked by Difficulty
+## Part 4: Summary Ranked by Difficulty
 
-### 🟢 Easy (small frontend changes, uses existing Kubernetes APIs)
+### ✅ Already Covered (existing plugins — install and use)
+
+| Feature | Plugin | Type |
+|---------|--------|------|
+| Helm chart management | [app-catalog](https://github.com/headlamp-k8s/plugins/tree/main/app-catalog) | Official (desktop) |
+| KEDA autoscaling | [keda](https://github.com/headlamp-k8s/plugins/tree/main/keda) | Official |
+| Karpenter / NAP | [karpenter](https://github.com/headlamp-k8s/plugins/tree/main/karpenter) | Official |
+| Flux GitOps | [flux](https://github.com/headlamp-k8s/plugins/tree/main/flux) | Official |
+| cert-manager | [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) | Official |
+| OpenCost | [opencost](https://github.com/headlamp-k8s/plugins/tree/main/opencost) | Official |
+| Prometheus metrics | [prometheus](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) | Official (default) |
+| OPA Gatekeeper | [Gatekeeper](https://github.com/sozercan/gatekeeper-headlamp-plugin) | Community |
+| Trivy scanning | [Trivy](https://github.com/kubebeam/trivy-headlamp-plugin) | Community |
+| Kubescape scanning | [Kubescape](https://github.com/kubescape/headlamp-plugin) | Community |
+| KubeVirt VMs | [KubeVirt](https://github.com/buttahtoast/headlamp-plugins/tree/main/kubevirt) | Community |
+| Inspektor Gadget | [Inspektor Gadget](https://github.com/inspektor-gadget/headlamp-plugin/) | Community |
+| KAITO AI models | [KAITO](https://github.com/kaito-project/headlamp-kaito) | Community |
+| Knative serverless | [knative](https://github.com/headlamp-k8s/plugins/tree/main/knative) | Official |
+| Volcano batch | [volcano](https://github.com/headlamp-k8s/plugins/tree/main/volcano) | Official |
+
+### 🟢 Easy (small frontend changes, existing Kubernetes APIs)
 
 | Feature | Effort Estimate | Notes |
 |---------|----------------|-------|
 | Node pool grouping / visualization | ~2-3 days | Label-based grouping in existing Node list |
-| KEDA ScaledObject detail views | ~2-3 days | CRD detail view plugin |
-| Karpenter NodePool dashboard | ~2-3 days | CRD detail view plugin |
 | VPA recommendations comparison | ~1-2 days | Enhancement to existing VPA detail view |
 | Virtual Node indicators | ~1 day | Badge/icon in existing Node view |
-| Cilium NetworkPolicy views | ~2-3 days | CRD detail view plugin |
-| cert-manager Certificate views | ~2-3 days | CRD detail view plugin |
 | Network Policy visualization | ~3-5 days | Diagram component for policy rules |
+| Cilium NetworkPolicy views | ~2-3 days | CRD detail view plugin |
 
 ### 🟡 Medium (new components, CRD aggregation, some backend work)
 
 | Feature | Effort Estimate | Notes |
 |---------|----------------|-------|
-| Flux GitOps dashboard | ~5-8 days | Multi-CRD aggregation, dependency graph |
-| Istio service mesh views | ~5-10 days | CRD views + Prometheus for traffic metrics |
-| OPA Gatekeeper policy dashboard | ~5-8 days | ConstraintTemplate + dynamic Constraint CRDs |
-| Helm release viewer (read-only) | ~3-5 days | Parse Helm Secrets; no backend changes |
+| Istio service mesh views | ~5-10 days | CRD views + mesh topology visualization |
 | Workload Identity visualization | ~3-5 days | ServiceAccount annotation parsing |
 | Key Vault CSI driver views | ~3-5 days | SecretProviderClass CRD status views |
-| Prometheus query integration | ~5-8 days | Backend proxy + frontend time-series charts |
 | Dapr component views | ~3-5 days | CRD views + sidecar detection |
 | OpenTelemetry views | ~3-5 days | Collector and instrumentation CRD views |
 | Grafana dashboard links | ~2-3 days | Configurable external dashboard URL linking |
 | Argo CD Application views | ~5-8 days | Application CRD sync status dashboard |
-| OpenCost dashboard | ~5-8 days | OpenCost API integration + cost charts |
 | eTag conflict detection | ~3-5 days | resourceVersion conflict UI in YAML editor |
-| Inspektor Gadget views | ~3-5 days | Trace CRD visualization |
-| KubeVirt VM views | ~5-8 days | VM lifecycle management CRD views |
-| Kyverno policy views | ~5-8 days | Policy and report CRD views |
-| Trivy vulnerability dashboard | ~5-8 days | VulnerabilityReport CRD aggregation |
+| Kyverno policy views (revive) | ~5-8 days | Archived plugin needs new maintainer or rebuild |
 
-### 🔴 Hard (Azure-specific APIs, new auth flows, complex integrations)
+### 🔴 Hard (Azure-specific APIs, new auth flows)
 
 | Feature | Effort Estimate | Notes |
 |---------|----------------|-------|
@@ -479,29 +446,47 @@ the current Headlamp support status and what could be done is listed.
 
 ---
 
-## Part 4: Recommended Implementation Order
-
-Based on impact and difficulty, here is a suggested order for implementation:
+## Part 5: Recommended Implementation Order
 
 ### Phase 1: Quick Wins (Easy, High Impact)
-1. **Node pool visualization** — Improves the AKS experience immediately with minimal effort.
-2. **KEDA ScaledObject views** — KEDA is one of the most popular AKS add-ons.
-3. **VPA recommendations** — Directly helps users optimize resource allocation.
-4. **Virtual Node indicators** — Small change, makes ACI nodes immediately recognizable.
+1. **Node pool visualization** — Group nodes by AKS node pool label; immediate UX improvement.
+2. **VPA recommendations** — Show current vs recommended resources side-by-side.
+3. **Virtual Node indicators** — Badge/icon to distinguish ACI-backed nodes.
+4. **Network Policy diagrams** — Visual ingress/egress rule representation.
 
-### Phase 2: CNCF Ecosystem (Medium, High Value)
-5. **Flux GitOps dashboard** — GitOps is the primary deployment model for AKS workloads.
-6. **Helm release viewer** — Helm is ubiquitous; even read-only viewing is very valuable.
-7. **OPA Gatekeeper dashboard** — Policy compliance is a top enterprise concern.
-8. **Prometheus integration** — Unlocks richer metrics for all other features.
+### Phase 2: Fill Remaining CNCF Gaps (Medium)
+5. **Istio service mesh views** — Growing AKS adoption; no plugin exists yet.
+6. **Argo CD dashboard** — Popular GitOps alternative to Flux; no plugin exists yet.
+7. **Dapr component views** — Official AKS extension; no plugin exists yet.
+8. **Key Vault CSI driver views** — Common AKS security pattern; no plugin exists yet.
 
-### Phase 3: Advanced Networking & Security (Medium)
-9. **Istio service mesh views** — Service mesh adoption is growing rapidly on AKS.
-10. **Karpenter dashboard** — NAP is increasingly used for cost optimization.
-11. **Workload Identity views** — Security-focused users need identity visibility.
-12. **Key Vault CSI driver views** — Secrets management is critical for production workloads.
+### Phase 3: Enhanced Experiences (Medium)
+9. **Workload Identity visualization** — AKS desktop supports this during deployment; Headlamp could show it for existing resources.
+10. **OpenTelemetry views** — Increasingly important for AKS observability.
+11. **Grafana dashboard links** — Deep links from Headlamp to Grafana dashboards.
+12. **Kyverno plugin revival** — Archived community plugin needs new maintainer.
 
 ### Phase 4: Azure-Specific Features (Hard)
 13. **Azure Monitor integration** — High value but requires Azure-specific auth work.
-14. **Cluster upgrade management** — Important for operations but complex to implement safely.
-15. **Cost analysis** — High demand but depends on Azure or OpenCost API integration.
+14. **Cluster upgrade management** — Important for operations but complex to implement.
+15. **Azure Cost Management** — High demand but the OpenCost plugin covers K8s-native costs.
+
+---
+
+## Part 6: Key Takeaway
+
+Of the ~30 AKS-relevant features analyzed, **15 are already covered** by existing official
+or community plugins. The main gaps are:
+- **5 Easy items** — small frontend enhancements (node pools, VPA, virtual nodes, network
+  policy visualization, Cilium)
+- **9 Medium items** — new plugin development needed (Istio, Argo CD, Dapr, Key Vault CSI,
+  OpenTelemetry, Workload Identity, Grafana links, eTag conflict detection, Kyverno revival)
+- **5 Hard items** — Azure-specific API integrations (Monitor, upgrades, maintenance, cost
+  management, Defender)
+
+The existing plugin ecosystem covers the most commonly requested CNCF integrations
+(KEDA, Karpenter, Flux, Helm, Prometheus, cert-manager, OPA Gatekeeper, OpenCost, Trivy,
+Kubescape, KubeVirt, Inspektor Gadget, KAITO). Additionally,
+[AKS desktop](https://github.com/Azure/aks-desktop) (built on Headlamp) has already
+implemented several Azure-specific features (Projects, Deployment Wizard, Workload Identity,
+ACR integration) that could inform future upstream contributions.
