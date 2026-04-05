@@ -651,7 +651,7 @@ Columns:
   `storybook.test.tsx` file does **not** count — it only runs Storybook snapshot tests, not
   plugin-specific tests)
 - **Storybook** — has Storybook stories for visual testing
-- **a11y** — has runtime accessibility testing (axe-core, pa11y), not just lint
+- **a11y** — has ≥ 5 `aria-*` attributes in src/ (indicating intentional accessibility work)
 - **i18n** — has full internationalization (multiple language files, not just a script)
 - **≥ 0.5** — version ≥ 0.5.0 (indicates stability beyond early alpha)
 - **Official repo** — lives in [headlamp-k8s/plugins](https://github.com/headlamp-k8s/plugins/)
@@ -659,49 +659,48 @@ Columns:
 
 | Plugin | Tests | Storybook | a11y | i18n | ≥ 0.5 | Official repo | Score | Status |
 |--------|:-----:|:---------:|:----:|:----:|:-----:|:-------------:|:-----:|:------:|
-| ◆ **app-catalog** (0.8.0) | ❌ | ✅ 2 stories | ❌ | ✅ 19 langs | ✅ | ✅ | 4/6 | 🟠 |
-| ◆ **prometheus** (0.8.2) | ✅ | ✅ 2 stories | ❌ | ✅ 19 langs | ✅ | ✅ | 5/6 | 🟠 |
-| ◆ **flux** (0.6.0) | ❌ | ❌ | ❌ | ⚠️ script only | ✅ | ✅ | 2/6 | 🔴 |
-| ● **plugin-catalog** (0.4.3) | ❌ | ✅ 4 stories | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
-| ◆ **Kubescape** (0.10.6) | ✅ | ❌ | ❌ | ✅ | ✅ | ⚠️ project repo | 3/6 | 🟠 |
-| ● **Strimzi** (0.3.9) | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ external | 1/6 | 🔴 |
-| ▲ **Trivy** (0.3.1) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ external | 0/6 | 🔴 |
-| ● **karpenter** (0.2.0-alpha) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
-| ● **knative** (0.2.0-alpha) | ✅ | ✅ 9 stories | ❌ | ⚠️ en only | ❌ | ✅ | 3/6 | 🟠 |
-| ● **ai-assistant** (0.2.0-alpha) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
-| ▲ **Gatekeeper** (0.2.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ external | 0/6 | 🔴 |
-| ● **opencost** (0.1.3) | ❌ | ✅ 1 story | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
-| ● **keda** (0.1.1-beta) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
-| ▲ **Kyverno** (0.1.1) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ archived | 0/6 | 🔴 |
-| ● **cert-manager** (0.1.0) | ❌ | ✅ 9 stories | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
-| ● **cluster-api** (0.1.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
+| ◆ **prometheus** (0.8.2) | ✅ | ✅ 2 stories | ✅ 7 files | ✅ 19 langs | ✅ | ✅ | 6/6 | 🟢 |
+| ◆ **app-catalog** (0.8.0) | ❌ | ✅ 3 stories | ✅ 6 files | ✅ 19 langs | ✅ | ✅ | 5/6 | 🟠 |
+| ● **knative** (0.2.0-alpha) | ✅ | ✅ 9 stories | ✅ 26 files | ⚠️ en only | ❌ | ✅ | 4/6 | 🟠 |
+| ◆ **Kubescape** (0.10.6) | ✅ | ❌ | ✅ 26 files | ✅ | ✅ | ⚠️ project repo | 4/6 | 🟠 |
+| ◆ **flux** (0.6.0) | ❌ | ❌ | ✅ 5 files | ⚠️ script only | ✅ | ✅ | 3/6 | 🟠 |
+| ● **cert-manager** (0.1.0) | ❌ | ✅ 13 stories | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
+| ● **plugin-catalog** (0.4.3) | ❌ | ✅ 5 stories | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
 | ● **backstage** (0.1.0-beta-2) | ❌ | ✅ 2 stories | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
-| ▲ **Inspektor Gadget** (0.1.0-beta.3) | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ project repo | 0/6 | 🔴 |
-| ▲ **KAITO** (0.0.7) | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ project repo | 0/6 | 🔴 |
-| ▲ **KubeVirt** (0.0.1-beta7) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ external | 0/6 | 🔴 |
+| ● **opencost** (0.1.3) | ❌ | ✅ 1 story | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
+| ● **ai-assistant** (0.2.0-alpha) | ❌ | ❌ | ✅ 27 files | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
+| ● **karpenter** (0.2.0-alpha) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
+| ● **keda** (0.1.1-beta) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
+| ● **cluster-api** (0.1.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
 | ● **Kubeflow** (plugin exists) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
 | ● **Volcano** (plugin exists) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
+| ▲ **Inspektor Gadget** (0.1.0-beta.3) | ❌ | ❌ | ✅ 19 files | ❌ | ❌ | ⚠️ project repo | 1/6 | 🔴 |
+| ● **Strimzi** (0.3.9) | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ external | 1/6 | 🔴 |
+| ▲ **Trivy** (0.3.1) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ external | 0/6 | 🔴 |
+| ▲ **Gatekeeper** (0.2.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ external | 0/6 | 🔴 |
+| ▲ **Kyverno** (0.1.1) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ archived | 0/6 | 🔴 |
+| ▲ **KAITO** (0.0.7) | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ project repo | 0/6 | 🔴 |
+| ▲ **KubeVirt** (0.0.1-beta7) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ external | 0/6 | 🔴 |
 
 **Key findings:**
-- **0 plugins are ◆ 🟢 green** in this scorecard — green here means **all 6 criteria** are met,
-  which is stricter than the Venn diagram (where green = score 3+, meaning "most criteria met").
-  The 4 plugins with score ≥ 3/6 (prometheus 5/6, app-catalog 4/6, knative 3/6, Kubescape 3/6)
-  appear green in the Venn diagram but still fall short of the full 6/6 scorecard bar.
+- **1 plugin is ◆ 🟢 green** — prometheus (6/6) is the only plugin meeting all 6 criteria.
+  Green in this scorecard means **all 6 criteria** are met, which is stricter than the Venn
+  diagram (where green = score 3+, meaning "most criteria met").
+- **4 plugins are 🟠 orange** (score 3-5/6): app-catalog (5/6), knative (4/6), Kubescape (4/6),
+  flux (3/6) — promising but not fully mature
+- **17 plugins are 🔴 red** with score 0-2 (very immature or early-stage)
 - **Only 3 of 22 plugins have real unit/integration tests** — 2 official (prometheus: util.test.ts;
   knative: url, ingress, nullable, time tests) and 1 community (Kubescape: layout.test.ts).
   All other plugins only have the auto-generated `storybook.test.tsx`, which does not count as
   plugin-specific testing
-- **7 of 22 plugins have Storybook stories** — cert-manager and knative lead with 9 stories each,
-  followed by plugin-catalog (4), app-catalog (2), prometheus (2), backstage (2), and opencost (1).
-  The remaining 15 plugins have no stories.
-- **4 plugins are 🟠 orange** (score ≥ 3/6): prometheus (5/6), app-catalog (4/6), knative (3/6),
-  Kubescape (3/6)
-- **18 plugins are 🔴 red** with score 0-2 (very immature or early-stage)
-- **0 plugins have runtime a11y tests** — all rely on lint-time jsx-a11y only
-- Even the **4 orange plugins** (prometheus, app-catalog, knative, Kubescape) still lack
-  a11y testing — they are the closest to production-grade but not there yet
+- **8 of 22 plugins have Storybook stories** — cert-manager leads with 13 stories, followed by
+  knative (9), plugin-catalog (5), app-catalog (3), backstage (2), prometheus (2), opencost (1),
+  and minikube (1, not in this table). The remaining 14 plugins have no stories.
+- **8 of 22 plugins have ≥ 5 aria attributes** — ai-assistant leads (27 files), followed by
+  knative (26), Kubescape (26), Inspektor Gadget (19), prometheus (7), app-catalog (6),
+  flux (5). The remaining 14 plugins have fewer than 5 aria attributes.
 - This confirms the crux: **making existing plugins production-grade is harder than building
-  new ones**, because no current plugin meets all 6 quality dimensions
+  new ones**, because only 1 of 22 plugins meets all 6 quality dimensions
 
 ---
 
@@ -774,7 +773,9 @@ community plugin repositories on GitHub (checked April 2026).
   prometheus. Flux has the i18n script but no language declarations beyond English.
 - **No plugins have dedicated a11y test suites** — all include `plugin:jsx-a11y/recommended`
   in ESLint (lint-time checks only), but none have runtime a11y testing (e.g. axe-core,
-  pa11y, or Storybook a11y addon integration tests).
+  pa11y, or Storybook a11y addon integration tests). However, **7 plugins have ≥ 5 aria attributes**
+  in their src/ folder, indicating intentional accessibility work: ai-assistant (27 files),
+  knative (26), Kubescape (26), Inspektor Gadget (19), prometheus (7), app-catalog (6), flux (5).
 - **Only 2 of 12 official plugins have real unit/integration tests** — prometheus (util.test.ts)
   and knative (url, ingress, nullable, time tests). All other official plugins only have the
   auto-generated `storybook.test.tsx`, which runs Storybook snapshot tests, not plugin-specific
@@ -785,33 +786,33 @@ community plugin repositories on GitHub (checked April 2026).
 
 #### Official Plugins
 
-| Plugin | Version | i18n | a11y Lint | a11y Tests | Maturity | Notes |
-|--------|---------|------|-----------|------------|----------|-------|
-| [app-catalog](https://github.com/headlamp-k8s/plugins/tree/main/app-catalog) | 0.8.0 | ✅ 19 langs | ✅ jsx-a11y | ❌ None | Maturing | Closest to v1.0 alongside Prometheus |
-| [prometheus](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) | 0.8.2 | ✅ 19 langs | ✅ jsx-a11y | ❌ None | Maturing | Shipped by default; best i18n coverage |
-| [flux](https://github.com/headlamp-k8s/plugins/tree/main/flux) | 0.6.0 | ⚠️ Script only | ✅ jsx-a11y | ❌ None | Stable | Has i18n script but no `headlamp.i18n` lang config |
-| [plugin-catalog](https://github.com/headlamp-k8s/plugins/tree/main/plugin-catalog) | 0.4.3 | ⚠️ Script only | ✅ jsx-a11y | ❌ None | Stable | Shipped by default |
-| [karpenter](https://github.com/headlamp-k8s/plugins/tree/main/karpenter) | 0.2.0 | ⚠️ Script only | ✅ jsx-a11y | ❌ None | Alpha | Description says "Alpha Release" |
-| [knative](https://github.com/headlamp-k8s/plugins/tree/main/knative) | 0.2.0-alpha | ⚠️ en only | ✅ jsx-a11y | ❌ None | Alpha | i18n configured but only English |
-| [ai-assistant](https://github.com/headlamp-k8s/plugins/tree/main/ai-assistant) | 0.2.0-alpha | ⚠️ Script only | ✅ jsx-a11y | ❌ None | Alpha | Complex dependencies (LangChain, MCP) |
-| [opencost](https://github.com/headlamp-k8s/plugins/tree/main/opencost) | 0.1.3 | ⚠️ Script only | ✅ jsx-a11y | ❌ None | Early | |
-| [keda](https://github.com/headlamp-k8s/plugins/tree/main/keda) | 0.1.1-beta | ❌ No i18n | ✅ jsx-a11y | ❌ None | Beta | No i18n script or config |
-| [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) | 0.1.0 | ❌ No i18n | ✅ jsx-a11y | ❌ None | Early | No i18n script or config |
-| [cluster-api](https://github.com/headlamp-k8s/plugins/tree/main/cluster-api) | 0.1.0 | ❌ No i18n | ✅ jsx-a11y | ❌ None | Early | No i18n script or config |
-| [backstage](https://github.com/headlamp-k8s/plugins/tree/main/backstage) | 0.1.0-beta-2 | ⚠️ Script only | ✅ jsx-a11y | ❌ None | Beta | |
+| Plugin | Version | i18n | a11y Lint | aria attrs | Storybook | Maturity | Notes |
+|--------|---------|------|-----------|------------|-----------|----------|-------|
+| [app-catalog](https://github.com/headlamp-k8s/plugins/tree/main/app-catalog) | 0.8.0 | ✅ 19 langs | ✅ jsx-a11y | ✅ 6 files | ✅ 3 stories | Maturing | Closest to v1.0 alongside Prometheus |
+| [prometheus](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) | 0.8.2 | ✅ 19 langs | ✅ jsx-a11y | ✅ 7 files | ✅ 2 stories | Maturing | Shipped by default; best i18n coverage |
+| [flux](https://github.com/headlamp-k8s/plugins/tree/main/flux) | 0.6.0 | ⚠️ Script only | ✅ jsx-a11y | ✅ 5 files | ❌ | Stable | Has i18n script but no `headlamp.i18n` lang config |
+| [plugin-catalog](https://github.com/headlamp-k8s/plugins/tree/main/plugin-catalog) | 0.4.3 | ⚠️ Script only | ✅ jsx-a11y | ❌ | ✅ 5 stories | Stable | Shipped by default |
+| [karpenter](https://github.com/headlamp-k8s/plugins/tree/main/karpenter) | 0.2.0 | ⚠️ Script only | ✅ jsx-a11y | ❌ | ❌ | Alpha | Description says "Alpha Release" |
+| [knative](https://github.com/headlamp-k8s/plugins/tree/main/knative) | 0.2.0-alpha | ⚠️ en only | ✅ jsx-a11y | ✅ 26 files | ✅ 9 stories | Alpha | i18n configured but only English |
+| [ai-assistant](https://github.com/headlamp-k8s/plugins/tree/main/ai-assistant) | 0.2.0-alpha | ⚠️ Script only | ✅ jsx-a11y | ✅ 27 files | ❌ | Alpha | Complex dependencies (LangChain, MCP) |
+| [opencost](https://github.com/headlamp-k8s/plugins/tree/main/opencost) | 0.1.3 | ⚠️ Script only | ✅ jsx-a11y | ❌ | ✅ 1 story | Early | |
+| [keda](https://github.com/headlamp-k8s/plugins/tree/main/keda) | 0.1.1-beta | ❌ No i18n | ✅ jsx-a11y | ❌ | ❌ | Beta | No i18n script or config |
+| [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) | 0.1.0 | ❌ No i18n | ✅ jsx-a11y | ❌ | ✅ 13 stories | Early | No i18n script or config |
+| [cluster-api](https://github.com/headlamp-k8s/plugins/tree/main/cluster-api) | 0.1.0 | ❌ No i18n | ✅ jsx-a11y | ❌ | ❌ | Early | No i18n script or config |
+| [backstage](https://github.com/headlamp-k8s/plugins/tree/main/backstage) | 0.1.0-beta-2 | ⚠️ Script only | ✅ jsx-a11y | ❌ | ✅ 2 stories | Beta | |
 
 #### Community Plugins
 
-| Plugin | Version | i18n | a11y Lint | Repo | Last Active | Maturity | Migration Work |
-|--------|---------|------|-----------|------|-------------|----------|----------------|
-| [Kubescape](https://github.com/kubescape/headlamp-plugin) | 0.10.6 | ✅ i18n | ✅ jsx-a11y | External | Mar 2026 | **Most mature community plugin** | Medium — different build system, needs CI integration |
-| [Strimzi](https://github.com/cesaroangelo/strimzi-headlamp) | 0.3.9 | ✅ i18n | ✅ jsx-a11y | External | Mar 2026 | Stable | Medium — individual developer, need maintainer agreement |
-| [Trivy](https://github.com/kubebeam/trivy-headlamp-plugin) | 0.3.1 | ❌ | ✅ jsx-a11y | External | Oct 2025 | Developing | Medium — kubebeam org, compliance-focused |
-| [Gatekeeper](https://github.com/sozercan/gatekeeper-headlamp-plugin) | 0.2.0 | ❌ | ✅ jsx-a11y | External | Nov 2025 | Stable | Low — single maintainer, smaller codebase |
-| [Inspektor Gadget](https://github.com/inspektor-gadget/headlamp-plugin/) | 0.1.0-beta.3 | ❌ | ✅ jsx-a11y | External | Mar 2026 | Beta | High — WASM dependencies, complex build |
-| [KAITO](https://github.com/kaito-project/headlamp-kaito) | 0.0.7 | ❌ | ⚠️ Implicit | External | Aug 2025 | Early | Medium — Microsoft-backed project |
-| [KubeVirt](https://github.com/buttahtoast/headlamp-plugins/tree/main/kubevirt) | 0.0.1-beta7 | ❌ | ✅ jsx-a11y | External | Nov 2025 | Beta | Medium — part of multi-plugin repo |
-| [Kyverno](https://github.com/kubebeam/kyverno-headlamp-plugin) | 0.1.1 | ❌ | ✅ jsx-a11y | External (archived) | Nov 2024 | **Unmaintained** | High — needs full rebuild or new maintainer |
+| Plugin | Version | i18n | a11y Lint | aria attrs | Repo | Last Active | Maturity | Migration Work |
+|--------|---------|------|-----------|------------|------|-------------|----------|----------------|
+| [Kubescape](https://github.com/kubescape/headlamp-plugin) | 0.10.6 | ✅ i18n | ✅ jsx-a11y | ✅ 26 files | External | Mar 2026 | **Most mature community plugin** | Medium — different build system, needs CI integration |
+| [Strimzi](https://github.com/cesaroangelo/strimzi-headlamp) | 0.3.9 | ✅ i18n | ✅ jsx-a11y | ❌ | External | Mar 2026 | Stable | Medium — individual developer, need maintainer agreement |
+| [Trivy](https://github.com/kubebeam/trivy-headlamp-plugin) | 0.3.1 | ❌ | ✅ jsx-a11y | ❌ | External | Oct 2025 | Developing | Medium — kubebeam org, compliance-focused |
+| [Gatekeeper](https://github.com/sozercan/gatekeeper-headlamp-plugin) | 0.2.0 | ❌ | ✅ jsx-a11y | ❌ | External | Nov 2025 | Stable | Low — single maintainer, smaller codebase |
+| [Inspektor Gadget](https://github.com/inspektor-gadget/headlamp-plugin/) | 0.1.0-beta.3 | ❌ | ✅ jsx-a11y | ✅ 19 files | External | Mar 2026 | Beta | High — WASM dependencies, complex build |
+| [KAITO](https://github.com/kaito-project/headlamp-kaito) | 0.0.7 | ❌ | ⚠️ Implicit | ❌ | External | Aug 2025 | Early | Medium — Microsoft-backed project |
+| [KubeVirt](https://github.com/buttahtoast/headlamp-plugins/tree/main/kubevirt) | 0.0.1-beta7 | ❌ | ✅ jsx-a11y | ❌ | External | Nov 2025 | Beta | Medium — part of multi-plugin repo |
+| [Kyverno](https://github.com/kubebeam/kyverno-headlamp-plugin) | 0.1.1 | ❌ | ✅ jsx-a11y | ❌ | External (archived) | Nov 2024 | **Unmaintained** | High — needs full rebuild or new maintainer |
 
 #### What "Production-Grade" Means for Plugins
 
