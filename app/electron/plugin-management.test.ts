@@ -210,6 +210,62 @@ describe('PluginManager', () => {
       fs.rmSync(testDataDir, { recursive: true });
     }
   }, 30000);
+
+  it('should install plugin across different directory trees (cross-device linking scenario)', async () => {
+    // This test verifies that plugin installation works when source (temp) and
+    // destination directories are in different directory trees, which simulates
+    // the Flatpak cross-device linking scenario where fs.rename() would fail
+    // with EXDEV. The moveDirs() function uses cpSync+rmSync to handle this.
+    const testDataDir = getUniqueTestDir(TEST_DATA_BASE_DIR, 'cross-device-data');
+    // Use a separate base directory to simulate different filesystem trees
+    const separateBaseDir = path.join(os.tmpdir(), 'headlamp-cross-device-test');
+    const pluginDestDir = getUniqueTestDir(separateBaseDir, 'cross-device-plugins');
+
+    // Create test tarball
+    await createMinimalPluginTarball(testDataDir);
+
+    // Mock the API without platform-specific archives
+    mockArtifactHubAPIWithoutPlatformSpecific(testDataDir);
+
+    const pluginURL = 'https://artifacthub.io/packages/headlamp/test-repo/headlamp_minikube';
+    const progress: any[] = [];
+
+    const progressCallback = (update: any) => {
+      progress.push(update);
+    };
+
+    await PluginManager.install(pluginURL, pluginDestDir, HEADLAMP_VERSION, progressCallback, null);
+
+    // Verify the plugin was installed successfully
+    const pluginDir = path.join(pluginDestDir, 'headlamp_minikube');
+    expect(fs.existsSync(pluginDir)).toBe(true);
+    expect(fs.lstatSync(pluginDir).isDirectory()).toBe(true);
+
+    // Verify main.js exists from the main archive
+    const mainJsPath = path.join(pluginDir, 'main.js');
+    expect(fs.existsSync(mainJsPath)).toBe(true);
+
+    // Verify package.json exists with correct metadata
+    const packageJson = JSON.parse(fs.readFileSync(path.join(pluginDir, 'package.json'), 'utf8'));
+    expect(packageJson.name).toBe('headlamp_minikube');
+    expect(packageJson.isManagedByHeadlampPlugin).toBe(true);
+
+    // Verify success progress message
+    const successMessages = progress.filter(p => p.type === 'success');
+    expect(successMessages.length).toBe(1);
+    expect(successMessages[0].message).toBe('Plugin Installed');
+
+    // Clean up
+    if (fs.existsSync(pluginDestDir)) {
+      fs.rmSync(pluginDestDir, { recursive: true });
+    }
+    if (fs.existsSync(testDataDir)) {
+      fs.rmSync(testDataDir, { recursive: true });
+    }
+    if (fs.existsSync(separateBaseDir)) {
+      fs.rmSync(separateBaseDir, { recursive: true });
+    }
+  }, 30000);
 });
 
 /**
