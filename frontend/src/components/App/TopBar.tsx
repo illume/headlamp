@@ -186,6 +186,33 @@ export interface PureTopBarProps {
   onToggleOpen: () => void;
 }
 
+/**
+ * Wrapper that only renders a MenuItem if its children produce visible content.
+ * This prevents empty MenuItems when a component (e.g. ClusterTitle) renders null.
+ */
+function MenuItemIfVisible({ children }: { children: React.ReactNode }) {
+  const ref = React.useRef<HTMLLIElement>(null);
+  const [hasContent, setHasContent] = React.useState(true);
+
+  React.useEffect(() => {
+    if (ref.current) {
+      // Check if the menuitem has any visible child content
+      const hasVisibleContent =
+        ref.current.childNodes.length > 1 ||
+        (ref.current.childNodes.length === 1 &&
+          ref.current.childNodes[0].nodeType !== Node.COMMENT_NODE &&
+          (ref.current.childNodes[0] as HTMLElement).offsetHeight > 0);
+      setHasContent(hasVisibleContent);
+    }
+  }, [children]);
+
+  if (!hasContent) {
+    return null;
+  }
+
+  return <MenuItem ref={ref}>{children}</MenuItem>;
+}
+
 function AppBarActionsMenu({
   appBarActions,
 }: {
@@ -198,7 +225,7 @@ function AppBarActionsMenu({
         if (React.isValidElement(Action)) {
           return (
             <ErrorBoundary>
-              <MenuItem>{Action}</MenuItem>
+              <MenuItemIfVisible>{Action}</MenuItemIfVisible>
             </ErrorBoundary>
           );
         } else if (Action === null) {
@@ -207,9 +234,9 @@ function AppBarActionsMenu({
           const ActionComponent = Action as React.FC;
           return (
             <ErrorBoundary>
-              <MenuItem>
+              <MenuItemIfVisible>
                 <ActionComponent />
-              </MenuItem>
+              </MenuItemIfVisible>
             </ErrorBoundary>
           );
         }
@@ -406,24 +433,29 @@ export const PureTopBar = memo(
       },
       {
         id: DefaultAppBarAction.SETTINGS,
-        action: isClusterContext ? <SettingsButton onClickExtra={handleMenuClose} /> : null,
+        action: isClusterContext ? (
+          <SettingsButton onClickExtra={handleMenuClose} showLabel />
+        ) : null,
       },
       {
         id: DefaultAppBarAction.USER,
         action: showUserMenu && (
-          <IconButton
+          <Box
+            sx={{ display: 'flex', alignItems: 'center', width: '100%' }}
+            role="button"
             aria-label={t('Account of current user')}
             aria-controls={userMenuId}
             aria-haspopup="true"
-            color="inherit"
             onClick={event => {
               handleMenuClose();
               handleProfileMenuOpen(event);
             }}
-            size="medium"
           >
-            <Icon icon="mdi:account" />
-          </IconButton>
+            <ListItemIcon>
+              <Icon icon="mdi:account" />
+            </ListItemIcon>
+            <ListItemText>{t('Account of current user')}</ListItemText>
+          </Box>
         ),
       },
     ];

@@ -14,20 +14,48 @@
  * limitations under the License.
  */
 
+import { Icon } from '@iconify/react';
+import Box from '@mui/material/Box';
+import ListItemIcon from '@mui/material/ListItemIcon';
+import ListItemText from '@mui/material/ListItemText';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
 import { getCluster } from '../../../lib/cluster';
 import { createRouteURL } from '../../../lib/router/createRouteURL';
 import ActionButton from '../../common/ActionButton';
 
-export default function SettingsButton(props: { onClickExtra?: () => void }) {
-  const { onClickExtra } = props;
+export default function SettingsButton(props: {
+  onClickExtra?: () => void;
+  showLabel?: boolean;
+}) {
+  const { onClickExtra, showLabel } = props;
   const { t } = useTranslation(['glossary', 'translation']);
   const history = useHistory();
   const clusterName = getCluster();
 
   if (clusterName === null) {
     return null;
+  }
+
+  const handleClick = () => {
+    history.push(createRouteURL('settingsCluster', { cluster: clusterName }));
+    onClickExtra && onClickExtra();
+  };
+
+  if (showLabel) {
+    return (
+      <Box
+        sx={{ display: 'flex', alignItems: 'center', width: '100%', cursor: 'pointer' }}
+        role="button"
+        aria-label={t('translation|Settings')}
+        onClick={handleClick}
+      >
+        <ListItemIcon>
+          <Icon icon="mdi:cog" />
+        </ListItemIcon>
+        <ListItemText>{t('translation|Settings')}</ListItemText>
+      </Box>
+    );
   }
 
   return (
@@ -37,10 +65,7 @@ export default function SettingsButton(props: { onClickExtra?: () => void }) {
       iconButtonProps={{
         color: 'inherit',
       }}
-      onClick={() => {
-        history.push(createRouteURL('settingsCluster', { cluster: clusterName }));
-        onClickExtra && onClickExtra();
-      }}
+      onClick={handleClick}
     />
   );
 }
