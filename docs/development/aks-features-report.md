@@ -25,6 +25,115 @@ implemented.
 
 ---
 
+## Strategic Alternatives (5 engineers, 3 months + 2 FTE AKS desktop)
+
+This section presents 3 strategic options for a team of 5 engineers over a 3-month project,
+plus 2 full-time engineers dedicated to AKS desktop. The analysis uses the "diagnose → guiding
+policy → coherent action" structure from Richard Rumelt's *Good Strategy Bad Strategy* and
+identifies the **crux** — the single hardest challenge whose resolution unlocks the rest.
+
+### The Crux
+
+**The plugin ecosystem is broad but shallow.** Headlamp has 20+ plugins covering AKS-relevant
+features, but most are early-stage (v0.1.x), lack internationalization (only 2 of 12 official
+plugins have full i18n), have no dedicated a11y test suites, and community plugins live outside
+the official repo — making quality, maintenance, and discoverability inconsistent. The crux is
+not "build more plugins" — it is **"make the existing plugins production-grade while filling
+the 3-4 highest-impact gaps."**
+
+### Strategy A: "Go Deep" — Polish Existing, Fill Critical Gaps
+
+**Diagnosis:** The biggest immediate value is making what already exists reliable and
+enterprise-ready. 15+ features are "covered" but most plugins are alpha/beta quality.
+
+**Guiding policy:** Prioritize depth over breadth. Bring the 8-10 most important existing
+plugins to v1.0 production quality before building new ones.
+
+**Coherent actions (5 engineers × 3 months):**
+
+| Month | 3 Engineers (Core Plugins) | 2 Engineers (New Plugins) |
+|-------|---------------------------|--------------------------|
+| **1** | Bring Flux (0.6.0), Prometheus (0.8.2), app-catalog (0.8.0) to v1.0: full i18n (19 langs), a11y test suites, Storybook coverage, e2e tests | Build **Argo CD** plugin (highest-impact gap: 60% of K8s clusters) |
+| **2** | Bring KEDA (0.1.1-beta), Karpenter (0.2.0-alpha), cert-manager (0.1.0) to v1.0 quality | Build **Network Policy visualizer** (🟢 Easy, high visual impact) |
+| **3** | Bring OpenCost (0.1.3), plugin-catalog (0.4.3), Knative (0.2.0-alpha) to v1.0 | Polish Argo CD and Network Policy plugins to v1.0 |
+
+**2 AKS desktop FTE:** Full i18n for all AKS desktop plugins (Projects, Deployment Wizard,
+Azure AD Login, etc.), a11y audit with axe-core and WCAG 2.1 AA compliance, screen reader
+testing, keyboard navigation fixes.
+
+**Outcome:** 9 production-grade official plugins + 2 high-impact new ones. Strong foundation.
+
+**Risk:** Fewer new capabilities delivered. May not address startup/growth-stage gaps beyond
+Argo CD.
+
+### Strategy B: "Go Wide" — Maximum Plugin Coverage
+
+**Diagnosis:** Headlamp's competitive position depends on covering the most popular CNCF
+ecosystem tools. Growth-stage startups have 7 unaddressed gaps.
+
+**Guiding policy:** Prioritize breadth — ship MVP plugins for all high-impact gaps, then
+iterate to quality.
+
+**Coherent actions (5 engineers × 3 months):**
+
+| Month | 5 Engineers |
+|-------|-------------|
+| **1** | Ship MVP plugins: **Argo CD**, **Crossplane**, **Node Pool visualization**, **Network Policy viz**, **VPA recommendations** |
+| **2** | Ship MVP plugins: **Istio**, **Dapr**, **PostgreSQL (CloudNativePG)**, **Redis**, **Cilium** |
+| **3** | Ship MVP plugins: **Falco**, **OpenTelemetry**, **Elasticsearch (ECK)**. Retrospective i18n/a11y pass on all new plugins. |
+
+**2 AKS desktop FTE:** i18n and a11y for AKS desktop plugins. Upstream 2-3 AKS desktop
+features (Projects, Deployment Wizard) to open-source Headlamp.
+
+**Outcome:** 13 new plugins covering most gaps. Strong ecosystem breadth. All plugins at
+v0.1-v0.3 quality.
+
+**Risk:** All new plugins are alpha/beta. Existing plugins remain unpolished. Technical debt
+accumulates. Users may perceive low quality.
+
+### Strategy C: "Platform Play" — Fix the Foundation, Then Build (Recommended)
+
+**Diagnosis:** The real bottleneck is not individual plugin features — it is the **plugin
+development experience and quality infrastructure.** If every plugin needs manual i18n, manual
+a11y testing, and manual quality assurance, the team will always be slow. The crux is:
+**building the infrastructure that makes all plugins better, faster.**
+
+**Guiding policy:** Invest month 1 in plugin quality infrastructure, then use it to ship
+high-quality plugins at speed in months 2-3.
+
+**Coherent actions (5 engineers × 3 months):**
+
+| Month | 2 Engineers (Infrastructure) | 3 Engineers (Plugins) |
+|-------|-------------------------------|----------------------|
+| **1** | Build **plugin quality toolkit**: automated i18n extraction, a11y test harness (axe-core integration), Storybook template, e2e test scaffolding. Establish quality gates in CI. | Bring **Flux**, **Prometheus**, **app-catalog** to v1.0 using new toolkit. Onboard community plugins (Gatekeeper, Trivy, Kubescape) into headlamp-k8s/plugins repo. |
+| **2** | Extend toolkit: plugin maturity scoring (version, i18n, a11y, test coverage), auto-i18n for existing plugins, shared CRD visualization components. | Ship v1.0: **Argo CD**, **Karpenter**, **KEDA**. Ship MVP: **Network Policy viz**, **Node Pool grouping**. |
+| **3** | Documentation, contributor guides, third-party plugin onboarding process. | Ship v1.0: **cert-manager**, **OpenCost**, **plugin-catalog**. Ship MVP: **PostgreSQL (CloudNativePG)**, **Crossplane**. |
+
+**2 AKS desktop FTE:** Month 1: a11y audit, axe-core integration, WCAG 2.1 AA baseline.
+Month 2: Full i18n for all AKS desktop plugins using the shared toolkit. Month 3: Upstream
+Projects and Deployment Wizard features to open-source, keyboard navigation pass.
+
+**Outcome:** Quality infrastructure that accelerates all future plugin work. 9 production-grade
+plugins + 4 new MVPs. Community plugin onboarding pathway established.
+
+**Why this is the best strategy:** It addresses the crux directly. The per-plugin cost of i18n,
+a11y, and quality drops permanently. Future plugins start at a higher quality baseline. This
+compounds — every subsequent quarter of work produces more value than strategies A or B.
+
+### Strategy Comparison
+
+| Dimension | A: Go Deep | B: Go Wide | C: Platform Play |
+|-----------|-----------|-----------|-----------------|
+| **New plugins** | 2 | 13 | 6 (4 MVP + 2 v1.0) |
+| **v1.0 plugins** | 9 | 0 | 9 |
+| **i18n coverage** | 9 plugins | ~3 plugins | All plugins (via toolkit) |
+| **a11y testing** | 9 plugins | ~3 plugins | All plugins (via harness) |
+| **Community onboarding** | No | No | Yes (3 plugins migrated) |
+| **Long-term velocity** | Unchanged | Unchanged | **Permanently faster** |
+| **Risk** | Low (known scope) | High (quality debt) | Medium (infrastructure may take longer) |
+
+---
+
 ## Part 1: Existing Plugin Coverage
 
 Many AKS-relevant features are **already covered** by official plugins in
@@ -78,6 +187,72 @@ plugins that could inform or be upstreamed to the open-source project:
 | **Resource Quota Awareness** | Deployment wizard warns when exceeding namespace resource quotas |
 | **Developer Mode** (preview) | Heroku-like experience for deploying from source repositories |
 | **Multi-tenancy** | Enhanced authentication handling for multi-tenant AKS setups |
+
+---
+
+### Plugin Maturity Assessment
+
+Most existing plugins need improvement work before they can be considered production-grade.
+This table assesses each plugin's maturity based on version number, internationalization
+support, accessibility testing, and repository location. Data sourced from
+[headlamp-k8s/plugins](https://github.com/headlamp-k8s/plugins) package.json files and
+community plugin repositories on GitHub (checked April 2026).
+
+**Key findings:**
+- **Only 2 of 12 official plugins** have full i18n support (19 languages): app-catalog and
+  prometheus. Flux has the i18n script but no language declarations beyond English.
+- **No plugins have dedicated a11y test suites** — all include `plugin:jsx-a11y/recommended`
+  in ESLint (lint-time checks only), but none have runtime a11y testing (e.g. axe-core,
+  pa11y, or Storybook a11y addon integration tests).
+- **8 of 12 official plugins are pre-v1.0**, with 5 at v0.1.x or alpha/beta.
+- **All community plugins live outside headlamp-k8s/plugins** — onboarding them into the
+  official repo would improve discoverability, CI quality gates, and maintenance.
+
+#### Official Plugins
+
+| Plugin | Version | i18n | a11y Lint | a11y Tests | Maturity | Notes |
+|--------|---------|------|-----------|------------|----------|-------|
+| [app-catalog](https://github.com/headlamp-k8s/plugins/tree/main/app-catalog) | 0.8.0 | ✅ 19 langs | ✅ jsx-a11y | ❌ None | Maturing | Closest to v1.0 alongside Prometheus |
+| [prometheus](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) | 0.8.2 | ✅ 19 langs | ✅ jsx-a11y | ❌ None | Maturing | Shipped by default; best i18n coverage |
+| [flux](https://github.com/headlamp-k8s/plugins/tree/main/flux) | 0.6.0 | ⚠️ Script only | ✅ jsx-a11y | ❌ None | Stable | Has i18n script but no `headlamp.i18n` lang config |
+| [plugin-catalog](https://github.com/headlamp-k8s/plugins/tree/main/plugin-catalog) | 0.4.3 | ⚠️ Script only | ✅ jsx-a11y | ❌ None | Stable | Shipped by default |
+| [karpenter](https://github.com/headlamp-k8s/plugins/tree/main/karpenter) | 0.2.0 | ⚠️ Script only | ✅ jsx-a11y | ❌ None | Alpha | Description says "Alpha Release" |
+| [knative](https://github.com/headlamp-k8s/plugins/tree/main/knative) | 0.2.0-alpha | ⚠️ en only | ✅ jsx-a11y | ❌ None | Alpha | i18n configured but only English |
+| [ai-assistant](https://github.com/headlamp-k8s/plugins/tree/main/ai-assistant) | 0.2.0-alpha | ⚠️ Script only | ✅ jsx-a11y | ❌ None | Alpha | Complex dependencies (LangChain, MCP) |
+| [opencost](https://github.com/headlamp-k8s/plugins/tree/main/opencost) | 0.1.3 | ⚠️ Script only | ✅ jsx-a11y | ❌ None | Early | |
+| [keda](https://github.com/headlamp-k8s/plugins/tree/main/keda) | 0.1.1-beta | ❌ No i18n | ✅ jsx-a11y | ❌ None | Beta | No i18n script or config |
+| [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) | 0.1.0 | ❌ No i18n | ✅ jsx-a11y | ❌ None | Early | No i18n script or config |
+| [cluster-api](https://github.com/headlamp-k8s/plugins/tree/main/cluster-api) | 0.1.0 | ❌ No i18n | ✅ jsx-a11y | ❌ None | Early | No i18n script or config |
+| [backstage](https://github.com/headlamp-k8s/plugins/tree/main/backstage) | 0.1.0-beta-2 | ⚠️ Script only | ✅ jsx-a11y | ❌ None | Beta | |
+
+#### Community Plugins
+
+| Plugin | Version | i18n | a11y Lint | Repo | Last Active | Maturity | Migration Work |
+|--------|---------|------|-----------|------|-------------|----------|----------------|
+| [Kubescape](https://github.com/kubescape/headlamp-plugin) | 0.10.6 | ✅ i18n | ✅ jsx-a11y | External | Mar 2026 | **Most mature community plugin** | Medium — different build system, needs CI integration |
+| [Strimzi](https://github.com/cesaroangelo/strimzi-headlamp) | 0.3.9 | ✅ i18n | ✅ jsx-a11y | External | Mar 2026 | Stable | Medium — individual developer, need maintainer agreement |
+| [Trivy](https://github.com/kubebeam/trivy-headlamp-plugin) | 0.3.1 | ❌ | ✅ jsx-a11y | External | Oct 2025 | Developing | Medium — kubebeam org, compliance-focused |
+| [Gatekeeper](https://github.com/sozercan/gatekeeper-headlamp-plugin) | 0.2.0 | ❌ | ✅ jsx-a11y | External | Nov 2025 | Stable | Low — single maintainer, smaller codebase |
+| [Inspektor Gadget](https://github.com/inspektor-gadget/headlamp-plugin/) | 0.1.0-beta.3 | ❌ | ✅ jsx-a11y | External | Mar 2026 | Beta | High — WASM dependencies, complex build |
+| [KAITO](https://github.com/kaito-project/headlamp-kaito) | 0.0.7 | ❌ | ⚠️ Implicit | External | Aug 2025 | Early | Medium — Microsoft-backed project |
+| [KubeVirt](https://github.com/buttahtoast/headlamp-plugins/tree/main/kubevirt) | 0.0.1-beta7 | ❌ | ✅ jsx-a11y | External | Nov 2025 | Beta | Medium — part of multi-plugin repo |
+| [Kyverno](https://github.com/kubebeam/kyverno-headlamp-plugin) | 0.1.1 | ❌ | ✅ jsx-a11y | External (archived) | Nov 2024 | **Unmaintained** | High — needs full rebuild or new maintainer |
+
+#### What "Production-Grade" Means for Plugins
+
+To bring a plugin from its current state to v1.0 production quality, the typical work includes:
+
+- **i18n:** Extract all user-visible strings, set up translation files for 19 languages
+  (matching app-catalog/prometheus), integrate with Headlamp's i18n pipeline. Effort: 1-3 days
+  per plugin depending on string count.
+- **a11y testing:** Add axe-core integration tests, verify keyboard navigation, test with
+  screen readers (VoiceOver, NVDA), fix color contrast issues, add ARIA labels. Effort: 2-5
+  days per plugin.
+- **Test coverage:** Add Storybook stories for all views, e2e tests for critical flows, unit
+  tests for data transformations. Effort: 3-5 days per plugin.
+- **Community plugin migration:** Fork/import code, adapt to headlamp-k8s/plugins CI and
+  build system, coordinate with original maintainers, establish maintenance plan. Effort:
+  2-5 days per plugin.
 
 ---
 
