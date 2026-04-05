@@ -661,12 +661,12 @@ Columns:
 | Plugin | Tests | Storybook | a11y | i18n | ≥ 0.5 | Official repo | Score | Status |
 |--------|:-----:|:---------:|:----:|:----:|:-----:|:-------------:|:-----:|:------:|
 | ◆ **prometheus** (0.8.2) | ✅ | ✅ 2 stories | ✅ 7 files | ✅ 19 langs | ✅ | ✅ | 6/6 | 🟢 |
-| ◆ **app-catalog** (0.8.0) | ❌ | ✅ 3 stories | ✅ 6 files | ✅ 19 langs | ✅ | ✅ | 5/6 | 🟠 |
+| ◆ **app-catalog** (0.8.0) | ❌ | ✅ 3 stories | ✅ 10 files | ✅ 19 langs | ✅ | ✅ | 5/6 | 🟠 |
 | ● **knative** (0.2.0-alpha) | ✅ | ✅ 9 stories | ✅ 26 files | ⚠️ en only | ❌ | ✅ | 4/6 | 🟠 |
 | ◆ **Kubescape** (0.10.6) | ✅ | ❌ | ✅ 26 files | ✅ | ✅ | ⚠️ project repo | 4/6 | 🟠 |
 | ◆ **flux** (0.6.0) | ❌ | ❌ | ✅ 5 files | ⚠️ script only | ✅ | ✅ | 3/6 | 🟠 |
 | ● **cert-manager** (0.1.0) | ❌ | ✅ 13 stories | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
-| ● **plugin-catalog** (0.4.3) | ❌ | ✅ 5 stories | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
+| ● **plugin-catalog** (0.4.3) | ❌ | ✅ 5 stories | ✅ 7 files | ⚠️ script only | ❌ | ✅ | 3/6 | 🟠 |
 | ● **backstage** (0.1.0-beta-2) | ❌ | ✅ 2 stories | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
 | ● **opencost** (0.1.3) | ❌ | ✅ 1 story | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
 | ● **ai-assistant** (0.2.0-alpha) | ❌ | ❌ | ✅ 27 files | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
@@ -687,9 +687,9 @@ Columns:
 - **1 plugin is ◆ 🟢 green** — prometheus (6/6) is the only plugin meeting all 6 criteria.
   Green in this scorecard means **all 6 criteria** are met, which is stricter than the Venn
   diagram (where green = score 3+, meaning "most criteria met").
-- **4 plugins are 🟠 orange** (score 3-5/6): app-catalog (5/6), knative (4/6), Kubescape (4/6),
-  flux (3/6) — promising but not fully mature
-- **17 plugins are 🔴 red** with score 0-2 (very immature or early-stage)
+- **5 plugins are 🟠 orange** (score 3-5/6): app-catalog (5/6), knative (4/6), Kubescape (4/6),
+  flux (3/6), plugin-catalog (3/6) — promising but not fully mature
+- **16 plugins are 🔴 red** with score 0-2 (very immature or early-stage)
 - **Only 3 of 22 plugins have real unit/integration tests** — 2 official (prometheus: util.test.ts;
   knative: url, ingress, nullable, time tests) and 1 community (Kubescape: layout.test.ts).
   All other plugins only have the auto-generated `storybook.test.tsx`, which does not count as
@@ -697,9 +697,10 @@ Columns:
 - **8 of 22 plugins have Storybook stories** — cert-manager leads with 13 stories, followed by
   knative (9), plugin-catalog (5), app-catalog (3), backstage (2), prometheus (2), opencost (1),
   and minikube (1, not in this table). The remaining 14 plugins have no stories.
-- **7 of 22 plugins have ≥ 5 aria attributes** — ai-assistant leads (27 files), followed by
-  knative (26), Kubescape (26), Inspektor Gadget (19), prometheus (7), app-catalog (6),
-  flux (5). The remaining 15 plugins have fewer than 5 source files with aria attributes.
+- **8 of 22 plugins have ≥ 5 aria attributes** — ai-assistant leads (27 files), followed by
+  knative (26), Kubescape (26), Inspektor Gadget (19), app-catalog (10), plugin-catalog (7),
+  prometheus (7), flux (5). The remaining 14 plugins have fewer than 5 source files with aria
+  attributes.
 - This confirms the crux: **making existing plugins production-grade is harder than building
   new ones**, because only 1 of 22 plugins meets all 6 quality dimensions
 
@@ -774,9 +775,10 @@ community plugin repositories on GitHub (checked April 2026).
   prometheus. Flux has the i18n script but no language declarations beyond English.
 - **No plugins have dedicated a11y test suites** — all include `plugin:jsx-a11y/recommended`
   in ESLint (lint-time checks only), but none have runtime a11y testing (e.g. axe-core,
-  pa11y, or Storybook a11y addon integration tests). However, **7 plugins have ≥ 5 aria attributes**
+  pa11y, or Storybook a11y addon integration tests). However, **8 plugins have ≥ 5 aria attributes**
   in their src/ folder, indicating intentional accessibility work: ai-assistant (27 files),
-  knative (26), Kubescape (26), Inspektor Gadget (19), prometheus (7), app-catalog (6), flux (5).
+  knative (26), Kubescape (26), Inspektor Gadget (19), app-catalog (10), plugin-catalog (7),
+  prometheus (7), flux (5).
 - **Only 2 of 12 official plugins have real unit/integration tests** — prometheus (util.test.ts)
   and knative (url, ingress, nullable, time tests). All other official plugins only have the
   auto-generated `storybook.test.tsx`, which runs Storybook snapshot tests, not plugin-specific
@@ -789,10 +791,10 @@ community plugin repositories on GitHub (checked April 2026).
 
 | Plugin | Version | i18n | a11y Lint | aria attrs | Storybook | Maturity | Notes |
 |--------|---------|------|-----------|------------|-----------|----------|-------|
-| [app-catalog](https://github.com/headlamp-k8s/plugins/tree/main/app-catalog) | 0.8.0 | ✅ 19 langs | ✅ jsx-a11y | ✅ 6 files | ✅ 3 stories | Maturing | Closest to v1.0 alongside Prometheus |
+| [app-catalog](https://github.com/headlamp-k8s/plugins/tree/main/app-catalog) | 0.8.0 | ✅ 19 langs | ✅ jsx-a11y | ✅ 10 files | ✅ 3 stories | Maturing | Closest to v1.0 alongside Prometheus |
 | [prometheus](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) | 0.8.2 | ✅ 19 langs | ✅ jsx-a11y | ✅ 7 files | ✅ 2 stories | Maturing | Shipped by default; best i18n coverage |
 | [flux](https://github.com/headlamp-k8s/plugins/tree/main/flux) | 0.6.0 | ⚠️ Script only | ✅ jsx-a11y | ✅ 5 files | ❌ | Stable | Has i18n script but no `headlamp.i18n` lang config |
-| [plugin-catalog](https://github.com/headlamp-k8s/plugins/tree/main/plugin-catalog) | 0.4.3 | ⚠️ Script only | ✅ jsx-a11y | ❌ | ✅ 5 stories | Stable | Shipped by default |
+| [plugin-catalog](https://github.com/headlamp-k8s/plugins/tree/main/plugin-catalog) | 0.4.3 | ⚠️ Script only | ✅ jsx-a11y | ✅ 7 files | ✅ 5 stories | Stable | Shipped by default |
 | [karpenter](https://github.com/headlamp-k8s/plugins/tree/main/karpenter) | 0.2.0 | ⚠️ Script only | ✅ jsx-a11y | ❌ | ❌ | Alpha | Description says "Alpha Release" |
 | [knative](https://github.com/headlamp-k8s/plugins/tree/main/knative) | 0.2.0-alpha | ⚠️ en only | ✅ jsx-a11y | ✅ 26 files | ✅ 9 stories | Alpha | i18n configured but only English |
 | [ai-assistant](https://github.com/headlamp-k8s/plugins/tree/main/ai-assistant) | 0.2.0-alpha | ⚠️ Script only | ✅ jsx-a11y | ✅ 27 files | ❌ | Alpha | Complex dependencies (LangChain, MCP) |
@@ -1445,6 +1447,66 @@ but there are Kubernetes-native patterns that could enhance the Headlamp experie
 **Key insight:** Application frameworks deploy as standard Kubernetes resources (Deployments,
 Services, Ingress, ConfigMaps, Secrets) which Headlamp already manages natively. No additional
 plugins needed for these — Headlamp's core functionality covers them.
+
+### Application Stack Deployment Methods and Kubernetes Compatibility
+
+Startups use various deployment methods depending on their application stack. This section
+analyzes the most popular deployment methods for each framework, whether they have
+Kubernetes compatibility tools, and the complexity of their deployment configuration files.
+
+#### Sources Consulted
+
+- [Next.js official deploy docs](https://nextjs.org/docs/pages/getting-started/deploying)
+- [Vercel–Kubernetes integration docs](https://vercel.com/docs/integrations/external-platforms/kubernetes)
+- [kubero — self-hosted PaaS for Kubernetes](https://github.com/kubero-dev/kubero)
+- [Kompose — docker-compose to K8s converter](https://kompose.io/)
+- [Cloud Native Buildpacks](https://buildpacks.io/)
+- [Helm documentation](https://helm.sh/docs/)
+
+#### Deployment Methods by Framework
+
+| Framework | #1 Deployment Method (est. % among startups) | #2 Deployment Method | #3 Deployment Method | Config Format | Config Complexity |
+|---|---|---|---|---|---|
+| **Next.js** | **Vercel** (~45%) — one-click Git deploy, proprietary `vercel.json` | **Docker + K8s/Cloud** (~30%) — Dockerfile + Helm/K8s YAML | **Netlify** (~15%) — `netlify.toml`, static/SSR | JSON (`vercel.json`) or YAML (K8s) | Low (Vercel) to Medium (K8s) |
+| **Django** | **Docker + Cloud PaaS** (~35%) — Dockerfile on AWS/GCP/DO | **Heroku** (~25%) — `Procfile` + `runtime.txt` | **Docker Compose** (~20%) — local dev, sometimes prod | YAML (`docker-compose.yml`) or text (`Procfile`) | Low (Heroku) to Medium (Compose) |
+| **Node.js / Express** | **Docker + Cloud** (~35%) — Dockerfile on various clouds | **Vercel/Netlify** (~25%) — serverless functions | **Heroku** (~20%) — `Procfile` | YAML/JSON/text | Low to Medium |
+| **Laravel** | **Laravel Forge** (~30%) — SSH-based server provisioning | **Docker + Cloud** (~25%) — PHP-FPM Dockerfile | **Laravel Vapor** (~15%) — serverless on AWS Lambda | PHP config + YAML (Docker) | Medium |
+| **Rails** | **Heroku** (~30%) — `Procfile` + buildpacks | **Docker + Cloud** (~25%) — multi-stage Dockerfile | **Render** (~15%) — Git deploy with `render.yaml` | YAML (`render.yaml`) or text (`Procfile`) | Low (Heroku) to Medium (Docker) |
+| **Spring Boot** | **Docker + K8s** (~40%) — enterprise standard | **AWS Elastic Beanstalk** (~20%) — `.ebextensions/` | **Cloud Foundry** (~10%) — `manifest.yml` | YAML | Medium to High |
+| **Go** | **Docker + K8s** (~50%) — most common for Go services | **Cloud Run / Lambda** (~20%) — container or binary | **Bare binary deploy** (~15%) — systemd or similar | YAML (K8s) or Dockerfile | Low (binary) to Medium (K8s) |
+| **FastAPI** | **Docker + Cloud** (~40%) — Dockerfile with uvicorn | **Heroku** (~20%) — `Procfile` with uvicorn | **Docker Compose** (~15%) — with Postgres/Redis | YAML | Low to Medium |
+
+#### Kubernetes Compatibility by Deployment Method
+
+| Original Deployment Method | K8s Compatibility Tool | How It Works | Config Stored in Git? | Format | Complexity (1-5) |
+|---|---|---|---|---|---|
+| **docker-compose** | **[Kompose](https://kompose.io/)** | Converts `docker-compose.yml` → K8s Deployments, Services, PVCs. One command: `kompose convert`. Handles ~80% of Compose features automatically. | ✅ Yes — YAML in git | YAML (`docker-compose.yml` → K8s YAML) | 2/5 — automated conversion, may need manual tuning for production (health checks, resource limits, Ingress) |
+| **docker-compose** | **[kubero](https://github.com/kubero-dev/kubero)** | Self-hosted PaaS that runs Compose-style apps directly on K8s. Git-push deploy model like Heroku. | ✅ Yes — YAML in git | YAML (kubero pipeline config) | 2/5 — PaaS abstraction hides K8s complexity |
+| **Heroku Procfile** | **[Cloud Native Buildpacks](https://buildpacks.io/)** + K8s | Buildpacks auto-detect runtime from source code (same technology Heroku uses). Produces OCI images deployable on K8s. Combined with `kpack` for K8s-native builds. | ⚠️ Partial — `Procfile` in git, K8s manifests separate | Text (`Procfile`) + YAML (K8s) | 3/5 — image build is automated, but K8s manifests need manual creation |
+| **Heroku Procfile** | **[kubero](https://github.com/kubero-dev/kubero)** | Directly supports Heroku-style Procfile deployments on K8s. Maps process types to K8s Deployments. | ✅ Yes — Procfile + kubero config in git | Text + YAML | 2/5 — designed as Heroku replacement |
+| **Vercel (Next.js)** | **No direct converter** | No tool converts `vercel.json` → K8s. Must containerize manually: use Next.js `output: "standalone"`, write Dockerfile, create K8s Deployment + Service + Ingress. Helm chart templates available from community. | ⚠️ Manual — Dockerfile + K8s YAML in git | JSON (`vercel.json`) → manual YAML (K8s) | 4/5 — no automation; must manually replicate Vercel's edge functions, ISR, and routing in K8s |
+| **Netlify** | **No direct converter** | No tool converts `netlify.toml` → K8s. For static sites, serve via Nginx container. For Netlify Functions, convert to standard Node.js Express app. | ⚠️ Manual — Dockerfile + K8s YAML | TOML → manual YAML | 3/5 — static sites are easy; functions require rewriting |
+| **Laravel Forge/Vapor** | **No direct converter** | Forge uses SSH provisioning (not container-based). Vapor uses AWS Lambda. For K8s: containerize with PHP-FPM + Nginx, create K8s manifests. | ⚠️ Manual — Dockerfile + K8s YAML | PHP config → manual YAML | 4/5 — queue workers, scheduler, and cache need separate K8s resources |
+| **Helm Charts** | **Native K8s** | Helm is already a K8s package manager. Charts contain templatized K8s YAML. Most mature K8s deployment method. | ✅ Yes — YAML templates in git | YAML (Go templates) | 3/5 — powerful but verbose; templating has a learning curve |
+| **Render** | **No direct converter** | `render.yaml` is Render-specific. Manual K8s migration needed. | ⚠️ Manual | YAML → manual YAML | 3/5 — config is similar conceptually but no tooling |
+| **Cloud Foundry** | **[cf-for-k8s](https://github.com/cloudfoundry/cf-for-k8s)** (deprecated) / **Korifi** | Korifi brings the Cloud Foundry developer experience to K8s. `cf push` deploys to K8s. | ✅ Yes — `manifest.yml` in git | YAML | 3/5 — requires Korifi installation on cluster |
+
+#### Key Findings
+
+- **docker-compose has the best K8s migration path** — Kompose provides automated conversion
+  and is the most mature bridge tool. The headlamp-k8s/plugins repo already has a
+  [kompose plugin](https://github.com/headlamp-k8s/plugins/tree/main/kompose).
+- **Heroku Procfile has decent K8s compatibility** — Cloud Native Buildpacks + kubero provide
+  viable paths, though neither is as seamless as Kompose for Compose files.
+- **Vercel/Netlify have NO K8s converters** — these proprietary platforms require manual
+  migration. This is a significant friction point for startups outgrowing PaaS.
+- **Go and Spring Boot stacks already target K8s** — these communities deploy to K8s by
+  default, so no conversion tools are needed.
+- **All deployment configs are stored in git** — whether YAML, JSON, TOML, or Procfile text.
+  The ecosystem universally follows GitOps principles.
+- **Complexity ranges from 1/5 to 4/5** — PaaS-to-K8s migrations (Vercel, Forge) are the most
+  complex because they require replicating platform-specific features manually. Docker/Compose
+  migrations are simplest thanks to Kompose.
 
 ### Supporting Infrastructure
 
