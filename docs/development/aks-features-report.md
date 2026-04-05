@@ -345,14 +345,6 @@ startup needs, AI workloads) and where they overlap. Color and shape encode plug
 ```mermaid
 %%{init: {'theme': 'base', 'themeVariables': {'fontSize': '14px'}}}%%
 graph TB
-    subgraph legend [" Legend "]
-        direction LR
-        G["◆ Mature plugin"]
-        O["● Early-stage plugin"]
-        RED["▲ Very immature"]
-        B["■ No plugin exists"]
-    end
-
     subgraph all3 ["⭐ All 3 Goals: AKS + Startup + AI"]
         P_kserve["■ KServe<br/><i>no plugin</i>"]
         P_karpenter["● Karpenter<br/><i>0.2.0-alpha</i>"]
@@ -422,12 +414,6 @@ graph TB
     style aks_only fill:#cfe2ff,stroke:#0d6efd,stroke-width:1px
     style startup_only fill:#d1e7dd,stroke:#198754,stroke-width:1px
     style ai_only fill:#e8f4fd,stroke:#0d6efd,stroke-width:1px
-    style legend fill:#f8f9fa,stroke:#6c757d,stroke-width:1px
-
-    style G fill:#198754,color:#fff,stroke:#146c43
-    style O fill:#fd7e14,color:#fff,stroke:#ca6510
-    style RED fill:#dc3545,color:#fff,stroke:#b02a37
-    style B fill:#0d6efd,color:#fff,stroke:#0a58ca
 
     style P_prometheus fill:#198754,color:#fff,stroke:#146c43
     style P_helm fill:#198754,color:#fff,stroke:#146c43
@@ -489,6 +475,170 @@ graph TB
   several ▲ red (very immature — KAITO, Gatekeeper, Trivy, Inspektor Gadget, Kyverno), very
   few ◆ green (mature — only Prometheus, Helm/app-catalog, Kubescape meet score 3+). This
   confirms the crux: the ecosystem is broad but shallow.
+
+#### AKS & Startup Focus
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '14px'}}}%%
+graph TB
+    subgraph all3 ["⭐ All 3 Goals: AKS + Startup + AI"]
+        P_kserve["■ KServe<br/><i>no plugin</i>"]
+        P_karpenter["● Karpenter<br/><i>0.2.0-alpha</i>"]
+        P_keda["● KEDA<br/><i>0.1.1-beta</i>"]
+        P_prometheus["◆ Prometheus<br/><i>0.8.2</i>"]
+        P_kueue["■ Kueue<br/><i>no plugin</i>"]
+    end
+
+    subgraph aks_startup ["AKS + Startup"]
+        P_flux["● Flux<br/><i>0.6.0</i>"]
+        P_certmgr["● cert-manager<br/><i>0.1.0</i>"]
+        P_gatekeeper["▲ Gatekeeper<br/><i>0.2.0</i>"]
+        P_opencost["● OpenCost<br/><i>0.1.3</i>"]
+    end
+
+    subgraph aks_only ["AKS Only"]
+        P_istio["■ Istio<br/><i>no plugin</i>"]
+        P_dapr["■ Dapr<br/><i>no plugin</i>"]
+        P_keyvault["■ Key Vault CSI<br/><i>no plugin</i>"]
+        P_cilium["■ Cilium<br/><i>no plugin</i>"]
+        P_defender["■ Defender<br/><i>no plugin</i>"]
+        P_inspektor["▲ Inspektor Gadget<br/><i>0.1.0-beta.3</i>"]
+        P_kyverno["▲ Kyverno<br/><i>archived</i>"]
+    end
+
+    subgraph startup_only ["Startup Only"]
+        P_argocd["■ Argo CD<br/><i>no plugin</i>"]
+        P_crossplane["■ Crossplane<br/><i>no plugin</i>"]
+        P_falco["■ Falco<br/><i>no plugin</i>"]
+        P_linkerd["■ Linkerd<br/><i>no plugin</i>"]
+        P_harbor["■ Harbor<br/><i>no plugin</i>"]
+        P_helm["◆ Helm<br/><i>app-catalog 0.8.0</i>"]
+        P_trivy["▲ Trivy<br/><i>0.3.1</i>"]
+        P_kubescape["◆ Kubescape<br/><i>0.10.6</i>"]
+        P_backstage["● Backstage<br/><i>0.1.0-beta-2</i>"]
+        P_strimzi["● Strimzi<br/><i>0.3.9</i>"]
+        P_extsecrets["● External Secrets<br/><i>community</i>"]
+        P_postgres["■ PostgreSQL<br/><i>CloudNativePG — no plugin</i>"]
+        P_redis["■ Redis<br/><i>no plugin</i>"]
+        P_mysql["■ MySQL<br/><i>no plugin</i>"]
+        P_mongodb["■ MongoDB<br/><i>no plugin</i>"]
+        P_elasticsearch["■ Elasticsearch<br/><i>ECK — no plugin</i>"]
+        P_rabbitmq["■ RabbitMQ<br/><i>no plugin</i>"]
+        P_minio["■ MinIO<br/><i>no plugin</i>"]
+    end
+
+    style all3 fill:#fff3cd,stroke:#ffc107,stroke-width:3px
+    style aks_startup fill:#e8f4fd,stroke:#0d6efd,stroke-width:2px
+    style aks_only fill:#cfe2ff,stroke:#0d6efd,stroke-width:1px
+    style startup_only fill:#d1e7dd,stroke:#198754,stroke-width:1px
+
+    style P_prometheus fill:#198754,color:#fff,stroke:#146c43
+    style P_helm fill:#198754,color:#fff,stroke:#146c43
+    style P_kubescape fill:#198754,color:#fff,stroke:#146c43
+
+    style P_flux fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_karpenter fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_keda fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_certmgr fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_opencost fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_backstage fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_strimzi fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_extsecrets fill:#fd7e14,color:#fff,stroke:#ca6510
+
+    style P_gatekeeper fill:#dc3545,color:#fff,stroke:#b02a37
+    style P_trivy fill:#dc3545,color:#fff,stroke:#b02a37
+    style P_inspektor fill:#dc3545,color:#fff,stroke:#b02a37
+    style P_kyverno fill:#dc3545,color:#fff,stroke:#b02a37
+
+    style P_kserve fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_kueue fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_istio fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_dapr fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_keyvault fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_cilium fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_defender fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_argocd fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_crossplane fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_falco fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_linkerd fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_harbor fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_postgres fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_redis fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_mysql fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_mongodb fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_elasticsearch fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_rabbitmq fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_minio fill:#0d6efd,color:#fff,stroke:#0a58ca
+```
+
+#### AI & Infrastructure Focus
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'fontSize': '14px'}}}%%
+graph TB
+    subgraph all3 ["⭐ All 3 Goals: AKS + Startup + AI"]
+        P_kserve["■ KServe<br/><i>no plugin</i>"]
+        P_karpenter["● Karpenter<br/><i>0.2.0-alpha</i>"]
+        P_keda["● KEDA<br/><i>0.1.1-beta</i>"]
+        P_prometheus["◆ Prometheus<br/><i>0.8.2</i>"]
+        P_kueue["■ Kueue<br/><i>no plugin</i>"]
+    end
+
+    subgraph aks_ai ["AKS + AI"]
+        P_kaito["▲ KAITO<br/><i>0.0.7</i>"]
+        P_gpu["■ GPU Operator<br/><i>no plugin</i>"]
+    end
+
+    subgraph startup_ai ["Startup + AI"]
+        P_otel["■ OpenTelemetry<br/><i>no plugin</i>"]
+        P_kubeflow["● Kubeflow<br/><i>plugin exists</i>"]
+    end
+
+    subgraph aks_only ["AKS Only"]
+        P_istio["■ Istio<br/><i>no plugin</i>"]
+        P_dapr["■ Dapr<br/><i>no plugin</i>"]
+        P_keyvault["■ Key Vault CSI<br/><i>no plugin</i>"]
+        P_cilium["■ Cilium<br/><i>no plugin</i>"]
+        P_defender["■ Defender<br/><i>no plugin</i>"]
+        P_inspektor["▲ Inspektor Gadget<br/><i>0.1.0-beta.3</i>"]
+        P_kyverno["▲ Kyverno<br/><i>archived</i>"]
+    end
+
+    subgraph ai_only ["AI Workloads Only"]
+        P_kuberay["■ KubeRay<br/><i>no plugin</i>"]
+        P_volcano["● Volcano<br/><i>plugin exists</i>"]
+        P_llmd["■ llm-d<br/><i>no plugin</i>"]
+    end
+
+    style all3 fill:#fff3cd,stroke:#ffc107,stroke-width:3px
+    style aks_ai fill:#e8f4fd,stroke:#0d6efd,stroke-width:2px
+    style startup_ai fill:#f0f9e8,stroke:#198754,stroke-width:2px
+    style aks_only fill:#cfe2ff,stroke:#0d6efd,stroke-width:1px
+    style ai_only fill:#e8f4fd,stroke:#0d6efd,stroke-width:1px
+
+    style P_prometheus fill:#198754,color:#fff,stroke:#146c43
+
+    style P_karpenter fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_keda fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_kubeflow fill:#fd7e14,color:#fff,stroke:#ca6510
+    style P_volcano fill:#fd7e14,color:#fff,stroke:#ca6510
+
+    style P_kaito fill:#dc3545,color:#fff,stroke:#b02a37
+    style P_inspektor fill:#dc3545,color:#fff,stroke:#b02a37
+    style P_kyverno fill:#dc3545,color:#fff,stroke:#b02a37
+
+    style P_kserve fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_kueue fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_otel fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_gpu fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_istio fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_dapr fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_keyvault fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_cilium fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_defender fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_kuberay fill:#0d6efd,color:#fff,stroke:#0a58ca
+    style P_llmd fill:#0d6efd,color:#fff,stroke:#0a58ca
+```
 
 ### Plugin Maturity Scorecard
 
