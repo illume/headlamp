@@ -27,10 +27,11 @@ implemented.
 
 ## Strategic Alternatives (5 engineers, 3 months + 2 FTE AKS desktop)
 
-This section presents 5 strategic options for a team of 5 engineers over a 3-month project,
+This section presents 6 strategic options for a team of 5 engineers over a 3-month project,
 plus 2 full-time engineers dedicated to AKS desktop. Strategies A-C are general approaches;
-**Strategy D targets the startup market** and **Strategy E targets the AKS ecosystem
-specifically**. Each includes an ordered list of which plugins to develop or polish first.
+**Strategy D targets the startup market**, **Strategy E targets the AKS ecosystem
+specifically**, and **Strategy F targets AI/ML workloads**. Each includes an ordered list
+of which plugins to develop or polish first.
 
 The analysis uses the "diagnose → guiding policy → coherent action" structure from Richard
 Rumelt's *Good Strategy Bad Strategy* and identifies the **crux** — the single hardest
@@ -221,21 +222,72 @@ universal.
 
 ---
 
+### Strategy F: "AI-First" — Capture the AI/ML Infrastructure Wave
+
+**Diagnosis:** AI/ML workloads on Kubernetes are the fastest-growing segment. The CNCF
+launched its [Kubernetes AI Conformance Program](https://www.cncf.io/announcements/2025/11/11/cncf-launches-certified-kubernetes-ai-conformance-program-to-standardize-ai-workloads-on-kubernetes/)
+in late 2025, KServe reached CNCF Incubating status, and projects like KAITO, Kueue, and
+KubeRay are rapidly maturing. Every major cloud provider (AKS, GKE, EKS) is investing
+heavily in GPU scheduling and model serving. Yet no Kubernetes UI offers comprehensive
+AI/ML workload visualization — this is an uncontested space.
+
+**Guiding policy:** Make Headlamp the first Kubernetes UI with dedicated AI/ML workload
+management. Target KServe (model serving), Kueue (GPU scheduling), KAITO (LLM deployment),
+and KubeRay (distributed compute) — covering the full AI lifecycle.
+
+**Coherent actions (5 engineers × 3 months):**
+
+| Month | 3 Engineers (New AI Plugins) | 2 Engineers (Polish Existing) |
+|-------|----------------------------|-------------------------------|
+| **1** | **KServe** plugin v1.0 — InferenceService management, model version views, traffic routing dashboard, autoscaling status; **Kueue** plugin MVP — ClusterQueue/LocalQueue status, GPU quota views, workload prioritization | Polish **KAITO** (0.0.7) → v1.0, migrate to official repo. Polish **Karpenter** (0.2.0-alpha) → v1.0 (GPU node provisioning). |
+| **2** | **KubeRay** plugin MVP — RayCluster topology, RayJob status, RayService serving views; **OpenTelemetry** plugin MVP — Collector status, AI workload trace views | Polish **Kubeflow** plugin → v1.0 with TrainJob/PyTorchJob status views, pipeline visualization. Polish **Volcano** plugin for LLM-era features (HyperNode, gang scheduling viz). |
+| **3** | **NVIDIA GPU Operator** plugin MVP — ClusterPolicy status, GPU driver health, MIG configuration views; Polish KServe + Kueue to v1.0 with i18n and a11y | Polish **Prometheus** (0.8.2) → v1.0 with GPU metrics (DCGM exporter) dashboards. Polish **KEDA** (0.1.1-beta) → v1.0 for inference autoscaling. |
+
+**2 AKS desktop FTE:** i18n + a11y for AKS desktop plugins. Enhance KAITO integration
+(AKS has an [official KAITO+Headlamp guide](https://azure-samples.github.io/aks-labs/docs/ai-workloads-on-aks/kaito-workspace-headlamp/)).
+Upstream AI-relevant features to open-source.
+
+**Plugin priority list (develop/polish order):**
+
+1. ⭐ **KServe** — NEW, v1.0 target (CNCF Incubating, #1 model serving platform)
+2. ⭐ **Kueue** — NEW, MVP → v1.0 (GPU job scheduling, used by Google/CoreWeave/Red Hat)
+3. **KAITO** (0.0.7) → official repo, v1.0 — MIGRATE + POLISH (AKS add-on, CNCF Sandbox)
+4. **KubeRay** — NEW, MVP (dominant distributed AI compute framework)
+5. **OpenTelemetry** — NEW, MVP (CNCF Graduated, universal AI observability)
+6. **Karpenter** (0.2.0-alpha) → v1.0 — POLISH (GPU node auto-provisioning)
+7. **Kubeflow** plugin → v1.0 — POLISH (training job views, pipeline viz)
+8. **Volcano** plugin polish — POLISH (HyperNode, gang scheduling for LLMs)
+9. **NVIDIA GPU Operator** — NEW, MVP (GPU driver/MIG management)
+10. **Prometheus** (0.8.2) → v1.0 — POLISH (GPU metrics via DCGM exporter)
+11. **KEDA** (0.1.1-beta) → v1.0 — POLISH (inference autoscaling)
+
+**Outcome:** Headlamp becomes the first K8s UI with comprehensive AI/ML workload
+management. 4 new AI-specific plugins + 7 polished existing plugins. Covers model serving,
+GPU scheduling, LLM deployment, distributed compute, and AI observability.
+
+**Risk:** AI/ML on Kubernetes is still evolving rapidly — CRDs and APIs may change. KServe
+and Kueue are relatively young. Non-AI plugins (Argo CD, databases, Crossplane) remain
+unaddressed. May be too niche if AI workloads don't become mainstream K8s use case.
+
+---
+
 ### Strategy Comparison
 
-| Dimension | A: Go Deep | B: Go Wide | C: Platform Play | D: Startup Magnet | E: AKS First |
-|-----------|-----------|-----------|-----------------|-------------------|--------------|
-| **New plugins** | 2 | 13 | 6 | 9 | 7 |
-| **v1.0 plugins** | 9 | 0 | 9 | 5 | 7 |
-| **i18n coverage** | 9 plugins | ~3 | All (toolkit) | 5 plugins | 7 plugins + AKS desktop |
-| **a11y testing** | 9 plugins | ~3 | All (harness) | 5 plugins | 7 plugins + AKS desktop |
-| **Startup appeal** | Low | Medium | Medium | **Very High** | Low |
-| **AKS appeal** | Medium | Low | Medium | Low | **Very High** |
-| **Community onboard** | No | No | Yes (3) | Yes (1: Strimzi) | Yes (1: Gatekeeper) |
-| **Hard Azure features** | 0 | 0 | 0 | 0 | **3** |
-| **Database plugins** | 0 | 3 | 1 | **4** | 0 |
-| **Long-term velocity** | Unchanged | Unchanged | **Fast** | Unchanged | Unchanged |
-| **Risk** | Low | High | Medium | Medium (AKS neglected) | High (Azure API complexity) |
+| Dimension | A: Go Deep | B: Go Wide | C: Platform Play | D: Startup Magnet | E: AKS First | F: AI-First |
+|-----------|-----------|-----------|-----------------|-------------------|--------------|-------------|
+| **New plugins** | 2 | 13 | 6 | 9 | 7 | 4 |
+| **v1.0 plugins** | 9 | 0 | 9 | 5 | 7 | 8 |
+| **i18n coverage** | 9 plugins | ~3 | All (toolkit) | 5 plugins | 7 + AKS desktop | 8 plugins |
+| **a11y testing** | 9 plugins | ~3 | All (harness) | 5 plugins | 7 + AKS desktop | 8 plugins |
+| **Startup appeal** | Low | Medium | Medium | **Very High** | Low | High (AI startups) |
+| **AKS appeal** | Medium | Low | Medium | Low | **Very High** | High (KAITO/Karpenter) |
+| **AI workload appeal** | None | Low | Low | Low | Low | **Very High** |
+| **Community onboard** | No | No | Yes (3) | Yes (1: Strimzi) | Yes (1: Gatekeeper) | Yes (1: KAITO) |
+| **Hard Azure features** | 0 | 0 | 0 | 0 | **3** | 0 |
+| **Database plugins** | 0 | 3 | 1 | **4** | 0 | 0 |
+| **AI/ML plugins** | 0 | 0 | 0 | 0 | 0 | **4** (KServe, Kueue, KubeRay, GPU Op) |
+| **Long-term velocity** | Unchanged | Unchanged | **Fast** | Unchanged | Unchanged | Unchanged |
+| **Risk** | Low | High | Medium | Medium | High | Medium (fast-moving ecosystem) |
 
 ### Which strategy to choose?
 
@@ -248,9 +300,38 @@ universal.
 - **If the goal is "maximize AKS partnership value"** → Strategy E (AKS First). The Hard
   Azure features (Monitor, Defender, upgrades) are things no other K8s UI offers. This
   differentiates Headlamp for AKS specifically.
+- **If the goal is "lead in AI/ML infrastructure"** → Strategy F (AI-First). KServe + Kueue +
+  KAITO + KubeRay would make Headlamp the first K8s UI with comprehensive AI workload
+  management. Uncontested space — no competitor offers this.
 - **Best hybrid:** **C + D** — build the quality toolkit in month 1 (from C), then use it
   to ship startup-focused plugins at high quality in months 2-3 (from D). This gets both
   long-term velocity AND startup market appeal.
+- **Best all-rounder hybrid:** **C + F** — build the quality toolkit (from C), then use it
+  to ship AI-focused plugins (from F). AI workloads overlap with both AKS (KAITO, Karpenter)
+  and startups (KServe, KubeRay, OpenTelemetry), so this strategy covers the most ground with
+  a single focused bet.
+
+### Cross-Strategy Analysis: Plugins That Cover Multiple Goals
+
+Some plugins serve AKS features, startup needs, **and** AI workloads simultaneously. These
+are the highest-leverage investments regardless of which strategy is chosen:
+
+| Plugin | AKS Features | Startup Needs | AI Workloads | Strategy Coverage |
+|--------|-------------|---------------|-------------|-------------------|
+| **KServe** (NEW) | ✅ AKS supports KServe | ✅ AI startups need inference mgmt | ✅ #1 model serving | D + E + F |
+| **Karpenter** (POLISH 0.2.0-alpha→v1.0) | ✅ AKS NAP uses Karpenter | ✅ Cost optimization | ✅ GPU node provisioning | D + E + F |
+| **KAITO** (POLISH 0.0.7→v1.0) | ✅ AKS add-on | ✅ AI startups deploy LLMs | ✅ LLM deployment | E + F |
+| **KEDA** (POLISH 0.1.1-beta→v1.0) | ✅ Azure Functions on AKS | ✅ Event-driven startups | ✅ Inference autoscaling | D + E + F |
+| **Prometheus** (POLISH 0.8.2→v1.0) | ✅ AKS monitoring | ✅ Universal monitoring | ✅ GPU metrics (DCGM) | All strategies |
+| **OpenTelemetry** (NEW) | ⚠️ AKS supports OTel | ✅ Fastest-growing CNCF | ✅ AI trace/metrics | D + F |
+| **Argo CD** (NEW) | ⚠️ AKS uses Flux | ✅ 60% of K8s clusters | ⚠️ ML model GitOps | D |
+| **Flux** (POLISH 0.6.0→v1.0) | ✅ AKS GitOps add-on | ✅ GitOps standard | ⚠️ Training pipeline GitOps | D + E |
+| **Kueue** (NEW) | ✅ AKS supports Kueue | ⚠️ AI-heavy startups | ✅ GPU job scheduling | E + F |
+| **cert-manager** (POLISH 0.1.0→v1.0) | ✅ AKS TLS | ✅ Every startup | ⚠️ Model endpoint TLS | D + E |
+
+**Key insight:** The 5 plugins that cover **all three goals** (AKS + startups + AI) are:
+**KServe**, **Karpenter**, **KEDA**, **Prometheus**, and **Kueue**. These should be
+prioritized regardless of strategy choice.
 
 ---
 
@@ -1030,3 +1111,102 @@ These are ordered by startup adoption × operator maturity × CRD richness:
    management.
 5. **MongoDB** — #4 database (24%) + community operator. Replica set status, shard topology
    views.
+
+---
+
+## Part 9: CNCF Projects for AI Workloads on Kubernetes
+
+AI/ML workloads on Kubernetes are one of the fastest-growing areas in cloud native
+infrastructure. The CNCF launched the
+[Certified Kubernetes AI Conformance Program](https://www.cncf.io/announcements/2025/11/11/cncf-launches-certified-kubernetes-ai-conformance-program-to-standardize-ai-workloads-on-kubernetes/)
+in late 2025 to standardize AI workloads across Kubernetes distributions. This section maps
+the key projects, their CRDs, and Headlamp's current coverage.
+
+### Sources Consulted
+
+- [CNCF Kubernetes AI Conformance Program](https://github.com/cncf/k8s-ai-conformance) — official conformance repo
+- [CNCF blog: KServe becomes a CNCF incubating project](https://www.cncf.io/blog/2025/11/11/kserve-becomes-a-cncf-incubating-project/) (Nov 2025)
+- [Google Cloud blog: llm-d officially a CNCF Sandbox project](https://cloud.google.com/blog/products/containers-kubernetes/llm-d-officially-a-cncf-sandbox-project) (2026)
+- [KAITO CNCF project page](https://www.cncf.io/projects/kaito/) — CNCF Sandbox (Oct 2024)
+- [Kubeflow CNCF project page](https://www.cncf.io/projects/kubeflow/) — CNCF Incubating (Jul 2023)
+- [Volcano CNCF project page](https://www.cncf.io/projects/volcano/) — CNCF Incubating (2022)
+- [KubeRay GitHub](https://github.com/ray-project/kuberay) — Ray operator for Kubernetes
+- [Kueue GitHub](https://github.com/kubernetes-sigs/kueue) — Kubernetes-native job queueing
+- [AKS Labs: Deploy AI Models with KAITO and Headlamp](https://azure-samples.github.io/aks-labs/docs/ai-workloads-on-aks/kaito-workspace-headlamp/) — official AKS+Headlamp AI guide
+- [CNCF blog: Standardizing AI/ML Workflows with KitOps, Cog, and KAITO](https://www.cncf.io/blog/2025/07/26/standardizing-ai-ml-workflows-on-kubernetes-with-kitops-cog-and-kaito/) (Jul 2025)
+
+### AI/ML Infrastructure Projects
+
+| Project | CNCF Status | Role | Key CRDs | Headlamp Plugin? | Gap |
+|---------|-------------|------|----------|-------------------|-----|
+| **[KServe](https://kserve.github.io/website/)** | CNCF Incubating (Nov 2025) | **Model Serving** — unified platform for predictive and generative AI inference | `InferenceService`, `InferenceGraph`, `ServingRuntime`, `ClusterServingRuntime`, `LocalModel` | ❌ No plugin | 🟡 Medium — rich CRDs, autoscaling views, model version management, traffic splits |
+| **[Kubeflow](https://www.kubeflow.org/)** | CNCF Incubating (Jul 2023) | **ML Platform** — end-to-end ML workflows (training, tuning, serving, pipelines) | `TrainJob` (unified), `PyTorchJob`, `TFJob`, `MPIJob`, `XGBoostJob`, `Notebook` | ✅ [kubeflow plugin](https://github.com/headlamp-k8s/plugins/tree/main/kubeflow) — foundational resource views | Evolving — plugin exists but needs maturity work for training job status views |
+| **[KAITO](https://kaito.sh/)** | CNCF Sandbox (Oct 2024) | **LLM Deployment** — automated AI model deployment, GPU provisioning, fine-tuning | `Workspace`, `Machine`, `RAGEngine` | ✅ [KAITO plugin](https://github.com/kaito-project/headlamp-kaito) — model deployment and GPU provisioning UI | Community plugin (v0.0.7) — needs polish, i18n, migration to official repo |
+| **[Volcano](https://volcano.sh/)** | CNCF Incubating (2022) | **Batch Scheduling** — gang scheduling, GPU/NPU scheduling, resource fairness for AI training | `PodGroup`, `Queue`, `HyperNode` | ✅ [volcano plugin](https://github.com/headlamp-k8s/plugins/tree/main/volcano) — job management | Official plugin exists — needs maturity assessment |
+| **[Kueue](https://kueue.sigs.k8s.io/)** | Kubernetes SIG (k8s-sigs) | **Job Queueing** — resource quotas, gang scheduling, multi-tenant GPU allocation | `ResourceFlavor`, `ClusterQueue`, `LocalQueue`, `Workload` | ❌ No plugin | 🟡 Medium — queue status views, resource allocation dashboards, workload prioritization |
+| **[KubeRay](https://github.com/ray-project/kuberay)** | Ray ecosystem | **Distributed Compute** — Ray clusters for ML training, inference, hyperparameter search | `RayCluster`, `RayJob`, `RayService` | ❌ No plugin | 🟡 Medium — cluster topology, job status, autoscaling views |
+| **[llm-d](https://github.com/llm-d/llm-d)** | CNCF Sandbox (2026) | **LLM Inference Routing** — model-aware routing, KV cache optimization for distributed LLM serving | Uses Gateway API + custom routing (no standalone CRDs yet) | ❌ No plugin | 🟢 Easy — routing/gateway visualization, metrics integration |
+| **[vLLM](https://docs.vllm.ai/)** | Independent (backed by NVIDIA, etc.) | **LLM Inference Engine** — high-throughput, memory-efficient LLM serving | No CRDs (deployed via KServe or direct Deployment) | ❌ No plugin needed | N/A — runtime engine, managed through KServe or KAITO |
+
+### AI/ML Observability and Supporting Projects
+
+| Project | Role | Headlamp Status | Notes |
+|---------|------|-----------------|-------|
+| **[OpenTelemetry](https://opentelemetry.io/)** | Universal observability (traces, metrics, logs) | ❌ No plugin | CNCF Graduated — critical for AI workload monitoring. `OpenTelemetryCollector` CRD. |
+| **[Prometheus](https://prometheus.io/)** | Metrics collection and alerting | ✅ [prometheus plugin](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) (0.8.2) | GPU utilization metrics (DCGM exporter) visible via Prometheus |
+| **[NVIDIA GPU Operator](https://github.com/NVIDIA/gpu-operator)** | GPU driver/runtime management | ❌ No plugin | CRDs: `ClusterPolicy`. Manages GPU driver lifecycle, MIG, time-slicing. AKS uses this. |
+| **[Karpenter](https://karpenter.sh/)** | Node auto-provisioning (GPU nodes) | ✅ [karpenter plugin](https://github.com/headlamp-k8s/plugins/tree/main/karpenter) (0.2.0-alpha) | Critical for AI — auto-provisions GPU nodes. AKS NAP uses Karpenter. |
+| **[KEDA](https://keda.sh/)** | Event-driven autoscaling | ✅ [keda plugin](https://github.com/headlamp-k8s/plugins/tree/main/keda) (0.1.1-beta) | Can scale inference workloads based on queue depth or request rate. |
+
+### Summary: AI Workload Coverage
+
+| Category | Projects | Headlamp Coverage | Gap Analysis |
+|----------|----------|-------------------|--------------|
+| **Model Serving** | KServe, vLLM, llm-d | ❌ No plugins | KServe is the #1 gap — CNCF Incubating with rich CRDs for InferenceService management |
+| **ML Platform** | Kubeflow | ✅ Plugin exists | Plugin is early-stage — needs training job views, pipeline visualization |
+| **LLM Deployment** | KAITO | ✅ Community plugin | Plugin exists but at v0.0.7 — needs polish, i18n, official repo migration |
+| **Batch Scheduling** | Volcano, Kueue | ⚠️ Partial (Volcano only) | Kueue is the bigger gap — used by all major clouds for AI job scheduling |
+| **Distributed Compute** | KubeRay (Ray) | ❌ No plugin | Growing adoption — RayCluster/RayJob/RayService CRDs are good plugin targets |
+| **GPU Management** | NVIDIA GPU Operator, Karpenter | ⚠️ Partial (Karpenter only) | GPU Operator CRDs (ClusterPolicy) would show GPU driver status, MIG configuration |
+| **Observability** | OpenTelemetry, Prometheus | ⚠️ Partial (Prometheus only) | OpenTelemetry is the universal standard — AI workloads need trace/metric views |
+
+### Recommended AI Workload Plugin Priorities
+
+These are ordered by adoption × CRD richness × ecosystem importance:
+
+1. **KServe** — #1 priority. CNCF Incubating (Nov 2025), used by Bloomberg, Red Hat, SAP,
+   NVIDIA. Rich CRDs: `InferenceService` (model endpoints with autoscaling, traffic splits,
+   canary rollouts), `InferenceGraph` (multi-model pipelines), `ServingRuntime`. Visual model
+   management, version comparison, traffic routing dashboard.
+2. **Kueue** — Job queueing for AI clusters. Used by Google, CoreWeave, Red Hat. CRDs:
+   `ClusterQueue`, `LocalQueue`, `ResourceFlavor`, `Workload`. Queue depth visualization,
+   resource allocation dashboard, GPU quota management.
+3. **KAITO** (0.0.7) → official repo, polish to v1.0 — Microsoft-backed, AKS-native, CNCF
+   Sandbox. `Workspace` CRD for LLM deployment, `RAGEngine` for RAG pipelines. Already has
+   [AKS Labs guide using Headlamp](https://azure-samples.github.io/aks-labs/docs/ai-workloads-on-aks/kaito-workspace-headlamp/).
+4. **KubeRay** — Ray is the dominant distributed compute framework for AI. CRDs: `RayCluster`,
+   `RayJob`, `RayService`. Cluster topology view, job status monitoring, autoscaling dashboard.
+5. **OpenTelemetry** — CNCF Graduated, universal observability. `OpenTelemetryCollector` CRD.
+   Critical for AI workload monitoring (trace latency, GPU metrics, model performance).
+6. **Kubeflow** plugin polish — existing plugin needs training job status views (`TrainJob`,
+   `PyTorchJob`, `TFJob`), pipeline visualization, notebook management.
+7. **NVIDIA GPU Operator** — `ClusterPolicy` CRD. GPU driver status, MIG configuration views,
+   node GPU health monitoring. Important for any AI-focused K8s cluster.
+8. **Volcano** plugin polish — existing plugin, enhance for LLM-era features (HyperNode
+   topology views, gang scheduling visualization for distributed training).
+
+### Cross-Cutting: AI Projects That Also Serve AKS and Startups
+
+Several AI workload projects overlap with AKS features and startup needs, creating
+opportunities for plugins that serve multiple strategies:
+
+| Plugin | AI Workloads | AKS Features | Startup Needs |
+|--------|-------------|-------------|---------------|
+| **KServe** | ✅ #1 model serving | ✅ AKS supports KServe | ✅ AI startups need inference management |
+| **KAITO** | ✅ LLM deployment | ✅ AKS add-on, [KAITO+Headlamp guide](https://azure-samples.github.io/aks-labs/docs/ai-workloads-on-aks/kaito-workspace-headlamp/) | ✅ AI startups deploy LLMs on AKS |
+| **Karpenter** (polish) | ✅ GPU node provisioning | ✅ AKS NAP uses Karpenter | ✅ Cost optimization |
+| **KEDA** (polish) | ✅ Inference autoscaling | ✅ Azure Functions on AKS | ✅ Event-driven startups |
+| **Prometheus** (polish) | ✅ GPU metrics (DCGM) | ✅ AKS monitoring | ✅ Universal monitoring |
+| **OpenTelemetry** | ✅ AI trace/metrics | ⚠️ AKS supports OTel | ✅ Fastest-growing CNCF project |
+| **Kueue** | ✅ GPU job scheduling | ✅ AKS supports Kueue | ⚠️ Relevant for AI-heavy startups |
+| **Argo CD** | ⚠️ ML model GitOps | ⚠️ AKS uses Flux, not Argo | ✅ 60% of K8s clusters |
