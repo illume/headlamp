@@ -54,7 +54,7 @@ These do not need new implementation — they just need to be installed.
 |--------|---------------------|-------|
 | [Gatekeeper](https://github.com/sozercan/gatekeeper-headlamp-plugin) | **OPA Gatekeeper / Azure Policy** — manage policies, violations, community policy library | |
 | [Trivy](https://github.com/kubebeam/trivy-headlamp-plugin) | **Vulnerability scanning** — compliance and vulnerability reports | |
-| [Kyverno](https://github.com/kubebeam/kyverno-headlamp-plugin) | **Kyverno policies** — policy and report views | Archived |
+| [Kyverno](https://github.com/kubebeam/kyverno-headlamp-plugin) | **Kyverno policies** — policy and report views | Repo archived; plugin unmaintained |
 | [Kubescape](https://github.com/kubescape/headlamp-plugin) | **Security scanning** — configuration and vulnerability scanning | |
 | [KubeVirt](https://github.com/buttahtoast/headlamp-plugins/tree/main/kubevirt) | **VM workloads** — manage KubeVirt virtual machines | |
 | [Inspektor Gadget](https://github.com/inspektor-gadget/headlamp-plugin/) | **eBPF debugging** — run gadgets, visualize observability data | |
@@ -342,7 +342,7 @@ the current Headlamp support status is listed.
 | # | Project | AKS Integration | Headlamp Status | Gap |
 |---|---------|----------------|-----------------|-----|
 | 1 | **Kubernetes** | Core platform | ✅ Full support | None |
-| 2 | **Prometheus** | Azure Managed Prometheus | ✅ [prometheus plugin](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) — charts in workload details | Plugin could add more AKS-specific dashboards |
+| 2 | **Prometheus** | Azure Managed Prometheus | ✅ [prometheus plugin](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) — charts in workload details | None |
 | 3 | **Flux** | GitOps extension | ✅ [flux plugin](https://github.com/headlamp-k8s/plugins/tree/main/flux) — Flux resource visualization | None |
 | 4 | **OPA (Gatekeeper)** | Azure Policy add-on | ✅ [Gatekeeper plugin](https://github.com/sozercan/gatekeeper-headlamp-plugin) — policies, violations, community library | None (community plugin) |
 | 5 | **Istio** | Managed Istio service mesh | ⚠️ Gateway API supported; Istio CRDs auto-discovered; no dedicated plugin | 🟡 Medium — Istio-specific views needed |
@@ -372,7 +372,7 @@ the current Headlamp support status is listed.
 |---|---------|----------------|-----------------|-----|
 | 1 | **Inspektor Gadget** | eBPF debugging | ✅ [plugin](https://github.com/inspektor-gadget/headlamp-plugin/) — gadget execution & visualization | None (community plugin) |
 | 2 | **KubeVirt** | VM workloads | ✅ [plugin](https://github.com/buttahtoast/headlamp-plugins/tree/main/kubevirt) — VM management | None (community plugin) |
-| 3 | **Kyverno** | Policy engine | ⚠️ [plugin](https://github.com/kubebeam/kyverno-headlamp-plugin) exists but is archived | 🟡 Medium — needs maintainer or replacement |
+| 3 | **Kyverno** | Policy engine | ⚠️ [plugin](https://github.com/kubebeam/kyverno-headlamp-plugin) exists but repo is archived (unmaintained) | 🟡 Medium — needs new maintainer or rebuild |
 | 4 | **Trivy** | Vulnerability scanning | ✅ [plugin](https://github.com/kubebeam/trivy-headlamp-plugin) — compliance & vulnerability reports | None (community plugin) |
 | 5 | **Kubescape** | Security scanning | ✅ [plugin](https://github.com/kubescape/headlamp-plugin) — configuration & vulnerability scanning | None (community plugin) |
 | 6 | **NGINX Ingress** | Web App Routing add-on | ✅ Ingress/IngressClass fully supported in core | None |
@@ -475,8 +475,8 @@ the current Headlamp support status is listed.
 
 ## Part 6: Key Takeaway
 
-Of the ~30 AKS-relevant features analyzed, **15 are already covered** by existing official
-or community plugins. The main gaps are:
+Of the 34 AKS-relevant features analyzed, **15 are already covered** by existing official
+or community plugins, and **9 more are implemented by AKS desktop**. The remaining gaps are:
 - **5 Easy items** — small frontend enhancements (node pools, VPA, virtual nodes, network
   policy visualization, Cilium)
 - **9 Medium items** — new plugin development needed (Istio, Argo CD, Dapr, Key Vault CSI,
