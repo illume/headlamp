@@ -367,7 +367,7 @@ graph TB
     end
 
     subgraph aks_startup ["AKS + Startup"]
-        P_flux["◆ Flux<br/><i>0.6.0</i>"]
+        P_flux["● Flux<br/><i>0.6.0</i>"]
         P_certmgr["● cert-manager<br/><i>0.1.0</i>"]
         P_gatekeeper["▲ Gatekeeper<br/><i>0.2.0</i>"]
         P_opencost["● OpenCost<br/><i>0.1.3</i>"]
@@ -430,10 +430,10 @@ graph TB
     style B fill:#0d6efd,color:#fff,stroke:#0a58ca
 
     style P_prometheus fill:#198754,color:#fff,stroke:#146c43
-    style P_flux fill:#198754,color:#fff,stroke:#146c43
     style P_helm fill:#198754,color:#fff,stroke:#146c43
     style P_kubescape fill:#198754,color:#fff,stroke:#146c43
 
+    style P_flux fill:#fd7e14,color:#fff,stroke:#ca6510
     style P_karpenter fill:#fd7e14,color:#fff,stroke:#ca6510
     style P_keda fill:#fd7e14,color:#fff,stroke:#ca6510
     style P_certmgr fill:#fd7e14,color:#fff,stroke:#ca6510
@@ -478,7 +478,7 @@ graph TB
 **Reading the diagram:**
 - The ⭐ **center group** (yellow border) contains the 5 highest-leverage plugins that serve
   all 3 goals — only ◆ Prometheus is green (mature), the rest are ● orange or ■ blue.
-- **Overlap zones** show plugins serving 2 goals — e.g. ◆ Flux and ● cert-manager serve both
+- **Overlap zones** show plugins serving 2 goals — e.g. ● Flux and ● cert-manager serve both
   AKS and startups.
 - **Edge zones** show single-goal plugins — e.g. ■ Argo CD and ■ Crossplane are startup-only
   gaps that need new plugins.
@@ -487,7 +487,8 @@ graph TB
   ■ RabbitMQ, ■ MinIO — all blue because no plugins exist yet.
 - **Shape + color tells the story:** lots of ■ blue (no plugin) and ● orange (early-stage),
   several ▲ red (very immature — KAITO, Gatekeeper, Trivy, Inspektor Gadget, Kyverno), very
-  few ◆ green (mature). This confirms the crux: the ecosystem is broad but shallow.
+  few ◆ green (mature — only Prometheus, Helm/app-catalog, Kubescape meet score 3+). This
+  confirms the crux: the ecosystem is broad but shallow.
 
 ### Plugin Maturity Scorecard
 
@@ -496,7 +497,9 @@ are 🟢 **green** (production-ready), **3-5** ✅ are 🟠 **orange** (needs wo
 are 🔴 **red** (very immature).
 
 Columns:
-- **Tests** — has unit tests, integration tests, or e2e tests
+- **Tests** — has unit tests, integration tests, or e2e tests (the auto-generated
+  `storybook.test.tsx` file does **not** count — it only runs Storybook snapshot tests, not
+  plugin-specific tests)
 - **Storybook** — has Storybook stories for visual testing
 - **a11y** — has runtime accessibility testing (axe-core, pa11y), not just lint
 - **i18n** — has full internationalization (multiple language files, not just a script)
@@ -506,41 +509,42 @@ Columns:
 
 | Plugin | Tests | Storybook | a11y | i18n | ≥ 0.5 | Official repo | Score | Status |
 |--------|:-----:|:---------:|:----:|:----:|:-----:|:-------------:|:-----:|:------:|
-| ◆ **app-catalog** (0.8.0) | ✅ | ❌ | ❌ | ✅ 19 langs | ✅ | ✅ | 4/6 | 🟠 |
+| ◆ **app-catalog** (0.8.0) | ❌ | ❌ | ❌ | ✅ 19 langs | ✅ | ✅ | 3/6 | 🟠 |
 | ◆ **prometheus** (0.8.2) | ✅ | ❌ | ❌ | ✅ 19 langs | ✅ | ✅ | 4/6 | 🟠 |
-| ◆ **flux** (0.6.0) | ✅ | ❌ | ❌ | ⚠️ script only | ✅ | ✅ | 3/6 | 🟠 |
-| ● **plugin-catalog** (0.4.3) | ✅ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
+| ◆ **flux** (0.6.0) | ❌ | ❌ | ❌ | ⚠️ script only | ✅ | ✅ | 2/6 | 🔴 |
+| ● **plugin-catalog** (0.4.3) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
 | ◆ **Kubescape** (0.10.6) | ✅ | ❌ | ❌ | ✅ | ✅ | ⚠️ project repo | 3/6 | 🟠 |
-| ● **Strimzi** (0.3.9) | ✅ | ❌ | ❌ | ✅ | ❌ | ❌ external | 2/6 | 🔴 |
-| ▲ **Trivy** (0.3.1) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ external | 1/6 | 🔴 |
-| ● **karpenter** (0.2.0-alpha) | ✅ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
+| ● **Strimzi** (0.3.9) | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ external | 1/6 | 🔴 |
+| ▲ **Trivy** (0.3.1) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ external | 0/6 | 🔴 |
+| ● **karpenter** (0.2.0-alpha) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
 | ● **knative** (0.2.0-alpha) | ✅ | ❌ | ❌ | ⚠️ en only | ❌ | ✅ | 2/6 | 🔴 |
-| ● **ai-assistant** (0.2.0-alpha) | ✅ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
-| ▲ **Gatekeeper** (0.2.0) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ external | 1/6 | 🔴 |
-| ● **opencost** (0.1.3) | ✅ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
-| ● **keda** (0.1.1-beta) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
+| ● **ai-assistant** (0.2.0-alpha) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
+| ▲ **Gatekeeper** (0.2.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ external | 0/6 | 🔴 |
+| ● **opencost** (0.1.3) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
+| ● **keda** (0.1.1-beta) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
 | ▲ **Kyverno** (0.1.1) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ archived | 0/6 | 🔴 |
-| ● **cert-manager** (0.1.0) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
-| ● **cluster-api** (0.1.0) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
-| ● **backstage** (0.1.0-beta-2) | ✅ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
-| ▲ **Inspektor Gadget** (0.1.0-beta.3) | ✅ | ❌ | ❌ | ❌ | ❌ | ⚠️ project repo | 1/6 | 🔴 |
-| ▲ **KAITO** (0.0.7) | ✅ | ❌ | ❌ | ❌ | ❌ | ⚠️ project repo | 1/6 | 🔴 |
-| ▲ **KubeVirt** (0.0.1-beta7) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ external | 1/6 | 🔴 |
-| ● **Kubeflow** (plugin exists) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
-| ● **Volcano** (plugin exists) | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
+| ● **cert-manager** (0.1.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
+| ● **cluster-api** (0.1.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
+| ● **backstage** (0.1.0-beta-2) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
+| ▲ **Inspektor Gadget** (0.1.0-beta.3) | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ project repo | 0/6 | 🔴 |
+| ▲ **KAITO** (0.0.7) | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ project repo | 0/6 | 🔴 |
+| ▲ **KubeVirt** (0.0.1-beta7) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ external | 0/6 | 🔴 |
+| ● **Kubeflow** (plugin exists) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
+| ● **Volcano** (plugin exists) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
 
 **Key findings:**
 - **0 plugins are ◆ 🟢 green** in this scorecard — green here means **all 6 criteria** are met,
   which is stricter than the Venn diagram (where green = score 3+, meaning "most criteria met").
-  The 4 strongest plugins (app-catalog, prometheus, flux, Kubescape) appear green in the Venn
+  The 3 strongest plugins (prometheus, app-catalog, Kubescape) appear green in the Venn
   diagram because they meet most criteria, but still fall short of the full 6/6 scorecard bar.
-- **4 plugins are 🟠 orange** (3-5 criteria): app-catalog, prometheus, flux, Kubescape
-- **12 plugins are ● 🔴 red** with score 2 (early-stage — need Storybook, a11y, i18n work)
-- **6 plugins are ▲ 🔴 red** with score 0-1 (very immature — Trivy, Gatekeeper, Kyverno,
-  Inspektor Gadget, KAITO, KubeVirt)
+- **Only 3 of 22 plugins have real unit/integration tests** (prometheus, knative, Kubescape) —
+  all other plugins only have the auto-generated `storybook.test.tsx`, which does not count as
+  plugin-specific testing
+- **3 plugins are 🟠 orange** (3-5 criteria): prometheus, app-catalog, Kubescape
+- **19 plugins are 🔴 red** with score 0-2 (very immature or early-stage)
 - **0 plugins have Storybook stories** — this is a universal gap
 - **0 plugins have runtime a11y tests** — all rely on lint-time jsx-a11y only
-- Even the **4 strongest plugins** (app-catalog, prometheus, flux, Kubescape) still lack
+- Even the **3 strongest plugins** (prometheus, app-catalog, Kubescape) still lack
   Storybook and a11y testing — they are the closest to production-grade but not there yet
 - This confirms the crux: **making existing plugins production-grade is harder than building
   new ones**, because no current plugin meets all 6 quality dimensions
@@ -617,6 +621,10 @@ community plugin repositories on GitHub (checked April 2026).
 - **No plugins have dedicated a11y test suites** — all include `plugin:jsx-a11y/recommended`
   in ESLint (lint-time checks only), but none have runtime a11y testing (e.g. axe-core,
   pa11y, or Storybook a11y addon integration tests).
+- **Only 2 of 12 official plugins have real unit/integration tests** — prometheus (util.test.ts)
+  and knative (url, ingress, nullable, time tests). All other official plugins only have the
+  auto-generated `storybook.test.tsx`, which runs Storybook snapshot tests, not plugin-specific
+  tests. Among community plugins, only Kubescape (layout.test.ts) has real tests.
 - **8 of 12 official plugins are pre-v1.0**, with 5 at v0.1.x or alpha/beta.
 - **All community plugins live outside headlamp-k8s/plugins** — onboarding them into the
   official repo would improve discoverability, CI quality gates, and maintenance.
