@@ -45,7 +45,7 @@ These instructions apply when reviewing pull requests in this repository.
   - `Dockerfile`, `Dockerfile.plugins`
   - `charts/**`
   - `kubernetes-*.yaml`
-  - `SECURITY.md`, `SECURITY_CONTACTS`
+  - `SECURITY_CONTACTS`
   - `OWNERS`, `OWNERS_ALIASES`
   - `LICENSE`, `NOTICE`
   - `code-of-conduct.md`

@@ -157,7 +157,7 @@ should NOT unless explicitly requested or strictly necessary for the change
   - `Dockerfile`, `Dockerfile.plugins` - container definitions
   - `charts/` - Helm charts
   - `kubernetes-*.yaml` - Kubernetes manifests
-  - `SECURITY.md`, `SECURITY_CONTACTS` - security policy files
+  - `SECURITY_CONTACTS` - security contact file
   - `OWNERS`, `OWNERS_ALIASES` - maintainer lists (documented in `/OWNERS`)
   - `LICENSE`, `NOTICE` - license files
   - `code-of-conduct.md` - code of conduct
