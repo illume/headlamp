@@ -15,6 +15,7 @@
  */
 
 import type { MCPSettings } from '@headlamp-k8s/ai-library';
+import { settingsChanges } from '@headlamp-k8s/ai-library';
 import type { ClientConfig } from '@langchain/mcp-adapters';
 import { type BrowserWindow, dialog } from 'electron';
 import os from 'os';
