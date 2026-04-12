@@ -508,6 +508,10 @@ async function main() {
     process.exit(0);
   }
 
+  const dataDir = getHeadlampDataDir();
+  const appConfigPath = path.join(dataDir, 'headlamp-ai.json');
+  const mcpSettingsPath = path.join(dataDir, 'mcp-tools-settings.json');
+
   // Resolve configuration with priority: CLI flags > explicit config file > env vars > app config
   let config: CLIConfig | null = null;
 
@@ -531,7 +535,7 @@ async function main() {
   if (!config) {
     config = loadAppConfig();
     if (config) {
-      console.error(`Using config from ${path.join(getHeadlampDataDir(), 'headlamp-ai.json')}`);
+      console.error(`Using config from ${appConfigPath}`);
     }
   }
 
@@ -565,7 +569,7 @@ async function main() {
     console.error(
       'Error: No AI provider configured.\n' +
         'Use --provider, --config, or set HEADLAMP_AI_PROVIDER env var.\n' +
-        `You can also place a config file at: ${path.join(getHeadlampDataDir(), 'headlamp-ai.json')}\n` +
+        `You can also place a config file at: ${appConfigPath}\n` +
         'Run with --help for usage information.'
     );
     process.exit(1);
@@ -576,7 +580,7 @@ async function main() {
     const appMCP = loadAppMCPSettings();
     if (appMCP) {
       config.mcp = appMCP;
-      console.error(`Using MCP settings from ${path.join(getHeadlampDataDir(), 'mcp-tools-settings.json')}`);
+      console.error(`Using MCP settings from ${mcpSettingsPath}`);
     }
   }
 
