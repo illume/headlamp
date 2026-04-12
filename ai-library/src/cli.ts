@@ -16,16 +16,20 @@
  */
 
 /**
- * headlamp-ai CLI
+ * headlamp-k8s-ai CLI
  *
  * A command-line interface for querying AI models using the same
- * configuration format as the Headlamp app and ai-assistant plugin.
+ * configuration as the Headlamp app and ai-assistant plugin.
+ *
+ * The CLI automatically discovers the Headlamp app's config directory
+ * to load MCP settings. It also supports explicit config files,
+ * CLI flags, and environment variables.
  *
  * Usage:
- *   headlamp-ai "What pods are running?"
- *   headlamp-ai --config ./ai-config.json "Explain Kubernetes services"
- *   echo "List namespaces" | headlamp-ai --provider openai --model gpt-4o
- *   headlamp-ai --interactive
+ *   headlamp-k8s-ai "What pods are running?"
+ *   headlamp-k8s-ai --config ./ai-config.json "Explain Kubernetes services"
+ *   echo "List namespaces" | headlamp-k8s-ai --provider openai --model gpt-4o
+ *   headlamp-k8s-ai --interactive
  *
  * Config file format (same as ai-assistant plugin):
  *   {
@@ -65,6 +69,7 @@ import { ChatMistralAI } from '@langchain/mistralai';
 import { ChatOllama } from '@langchain/ollama';
 import { AzureChatOpenAI, ChatOpenAI } from '@langchain/openai';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import * as readline from 'readline';
 
@@ -91,6 +96,74 @@ interface CLIConfig {
 const DEFAULT_SYSTEM_PROMPT = `You are a helpful AI assistant for Kubernetes management.
 You help users understand and manage their Kubernetes clusters.
 Be concise and precise in your responses.`;
+
+/**
+ * Get the Headlamp app data directory.
+ *
+ * Uses the same paths as Electron's app.getPath('userData') for the "Headlamp" app:
+ * - Linux:   ~/.config/Headlamp/
+ * - macOS:   ~/Library/Application Support/Headlamp/
+ * - Windows: %APPDATA%/Headlamp/
+ */
+function getHeadlampDataDir(): string {
+  switch (process.platform) {
+    case 'win32':
+      return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'Headlamp');
+    case 'darwin':
+      return path.join(os.homedir(), 'Library', 'Application Support', 'Headlamp');
+    default:
+      return path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'Headlamp');
+  }
+}
+
+/**
+ * Attempt to load MCP settings from the Headlamp app's config directory.
+ * Returns the MCP config if found, or undefined.
+ */
+function loadAppMCPSettings(): CLIConfig['mcp'] | undefined {
+  const dataDir = getHeadlampDataDir();
+  const settingsPath = path.join(dataDir, 'mcp-tools-settings.json');
+
+  try {
+    if (!fs.existsSync(settingsPath)) {
+      return undefined;
+    }
+    const content = fs.readFileSync(settingsPath, 'utf-8');
+    const settings = JSON.parse(content);
+    // The app stores MCP settings under the 'mcp' key in settings.json,
+    // but mcp-tools-settings.json is the MCPSettings object directly.
+    if (settings && typeof settings === 'object') {
+      if (settings.servers) {
+        return settings as CLIConfig['mcp'];
+      }
+      if (settings.mcp) {
+        return settings.mcp as CLIConfig['mcp'];
+      }
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Try to load AI provider config from the Headlamp app's config directory.
+ * Checks for a headlamp-ai.json file in the data dir.
+ */
+function loadAppConfig(): CLIConfig | null {
+  const dataDir = getHeadlampDataDir();
+  const configPath = path.join(dataDir, 'headlamp-ai.json');
+
+  try {
+    if (!fs.existsSync(configPath)) {
+      return null;
+    }
+    const content = fs.readFileSync(configPath, 'utf-8');
+    return JSON.parse(content) as CLIConfig;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * Create a LangChain chat model from provider ID and config.
@@ -259,10 +332,11 @@ async function query(
 }
 
 function printUsage() {
-  console.log(`headlamp-ai - CLI for Headlamp AI assistant
+  const dataDir = getHeadlampDataDir();
+  console.log(`headlamp-k8s-ai - CLI for Headlamp AI assistant
 
 Usage:
-  headlamp-ai [options] [query]
+  headlamp-k8s-ai [options] [query]
 
 Options:
   --config <path>       Path to config JSON file
@@ -273,6 +347,10 @@ Options:
   --system-prompt <p>   Custom system prompt
   --interactive, -i     Start interactive chat session
   --help, -h            Show this help message
+
+Auto-discovered config paths (same as Headlamp app):
+  ${path.join(dataDir, 'headlamp-ai.json')}     AI provider config
+  ${path.join(dataDir, 'mcp-tools-settings.json')}   MCP server settings
 
 Environment variables:
   HEADLAMP_AI_PROVIDER        Provider ID
@@ -297,10 +375,10 @@ Config file format:
   }
 
 Examples:
-  headlamp-ai --provider openai --api-key sk-... "What is a Pod?"
-  headlamp-ai --config ./ai-config.json "Explain services"
-  headlamp-ai -i --provider anthropic --api-key sk-ant-...
-  echo "List resources" | headlamp-ai --config ./config.json`);
+  headlamp-k8s-ai --provider openai --api-key sk-... "What is a Pod?"
+  headlamp-k8s-ai --config ./ai-config.json "Explain services"
+  headlamp-k8s-ai -i --provider anthropic --api-key sk-ant-...
+  echo "List resources" | headlamp-k8s-ai --config ./config.json`);
 }
 
 function parseArgs(argv: string[]): {
@@ -430,10 +508,10 @@ async function main() {
     process.exit(0);
   }
 
-  // Resolve configuration: CLI flags > config file > env vars
+  // Resolve configuration with priority: CLI flags > explicit config file > env vars > app config
   let config: CLIConfig | null = null;
 
-  // 1. Try config file (from flag or env)
+  // 1. Try explicit config file (from flag or env)
   const configPath = parsed.configPath || process.env.HEADLAMP_AI_CONFIG;
   if (configPath) {
     try {
@@ -449,7 +527,15 @@ async function main() {
     config = configFromEnv();
   }
 
-  // 3. Apply CLI flag overrides
+  // 3. Try Headlamp app's config directory
+  if (!config) {
+    config = loadAppConfig();
+    if (config) {
+      console.error(`Using config from ${path.join(getHeadlampDataDir(), 'headlamp-ai.json')}`);
+    }
+  }
+
+  // 4. Apply CLI flag overrides
   if (parsed.provider) {
     if (!config) config = { provider: parsed.provider, config: {} };
     else config.provider = parsed.provider;
@@ -479,9 +565,19 @@ async function main() {
     console.error(
       'Error: No AI provider configured.\n' +
         'Use --provider, --config, or set HEADLAMP_AI_PROVIDER env var.\n' +
+        `You can also place a config file at: ${path.join(getHeadlampDataDir(), 'headlamp-ai.json')}\n` +
         'Run with --help for usage information.'
     );
     process.exit(1);
+  }
+
+  // If no MCP config in explicit config, try loading from Headlamp app's settings
+  if (!config.mcp) {
+    const appMCP = loadAppMCPSettings();
+    if (appMCP) {
+      config.mcp = appMCP;
+      console.error(`Using MCP settings from ${path.join(getHeadlampDataDir(), 'mcp-tools-settings.json')}`);
+    }
   }
 
   const systemPrompt = parsed.systemPrompt || config.systemPrompt || DEFAULT_SYSTEM_PROMPT;

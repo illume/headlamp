@@ -67,7 +67,7 @@ frontend/build:
 	make frontend
 
 .PHONY: app
-app-build: frontend/build
+app-build: frontend/build ai-library-build
 	cd app && npm install && node ./scripts/setup-plugins.js && npm run build
 app: app-build
 	cd app && npm run package -- --win --linux --mac
@@ -79,10 +79,12 @@ app-linux: app-build
 	cd app && npm run package -- --linux
 app-mac: app-build
 	cd app && npm run package -- --mac
-app-test:
+ai-library-build:
+	cd ai-library && npm install && npm run build
+app-test: ai-library-build
 	cd app && npm install
 	cd app && npm run test
-app-tsc:
+app-tsc: ai-library-build
 	cd app && npm install
 	cd app && npm run tsc
 
