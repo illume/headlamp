@@ -2,7 +2,84 @@
 
 Shared AI assistant, MCP (Model Context Protocol), and LangChain library for Headlamp.
 
-This library provides the core AI infrastructure used by both the Headlamp desktop app (Electron) and the ai-assistant plugin.
+This library provides the core AI infrastructure used by both the Headlamp desktop app (Electron) and the ai-assistant plugin. It also includes a CLI for querying AI models from the command line.
+
+## CLI
+
+The `headlamp-ai` CLI lets you query AI models from the command line using the same configuration format as the Headlamp app and ai-assistant plugin.
+
+### Quick Start
+
+```bash
+# Build the library
+cd ai-library && npm install && npm run build
+
+# Query with CLI flags
+npx headlamp-ai --provider openai --api-key sk-... "What is a Kubernetes Pod?"
+
+# Or use environment variables
+export HEADLAMP_AI_PROVIDER=openai
+export HEADLAMP_AI_API_KEY=sk-...
+npx headlamp-ai "Explain Kubernetes services"
+
+# Or use a config file
+npx headlamp-ai --config ./ai-config.json "List common kubectl commands"
+
+# Interactive chat mode
+npx headlamp-ai -i --provider anthropic --api-key sk-ant-...
+
+# Pipe from stdin
+echo "What is a DaemonSet?" | npx headlamp-ai --provider openai --api-key sk-...
+```
+
+### Config File
+
+The config file uses the same format as the ai-assistant plugin:
+
+```json
+{
+  "provider": "openai",
+  "config": {
+    "apiKey": "sk-...",
+    "model": "gpt-4o"
+  },
+  "mcp": {
+    "enabled": true,
+    "servers": [
+      {
+        "name": "my-mcp-server",
+        "command": "npx",
+        "args": ["-y", "@modelcontextprotocol/server-everything"],
+        "enabled": true
+      }
+    ]
+  }
+}
+```
+
+### Supported Providers
+
+| Provider | ID | Required Config |
+|----------|------|----------------|
+| OpenAI | `openai` | `apiKey`, `model` |
+| Azure OpenAI | `azure` | `apiKey`, `endpoint`, `deploymentName`, `model` |
+| Anthropic | `anthropic` | `apiKey`, `model` |
+| Mistral AI | `mistral` | `apiKey`, `model` |
+| Google Gemini | `gemini` | `apiKey`, `model` |
+| DeepSeek | `deepseek` | `apiKey`, `model` |
+| Local (Ollama) | `local` | `baseUrl`, `model` |
+
+### Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+| `HEADLAMP_AI_PROVIDER` | Provider ID |
+| `HEADLAMP_AI_MODEL` | Model name |
+| `HEADLAMP_AI_API_KEY` | API key |
+| `HEADLAMP_AI_BASE_URL` | Base URL for local models |
+| `HEADLAMP_AI_CONFIG` | Path to config file |
+| `HEADLAMP_AI_ENDPOINT` | Azure endpoint |
+| `HEADLAMP_AI_DEPLOYMENT_NAME` | Azure deployment name |
 
 ## Modules
 
@@ -31,7 +108,7 @@ AI manager and configuration:
 - **ElectronMCPClient**: Client for MCP operations in the Electron environment
 - **Prompts**: System prompts for the AI assistant
 
-## Usage
+## Library Usage
 
 ```typescript
 // Import MCP types and utilities
