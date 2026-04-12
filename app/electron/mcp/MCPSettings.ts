@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-import type { MCPSettings } from '@headlamp-k8s/ai-library';
-import { settingsChanges } from '@headlamp-k8s/ai-library';
+import type { MCPSettings } from '@headlamp-k8s/ai';
+import { settingsChanges } from '@headlamp-k8s/ai';
 import type { ClientConfig } from '@langchain/mcp-adapters';
 import { type BrowserWindow, dialog } from 'electron';
 import os from 'os';
 import path from 'path';
 import { loadSettings, saveSettings } from '../settings';
 
-export type { MCPSettings } from '@headlamp-k8s/ai-library';
-export { settingsChanges } from '@headlamp-k8s/ai-library';
+export type { MCPSettings } from '@headlamp-k8s/ai';
+export { settingsChanges } from '@headlamp-k8s/ai';
 
 const DEBUG = true;
 

@@ -1,5 +1,5 @@
 {
-  "name": "@headlamp-k8s/ai-library",
+  "name": "@headlamp-k8s/ai",
   "version": "0.1.0",
   "description": "Shared AI assistant, MCP, and LangChain library for Headlamp",
   "type": "module",

@@ -15,7 +15,7 @@
  */
 
 /**
- * @headlamp-k8s/ai-library
+ * @headlamp-k8s/ai
  *
  * Shared AI assistant, MCP, and LangChain library for Headlamp.
  * This library provides the core AI infrastructure used by both the

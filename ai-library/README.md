@@ -1,4 +1,4 @@
-# @headlamp-k8s/ai-library
+# @headlamp-k8s/ai
 
 Shared AI assistant, MCP (Model Context Protocol), and LangChain library for Headlamp.
 
@@ -93,14 +93,14 @@ The config file uses the same format as the ai-assistant plugin:
 
 ## Modules
 
-### MCP (`@headlamp-k8s/ai-library/mcp`)
+### MCP (`@headlamp-k8s/ai/mcp`)
 
 Types and utilities for the Model Context Protocol:
 
 - **Types**: `MCPSettings`, `MCPServer`, `MCPToolState`, `MCPServerToolState`, `MCPToolsConfig`
 - **Utilities**: `expandEnvAndResolvePaths`, `settingsChanges`, `parseServerNameToolName`, `validateToolArgs`, `summarizeMcpToolStateChanges`
 
-### LangChain (`@headlamp-k8s/ai-library/langchain`)
+### LangChain (`@headlamp-k8s/ai/langchain`)
 
 LangChain integration for AI-powered Kubernetes management:
 
@@ -110,7 +110,7 @@ LangChain integration for AI-powered Kubernetes management:
 - **Tools**: Tool management, orchestration, and Kubernetes-specific tools
 - **Formatters**: MCP output formatting utilities
 
-### AI (`@headlamp-k8s/ai-library/ai`)
+### AI (`@headlamp-k8s/ai/ai`)
 
 AI manager and configuration:
 
@@ -122,11 +122,11 @@ AI manager and configuration:
 
 ```typescript
 // Import MCP types and utilities
-import { MCPSettings, validateToolArgs } from '@headlamp-k8s/ai-library';
+import { MCPSettings, validateToolArgs } from '@headlamp-k8s/ai';
 
 // Import from specific submodules
-import { LangChainManager } from '@headlamp-k8s/ai-library/langchain';
-import { ElectronMCPClient } from '@headlamp-k8s/ai-library/ai';
+import { LangChainManager } from '@headlamp-k8s/ai/langchain';
+import { ElectronMCPClient } from '@headlamp-k8s/ai/ai';
 ```
 
 ## Building

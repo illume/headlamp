@@ -18,22 +18,22 @@ import type {
   MCPToolsConfig,
   MCPToolState,
   MCPServerToolState,
-} from '@headlamp-k8s/ai-library';
+} from '@headlamp-k8s/ai';
 import {
   parseServerNameToolName,
   validateToolArgs,
   summarizeMcpToolStateChanges,
-} from '@headlamp-k8s/ai-library';
+} from '@headlamp-k8s/ai';
 import type { DynamicStructuredTool } from '@langchain/core/dist/tools/index';
 import { type BrowserWindow, dialog } from 'electron';
 import * as fs from 'fs';
 
-export type { MCPToolState, MCPServerToolState, MCPToolsConfig } from '@headlamp-k8s/ai-library';
+export type { MCPToolState, MCPServerToolState, MCPToolsConfig } from '@headlamp-k8s/ai';
 export {
   parseServerNameToolName,
   validateToolArgs,
   summarizeMcpToolStateChanges,
-} from '@headlamp-k8s/ai-library';
+} from '@headlamp-k8s/ai';
 
 /**
  * MCPToolStateStore manages configuration for MCP (Multi-Cluster Platform)
