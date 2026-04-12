@@ -16,7 +16,7 @@
  */
 
 /**
- * headlamp-k8s-ai CLI
+ * headlamp-ai CLI
  *
  * A command-line interface for querying AI models using the same
  * configuration as the Headlamp app and ai-assistant plugin.
@@ -26,10 +26,10 @@
  * CLI flags, and environment variables.
  *
  * Usage:
- *   headlamp-k8s-ai "What pods are running?"
- *   headlamp-k8s-ai --config ./ai-config.json "Explain Kubernetes services"
- *   echo "List namespaces" | headlamp-k8s-ai --provider openai --model gpt-4o
- *   headlamp-k8s-ai --interactive
+ *   headlamp-ai "What pods are running?"
+ *   headlamp-ai --config ./ai-config.json "Explain Kubernetes services"
+ *   echo "List namespaces" | headlamp-ai --provider openai --model gpt-4o
+ *   headlamp-ai --interactive
  *
  * Config file format (same as ai-assistant plugin):
  *   {
@@ -333,10 +333,10 @@ async function query(
 
 function printUsage() {
   const dataDir = getHeadlampDataDir();
-  console.log(`headlamp-k8s-ai - CLI for Headlamp AI assistant
+  console.log(`headlamp-ai - CLI for Headlamp AI assistant
 
 Usage:
-  headlamp-k8s-ai [options] [query]
+  headlamp-ai [options] [query]
 
 Options:
   --config <path>       Path to config JSON file
@@ -375,10 +375,10 @@ Config file format:
   }
 
 Examples:
-  headlamp-k8s-ai --provider openai --api-key sk-... "What is a Pod?"
-  headlamp-k8s-ai --config ./ai-config.json "Explain services"
-  headlamp-k8s-ai -i --provider anthropic --api-key sk-ant-...
-  echo "List resources" | headlamp-k8s-ai --config ./config.json`);
+  headlamp-ai --provider openai --api-key sk-... "What is a Pod?"
+  headlamp-ai --config ./ai-config.json "Explain services"
+  headlamp-ai -i --provider anthropic --api-key sk-ant-...
+  echo "List resources" | headlamp-ai --config ./config.json`);
 }
 
 function parseArgs(argv: string[]): {

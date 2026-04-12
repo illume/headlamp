@@ -6,7 +6,7 @@ This library provides the core AI infrastructure used by both the Headlamp deskt
 
 ## CLI
 
-The `headlamp-k8s-ai` CLI lets you query AI models from the command line using the same configuration as the Headlamp app and ai-assistant plugin.
+The `headlamp-ai` CLI lets you query AI models from the command line using the same configuration as the Headlamp app and ai-assistant plugin.
 
 The CLI automatically discovers config from the Headlamp app's data directory:
 - **Linux:** `~/.config/Headlamp/`
@@ -22,24 +22,24 @@ It reads `headlamp-ai.json` (AI provider config) and `mcp-tools-settings.json` (
 cd ai-library && npm install && npm run build
 
 # Query with CLI flags
-npx headlamp-k8s-ai --provider openai --api-key sk-... "What is a Kubernetes Pod?"
+npx headlamp-ai --provider openai --api-key sk-... "What is a Kubernetes Pod?"
 
 # Or use environment variables
 export HEADLAMP_AI_PROVIDER=openai
 export HEADLAMP_AI_API_KEY=sk-...
-npx headlamp-k8s-ai "Explain Kubernetes services"
+npx headlamp-ai "Explain Kubernetes services"
 
 # Or use a config file
-npx headlamp-k8s-ai --config ./ai-config.json "List common kubectl commands"
+npx headlamp-ai --config ./ai-config.json "List common kubectl commands"
 
 # Or place config in the Headlamp app's data directory
 # (e.g. ~/.config/Headlamp/headlamp-ai.json on Linux)
 
 # Interactive chat mode
-npx headlamp-k8s-ai -i --provider anthropic --api-key sk-ant-...
+npx headlamp-ai -i --provider anthropic --api-key sk-ant-...
 
 # Pipe from stdin
-echo "What is a DaemonSet?" | npx headlamp-k8s-ai --provider openai --api-key sk-...
+echo "What is a DaemonSet?" | npx headlamp-ai --provider openai --api-key sk-...
 ```
 
 ### Config File

@@ -6,7 +6,7 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "headlamp-k8s-ai": "dist/cli.js"
+    "headlamp-ai": "dist/cli.js"
   },
   "exports": {
     ".": {
