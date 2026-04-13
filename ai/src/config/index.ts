@@ -22,10 +22,7 @@ export {
   getDefaultConfig,
 } from './modelConfig';
 
-export type {
-  StoredProviderConfig,
-  SavedConfigurations,
-} from '../utils/ProviderConfigManager';
+export type { StoredProviderConfig, SavedConfigurations } from '../utils/ProviderConfigManager';
 export {
   getSavedConfigurations,
   getActiveConfig,

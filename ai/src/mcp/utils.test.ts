@@ -202,7 +202,12 @@ describe('hasClusterDependentServers', () => {
     const settings = {
       enabled: true,
       servers: [
-        { name: 's', command: 'cmd', args: ['--cluster', 'HEADLAMP_CURRENT_CLUSTER'], enabled: true },
+        {
+          name: 's',
+          command: 'cmd',
+          args: ['--cluster', 'HEADLAMP_CURRENT_CLUSTER'],
+          enabled: true,
+        },
       ],
     };
     expect(hasClusterDependentServers(settings)).toBe(true);
@@ -211,9 +216,7 @@ describe('hasClusterDependentServers', () => {
   it('returns false when only disabled servers use HEADLAMP_CURRENT_CLUSTER', () => {
     const settings = {
       enabled: true,
-      servers: [
-        { name: 's', command: 'cmd', args: ['HEADLAMP_CURRENT_CLUSTER'], enabled: false },
-      ],
+      servers: [{ name: 's', command: 'cmd', args: ['HEADLAMP_CURRENT_CLUSTER'], enabled: false }],
     };
     expect(hasClusterDependentServers(settings)).toBe(false);
   });
