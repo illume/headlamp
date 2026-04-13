@@ -1,5 +1,3 @@
-export { ToolBase } from './ToolBase';
-export { KubernetesTool, type KubernetesToolContext } from './kubernetes';
-export { ToolManager } from './ToolManager';
-export type { ToolConfig, ToolHandler, ToolResponse } from './ToolBase';
-export { AVAILABLE_TOOLS } from './registry';
+// Re-export from @headlamp-k8s/ai library
+export { ToolBase, ToolManager, ToolOrchestrator } from '@headlamp-k8s/ai/langchain';
+export type { ToolConfig, ToolResponse, ToolHandler, RecommendedTool, ToolRecommendation } from '@headlamp-k8s/ai/langchain';

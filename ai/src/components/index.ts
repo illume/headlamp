@@ -14,14 +14,9 @@
  * limitations under the License.
  */
 
-export type { HolmesServiceInfo } from './agentTypes';
-export {
-  DEFAULT_AGUI_URL,
-  HOLMES_SERVICE_NAME,
-  HOLMES_SERVICE_PORT,
-  HOLMES_SERVICE_NAMESPACE,
-  getHolmesServiceProxyPath,
-  getHolmesProxyBaseUrl,
-  checkHolmesAgentHealth,
-  HolmesAgent,
-} from './holmesClient';
+export type {
+  MCPToolSchema,
+  UserContext,
+  ProcessedArguments,
+} from './mcpOutput/MCPArgumentProcessor';
+export { MCPArgumentProcessor } from './mcpOutput/MCPArgumentProcessor';

@@ -22,6 +22,10 @@ export {
   resourceListParser,
   configRecommendationParser,
   nameListParser,
+  plainTextParser,
+  actionSuggestionParser,
+  getFormatInstructions,
+  safeParseResponse,
 } from './OutputParsers';
 
 export {
@@ -30,6 +34,12 @@ export {
   resourceAnalysisPromptTemplate,
   configReviewPromptTemplate,
   userGuidancePromptTemplate,
+  errorExplanationPromptTemplate,
+  apiErrorPromptTemplate,
+  toolFailurePromptTemplate,
+  quickActionPromptTemplate,
+  createCustomPromptTemplate,
+  toolSpecificPromptTemplate,
 } from './PromptTemplates';
 
 export { MCPOutputFormatter } from './formatters/MCPOutputFormatter';
@@ -40,3 +50,10 @@ export type { ToolConfig, ToolResponse, ToolHandler } from './tools/ToolBase';
 export { ToolManager } from './tools/ToolManager';
 export { ToolOrchestrator } from './tools/ToolOrchestrator';
 export type { RecommendedTool, ToolRecommendation } from './tools/ToolOrchestrator';
+export { AVAILABLE_TOOLS, getToolByName } from './tools/registry';
+export { KubernetesTool } from './tools/kubernetes/KubernetesTool';
+export type {
+  KubernetesToolUIState,
+  KubernetesToolUICallbacks,
+  KubernetesToolContext,
+} from './tools/kubernetes/types';
