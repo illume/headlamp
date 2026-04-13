@@ -3,3 +3,4 @@ backend/tools/
 docs/
 **/*.stories.*
 **/*.test.*
+plugins/examples/ai-assistant

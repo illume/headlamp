@@ -93,7 +93,7 @@ export function makeMcpServers(
 ): Record<
   string,
   {
-    transport: string;
+    transport: 'stdio';
     command: string;
     args: string[];
     env: Record<string, string>;

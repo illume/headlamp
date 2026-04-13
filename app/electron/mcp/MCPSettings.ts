@@ -16,7 +16,6 @@
 
 import type { MCPSettings } from '@headlamp-k8s/ai';
 import {
-  expandEnvAndResolvePaths,
   hasClusterDependentServers as hasClusterDependentServersFromSettings,
   makeMcpServers,
   settingsChanges,
