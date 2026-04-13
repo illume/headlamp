@@ -29,8 +29,12 @@
   "scripts": {
     "build": "tsc",
     "clean": "rm -rf dist",
-    "lint": "echo 'no linter configured'",
-    "test": "echo 'no tests configured yet'"
+    "format": "prettier --config package.json --write src/",
+    "format:check": "prettier --config package.json --check src/",
+    "lint": "eslint --cache -c package.json --ext .ts src/",
+    "lint:fix": "eslint --cache -c package.json --ext .ts --fix src/",
+    "test": "vitest run --passWithNoTests",
+    "tsc": "tsc --noEmit"
   },
   "keywords": [
     "headlamp",
@@ -64,9 +68,48 @@
     }
   },
   "devDependencies": {
+    "@headlamp-k8s/eslint-config": "^0.6.0",
     "@kinvolk/headlamp-plugin": "^0.13.0-alpha.14",
     "@types/node": "^25.6.0",
     "@types/sanitize-html": "^2.16.1",
-    "typescript": "~5.6.2"
+    "@typescript-eslint/eslint-plugin": "^8.58.1",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^9.1.2",
+    "eslint-plugin-license-header": "^0.8.0",
+    "prettier": "^2.8.8",
+    "typescript": "~5.6.2",
+    "vitest": "^3.2.4"
+  },
+  "prettier": "@headlamp-k8s/eslint-config/prettier-config",
+  "eslintConfig": {
+    "plugins": [
+      "license-header"
+    ],
+    "extends": [
+      "@headlamp-k8s",
+      "prettier"
+    ],
+    "rules": {
+      "license-header/header": [
+        "error",
+        [
+          "/*",
+          " * Copyright 2025 The Kubernetes Authors",
+          " *",
+          " * Licensed under the Apache License, Version 2.0 (the \"License\");",
+          " * you may not use this file except in compliance with the License.",
+          " * You may obtain a copy of the License at",
+          " *",
+          " * http://www.apache.org/licenses/LICENSE-2.0",
+          " *",
+          " * Unless required by applicable law or agreed to in writing, software",
+          " * distributed under the License is distributed on an \"AS IS\" BASIS,",
+          " * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.",
+          " * See the License for the specific language governing permissions and",
+          " * limitations under the License.",
+          " */"
+        ]
+      ]
+    }
   }
 }

@@ -16,7 +16,7 @@
 
 import os from 'os';
 import path from 'path';
-import type { MCPSettings, MCPToolState, MCPToolsConfig } from './types';
+import type { MCPSettings, MCPToolState } from './types';
 
 /**
  * Expand environment variables and resolve paths in arguments.
@@ -90,7 +90,16 @@ export function expandEnvAndResolvePaths(args: string[], cluster: string | null 
 export function makeMcpServers(
   mcpSettings: MCPSettings | null,
   clusters: string[]
-): Record<string, { transport: string; command: string; args: string[]; env: Record<string, string>; restart: { enabled: boolean; maxAttempts: number; delayMs: number } }> {
+): Record<
+  string,
+  {
+    transport: string;
+    command: string;
+    args: string[];
+    env: Record<string, string>;
+    restart: { enabled: boolean; maxAttempts: number; delayMs: number };
+  }
+> {
   const mcpServers: Record<string, any> = {};
 
   if (

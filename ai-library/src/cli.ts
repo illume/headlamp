@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+
 /*
  * Copyright 2025 The Kubernetes Authors
  *
@@ -108,11 +109,17 @@ Be concise and precise in your responses.`;
 function getHeadlampDataDir(): string {
   switch (process.platform) {
     case 'win32':
-      return path.join(process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'), 'Headlamp');
+      return path.join(
+        process.env.APPDATA || path.join(os.homedir(), 'AppData', 'Roaming'),
+        'Headlamp'
+      );
     case 'darwin':
       return path.join(os.homedir(), 'Library', 'Application Support', 'Headlamp');
     default:
-      return path.join(process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'), 'Headlamp');
+      return path.join(
+        process.env.XDG_CONFIG_HOME || path.join(os.homedir(), '.config'),
+        'Headlamp'
+      );
   }
 }
 
@@ -319,9 +326,10 @@ async function query(
   messages.push(new HumanMessage(message));
 
   const response = await model.invoke(messages);
-  const content = typeof response.content === 'string'
-    ? response.content
-    : Array.isArray(response.content)
+  const content =
+    typeof response.content === 'string'
+      ? response.content
+      : Array.isArray(response.content)
       ? response.content
           .filter((c: any) => c.type === 'text')
           .map((c: any) => c.text)
@@ -454,10 +462,12 @@ function parseArgs(argv: string[]): {
  * Read all of stdin as a string (for piped input).
  */
 async function readStdin(): Promise<string> {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     let data = '';
     process.stdin.setEncoding('utf-8');
-    process.stdin.on('data', chunk => { data += chunk; });
+    process.stdin.on('data', chunk => {
+      data += chunk;
+    });
     process.stdin.on('end', () => resolve(data.trim()));
   });
 }
@@ -477,7 +487,7 @@ async function interactiveMode(model: BaseChatModel, systemPrompt: string) {
   console.log('Type your questions. Press Ctrl+C or type "exit" to quit.\n');
 
   const askQuestion = () => {
-    rl.question('You: ', async (input) => {
+    rl.question('You: ', async input => {
       const trimmed = input.trim();
       if (!trimmed || trimmed.toLowerCase() === 'exit' || trimmed.toLowerCase() === 'quit') {
         rl.close();
