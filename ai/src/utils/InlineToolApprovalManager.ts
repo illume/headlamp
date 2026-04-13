@@ -17,6 +17,7 @@
 import { EventEmitter } from 'events';
 import { ToolCall } from '../ai/manager';
 import { UserContext } from '../components/mcpOutput/MCPArgumentProcessor';
+import { ToolApprovalHandler } from './ToolApprovalManager';
 
 export interface InlineToolApprovalRequest {
   requestId: string;
@@ -34,6 +35,7 @@ export class InlineToolApprovalManager extends EventEmitter {
   private pendingRequest: InlineToolApprovalRequest | null = null;
   private autoApproveSettings: Map<string, boolean> = new Map();
   private sessionAutoApproval: boolean = false;
+  private approvalHandler: ToolApprovalHandler | null = null;
 
   private constructor() {
     super();
@@ -44,6 +46,26 @@ export class InlineToolApprovalManager extends EventEmitter {
       InlineToolApprovalManager.instance = new InlineToolApprovalManager();
     }
     return InlineToolApprovalManager.instance;
+  }
+
+  /**
+   * Set a custom approval handler.
+   *
+   * When set, `requestApproval` delegates to this handler instead of
+   * emitting event-based confirmation requests for the React UI.
+   * Pass `null` to revert to the default event-based flow.
+   *
+   * Example (CLI auto-approve):
+   *   import { autoApproveAll } from '@headlamp-k8s/ai/utils';
+   *   inlineToolApprovalManager.setApprovalHandler(autoApproveAll());
+   *
+   * Example (terminal prompt):
+   *   inlineToolApprovalManager.setApprovalHandler({
+   *     async handleApproval(tools) { ... prompt user on stdin ... }
+   *   });
+   */
+  public setApprovalHandler(handler: ToolApprovalHandler | null): void {
+    this.approvalHandler = handler;
   }
 
   /**
@@ -125,6 +147,13 @@ export class InlineToolApprovalManager extends EventEmitter {
       return autoApprovedTools;
     }
 
+    // If a custom approval handler is set, delegate to it
+    if (this.approvalHandler) {
+      const approvedIds = await this.approvalHandler.handleApproval(needsApprovalTools);
+      return [...autoApprovedTools, ...approvedIds];
+    }
+
+    // Default: event-based flow for UI components
     // If there's already a pending request, reject the previous one
     if (this.pendingRequest) {
       this.pendingRequest.reject(new Error('Request superseded by new tool approval request'));

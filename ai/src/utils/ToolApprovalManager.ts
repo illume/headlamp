@@ -31,11 +31,42 @@ export interface ToolApprovalRequest {
   reject: (error: Error) => void;
 }
 
+/**
+ * Pluggable approval handler interface.
+ *
+ * Consumers (CLI, eval frameworks, TUI) implement this to control
+ * how tool-execution requests are approved or denied.
+ *
+ * Built-in strategies:
+ *   - `autoApproveAll()` — approves every tool call (useful for evals)
+ *   - Default (no handler set) — emits 'approval-requested' event for UI
+ */
+export interface ToolApprovalHandler {
+  /**
+   * Called when tools need human/programmatic approval.
+   * Return the IDs of the approved tool calls; throw or return [] to deny.
+   */
+  handleApproval(toolCalls: ToolCall[]): Promise<string[]>;
+}
+
+/**
+ * Built-in handler that auto-approves every tool call.
+ * Use for eval frameworks or non-interactive CLI runs.
+ */
+export function autoApproveAll(): ToolApprovalHandler {
+  return {
+    async handleApproval(toolCalls: ToolCall[]) {
+      return toolCalls.map(t => t.id);
+    },
+  };
+}
+
 export class ToolApprovalManager extends EventEmitter {
   private static instance: ToolApprovalManager | null = null;
   private pendingRequest: ToolApprovalRequest | null = null;
   private autoApproveSettings: Map<string, boolean> = new Map();
   private sessionAutoApproval: boolean = false;
+  private approvalHandler: ToolApprovalHandler | null = null;
 
   private constructor() {
     super();
@@ -46,6 +77,25 @@ export class ToolApprovalManager extends EventEmitter {
       ToolApprovalManager.instance = new ToolApprovalManager();
     }
     return ToolApprovalManager.instance;
+  }
+
+  /**
+   * Set a custom approval handler.
+   *
+   * When set, `requestApproval` delegates to this handler instead of
+   * emitting 'approval-requested' events.  Pass `null` to revert to
+   * the default event-based flow (used by the React UI).
+   *
+   * Example (CLI auto-approve):
+   *   toolApprovalManager.setApprovalHandler(autoApproveAll());
+   *
+   * Example (terminal prompt):
+   *   toolApprovalManager.setApprovalHandler({
+   *     async handleApproval(tools) { ... prompt user ... }
+   *   });
+   */
+  public setApprovalHandler(handler: ToolApprovalHandler | null): void {
+    this.approvalHandler = handler;
   }
 
   /**
@@ -74,6 +124,13 @@ export class ToolApprovalManager extends EventEmitter {
       return autoApprovedTools;
     }
 
+    // If a custom approval handler is set, delegate to it
+    if (this.approvalHandler) {
+      const approvedIds = await this.approvalHandler.handleApproval(needsApprovalTools);
+      return [...autoApprovedTools, ...approvedIds];
+    }
+
+    // Default: event-based flow for UI components
     // If there's already a pending request, reject the previous one
     if (this.pendingRequest) {
       this.pendingRequest.reject(new Error('Request superseded by new tool approval request'));

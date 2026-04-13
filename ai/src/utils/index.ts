@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-export type { ToolApprovalRequest } from './ToolApprovalManager';
-export { ToolApprovalManager, toolApprovalManager } from './ToolApprovalManager';
+export type { ToolApprovalRequest, ToolApprovalHandler } from './ToolApprovalManager';
+export { ToolApprovalManager, toolApprovalManager, autoApproveAll } from './ToolApprovalManager';
 export type { ToolCall as ToolApprovalToolCall } from './ToolApprovalManager';
 
 export type { InlineToolApprovalRequest } from './InlineToolApprovalManager';
