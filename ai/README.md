@@ -19,7 +19,7 @@ It reads `headlamp-ai.json` (AI provider config) and `mcp-tools-settings.json` (
 
 ```bash
 # Build the library
-cd ai-library && npm install && npm run build
+cd ai && npm install && npm run build
 
 # Query with CLI flags
 npx headlamp-ai --provider openai --api-key sk-... "What is a Kubernetes Pod?"
