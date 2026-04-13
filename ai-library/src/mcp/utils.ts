@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+import os from 'os';
+import path from 'path';
 import type { MCPSettings, MCPToolState, MCPToolsConfig } from './types';
 
 /**
@@ -26,6 +28,7 @@ import type { MCPSettings, MCPToolState, MCPToolsConfig } from './types';
  */
 export function expandEnvAndResolvePaths(args: string[], cluster: string | null = null): string[] {
   return args.map(arg => {
+    // Replace Windows environment variables like %USERPROFILE%
     let expandedArg = arg;
 
     // Handle HEADLAMP_CURRENT_CLUSTER placeholder
@@ -33,8 +36,114 @@ export function expandEnvAndResolvePaths(args: string[], cluster: string | null 
       expandedArg = expandedArg.replace(/HEADLAMP_CURRENT_CLUSTER/g, cluster || '');
     }
 
+    // Handle %USERPROFILE%
+    if (expandedArg.includes('%USERPROFILE%')) {
+      expandedArg = expandedArg.replace(/%USERPROFILE%/g, os.homedir());
+    }
+
+    // Handle other common Windows environment variables
+    if (expandedArg.includes('%APPDATA%')) {
+      expandedArg = expandedArg.replace(/%APPDATA%/g, process.env.APPDATA || '');
+    }
+
+    if (expandedArg.includes('%LOCALAPPDATA%')) {
+      expandedArg = expandedArg.replace(/%LOCALAPPDATA%/g, process.env.LOCALAPPDATA || '');
+    }
+
+    // Convert Windows backslashes to forward slashes for Docker
+    if (process.platform === 'win32' && expandedArg.includes('\\')) {
+      expandedArg = expandedArg.replace(/\\/g, '/');
+    }
+
+    // Handle Docker volume mount format and ensure proper Windows path format
+    if (expandedArg.includes('type=bind,src=')) {
+      const match = expandedArg.match(/type=bind,src=(.+?),dst=(.+)/);
+      if (match) {
+        let srcPath = match[1];
+        const dstPath = match[2];
+
+        // Resolve the source path
+        if (process.platform === 'win32') {
+          srcPath = path.resolve(srcPath);
+          // For Docker on Windows, we might need to convert C:\ to /c/ format
+          if (srcPath.match(/^[A-Za-z]:/)) {
+            srcPath = '/' + srcPath.charAt(0).toLowerCase() + srcPath.slice(2).replace(/\\/g, '/');
+          }
+        }
+
+        expandedArg = `type=bind,src=${srcPath},dst=${dstPath}`;
+      }
+    }
+
     return expandedArg;
   });
+}
+
+/**
+ * Build MCP server configuration from MCPSettings for MultiServerMCPClient.
+ *
+ * @param mcpSettings - The MCP settings to build from, or null if none.
+ * @param clusters - List of current clusters (first is used for HEADLAMP_CURRENT_CLUSTER).
+ *
+ * @returns Record of MCP servers suitable for MultiServerMCPClient's mcpServers config.
+ */
+export function makeMcpServers(
+  mcpSettings: MCPSettings | null,
+  clusters: string[]
+): Record<string, { transport: string; command: string; args: string[]; env: Record<string, string>; restart: { enabled: boolean; maxAttempts: number; delayMs: number } }> {
+  const mcpServers: Record<string, any> = {};
+
+  if (
+    !mcpSettings ||
+    !mcpSettings.enabled ||
+    !mcpSettings.servers ||
+    mcpSettings.servers.length === 0
+  ) {
+    return mcpServers;
+  }
+
+  for (const server of mcpSettings.servers) {
+    if (!server.enabled || !server.name || !server.command) {
+      continue;
+    }
+
+    const expandedArgs = expandEnvAndResolvePaths(server.args || [], clusters[0] || null);
+
+    const serverEnv = server.env ? { ...process.env, ...server.env } : process.env;
+
+    mcpServers[server.name] = {
+      transport: 'stdio',
+      command: server.command,
+      args: expandedArgs,
+      env: serverEnv as Record<string, string>,
+      restart: {
+        enabled: true,
+        maxAttempts: 3,
+        delayMs: 2000,
+      },
+    };
+  }
+
+  return mcpServers;
+}
+
+/**
+ * Check if any server in the settings uses HEADLAMP_CURRENT_CLUSTER placeholder.
+ * This determines whether the MCP client needs to be restarted on cluster changes.
+ *
+ * @param mcpSettings - The MCP settings to check, or null if none.
+ *
+ * @returns True if any enabled server has HEADLAMP_CURRENT_CLUSTER in its arguments.
+ */
+export function hasClusterDependentServers(mcpSettings: MCPSettings | null): boolean {
+  return (
+    mcpSettings?.servers.some(
+      server =>
+        server.enabled &&
+        server.args &&
+        server.args.some(arg => arg.includes('HEADLAMP_CURRENT_CLUSTER'))
+    ) || false
+  );
 }
 
 /**

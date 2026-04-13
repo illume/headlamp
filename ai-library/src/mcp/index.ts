@@ -28,4 +28,8 @@ export {
   parseServerNameToolName,
   validateToolArgs,
   summarizeMcpToolStateChanges,
+  makeMcpServers,
+  hasClusterDependentServers,
 } from './utils';
+
+export { MCPToolStateStore } from './MCPToolStateStore';

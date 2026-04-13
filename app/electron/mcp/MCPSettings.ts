@@ -15,17 +15,18 @@
  */
 
 import type { MCPSettings } from '@headlamp-k8s/ai';
-import { settingsChanges } from '@headlamp-k8s/ai';
+import {
+  expandEnvAndResolvePaths,
+  hasClusterDependentServers as hasClusterDependentServersFromSettings,
+  makeMcpServers,
+  settingsChanges,
+} from '@headlamp-k8s/ai';
 import type { ClientConfig } from '@langchain/mcp-adapters';
 import { type BrowserWindow, dialog } from 'electron';
-import os from 'os';
-import path from 'path';
 import { loadSettings, saveSettings } from '../settings';
 
 export type { MCPSettings } from '@headlamp-k8s/ai';
-export { settingsChanges } from '@headlamp-k8s/ai';
-
-const DEBUG = true;
+export { expandEnvAndResolvePaths, settingsChanges } from '@headlamp-k8s/ai';
 
 /**
  * Load MCP server configuration from settings
@@ -56,68 +57,6 @@ export function saveMCPSettings(settingsPath: string, mcpSettings: MCPSettings):
 }
 
 /**
- * Expand environment variables and resolve paths in arguments.
- *
- * @param args - The array of argument strings to expand.
- * @param currentCluster - The current cluster name to replace HEADLAMP_CURRENT_CLUSTER.
- * @param cluster - The specific cluster name to replace HEADLAMP_CURRENT_CLUSTER, if provided.
- *
- * @returns The array of expanded argument strings.
- */
-export function expandEnvAndResolvePaths(args: string[], cluster: string | null = null): string[] {
-  return args.map(arg => {
-    // Replace Windows environment variables like %USERPROFILE%
-    let expandedArg = arg;
-
-    // Handle HEADLAMP_CURRENT_CLUSTER placeholder
-    if (expandedArg.includes('HEADLAMP_CURRENT_CLUSTER')) {
-      expandedArg = expandedArg.replace(/HEADLAMP_CURRENT_CLUSTER/g, cluster || '');
-    }
-
-    // Handle %USERPROFILE%
-    if (expandedArg.includes('%USERPROFILE%')) {
-      expandedArg = expandedArg.replace(/%USERPROFILE%/g, os.homedir());
-    }
-
-    // Handle other common Windows environment variables
-    if (expandedArg.includes('%APPDATA%')) {
-      expandedArg = expandedArg.replace(/%APPDATA%/g, process.env.APPDATA || '');
-    }
-
-    if (expandedArg.includes('%LOCALAPPDATA%')) {
-      expandedArg = expandedArg.replace(/%LOCALAPPDATA%/g, process.env.LOCALAPPDATA || '');
-    }
-
-    // Convert Windows backslashes to forward slashes for Docker
-    if (process.platform === 'win32' && expandedArg.includes('\\')) {
-      expandedArg = expandedArg.replace(/\\/g, '/');
-    }
-
-    // Handle Docker volume mount format and ensure proper Windows path format
-    if (expandedArg.includes('type=bind,src=')) {
-      const match = expandedArg.match(/type=bind,src=(.+?),dst=(.+)/);
-      if (match) {
-        let srcPath = match[1];
-        const dstPath = match[2];
-
-        // Resolve the source path
-        if (process.platform === 'win32') {
-          srcPath = path.resolve(srcPath);
-          // For Docker on Windows, we might need to convert C:\ to /c/ format
-          if (srcPath.match(/^[A-Za-z]:/)) {
-            srcPath = '/' + srcPath.charAt(0).toLowerCase() + srcPath.slice(2).replace(/\\/g, '/');
-          }
-        }
-
-        expandedArg = `type=bind,src=${srcPath},dst=${dstPath}`;
-      }
-    }
-
-    return expandedArg;
-  });
-}
-
-/**
  * Make mpcServers from settings for the mpcServers arg of MultiServerMCPClient.
  *
  * @param settingsPath - path to settings file
@@ -129,45 +68,8 @@ export function makeMcpServersFromSettings(
   settingsPath: string,
   clusters: string[]
 ): ClientConfig['mcpServers'] {
-  const mcpServers: ClientConfig['mcpServers'] = {};
-
   const mcpSettings = loadMCPSettings(settingsPath);
-  if (
-    !mcpSettings ||
-    !mcpSettings.enabled ||
-    !mcpSettings.servers ||
-    mcpSettings.servers.length === 0
-  ) {
-    return mcpServers;
-  }
-
-  for (const server of mcpSettings.servers) {
-    if (!server.enabled || !server.name || !server.command) {
-      continue;
-    }
-
-    const expandedArgs = expandEnvAndResolvePaths(server.args || [], clusters[0] || null);
-
-    if (DEBUG) {
-      console.log(`Expanded args for ${server.name}:`, expandedArgs);
-    }
-
-    const serverEnv = server.env ? { ...process.env, ...server.env } : process.env;
-
-    mcpServers[server.name] = {
-      transport: 'stdio',
-      command: server.command,
-      args: expandedArgs,
-      env: serverEnv as Record<string, string>,
-      restart: {
-        enabled: true,
-        maxAttempts: 3,
-        delayMs: 2000,
-      },
-    };
-  }
-
-  return mcpServers;
+  return makeMcpServers(mcpSettings, clusters);
 }
 
 /**
@@ -212,12 +114,5 @@ export async function showSettingsChangeDialog(
  * @returns True if any enabled server has HEADLAMP_CURRENT_CLUSTER in its arguments
  */
 export function hasClusterDependentServers(settingsPath: string): boolean {
-  return (
-    loadMCPSettings(settingsPath)?.servers.some(
-      server =>
-        server.enabled &&
-        server.args &&
-        server.args.some(arg => arg.includes('HEADLAMP_CURRENT_CLUSTER'))
-    ) || false
-  );
+  return hasClusterDependentServersFromSettings(loadMCPSettings(settingsPath));
 }

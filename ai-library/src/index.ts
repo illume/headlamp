@@ -37,4 +37,8 @@ export {
   parseServerNameToolName,
   validateToolArgs,
   summarizeMcpToolStateChanges,
+  makeMcpServers,
+  hasClusterDependentServers,
 } from './mcp/index';
+
+export { MCPToolStateStore } from './mcp/index';
