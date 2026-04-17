@@ -25,12 +25,25 @@ spec:
       labels:
         k8s-app: headlamp
     spec:
+      initContainers:
+        - name: fetch-minikube-plugin
+          image: ghcr.io/headlamp-k8s/headlamp-plugin-minikube:latest
+          # Copy the minikube plugin into the shared plugins volume so
+          # Headlamp loads it at startup. See docs/development/plugins/building.md.
+          command: ["/bin/sh", "-c"]
+          args: ["cp -r /plugins/* /headlamp/plugins/ && ls -l /headlamp/plugins"]
+          volumeMounts:
+            - name: plugins
+              mountPath: /headlamp/plugins
       containers:
         - name: headlamp
           image: ghcr.io/headlamp-k8s/headlamp:latest
           args:
             - "-in-cluster"
             - "-plugins-dir=/headlamp/plugins"
+          volumeMounts:
+            - name: plugins
+              mountPath: /headlamp/plugins
           env:
             - name: HEADLAMP_CONFIG_TRACING_ENABLED
               value: "true"
@@ -63,6 +76,9 @@ spec:
             timeoutSeconds: 30
       nodeSelector:
         'kubernetes.io/os': linux
+      volumes:
+        - name: plugins
+          emptyDir: {}
 ---
 kind: Secret
 apiVersion: v1
