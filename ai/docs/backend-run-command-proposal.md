@@ -106,11 +106,11 @@ func validateCommand(command string) error {
 }
 ```
 
-**Layer 4 — User consent (backend-managed):**
+**Layer 4 — User consent (backend-managed, NOT browser-based):**
 
-- Instead of Electron dialog: frontend shows a consent UI, sends decision to `POST /api/v1/run-command/consent`
-- Backend persists consent in config file (headless) or ConfigMap (in-cluster)
-- Pre-approved commands can be configured via Helm values
+- **Headless:** Go backend prompts via terminal stdout/stdin (same trust as Electron — user's machine, possibly over SSH). See [consent security analysis](#consent-ui--security-analysis) for why React dialogs are not safe.
+- **In-cluster:** Admin pre-approves commands via Helm values. No runtime consent — unapproved commands return 403.
+- Backend persists consent in config file (headless). Pre-approved commands configured via Helm values (in-cluster).
 
 **Layer 5 — Mode gating:**
 
@@ -232,39 +232,265 @@ export async function permissionSecretsFromApp(): Promise<Record<string, number>
 }
 ```
 
-### Consent UI — why React dialogs are not safe
+### Consent UI — security analysis
 
-In Electron, `checkCommandConsent` shows a **native OS dialog** (`dialog.showMessageBoxSync`). This is critical for security — the dialog runs in the main process, outside the renderer's JavaScript context, so no plugin or script in the page can programmatically dismiss or approve it.
+In Electron, `checkCommandConsent` shows a **native OS dialog** (`dialog.showMessageBoxSync`). This dialog runs in Electron's main process — completely outside the renderer's JavaScript context. No page script can dismiss, approve, or even detect it. This is the gold standard for consent security.
 
-**A React dialog in the same page is not safe for consent.** Any JavaScript running in the page context — including a compromised or malicious plugin — could:
-- Intercept the React component render and auto-approve
-- Directly call the consent API endpoint without showing any UI
-- Manipulate the DOM to hide/approve the dialog
+When moving to backend-based `runCommand`, we lose access to Electron's native dialog. The question is: **what consent mechanism is secure enough?**
 
-**Recommended alternatives for headless/in-cluster consent:**
+#### Why consent matters
 
-| Approach | Pros | Cons | Best for |
-|----------|------|------|----------|
-| **Admin pre-approval via config** | No runtime UI needed, simple | No per-user consent, all-or-nothing | In-cluster (admin controls config) |
-| **Separate browser tab/popup** | Isolated JS context, cannot be manipulated by page scripts | Popup blockers may interfere, worse UX | Headless (single user, local machine) |
-| **Backend-managed allowlist only** | Server-side enforcement, no client trust | No interactive consent, admin must pre-configure | All modes (defense-in-depth) |
+Without consent, any plugin with a valid permission secret could silently run commands. The consent layer adds **user awareness** — the user explicitly approves "yes, I want minikube to be allowed to run." This is defense-in-depth on top of permission secrets.
 
-**Recommendation:**
+#### Background: how browsers isolate UI
 
-1. **In-cluster**: Admin pre-approves commands via Helm values (`runCommand.preApprovedCommands`). No runtime consent dialog. Unauthorized commands are rejected by the backend with 403.
-2. **Headless**: Backend rejects commands not in the allowlist. For new commands, the headless Go backend can prompt via terminal stdout/stdin (same trust boundary as Electron — user's machine). The browser UI shows a status message ("Waiting for approval in terminal...") but the actual consent happens server-side.
-3. **Defense-in-depth**: Even with valid consent, the permission secret check ensures only the authorized plugin can call the endpoint.
+Browser-native permission prompts (geolocation, camera, Payment Request API, WebAuthn) are secure because they render **outside the DOM** in browser chrome that page JavaScript cannot access. There is no web API to create custom browser-chrome prompts. Any consent UI that a web app renders inside its own page is accessible to page scripts.
+
+However, the browser's **Same-Origin Policy** provides strong isolation between different origins. Two pages on different origins (including different ports on localhost) cannot access each other's DOM, cookies, or JavaScript state. This is the same security boundary that makes OAuth2 work — the authorization server is on a different origin than the client application.
+
+#### Approach 1: In-page React dialog — NOT SECURE ❌
+
+A React consent dialog renders inside the same DOM and JavaScript context as plugins.
+
+**Attack vectors:**
+
+| Attack | How it works | Difficulty |
+|--------|-------------|------------|
+| **Direct API call** | Plugin calls `fetch('/api/v1/run-command/consent', { method: 'POST', body: '{"allowed": true}' })` — bypasses the dialog entirely | Trivial |
+| **DOM manipulation** | Plugin finds the dialog's "Allow" button via `document.querySelector` and calls `.click()` | Easy |
+| **React tree interception** | Plugin monkey-patches `React.createElement` or `useState` to intercept the consent component's state setter | Medium |
+| **Global fetch override** | Plugin replaces `window.fetch` to intercept the consent request and auto-approve before it reaches the server | Easy |
+
+**Why CSRF tokens don't help:** A CSRF token prevents *cross-site* forgery — requests from *other* websites. But a malicious plugin runs on the *same* origin. It has the same cookies, same CSRF tokens, same `HEADLAMP_BACKEND_TOKEN`. A CSRF token cannot distinguish between "the user clicked Allow in the dialog" and "a plugin script called the endpoint directly."
+
+**Verdict: ❌ Do not use for security-critical consent.**
+
+#### Approach 2: Same-origin popup (window.open, same port) — NOT SECURE ❌
+
+A `window.open()` popup on the **same** origin (same host and port) provides a visually separate window, but **no security isolation**. The opener can fully access the popup's DOM.
+
+**Why it fails:**
+```javascript
+// Malicious plugin on localhost:4466
+const popup = window.open('/api/v1/consent/abc123');
+// Same origin — full DOM access!
+popup.document.querySelector('#approve-button').click();  // ✅ works
+```
+
+The browser treats same-origin popups identically to iframes in the same page — full mutual DOM access. A `new Function()` sandbox prevents accessing the opener's *scope variables*, but it does NOT prevent a plugin from calling `window.open()` and interacting with the popup's DOM.
+
+**Verdict: ❌ Same origin = no isolation. Same problem as in-page React dialog.**
+
+#### Approach 3: Cross-origin popup via different port — SECURE ✅
+
+A popup opened on a **different port** (e.g., `localhost:4467` when the app runs on `localhost:4466`) is treated as a **different origin** by the browser. The Same-Origin Policy then enforces complete isolation.
+
+**How it works:**
 
 ```
-Consent flow (headless):
+Main app (localhost:4466)              Consent server (localhost:4467)
+────────────────────────               ─────────────────────────────
+1. Plugin requests command
+   → Backend returns 202 +
+     consentUrl + consentId
+
+2. Frontend opens popup:
+   window.open('http://localhost:4467
+     /consent/{consentId}')
+                                       3. Consent page loads
+                                          (minimal HTML, no plugins,
+                                           no Headlamp JS bundle)
+
+                                       4. Page shows:
+                                          "Allow: minikube status?"
+                                          [Allow] [Deny]
+
+                                       5. User clicks Allow
+                                          → POST /consent/{consentId}/approve
+                                          → Sets consent cookie on :4467
+                                          → Returns success
+
+                                       6. Popup calls:
+                                          window.opener.postMessage(
+                                            {type:'consent-result',
+                                             consentId, approved:true},
+                                            'http://localhost:4466')
+
+7. Main app receives postMessage
+   → Retries the original command
+   → Backend sees consent recorded
+   → Command executes
+```
+
+**Why this is secure — attack-by-attack analysis:**
+
+| Attack | Attempt | Result | Why |
+|--------|---------|--------|-----|
+| **Direct API call to consent endpoint** | Plugin on :4466 calls `fetch('http://localhost:4467/consent/abc/approve', {method:'POST'})` | ❌ Blocked | Cross-origin request. Consent server on :4467 does NOT set `Access-Control-Allow-Origin` headers, so browser blocks the response (and for non-simple requests, blocks the preflight). |
+| **DOM manipulation of popup** | `popup.document.querySelector('#approve').click()` | ❌ Blocked | Cross-origin. Browser throws `SecurityError: Blocked a frame with origin "http://localhost:4466" from accessing a cross-origin frame.` |
+| **Read popup content** | `popup.document.body.innerHTML` | ❌ Blocked | Same cross-origin restriction. |
+| **postMessage spoofing** | Plugin sends `popup.postMessage({type:'auto-approve'}, '*')` | ❌ No effect | The consent page does not listen for messages from the opener. The "Allow" button submits a form or calls `fetch` to its own origin (:4467). The consent decision flows from popup → consent server, not from opener → popup. |
+| **Open own popup first** | Plugin calls `window.open('http://localhost:4467/consent/abc/approve')` | ❌ No effect | The consent page requires user interaction (button click). Even if the plugin opens the page, it can't click the button (cross-origin). The GET endpoint shows the form; the POST endpoint requires the form submission. |
+| **Intercept postMessage result** | Plugin listens for `message` events from :4467 | ⚠️ Can observe | Plugin can see the consent result, but this is harmless — the consent was already recorded server-side. The result message is informational only. |
+| **Race condition: approve before user sees it** | Plugin calls the consent endpoint on :4467 before user acts | ❌ Blocked | Same CORS block as "Direct API call" above. |
+
+**Why CORS is the key:** The browser enforces CORS at the network level. Even if a plugin uses `XMLHttpRequest`, `fetch`, or dynamically created `<form>` elements, the browser will:
+- Block the preflight `OPTIONS` request (no `Access-Control-Allow-Origin` header from :4467)
+- Block reading the response even for simple requests
+- `<form>` submissions to :4467 would navigate away from the page (destructive to the attacker), and the consent server can reject requests without a valid `Referer` from its own origin
+
+**Implementation details:**
+
+```go
+// In Go backend startup
+consentPort := findFreePort()  // e.g., 4467
+go startConsentServer(consentPort, consentStore)
+
+// Consent server — minimal, no CORS headers
+mux := http.NewServeMux()
+mux.HandleFunc("GET /consent/{id}", showConsentPage)   // serves minimal HTML
+mux.HandleFunc("POST /consent/{id}/approve", approveConsent)
+mux.HandleFunc("POST /consent/{id}/deny", denyConsent)
+// NO Access-Control-Allow-Origin headers — blocks all cross-origin requests
+```
+
+The consent page HTML is minimal — no Headlamp bundle, no plugin code, no React:
+
+```html
+<!-- Served by consent server on :4467 -->
+<html>
+<body>
+  <h2>Headlamp: Command Approval</h2>
+  <p>Allow this command to run?</p>
+  <pre>minikube status</pre>
+  <form method="POST" action="/consent/abc123/approve">
+    <button type="submit">Allow</button>
+  </form>
+  <form method="POST" action="/consent/abc123/deny">
+    <button type="submit">Deny</button>
+  </form>
+  <script>
+    // After form submission, notify opener and close
+    document.querySelectorAll('form').forEach(form => {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const resp = await fetch(form.action, { method: 'POST' });
+        if (resp.ok && window.opener) {
+          window.opener.postMessage(
+            { type: 'consent-result', approved: form.action.includes('approve') },
+            'http://localhost:4466'  // only send to expected origin
+          );
+        }
+        window.close();
+      });
+    });
+  </script>
+</body>
+</html>
+```
+
+**Consent secret (consentId) lifecycle:**
+
+```
+1. Backend generates consentId = crypto.RandomBytes(32).hex()
+2. consentId is stored in memory with: command, args, expiry (60s), status: "pending"
+3. Frontend receives consentId in the 202 response
+4. Popup loads /consent/{consentId} — backend verifies it exists and is pending
+5. User clicks Allow → POST /consent/{consentId}/approve → status: "approved"
+6. consentId is single-use: once approved/denied, it cannot be reused
+7. After 60s, pending consentIds expire automatically
+8. The frontend retries the original command — backend sees it's now approved
+9. Optionally, the choice is persisted to config (like Electron's confirmedCommands)
+```
+
+**Edge cases:**
+- **Popup blocked:** If the browser blocks the popup, the frontend shows a link: "Click here to approve command in a new tab." Manual navigation bypasses popup blockers.
+- **Multiple consent requests:** Each gets its own consentId. The consent server can show a list of pending requests.
+- **Consent port discovery:** The main backend returns the consent port in its API (e.g., `GET /api/v1/config` includes `consentPort: 4467`). The frontend constructs the popup URL from this.
+
+**Verdict: ✅ Secure. Browser-enforced cross-origin isolation prevents plugins from bypassing consent. Equivalent security to OAuth2 authorization code flow.**
+
+#### Approach 4: Terminal prompt (headless with visible terminal) — SECURE ✅
+
+For headless mode when the user has terminal access (e.g., SSH session, or started from a terminal), the Go backend prompts via terminal stdout/stdin:
+
+```
+[headlamp] Allow command: minikube status? [y/N]
+```
+
+**Why this is secure:**
+- The terminal is controlled by the OS, not by browser JavaScript
+- No plugin can interact with the terminal — it's a completely separate I/O channel
+- The user who started the headless server is the same user who sees the prompt (same trust boundary as Electron)
+- Appropriate for SSH/headless scenarios — the user is already looking at a terminal
+
+**Attack surface:** An attacker would need shell access to the machine running the backend to inject input into the terminal. If they have shell access, they can already run arbitrary commands — consent is moot.
+
+**Implementation:**
+- Backend uses Go's `fmt.Fprintf(os.Stderr, ...)` and `bufio.NewReader(os.Stdin)` for the prompt
+- Browser UI shows a non-interactive status: "Waiting for approval in terminal..." (informational only — not a consent mechanism)
+- Previously-approved commands are saved to a config file, same as Electron's `confirmedCommands`
+- Optional timeout (e.g., 60s auto-deny) prevents blocking indefinitely
+
+**Verdict: ✅ Secure. Equivalent to Electron's native dialog in a terminal context.**
+
+#### Approach 5: Admin pre-approval via config (in-cluster) — SECURE ✅
+
+For in-cluster deployments, an admin pre-approves commands via Helm values:
+
+```yaml
+runCommand:
+  preApprovedCommands:
+    - "minikube status"
+    - "minikube start"
+```
+
+**Why this is secure:**
+- No runtime consent UI at all — nothing to bypass
+- Changing the approved list requires Helm upgrade (K8s RBAC-protected)
+- Backend reads config from ConfigMap (mounted as a file) — not from any browser request
+- Unapproved commands return 403 with no option to override at runtime
+
+**Verdict: ✅ Secure. No client-side trust required. Appropriate for shared/multi-user clusters.**
+
+#### Summary: which approach for which mode
+
+| Mode | Consent mechanism | Secure? | Reasoning |
+|------|-------------------|---------|-----------|
+| **Desktop (Electron)** | Native OS dialog (`dialog.showMessageBoxSync`) | ✅ | Runs in main process, outside renderer JS context |
+| **Headless (terminal visible)** | Terminal prompt (Go backend stdin/stdout) | ✅ | Separate I/O channel, inaccessible to browser JS. Good for SSH. |
+| **Headless (no terminal, e.g., desktop icon)** | Cross-origin popup on different port | ✅ | Browser-enforced cross-origin isolation. Plugin cannot access popup DOM or call consent endpoint (CORS blocked). |
+| **In-cluster** | Admin pre-approval (Helm/ConfigMap) | ✅ | No runtime consent, server-side enforcement only |
+| **Any mode** | In-page React dialog | ❌ | Same JS context as plugins, trivially bypassable |
+| **Any mode** | Same-origin popup (same port) | ❌ | Same origin = full DOM access from plugin code |
+
+#### Recommended consent flow
+
+**Headless auto-detection:** The backend can detect whether stdin is a TTY (`term.IsTerminal(int(os.Stdin.Fd()))` in Go). If yes → terminal prompt. If no (e.g., started from desktop icon, stdin is /dev/null) → cross-origin popup.
+
+```
+Consent flow (headless — terminal available):
   Plugin calls runCommand ──HTTP──► Go backend
                                       ├─ checkPermissionSecret ✓
                                       ├─ checkHeadlampBackendToken ✓
                                       ├─ checkAllowlist ✓
-                                      ├─ checkConsent
+                                      ├─ checkConsent (config file)
                                       │   └─ Not consented?
-                                      │       ├─ Print to terminal: "Allow minikube status? [y/N]"
-                                      │       └─ Wait for terminal input
+                                      │       ├─ stdin is TTY → prompt in terminal
+                                      │       └─ Save choice to config file
+                                      └─ spawn('minikube', ['status'])
+
+Consent flow (headless — no terminal, e.g., desktop icon):
+  Plugin calls runCommand ──HTTP──► Go backend
+                                      ├─ checkPermissionSecret ✓
+                                      ├─ checkHeadlampBackendToken ✓
+                                      ├─ checkAllowlist ✓
+                                      ├─ checkConsent (config file)
+                                      │   └─ Not consented?
+                                      │       ├─ Generate consentId, return 202
+                                      │       ├─ Frontend opens popup on consent port
+                                      │       ├─ User approves in popup (cross-origin)
+                                      │       └─ Frontend retries, backend sees approval
                                       └─ spawn('minikube', ['status'])
 
 Consent flow (in-cluster):
@@ -380,11 +606,13 @@ Both share:
 1. **Go backend endpoints** — `POST /start`, `GET /stream`, `POST /consent` with permission secret validation
 2. **Frontend HTTP fallback** — `runCommandViaHTTP` alongside existing IPC path
 3. **Plugin loader backend secrets** — `permissionSecretsFromApp` fetches from backend when not in Electron
-4. **Consent UI** — React dialog for headless/in-cluster (replaces Electron native dialog)
-5. **Helm configuration** — `runCommand.enabled`, `runCommand.allowedCommands`, `runCommand.preApprovedCommands`
+4. **Consent: terminal prompt** — Go backend checks `term.IsTerminal(os.Stdin)`, prompts via stdin/stdout, saves choice to config
+5. **Consent: cross-origin popup** — Go backend starts consent server on separate port, serves minimal consent HTML, uses single-use consentId nonces
+6. **Helm configuration** — `runCommand.enabled`, `runCommand.allowedCommands`, `runCommand.preApprovedCommands`
 
 ## Open questions
 
 1. **WebSocket vs SSE for streaming** — SSE is simpler (unidirectional) but WebSocket supports stdin. Could start with SSE and add WebSocket later if stdin is needed.
 2. **In-cluster runCommand** — Should this be disabled entirely, or configurable per-command? The minikube plugin doesn't make sense in-cluster, but future plugins might need local commands.
-3. **Terminal consent UX** — For headless, the Go backend prompts via terminal. Should there be a timeout (e.g., 30s auto-deny)? Should previously-consented commands be remembered in a config file?
+3. **Consent port stability** — The consent server runs on a random port. Should it be configurable (e.g., `--consent-port 4467`) so that popup blocker exceptions can be saved?
+4. **Popup blocker UX** — If the popup is blocked, the frontend falls back to a clickable link. Should there be a third fallback (e.g., admin pre-approval via config file)?

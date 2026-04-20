@@ -110,8 +110,9 @@ POST /api/v1/mcp/reset     → reconnect to MCP servers
 **Tool approval (backend-side):**
 - Backend validates the permission secret + HEADLAMP_BACKEND_TOKEN/Bearer auth before executing any tool
 - **In-cluster:** Admin pre-approves tools via ConfigMap (Helm values). No runtime consent dialog — unapproved tools return 403.
-- **Headless:** Backend prompts via terminal stdout/stdin for first-time tool approval (same trust boundary as Electron — user's machine). Browser shows "Waiting for approval in terminal..." status.
-- **Why not a React dialog?** A React consent dialog runs in the same JavaScript context as plugins. A malicious plugin could programmatically approve it or bypass it entirely. Electron uses `dialog.showMessageBoxSync` which runs in the main process — outside the renderer. For the backend path, we replicate this isolation by doing consent outside the browser context (terminal prompt for headless, admin config for in-cluster).
+- **Headless (terminal visible):** Backend prompts via terminal stdout/stdin for first-time tool approval (same trust boundary as Electron — user's machine).
+- **Headless (no terminal, e.g., desktop icon):** Backend opens a cross-origin popup on a separate port for consent. Cross-origin isolation (Same-Origin Policy) prevents plugins from accessing the popup's DOM or calling the consent endpoint. See [detailed security analysis](./backend-run-command-proposal.md#consent-ui--security-analysis) with attack-by-attack reasoning.
+- **Why not a React dialog?** A React consent dialog runs in the same JavaScript context as plugins. A malicious plugin could programmatically approve it or bypass it entirely. Same-origin popups are equally insecure. Only cross-origin popups (different port) provide browser-enforced isolation. See [full analysis](./backend-run-command-proposal.md#approach-1-in-page-react-dialog--not-secure-).
 - Backend logs every tool execution with user identity for audit
 
 **MCP server connections:**
