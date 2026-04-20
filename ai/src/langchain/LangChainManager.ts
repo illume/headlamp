@@ -35,6 +35,7 @@ import sanitizeHtml from 'sanitize-html';
 import AIManager, { Prompt } from '../ai/manager';
 import { basePrompt } from '../ai/prompts';
 import { MCPArgumentProcessor, UserContext } from '../components/mcpOutput/MCPArgumentProcessor';
+import { createMockTestingModel } from '../mock-testing-model/MockTestingModel';
 import { inlineToolApprovalManager } from '../utils/InlineToolApprovalManager';
 import { ToolCall } from '../utils/ToolApprovalManager';
 import { isBuiltInTool } from '../utils/ToolConfigManager';
@@ -366,6 +367,11 @@ export default class LangChainManager extends AIManager {
             headers: Object.keys(headers).length ? headers : undefined,
           });
         }
+        case 'mock-testing-model':
+          return createMockTestingModel({
+            fixturesDir: (config.fixturesDir as string) || undefined,
+            sequenceName: (config.sequenceName as string) || undefined,
+          });
         default:
           throw new Error(`Unsupported provider: ${providerId}`);
       }

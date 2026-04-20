@@ -290,6 +290,32 @@ export const modelProviders: ModelProvider[] = [
       'phi3',
     ],
   },
+  {
+    id: 'mock-testing-model',
+    name: 'Mock Testing Model',
+    icon: 'mdi:test-tube',
+    description:
+      'A canned-response model for automated tests, CI, and scripted demos — no API key or network required',
+    fields: [
+      {
+        name: 'fixturesDir',
+        label: 'Custom Fixtures Directory',
+        type: 'text',
+        required: false,
+        placeholder: '/path/to/custom/fixtures',
+        description: 'Optional path to a directory of extra .json fixture files',
+      },
+      {
+        name: 'sequenceName',
+        label: 'Demo Sequence',
+        type: 'text',
+        required: false,
+        placeholder: 'cluster-exploration-demo',
+        description:
+          'Name of a conversation sequence to play back in order (leave empty for template matching)',
+      },
+    ],
+  },
 ];
 
 // Function to get provider by ID
