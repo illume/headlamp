@@ -49,9 +49,10 @@ export abstract class ToolBase {
           return response.content;
         } catch (error) {
           console.error(`Error in ${this.config.name} tool:`, error);
+          const message = error instanceof Error ? error.message : String(error);
           return JSON.stringify({
             error: true,
-            message: error.message,
+            message,
           });
         }
       },

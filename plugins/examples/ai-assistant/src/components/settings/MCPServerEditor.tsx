@@ -247,6 +247,11 @@ export default function MCPServerEditor({
                       size="small"
                       onClick={() => handleRemoveEnvVar(index)}
                       color="error"
+                      aria-label={
+                        envVar.key
+                          ? `Remove environment variable ${envVar.key}`
+                          : `Remove environment variable ${index + 1}`
+                      }
                     >
                       <Icon icon="mdi:delete" />
                     </IconButton>

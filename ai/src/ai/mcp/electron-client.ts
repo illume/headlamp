@@ -338,10 +338,10 @@ class ElectronMCPClient {
   }
 }
 
-// Export a function that returns tools (compatible with existing interface)
+// Export a function that returns enabled tools (compatible with existing interface)
 const tools = async function (): Promise<MCPTool[]> {
   const client = new ElectronMCPClient();
-  return (await client.getToolsConfig()).config;
+  return client.getEnabledTools();
 };
 
 // Export both the client class and the tools function for flexibility

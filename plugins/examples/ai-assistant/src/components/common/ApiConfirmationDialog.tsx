@@ -1,6 +1,6 @@
 import { ConfirmDialog, EditorDialog } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import { Box, Typography } from '@mui/material';
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import YAML from 'yaml';
 
 // Helper function to clean YAML content by removing the |- prefix if present
@@ -254,9 +254,20 @@ export default function ApiConfirmationDialog({
     );
   }
 
+  // Auto-confirm GET requests via effect to avoid side effects during render
+  const hasAutoConfirmedGet = useRef(false);
+  useEffect(() => {
+    if (open && method.toUpperCase() === 'GET' && !hasAutoConfirmedGet.current) {
+      hasAutoConfirmedGet.current = true;
+      onConfirm();
+      onClose();
+    }
+    if (!open) {
+      hasAutoConfirmedGet.current = false;
+    }
+  }, [open, method, onConfirm, onClose]);
+
   if (method.toUpperCase() === 'GET') {
-    onConfirm();
-    onClose();
     return null;
   }
 

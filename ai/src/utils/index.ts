@@ -37,4 +37,4 @@ export {
   initializeToolsState,
 } from './ToolConfigManager';
 
-export { promptLinksInstructions, getHeadlampLink } from './promptLinkHelper';
+export { promptLinksInstructions } from './promptLinkHelper';

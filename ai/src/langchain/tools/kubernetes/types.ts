@@ -45,7 +45,7 @@ export interface KubernetesToolUICallbacks {
     targetCluster?: string,
     onFailure?: (error: any, operationType: string, resourceInfo?: any) => void,
     onSuccess?: (response: any, operationType: string, resourceInfo?: any) => void
-  ) => Promise<void>;
+  ) => Promise<any>;
 }
 
 export interface KubernetesToolContext {

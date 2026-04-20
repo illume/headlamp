@@ -79,8 +79,7 @@ const ToolRecommendationSchema = z.object({
         .transform(tool => ({
           ...tool,
           name: tool.name || tool.tool_name || '',
-          arguments:
-            typeof tool.arguments === 'string' ? JSON.parse(tool.arguments) : tool.arguments,
+          arguments: tool.arguments,
         }))
     )
     .describe('List of tools to execute'),
@@ -297,6 +296,10 @@ Return your response as a valid JSON object. Include ONLY the JSON, no other tex
         return true;
       }
       // For kubernetes_api_request, check the method argument
+      if (nameLower === 'kubernetes_api_request') {
+        const method = tool.arguments?.method?.toUpperCase();
+        return method === 'GET';
+      }
       if (tool.arguments?.method?.toUpperCase() === 'GET') {
         return true;
       }

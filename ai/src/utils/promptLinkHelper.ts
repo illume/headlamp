@@ -14,8 +14,14 @@
  * limitations under the License.
  */
 
-import { ResourceClasses } from '@kinvolk/headlamp-plugin/lib/lib/k8s';
-import { KubeObject } from '@kinvolk/headlamp-plugin/lib/lib/k8s/KubeObject';
+/**
+ * Prompt link instructions for AI prompts.
+ *
+ * This module is Node.js-safe — it contains only string constants.
+ * The browser-only `getHeadlampLink` function is in `@headlamp-k8s/ai/ai`
+ * (ai/src/ai/headlampLink.ts) since it depends on `@kinvolk/headlamp-plugin`
+ * and `window`.
+ */
 
 const HEADLAMP_LINK_HOST = 'headlamp';
 const HEADLAMP_RESOURCE_DETAILS_LINK = 'resource-details';
@@ -30,87 +36,3 @@ export const promptLinksInstructions = `RESOURCE LINKING:
 - When you mention an existing cluster, ALWAYS format the cluster name as a markdown link using this pattern:
   \[CLUSTER_NAME\]\(https://${HEADLAMP_LINK_HOST}/${HEADLAMP_CLUSTER_LINK}?cluster=CLUSTER\)
 `;
-
-export function getHeadlampLink(link: string | null | undefined) {
-  const linkResult: {
-    isHeadlampLink: boolean;
-    url: string;
-    kubeObject: KubeObject | null;
-  } = {
-    isHeadlampLink: false,
-    url: '',
-    kubeObject: null,
-  };
-
-  // Early return if link is falsy
-  if (!link || typeof link !== 'string') {
-    return linkResult;
-  }
-
-  let url: URL;
-  try {
-    url = new URL(link, window.location.origin);
-  } catch (error) {
-    console.warn('Invalid URL provided to getHeadlampLink:', link, error);
-    return linkResult;
-  }
-
-  // Check if it's a resource details link
-  if (url.host === HEADLAMP_LINK_HOST) {
-    linkResult.isHeadlampLink = true;
-    // Check if the path is for resource details
-    const urlPath = url.pathname.startsWith('/') ? url.pathname.substring(1) : url.pathname;
-    if (urlPath === HEADLAMP_RESOURCE_DETAILS_LINK) {
-      const searchParams = new URLSearchParams(url.search);
-      const cluster = searchParams.get('cluster');
-      const kind = searchParams.get('kind');
-      const resource = searchParams.get('resource');
-      const namespace = searchParams.get('ns');
-
-      // @todo: Add support for CRDs
-      let resourceClass = ResourceClasses[kind];
-      // If we couldn't match it like this, iterate and try to match it from the API name
-      if (!resourceClass) {
-        for (const className in ResourceClasses) {
-          const rc = ResourceClasses[className];
-          if (rc.apiName === kind) {
-            resourceClass = rc;
-            break;
-          }
-        }
-      }
-
-      if (
-        resourceClass &&
-        resource &&
-        cluster &&
-        (resourceClass.isNamespaced ? !!namespace : true)
-      ) {
-        // Create an instance
-        const instance = new resourceClass(
-          {
-            kind,
-            metadata: {
-              name: resource,
-              ...(resourceClass.isNamespaced ? { namespace } : {}),
-            },
-          },
-          cluster
-        );
-
-        linkResult.kubeObject = instance;
-        linkResult.url = instance.getDetailsLink();
-      }
-    } else if (urlPath === HEADLAMP_CLUSTER_LINK) {
-      // It's a cluster link
-      const searchParams = new URLSearchParams(url.search);
-      const cluster = searchParams.get('cluster');
-      if (!!cluster) {
-        linkResult.url = `/c/${cluster}`;
-      }
-    }
-  }
-
-  // If not a valid Headlamp link, return null
-  return linkResult;
-}

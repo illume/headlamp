@@ -190,7 +190,7 @@ const ToolApprovalDialog: React.FC<ToolApprovalDialogProps> = ({
           Tool Execution Approval Required
         </Box>
         {!loading && (
-          <IconButton onClick={onClose} size="small">
+          <IconButton aria-label="Close dialog" onClick={onClose} size="small">
             <Icon icon="mdi:close" />
           </IconButton>
         )}

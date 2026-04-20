@@ -35,7 +35,7 @@ const YamlDisplay: React.FC<YamlDisplayProps> = React.memo(
         return;
       }
 
-      let currentResizingHandler: NodeJS.Timeout | null = null;
+      let currentResizingHandler: ReturnType<typeof setTimeout> | null = null;
       const resizeObserver = new window.ResizeObserver(() => {
         let width = 0;
         if (parentRef.current) {
