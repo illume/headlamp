@@ -585,7 +585,12 @@ Consent page HTML (minimal — no Headlamp bundle, no plugin code, no React):
     <button type="button" onclick="deny()">Deny</button>
   </form>
   <script>
-    // Self-check: refuse to render if a Service Worker is controlling this page
+    // Defense-in-depth: refuse to render if a Service Worker is controlling this page.
+    // Primary defense is server-side SW registration blocking (Service-Worker: script → 403).
+    // This catches pre-existing SWs from before the server-side block was deployed.
+    // Note: a sophisticated SW could strip this check from the HTML response, but combined
+    // with the server-side block (which prevents new SW registration), the window of
+    // vulnerability is limited to SWs registered before the feature was deployed.
     if (navigator.serviceWorker && navigator.serviceWorker.controller) {
       document.body.innerHTML = '<p style="color:red">⚠️ Service Worker detected. ' +
         'Consent page cannot render securely. Please clear site data and reload.</p>';
@@ -637,7 +642,8 @@ Consent page HTML (minimal — no Headlamp bundle, no plugin code, no React):
 **Edge cases:**
 - **Popup blocked:** The consent popup is opened via user gesture (clicking "Review command"), so popup blockers allow it. If an aggressive enterprise popup blocker still blocks it, fall back to full-page navigation: `location.href = '/consent/{consentId}?returnUrl=...'` — the consent page redirects back after approval.
 - **Multiple consent requests:** Each gets its own consentId and nonce. The consent page can show a list of pending requests.
-- **Browser doesn't support COOP or Sec-Fetch:** Fall back to full-page navigation (no plugins loaded on the consent page = no attacker JS). Check `Sec-Fetch-Dest` presence on the server — if absent, require full-page navigation flow.
+- **Browser doesn't support COOP or Sec-Fetch:** The server detects this by checking for the presence of `Sec-Fetch-Dest` header on the request. If absent (older browser), the server refuses to serve the consent page via popup and returns a redirect to full-page navigation flow instead. Full-page navigation is inherently secure (no plugins loaded on the consent page = no attacker JS). COOP is supported in Chrome 83+, Firefox 79+, Safari 15.2+; Sec-Fetch in Chrome 76+, Firefox 90+.
+- **Pre-existing Service Worker:** If a SW was registered before the server-side `Service-Worker: script` blocking was deployed, the consent page JS self-check detects it and refuses to render. Admin action: clear site data or wait for the SW to expire. New deployments are not affected (server blocks all new SW registrations from day one).
 
 **Verdict: ✅ Secure. COOP severs popup opener. Sec-Fetch filtering blocks programmatic access. Server-side nonce prevents direct approval. SW registration blocking closes the SW interception vector. Popup is inherently immune to clickjacking.**
 
@@ -1082,8 +1088,12 @@ func handleTerminal(w http.ResponseWriter, r *http.Request) {
     conn, _ := upgrader.Upgrade(w, r, nil)
     defer conn.Close()
 
-    // Spawn shell in a PTY
-    cmd := exec.Command("bash")
+    // Use user's login shell, fall back to sh (works on Alpine, BusyBox)
+    shell := os.Getenv("SHELL")
+    if shell == "" { shell = "/bin/sh" }
+
+    // Spawn shell in a PTY (requires github.com/creack/pty)
+    cmd := exec.Command(shell)
     ptmx, _ := pty.Start(cmd)
     defer ptmx.Close()
 
@@ -1092,7 +1102,10 @@ func handleTerminal(w http.ResponseWriter, r *http.Request) {
         buf := make([]byte, 4096)
         for {
             n, err := ptmx.Read(buf)
-            if err != nil { return }
+            if err != nil {
+                log.Printf("terminal: PTY read error: %v", err)
+                return
+            }
             // Channel 1 = StdOut
             msg := append([]byte{1}, buf[:n]...)
             conn.WriteMessage(websocket.BinaryMessage, msg)
@@ -1108,9 +1121,10 @@ func handleTerminal(w http.ResponseWriter, r *http.Request) {
         switch channel {
         case 0: // StdIn
             ptmx.Write(data)
-        case 4: // Resize
-            cols, rows := parseResize(data)
-            pty.Setsize(ptmx, &pty.Winsize{Cols: cols, Rows: rows})
+        case 4: // Resize — data format: JSON {"cols":80,"rows":24}
+            var size struct{ Cols, Rows uint16 }
+            json.Unmarshal(data, &size)
+            pty.Setsize(ptmx, &pty.Winsize{Cols: size.Cols, Rows: size.Rows})
         }
     }
 }
