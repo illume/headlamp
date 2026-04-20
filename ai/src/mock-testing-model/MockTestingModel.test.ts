@@ -15,7 +15,7 @@
  */
 
 import { HumanMessage } from '@langchain/core/messages';
-import { describe, expect,it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import {
   createMockTestingModel,
   fillTemplate,
