@@ -64,7 +64,7 @@ POST /api/v1/run-command/{id}/input    Send stdin to running command (optional)
 
 GET  /api/v1/run-command/consent       Check if command is pre-approved
   Request:  ?command=minikube&firstArg=status
-  Response: { consented: boolean }
+  Response: { consented: boolean | null }  (null = no stored decision)
 
 POST /api/v1/run-command/consent       Record user's consent decision
   Request:  { command, firstArg, allowed: boolean }
@@ -145,37 +145,57 @@ function runCommandViaHTTP(
   options: {},
   permissionSecrets?: Record<string, number>
 ) {
-  const id = `${Date.now()}-${Math.random().toString(36)}`;
   const permissionName = `runCmd-${command}`;
+  const secret = permissionSecrets?.[permissionName];
 
-  // Start the command
-  fetch('/api/v1/run-command/start', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...getHeadlampAPIHeaders(),
-      'X-RunCmd-Permission-Secret': String(permissionSecrets?.[permissionName] ?? ''),
-    },
-    body: JSON.stringify({ command, args, options }),
-  });
+  if (secret === undefined) {
+    throw new Error(`No permission secret for command: ${command}`);
+  }
 
-  // Stream output via SSE
-  const eventSource = new EventSource(`/api/v1/run-command/${id}/stream`);
+  const headers = {
+    'Content-Type': 'application/json',
+    ...getHeadlampAPIHeaders(),
+    'X-RunCmd-Permission-Secret': String(secret),
+  };
 
   const stdout = new EventTarget();
   const stderr = new EventTarget();
   const exit = new EventTarget();
 
-  eventSource.addEventListener('stdout', (e) => {
-    stdout.dispatchEvent(new CustomEvent('data', { detail: e.data }));
-  });
-  eventSource.addEventListener('stderr', (e) => {
-    stderr.dispatchEvent(new CustomEvent('data', { detail: e.data }));
-  });
-  eventSource.addEventListener('exit', (e) => {
-    exit.dispatchEvent(new CustomEvent('exit', { detail: Number(e.data) }));
-    eventSource.close();
-  });
+  // Start the command, then stream output via fetch + ReadableStream
+  // (EventSource cannot set custom headers, so we use fetch-based SSE)
+  (async () => {
+    const startResp = await fetch('/api/v1/run-command/start', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ command, args, options }),
+    });
+    if (!startResp.ok) {
+      exit.dispatchEvent(new CustomEvent('exit', { detail: 1 }));
+      return;
+    }
+    const { id } = await startResp.json();
+
+    // Stream output using fetch (supports auth headers, unlike EventSource)
+    const streamResp = await fetch(`/api/v1/run-command/${id}/stream`, { headers });
+    const reader = streamResp.body?.getReader();
+    const decoder = new TextDecoder();
+
+    while (reader) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      const text = decoder.decode(value, { stream: true });
+      // Parse SSE events from text (simplified — real impl needs SSE parser)
+      for (const line of text.split('\n')) {
+        if (line.startsWith('event: stdout')) {
+          // next data: line has the payload
+        } else if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          stdout.dispatchEvent(new CustomEvent('data', { detail: data }));
+        }
+      }
+    }
+  })();
 
   return {
     stdout: { on: (event, listener) => stdout.addEventListener(event, (e) => listener(e.detail)) },
@@ -224,8 +244,8 @@ const consentResp = await fetch(
 );
 const { consented } = await consentResp.json();
 
-if (consented === undefined) {
-  // Show React consent dialog
+if (consented === null) {
+  // No stored consent — show React consent dialog
   const userChoice = await showCommandConsentDialog(command, args);
   await fetch('/api/v1/run-command/consent', {
     method: 'POST',
