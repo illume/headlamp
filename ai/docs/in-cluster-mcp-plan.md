@@ -161,7 +161,7 @@ export class HTTPMCPClient implements MCPClientInterface {
   }
 
   isAvailable(): boolean {
-    // Available when in browser without Electron desktop API
+    // Available in browser when Electron desktop API is not present (headless or in-cluster)
     return typeof window !== 'undefined' && !window.desktopApi;
   }
 
@@ -415,7 +415,7 @@ metadata:
 spec:
   podSelector:
     matchLabels:
-      app: headlamp
+      app: headlamp  # Match your actual Headlamp pod labels
   policyTypes:
     - Egress
   egress:
