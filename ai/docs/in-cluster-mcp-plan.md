@@ -108,9 +108,10 @@ POST /api/v1/mcp/reset     → reconnect to MCP servers
 - In-cluster: use existing Headlamp auth (Bearer token / OIDC cookie) — same as every other Headlamp API endpoint. No `HEADLAMP_BACKEND_TOKEN` needed because auth is handled by K8s/OIDC.
 
 **Tool approval (backend-side):**
-- Frontend sends tool execution request with user's approval decision
-- Backend validates the approval token before forwarding to MCP server
-- Admin can pre-approve specific tools via ConfigMap (e.g., all read-only tools)
+- Backend validates the permission secret + HEADLAMP_BACKEND_TOKEN/Bearer auth before executing any tool
+- **In-cluster:** Admin pre-approves tools via ConfigMap (Helm values). No runtime consent dialog — unapproved tools return 403.
+- **Headless:** Backend prompts via terminal stdout/stdin for first-time tool approval (same trust boundary as Electron — user's machine). Browser shows "Waiting for approval in terminal..." status.
+- **Why not a React dialog?** A React consent dialog runs in the same JavaScript context as plugins. A malicious plugin could programmatically approve it or bypass it entirely. Electron uses `dialog.showMessageBoxSync` which runs in the main process — outside the renderer. For the backend path, we replicate this isolation by doing consent outside the browser context (terminal prompt for headless, admin config for in-cluster).
 - Backend logs every tool execution with user identity for audit
 
 **MCP server connections:**

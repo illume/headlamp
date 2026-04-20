@@ -232,27 +232,49 @@ export async function permissionSecretsFromApp(): Promise<Record<string, number>
 }
 ```
 
-### Consent UI
+### Consent UI — why React dialogs are not safe
 
-In Electron, `checkCommandConsent` shows a native dialog. In headless/in-cluster, the frontend shows a React dialog instead:
+In Electron, `checkCommandConsent` shows a **native OS dialog** (`dialog.showMessageBoxSync`). This is critical for security — the dialog runs in the main process, outside the renderer's JavaScript context, so no plugin or script in the page can programmatically dismiss or approve it.
 
-```typescript
-// Before running a command, check consent
-const consentResp = await fetch(
-  `/api/v1/run-command/consent?command=${command}&firstArg=${args[0]}`,
-  { headers: getHeadlampAPIHeaders() }
-);
-const { consented } = await consentResp.json();
+**A React dialog in the same page is not safe for consent.** Any JavaScript running in the page context — including a compromised or malicious plugin — could:
+- Intercept the React component render and auto-approve
+- Directly call the consent API endpoint without showing any UI
+- Manipulate the DOM to hide/approve the dialog
 
-if (consented === null) {
-  // No stored consent — show React consent dialog
-  const userChoice = await showCommandConsentDialog(command, args);
-  await fetch('/api/v1/run-command/consent', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...getHeadlampAPIHeaders() },
-    body: JSON.stringify({ command, firstArg: args[0], allowed: userChoice }),
-  });
-}
+**Recommended alternatives for headless/in-cluster consent:**
+
+| Approach | Pros | Cons | Best for |
+|----------|------|------|----------|
+| **Admin pre-approval via config** | No runtime UI needed, simple | No per-user consent, all-or-nothing | In-cluster (admin controls config) |
+| **Separate browser tab/popup** | Isolated JS context, cannot be manipulated by page scripts | Popup blockers may interfere, worse UX | Headless (single user, local machine) |
+| **Backend-managed allowlist only** | Server-side enforcement, no client trust | No interactive consent, admin must pre-configure | All modes (defense-in-depth) |
+
+**Recommendation:**
+
+1. **In-cluster**: Admin pre-approves commands via Helm values (`runCommand.preApprovedCommands`). No runtime consent dialog. Unauthorized commands are rejected by the backend with 403.
+2. **Headless**: Backend rejects commands not in the allowlist. For new commands, the headless Go backend can prompt via terminal stdout/stdin (same trust boundary as Electron — user's machine). The browser UI shows a status message ("Waiting for approval in terminal...") but the actual consent happens server-side.
+3. **Defense-in-depth**: Even with valid consent, the permission secret check ensures only the authorized plugin can call the endpoint.
+
+```
+Consent flow (headless):
+  Plugin calls runCommand ──HTTP──► Go backend
+                                      ├─ checkPermissionSecret ✓
+                                      ├─ checkHeadlampBackendToken ✓
+                                      ├─ checkAllowlist ✓
+                                      ├─ checkConsent
+                                      │   └─ Not consented?
+                                      │       ├─ Print to terminal: "Allow minikube status? [y/N]"
+                                      │       └─ Wait for terminal input
+                                      └─ spawn('minikube', ['status'])
+
+Consent flow (in-cluster):
+  Plugin calls runCommand ──HTTP──► Go backend
+                                      ├─ checkPermissionSecret ✓
+                                      ├─ checkBearerToken ✓
+                                      ├─ checkAllowlist ✓
+                                      ├─ checkPreApproved (from Helm config)
+                                      │   └─ Not pre-approved? → 403 Forbidden
+                                      └─ exec.Command(...)
 ```
 
 ## Could MCP use runCommand directly?
@@ -365,4 +387,4 @@ Both share:
 
 1. **WebSocket vs SSE for streaming** — SSE is simpler (unidirectional) but WebSocket supports stdin. Could start with SSE and add WebSocket later if stdin is needed.
 2. **In-cluster runCommand** — Should this be disabled entirely, or configurable per-command? The minikube plugin doesn't make sense in-cluster, but future plugins might need local commands.
-3. **Shared consent storage** — In-cluster, should consent be per-user (stored in user's session/profile) or global (ConfigMap)?
+3. **Terminal consent UX** — For headless, the Go backend prompts via terminal. Should there be a timeout (e.g., 30s auto-deny)? Should previously-consented commands be remembered in a config file?
