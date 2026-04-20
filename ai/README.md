@@ -78,6 +78,7 @@ The config file uses the same format as the ai-assistant plugin:
 | Google Gemini | `gemini` | `apiKey`, `model` |
 | DeepSeek | `deepseek` | `apiKey`, `model` |
 | Local (Ollama) | `local` | `baseUrl`, `model` |
+| Mock Testing Model | `mock-testing-model` | *(none — no API key needed)* |
 
 ### Environment Variables
 
@@ -129,9 +130,52 @@ import { LangChainManager } from '@headlamp-k8s/ai/langchain';
 import { ElectronMCPClient } from '@headlamp-k8s/ai/ai';
 ```
 
+### Mock Testing Model
+
+The `mock-testing-model` provider returns canned responses from fixture files —
+no API keys or network access required.  See
+[`ai/src/mock-testing-model/README.md`](src/mock-testing-model/README.md) for
+fixture format, template variables, and sequence playback.
+
+```bash
+# CLI usage — no API key needed
+npx headlamp-ai --provider mock-testing-model "What is a Pod?"
+
+# Or with a config file
+echo '{"provider":"mock-testing-model","config":{}}' > /tmp/mock-config.json
+npx headlamp-ai --config /tmp/mock-config.json "Hello"
+```
+
+```typescript
+// Programmatic usage
+import { createMockTestingModel } from '@headlamp-k8s/ai/mock-testing-model';
+
+const model = createMockTestingModel();
+const result = await model.invoke([new HumanMessage('What is a Service?')]);
+// → "A **Service** is a Kubernetes resource managed by the API server…"
+```
+
+For full instructions on running the AI assistant with KWOK and the mock model,
+see [`ai/docs/testing-with-mock-model.md`](docs/testing-with-mock-model.md).
+
 ## Building
 
 ```bash
 npm install
 npm run build
 ```
+
+## Testing
+
+```bash
+npm test          # runs all tests (102 tests across 6 files)
+npm run lint      # eslint
+npm run tsc       # type-check
+npm run format    # prettier
+```
+
+## TODO
+
+- [ ] Add `--config-dir` CLI flag to override the Headlamp app config directory
+- [ ] Add CLI configuration fixture files for common testing scenarios
+- [ ] Add Playwright e2e tests for the ai-assistant plugin using mock-testing-model + KWOK

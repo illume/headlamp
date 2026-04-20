@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-import { FakeListChatModel } from '@langchain/core/utils/testing';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
+import { FakeListChatModel } from '@langchain/core/utils/testing';
 import { DEMO_CLUSTER_EXPLORATION, GENERAL_FIXTURES } from './builtinFixtures.js';
 
 // The variable delimiters used in prompt/response templates.

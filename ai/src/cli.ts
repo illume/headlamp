@@ -73,6 +73,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as readline from 'readline';
+import { createMockTestingModel } from './mock-testing-model/MockTestingModel.js';
 
 /**
  * CLI configuration format — compatible with the ai-assistant plugin's
@@ -231,10 +232,16 @@ function createModel(providerId: string, config: Record<string, any>): BaseChatM
         headers: Object.keys(headers).length ? headers : undefined,
       });
     }
+    case 'mock-testing-model':
+      return createMockTestingModel({
+        sequenceName: config.sequenceName,
+        fixturesDir: config.fixturesDir,
+        fallbackResponse: config.fallbackResponse,
+      });
     default:
       throw new Error(
         `Unsupported provider: ${providerId}. ` +
-          `Supported: openai, azure, anthropic, mistral, gemini, deepseek, local`
+          `Supported: openai, azure, anthropic, mistral, gemini, deepseek, local, mock-testing-model`
       );
   }
 }
@@ -348,7 +355,7 @@ Usage:
 
 Options:
   --config <path>       Path to config JSON file
-  --provider <id>       Provider: openai, anthropic, gemini, mistral, deepseek, local
+  --provider <id>       Provider: openai, anthropic, gemini, mistral, deepseek, local, mock-testing-model
   --model <name>        Model name (e.g. gpt-4o, claude-sonnet-4-6)
   --api-key <key>       API key for the provider
   --base-url <url>      Base URL for local/custom providers
