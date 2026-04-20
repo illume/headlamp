@@ -16,8 +16,7 @@
 
 import { FakeListChatModel } from '@langchain/core/utils/testing';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import * as fs from 'fs';
-import * as path from 'path';
+import { DEMO_CLUSTER_EXPLORATION, GENERAL_FIXTURES } from './builtinFixtures.js';
 
 // The variable delimiters used in prompt/response templates.
 // `<<varName>>` was chosen because `{{…}}` conflicts with Mustache/Handlebars/
@@ -176,6 +175,12 @@ function fillTemplate(template: string, vars: Record<string, string>): string {
 /**
  * Tries each fixture's prompt pattern against `input`.  Returns the first
  * matching response with variables substituted, or `undefined` if nothing matches.
+ *
+ * First attempts an exact match (the input, after trimming, must match the
+ * template from start to end).  If no exact match is found, tries to find a
+ * fixture whose template appears as a substring of the input — this handles
+ * cases where the LLM pipeline prepends/appends system context to the user
+ * message.
  */
 function matchFixtures(
   input: string,
@@ -183,8 +188,30 @@ function matchFixtures(
 ): string | undefined {
   const trimmed = input.trim();
 
+  // Pass 1: exact match.
   for (const entry of fixtures) {
     const vars = matchTemplate(trimmed, entry.prompt);
+    if (vars) {
+      return fillTemplate(entry.response, vars);
+    }
+  }
+
+  // Pass 2: substring match — try to find the template pattern anywhere
+  // inside the input (useful when system prompts surround the user query).
+  for (const entry of fixtures) {
+    const { parts } = parseTemplate(entry.prompt);
+    // Only attempt substring matching for templates with at least one
+    // non-empty literal part to anchor on.
+    const firstLiteral = parts.find(p => p.length > 0);
+    if (!firstLiteral) continue;
+
+    const idx = trimmed.toLowerCase().indexOf(firstLiteral.toLowerCase());
+    if (idx === -1) continue;
+
+    // Extract the portion of input starting from just before the first literal
+    // and try matching that substring.
+    const candidate = trimmed.slice(idx);
+    const vars = matchTemplate(candidate, entry.prompt);
     if (vars) {
       return fillTemplate(entry.response, vars);
     }
@@ -204,18 +231,28 @@ function isFixtureSequence(data: unknown): data is FixtureSequence {
 }
 
 /**
- * Loads all `.json` fixture files from a directory.
+ * Loads all `.json` fixture files from a directory (Node.js only).
  *
  * Each file may be either:
  * - A JSON array of `{ prompt, response }` objects (individual patterns), or
  * - A `{ name, sequence: [...] }` object (conversation sequence).
  *
  * Returns the individual entries and named sequences separately.
+ *
+ * This function requires Node.js (`fs` and `path`).  In browser contexts
+ * use `getBuiltinFixtures()` or pass `extraFixtures` / `extraSequences` instead.
  */
 export function loadFixturesFromDirectory(dir: string): {
   entries: FixtureEntry[];
   sequences: FixtureSequence[];
 } {
+  // Lazy-require fs and path so this module can be imported in browsers
+  // without crashing — the function simply won't work if called there.
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const fs = require('fs');
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const path = require('path');
+
   const entries: FixtureEntry[] = [];
   const sequences: FixtureSequence[] = [];
 
@@ -238,12 +275,18 @@ export function loadFixturesFromDirectory(dir: string): {
   return { entries, sequences };
 }
 
-/** The built-in fixtures shipped with the library. */
+/**
+ * Returns the built-in fixtures shipped with the library.
+ * Works in both Node.js and browser environments (fixtures are statically embedded).
+ */
 export function getBuiltinFixtures(): {
   entries: FixtureEntry[];
   sequences: FixtureSequence[];
 } {
-  return loadFixturesFromDirectory(path.join(__dirname, 'fixtures'));
+  return {
+    entries: [...GENERAL_FIXTURES],
+    sequences: [DEMO_CLUSTER_EXPLORATION],
+  };
 }
 
 /**
@@ -343,42 +386,68 @@ export function createMockTestingModel(
     }
   }
 
-  // FakeListChatModel._generate receives `messages` — we inspect the last
-  // human message to find the user input, match it against fixtures, and
-  // set `this.responses` to a single-element array with the matched response
-  // before delegating to the real _generate.
+  // We subclass FakeListChatModel to override _generate with fixture matching.
+  // This is necessary because FakeListChatModel.bindTools() creates a NEW
+  // FakeListChatModel instance (losing monkey-patched overrides), but it
+  // copies `responses` and `i` from the original — so we update those
+  // *inside* _generate before delegating.
+  //
+  // However, since bindTools creates a plain FakeListChatModel (not our
+  // subclass), we must instead directly patch the responses list on each
+  // call.  The trick: we store the matching logic in a closure, override
+  // `_generate` on the instance, and also override `bindTools` to carry
+  // the override forward to the new instance.
   const model = new FakeListChatModel({ responses: [fallback] });
 
-  const original_generate = model._generate.bind(model);
-  model._generate = async function (messages, options, runManager) {
-    let matched: string;
+  function patchGenerate(m: any) {
+    const superGenerate = Object.getPrototypeOf(m)._generate.bind(m);
+    m._generate = async function (
+      messages: any,
+      options: any,
+      runManager: any
+    ) {
+      let matched: string;
 
-    if (sequenceTurns) {
-      // Sequence playback: return next response in order, wrapping around.
-      matched = sequenceTurns[sequenceIndex % sequenceTurns.length].response;
-      sequenceIndex++;
-    } else {
-      // Template matching: find best fixture match.
-      const lastHuman = [...messages].reverse().find(m => m._getType() === 'human');
-      const input =
-        typeof lastHuman?.content === 'string'
-          ? lastHuman.content
-          : Array.isArray(lastHuman?.content)
+      if (sequenceTurns) {
+        matched = sequenceTurns[sequenceIndex % sequenceTurns.length].response;
+        sequenceIndex++;
+      } else {
+        const lastHuman = [...messages]
+          .reverse()
+          .find((msg: any) => msg._getType() === 'human');
+        const input =
+          typeof lastHuman?.content === 'string'
             ? lastHuman.content
-                .filter((c: any) => c.type === 'text')
-                .map((c: any) => c.text)
-                .join(' ')
-            : '';
+            : Array.isArray(lastHuman?.content)
+              ? lastHuman.content
+                  .filter((c: any) => c.type === 'text')
+                  .map((c: any) => c.text)
+                  .join(' ')
+              : '';
 
-      matched = matchFixtures(input, allFixtures) ?? fallback;
-    }
+        matched = matchFixtures(input, allFixtures) ?? fallback;
+      }
 
-    // Override the responses list so _generate returns our match.
-    (this as any).responses = [matched];
-    (this as any).i = 0;
+      this.responses = [matched];
+      this.i = 0;
 
-    return original_generate(messages, options, runManager);
-  };
+      return superGenerate(messages, options, runManager);
+    };
+
+    // Override bindTools so the patch survives tool-binding.
+    const origBindTools = m.bindTools.bind(m);
+    m.bindTools = function (...args: any[]) {
+      const result = origBindTools(...args);
+      // result is a RunnableBinding wrapping a new FakeListChatModel.
+      // Patch the inner model (result.bound).
+      if ((result as any).bound) {
+        patchGenerate((result as any).bound);
+      }
+      return result;
+    };
+  }
+
+  patchGenerate(model);
 
   return model as BaseChatModel;
 }
