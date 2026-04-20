@@ -2,9 +2,9 @@
 
 ## Summary
 
-Extend Headlamp's `runCommand` to work through the Go backend, so plugins can run approved local commands in headless and (potentially) in-cluster modes — not just Electron.
+Extend Headlamp's `runCommand` to work through the Go backend, so plugins can run approved local commands in headless and (potentially) in-cluster modes — not just Electron. Also proposes WebSocket-based local terminal access for interactive shell sessions on the backend server.
 
-Today `runCommand` only works in the Electron desktop app via IPC. This proposal adds an HTTP-based equivalent that reuses the same security model: permission secrets, command allowlists, and user consent.
+Today `runCommand` only works in the Electron desktop app via IPC. This proposal adds an HTTP-based equivalent that reuses the same security model: permission secrets, command allowlists, and user consent. The consent UI uses a same-port COOP popup (no second port needed).
 
 ## How runCommand works today (Electron only)
 
@@ -477,15 +477,15 @@ This detection is well-supported across browsers (Chrome, Firefox, Safari, Edge)
 
 ##### Recommendation
 
-**Primary: cross-origin popup.** Best security (inherently immune to clickjacking, no additional defenses needed) and best a11y (standard page, no iframe focus boundaries, screen readers treat it as a normal window). The popup window demands user attention and has a clean keyboard flow.
+**Same-port popup with COOP + Fetch Metadata + SW blocking.** A popup on the same port using `Cross-Origin-Opener-Policy: same-origin` (to sever the opener), Fetch Metadata filtering (to block programmatic access), server-side nonce (to prevent direct approval), and Service Worker registration blocking (to close the SW interception vector). No second port needed. Best a11y (standard popup page, no iframe focus boundaries). See the detailed analysis in "Could a same-port popup work?" below.
 
-**Fallback: cross-origin iframe with typed confirmation code.** When popup blockers prevent the popup, the frontend detects this (see above) and falls back to an inline iframe. The typed confirmation code defeats clickjacking (the main iframe weakness). The iframe should include `title="Headlamp: Command Approval"` for screen reader users, and the consent page should auto-focus the code input field for keyboard accessibility.
+**Popup blockers are not a concern** because the popup is always opened in response to a user gesture — the Headlamp UI shows a "Review command" prompt that the user clicks, which triggers `window.open()`. User-gesture-triggered popups are allowed by all modern popup blockers. If a popup blocker still blocks it (e.g., aggressive enterprise policies), fall back to full-page navigation to the consent URL with a return-to redirect.
 
-**Both approaches** are secure against direct API bypass (CORS + Origin header) and DOM manipulation (Same-Origin Policy). Both use the same consent server on a different port — the only difference is `window.open()` vs `<iframe src="...">`.
+The approach is secure against direct API bypass (Sec-Fetch filtering), DOM manipulation (COOP), and Service Worker interception (SW registration blocking). See the detailed analysis in "Could a same-port popup work?" below for the full attack-by-attack analysis.
 
 ##### Accessibility requirements for the consent page
 
-The consent page (served by the consent server on the different port) should follow these a11y guidelines regardless of whether it's displayed in a popup or iframe:
+The consent page should follow these a11y guidelines regardless of how it's displayed:
 
 - **Heading structure:** `<h1>` for "Command Approval" — screen readers use headings for navigation
 - **Auto-focus:** The confirmation code `<input>` should have `autofocus` so keyboard users can immediately start typing
@@ -496,44 +496,44 @@ The consent page (served by the consent server on the different port) should fol
 - **Focus visible:** Ensure `:focus-visible` outlines are not suppressed — keyboard users need to see where focus is
 - **Iframe-specific:** When displayed in an iframe, set `<iframe title="Headlamp: Command Approval" role="dialog" aria-label="Command approval required">` so screen readers announce the purpose before the user navigates into it
 
-##### How it works (popup with iframe fallback)
+##### How it works (same-port COOP popup)
 
 ```
-Main app (localhost:4466)              Consent server (localhost:4467)
-────────────────────────               ─────────────────────────────
+Main app (localhost:4466)              Consent handler (same port :4466)
+────────────────────────               ────────────────────────────────
 1. Plugin requests command
    → Backend returns 202 +
-     consentUrl + consentId
+     consentId
 
-2. Frontend tries popup:
-   window.open('http://localhost:4467
-     /consent/{consentId}')
-   → If blocked: falls back to iframe
-     <iframe src="...same URL...">
-                                       3. Consent page loads
-                                          (minimal HTML, no plugins,
-                                           no Headlamp JS bundle)
+2. Headlamp UI shows prompt:
+   "Command approval needed.
+    Click to review."
+   User clicks →
+   window.open('/consent/{consentId}')
+   (user gesture = popup blocker allows)
 
-                                       4. Page shows:
+                                       3. Backend checks Sec-Fetch headers:
+                                          Sec-Fetch-Dest: document ✓
+                                          Sec-Fetch-Mode: navigate ✓
+                                          → Serves consent page with:
+                                            COOP: same-origin
+                                            Nonce in hidden form field
+
+                                       4. COOP mismatch severs opener
+                                          (main page has no COOP)
+
+                                       5. Page shows:
                                           "Allow: minikube status?"
-                                          "Type BLUE42 to confirm:"
-                                          [input] [Confirm] [Deny]
+                                          [Approve] [Deny]
 
-                                       5. User types code + clicks Confirm
+                                       6. User clicks Approve
                                           → POST /consent/{consentId}/approve
-                                            with { code: "BLUE42" }
-                                          → Server verifies code
-                                          → Server verifies Origin header
+                                            with { nonce: "..." }
+                                          → Server validates nonce
                                           → Returns success
+                                          → Popup closes
 
-                                       6. Consent page calls:
-                                          window.parent.postMessage(
-                                            {type:'consent-result',
-                                             consentId, approved:true},
-                                            'http://localhost:4466')
-
-7. Main app receives postMessage
-   → Retries the original command
+7. Plugin polls backend for status
    → Backend sees consent recorded
    → Command executes
 ```
@@ -541,66 +541,73 @@ Main app (localhost:4466)              Consent server (localhost:4467)
 ##### Implementation details
 
 ```go
-// In Go backend startup
-consentPort := findFreePort()  // e.g., 4467
-go startConsentServer(consentPort, consentStore)
-
-// Consent server — minimal, no CORS headers
-mux := http.NewServeMux()
-mux.HandleFunc("GET /consent/{id}", showConsentPage)   // serves minimal HTML
+// In Go backend — consent handler on the same HTTP mux
+mux.HandleFunc("GET /consent/{id}", showConsentPage)     // serves minimal HTML
 mux.HandleFunc("POST /consent/{id}/approve", approveConsent)
 mux.HandleFunc("POST /consent/{id}/deny", denyConsent)
-// NO Access-Control-Allow-Origin headers — blocks all cross-origin fetch/XHR
-// Origin header checked on POST — blocks cross-origin form submissions
+
+// Block Service Worker registration for the entire origin
+func securityMiddleware(next http.Handler) http.Handler {
+    return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+        if r.Header.Get("Service-Worker") == "script" {
+            http.Error(w, "Service Worker registration not allowed", http.StatusForbidden)
+            return
+        }
+        next.ServeHTTP(w, r)
+    })
+}
+
+// In showConsentPage — serve only to navigations, with COOP
+func showConsentPage(w http.ResponseWriter, r *http.Request) {
+    if r.Header.Get("Sec-Fetch-Dest") != "document" ||
+       r.Header.Get("Sec-Fetch-Mode") != "navigate" {
+        http.Error(w, "Consent page must be opened via navigation", http.StatusForbidden)
+        return
+    }
+    w.Header().Set("Cross-Origin-Opener-Policy", "same-origin")
+    w.Header().Set("Content-Type", "text/html")
+    // ... render minimal consent page with nonce in hidden field
+}
 ```
 
 Consent page HTML (minimal — no Headlamp bundle, no plugin code, no React):
 
 ```html
-<!-- Served by consent server on :4467 -->
+<!-- Served on the same port with COOP header -->
 <html>
 <body>
-  <h2>Headlamp: Command Approval</h2>
+  <h1>Headlamp: Command Approval</h1>
   <p>Allow this command to run?</p>
   <pre>minikube status</pre>
-  <p>Type <strong>BLUE42</strong> to confirm:</p>
   <form method="POST" action="/consent/abc123/approve">
-    <input type="text" name="code" autocomplete="off" required
-           placeholder="Type the code above" />
-    <button type="submit">Confirm</button>
+    <input type="hidden" name="nonce" value="{{NONCE}}" />
+    <button type="submit">Approve</button>
     <button type="button" onclick="deny()">Deny</button>
   </form>
   <script>
-    // Self-check: hide form if iframe is suspiciously small
-    if (window.innerWidth < 200 || window.innerHeight < 100) {
-      document.querySelector('form').style.display = 'none';
-      document.body.innerHTML += '<p style="color:red">⚠️ Window too small. Possible tampering.</p>';
+    // Self-check: refuse to render if a Service Worker is controlling this page
+    if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+      document.body.innerHTML = '<p style="color:red">⚠️ Service Worker detected. ' +
+        'Consent page cannot render securely. Please clear site data and reload.</p>';
+    }
+
+    function deny() {
+      fetch('/consent/abc123/deny', { method: 'POST' });
+      window.close();
     }
 
     document.querySelector('form').addEventListener('submit', async (e) => {
       e.preventDefault();
-      const code = e.target.elements.code.value;
+      const nonce = e.target.elements.nonce.value;
       const resp = await fetch(e.target.action, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code }),
+        body: JSON.stringify({ nonce }),
       });
       if (resp.ok) {
-        parent.postMessage(
-          { type: 'consent-result', approved: true },
-          mainAppOrigin  // only send to expected origin, never '*'
-        );
+        window.close();
       }
     });
-
-    // mainAppOrigin is injected by the consent server when rendering the page
-    // e.g., 'http://localhost:4466' — derived from runtime configuration
-    const mainAppOrigin = '{{MAIN_APP_ORIGIN}}';
-
-    function deny() {
-      fetch('/consent/abc123/deny', { method: 'POST' });
-      parent.postMessage({ type: 'consent-result', approved: false }, mainAppOrigin);
-    }
   </script>
 </body>
 </html>
@@ -610,76 +617,63 @@ Consent page HTML (minimal — no Headlamp bundle, no plugin code, no React):
 
 ```
 1. Backend generates consentId = crypto.RandomBytes(32).hex()
-   and confirmationCode = randomWord() + randomDigits()  (e.g., "BLUE42")
-2. Stored in memory: { consentId, command, args, code, expiry: now+60s, status: "pending" }
+   and nonce = crypto.RandomBytes(32).hex()
+2. Stored in memory: { consentId, command, args, nonce, expiry: now+60s, status: "pending" }
 3. Frontend receives consentId in the 202 response
-4. Iframe/popup loads /consent/{consentId} — server renders page with the code
-5. User types code + clicks Confirm
-   → POST /consent/{consentId}/approve with { code: "BLUE42" }
-   → Server checks: Origin header == consent server origin
-   → Server checks: submitted code == stored code
+4. User clicks "Review command" → popup opens /consent/{consentId}
+5. Backend checks Sec-Fetch-Dest: document + Sec-Fetch-Mode: navigate
+   → Serves consent page with COOP: same-origin + nonce in hidden form field
+6. User clicks Approve
+   → POST /consent/{consentId}/approve with { nonce: "..." }
+   → Server checks: nonce matches stored nonce
    → Server checks: consentId is pending and not expired
    → status: "approved"
-6. consentId is single-use: once approved/denied, cannot be reused
-7. After 60s, pending consentIds expire automatically
-8. Frontend retries the original command — backend sees it's now approved
-9. Optionally, choice is persisted to config (like Electron's confirmedCommands)
+7. consentId is single-use: once approved/denied, cannot be reused
+8. After 60s, pending consentIds expire automatically
+9. Plugin polls backend → backend sees approval → command executes
+10. Optionally, choice is persisted to config (like Electron's confirmedCommands)
 ```
 
 **Edge cases:**
-- **Popup blocked:** Frontend detects blocked popup (see popup blocker detection above) and immediately falls back to cross-origin iframe with typed confirmation code. No user action needed — the fallback is automatic and seamless.
-- **Iframe removed by plugin:** If using iframe fallback, frontend detects removal via MutationObserver and shows a clickable link: "Click here to approve command in a new tab." This is a last-resort manual fallback.
-- **Multiple consent requests:** Each gets its own consentId and confirmation code. The consent server can show a list of pending requests.
-- **Consent port discovery:** Main backend returns the consent port in its API (e.g., `GET /api/v1/config` includes `consentPort: 4467`).
+- **Popup blocked:** The consent popup is opened via user gesture (clicking "Review command"), so popup blockers allow it. If an aggressive enterprise popup blocker still blocks it, fall back to full-page navigation: `location.href = '/consent/{consentId}?returnUrl=...'` — the consent page redirects back after approval.
+- **Multiple consent requests:** Each gets its own consentId and nonce. The consent page can show a list of pending requests.
+- **Browser doesn't support COOP or Sec-Fetch:** Fall back to full-page navigation (no plugins loaded on the consent page = no attacker JS). Check `Sec-Fetch-Dest` presence on the server — if absent, require full-page navigation flow.
 
-**Verdict: ✅ Secure. Cross-origin isolation prevents DOM access and direct API calls. Origin header checking blocks form submission bypass. Typed confirmation code defeats clickjacking (iframe). Popup is inherently immune to clickjacking.**
+**Verdict: ✅ Secure. COOP severs popup opener. Sec-Fetch filtering blocks programmatic access. Server-side nonce prevents direct approval. SW registration blocking closes the SW interception vector. Popup is inherently immune to clickjacking.**
 
-##### Same port / different path — could it work?
+##### Same port / different path — background analysis
 
-The analysis above assumes the consent UI runs on a **different port** (e.g., `:4467` vs `:4466`). But deploying two ports is operationally inconvenient — Kubernetes Services, ingress rules, Docker port mappings, and firewall rules all need the extra port. Could a **different path on the same port** (e.g., `/consent/...` on `:4466`) provide the same security?
+This section analyzes why naive same-port, different-path approaches don't work for consent isolation — and how the COOP + Fetch Metadata approach (recommended above) solves the problem.
 
-**Short answer: No — same port = same origin = no browser isolation. But there are practical workarounds.**
-
-**Why same-origin paths don't isolate:**
+**Why same-origin paths alone don't isolate:**
 
 The browser's Same-Origin Policy is defined by `scheme + host + port`. Two paths on the same `http://localhost:4466` share the same origin — regardless of the path. This means:
 
-| Attack | Same port, different path | Different port |
-|--------|--------------------------|----------------|
-| `fetch('/consent/abc/approve', {method:'POST'})` | ✅ **Works** — same origin, no CORS block | ❌ Blocked — cross-origin, no CORS headers |
-| `iframe.contentDocument.querySelector('#approve').click()` | ✅ **Works** — same origin, full DOM access | ❌ Blocked — cross-origin SecurityError |
-| Plugin reads consent page content | ✅ **Works** — same origin | ❌ Blocked — cross-origin |
+| Attack | Naive same-port (no COOP) | With COOP + Sec-Fetch + nonce |
+|--------|--------------------------|-------------------------------|
+| `fetch('/consent/abc/approve', {method:'POST'})` | ✅ **Works** — same origin, no CORS block | ❌ Blocked — plugin doesn't have the nonce |
+| `fetch('/consent/abc')` to read nonce from HTML | ✅ **Works** — same origin | ❌ Blocked — Sec-Fetch-Dest: empty ≠ document |
+| `iframe.contentDocument.querySelector(...)` | ✅ **Works** — same origin, full DOM access | ❌ Blocked — Sec-Fetch-Dest: iframe ≠ document |
+| Read popup DOM via `window.opener` | ✅ **Works** — same origin | ❌ Blocked — COOP severed opener |
 
-A same-port consent path is equivalent to Approach 1 (in-page React dialog) — the plugin can bypass it trivially by calling the endpoint directly.
+A naive same-port consent path (without COOP/Sec-Fetch) is equivalent to Approach 1 (in-page React dialog) — the plugin can bypass it trivially.
 
-**Server-side defenses that DON'T help on the same origin:**
+**Server-side defenses that DON'T help on their own:**
 
-- **CORS headers:** CORS only restricts **cross-origin** requests. Same-origin requests bypass CORS entirely — the browser never checks `Access-Control-*` headers.
-- **Different Content-Type:** The plugin can set any `Content-Type` on a same-origin fetch — no preflight needed.
-- **CSRF tokens:** The plugin runs in the same origin, so it has access to the same cookies and tokens. CSRF tokens protect against *cross-site* forgery, not same-origin abuse.
-- **`Sec-Fetch-*` headers:** These are set by the browser on navigation requests (e.g., `Sec-Fetch-Mode: navigate`) but a plugin using `fetch()` will have `Sec-Fetch-Mode: cors` — distinguishable in theory, but `Sec-Fetch-*` headers can only tell you *how* a request was made, not *who* made it. Both the real consent page and a malicious plugin call from the same origin will have the same `Sec-Fetch-Site: same-origin`.
+- **CORS headers:** CORS only restricts **cross-origin** requests. Same-origin requests bypass CORS entirely.
+- **CSRF tokens:** The plugin runs in the same origin, so it can read tokens from cookies and DOM. CSRF tokens protect against *cross-site* forgery, not same-origin abuse.
+- **Custom headers:** The plugin can set any custom header on same-origin fetch.
+- **`Sec-Fetch-*` alone:** Distinguishes *how* a request was made but not *who* — however, when combined with COOP (which prevents DOM access) and server-side nonces, Sec-Fetch filtering becomes effective because the plugin has no way to obtain the nonce.
 
-**What DOES work for same-port isolation:**
+**What makes COOP + Fetch Metadata + nonce work:**
 
-1. **Custom header requirement:** The consent endpoint could require a custom header (e.g., `X-Consent-Token: <nonce>`) that is only known to the consent page itself (embedded in the HTML at render time, not available via any API). But since the plugin runs in the same origin, it can load the consent page in an iframe, read the nonce from the DOM (`iframe.contentDocument`), and use it. **Not secure on same origin.**
+The key insight is that these mechanisms work together, not individually:
+1. **Sec-Fetch filtering** prevents the plugin from reading the consent page content via `fetch()`/XHR/iframe
+2. **COOP** prevents the plugin from reading the popup's DOM (opener severed)
+3. **Server-side nonce** prevents the plugin from approving without the secret
+4. **SW registration blocking** prevents the plugin from intercepting navigations via Service Worker
 
-2. **Double-submit cookie with SameSite:** A cookie set with `Path=/consent/` and `SameSite=Strict` would only be sent on requests to `/consent/*`. But a plugin on the same origin can still read this cookie via `document.cookie` (unless it's `HttpOnly`), and even if `HttpOnly`, it can navigate to `/consent/approve` via a form submission and the cookie goes along. **Not secure on same origin.**
-
-3. **Separate origin via reverse proxy:** Deploy one port externally but use a reverse proxy (nginx/Envoy) to map `/consent/*` to a separate internal service on a different port. The browser sees one port, but the backend has isolation. **However:** the browser still sees the same origin. The proxy only changes the backend routing, not the browser's Same-Origin Policy. The plugin can still `fetch('/consent/...')` and it reaches the consent endpoint. **Not secure from the browser's perspective.**
-
-**The only same-port option that's secure: sub-domain isolation.**
-
-If the main app runs on `headlamp.example.com` and the consent UI runs on `consent.headlamp.example.com` (pointing to the same server, same port, different sub-domain), the browser treats them as **different origins**. Same-Origin Policy kicks in. This works for production deployments behind a DNS, but not for `localhost` development (where sub-domains aren't available without `/etc/hosts` hacks).
-
-**Practical recommendation:**
-
-| Scenario | Approach | Why |
-|----------|----------|-----|
-| **Headless (localhost)** | Different port (`:4467`) | Only reliable way to get cross-origin isolation on localhost. The consent server is a lightweight Go HTTP handler — starting it on a second port is trivial. |
-| **In-cluster (Kubernetes)** | Sub-domain (`consent.headlamp.svc`) or admin pre-approval | Sub-domain gives cross-origin isolation on a single port. But admin pre-approval (Approach 5) is simpler and already recommended for in-cluster. |
-| **Behind ingress** | Sub-domain or admin pre-approval | If a second port is hard to expose, use sub-domain routing. Or skip the consent UI entirely with admin pre-approval. |
-
-**Bottom line:** A different port is the simplest reliable way to get Same-Origin Policy isolation, especially for localhost/headless. For production Kubernetes deployments where a second port is inconvenient, admin pre-approval (Helm config) eliminates the need for a browser consent UI entirely. Sub-domain isolation is a middle ground for cases where you need browser-based consent but can't expose a second port.
+No single mechanism provides isolation — but together they create a complete defense. See "Could a same-port popup work?" below for the full attack-by-attack analysis.
 
 ##### Could iframe `sandbox` work if same-path isolation doesn't?
 
@@ -760,7 +754,95 @@ For this proposal, stick with the earlier guidance:
 - **Localhost/headless:** Different port — trivial to add, gives cross-origin isolation immediately, no plugin rewrites.
 - **In-cluster:** Admin pre-approval (no consent UI) or sub-domain isolation.
 
-Sandboxed plugins (Option B) are a genuinely good long-term architecture and would let consent UI, plugin isolation, and third-party plugin hosting all share a single port — but that belongs in a separate RFC about the plugin system itself, not a consent-UI proposal. If/when Headlamp plugins move to a sandboxed model, the "different port for consent" requirement relaxes naturally; until then, a second port is the cheapest path to real isolation.
+Sandboxed plugins (Option B) are a genuinely good long-term architecture and would let consent UI, plugin isolation, and third-party plugin hosting all share a single port — but that belongs in a separate RFC about the plugin system itself, not a consent-UI proposal. The COOP + Fetch Metadata + SW blocking approach (see below) provides same-port consent isolation without plugin system changes.
+
+##### Could a same-port popup work? (COOP + Fetch Metadata + SW blocking)
+
+The previous sections show that same-origin paths don't isolate, and sandboxing the plugin is a system redesign. But there's a middle ground: **a popup on the same port that combines three browser mechanisms to create effective isolation without a second port.**
+
+**How it works:**
+
+1. Plugin requests command execution → backend generates `consentId` + cryptographic `nonce`, stores nonce server-side
+2. Headlamp frontend opens popup: `window.open('/consent/{consentId}')`
+3. Backend serves the consent page with three protections:
+   - **Fetch Metadata filtering**: only responds when `Sec-Fetch-Dest: document` AND `Sec-Fetch-Mode: navigate` (rejects `fetch()`/XHR which send `Sec-Fetch-Dest: empty`)
+   - **`Cross-Origin-Opener-Policy: same-origin`**: the main page has no COOP (defaults to `unsafe-none`), creating a COOP mismatch → browser severs the opener relationship. The popup gets its own browsing context group.
+   - **Nonce in HTML**: the consent page embeds the `nonce` in a hidden form field
+4. User sees command details in the popup, clicks "Approve"
+5. Form POSTs to `/consent/{consentId}/approve` with the nonce
+6. Backend validates nonce (one-time use), records approval, popup closes
+7. Plugin polls backend for consent status (it never had access to the nonce)
+
+**Why this is secure — attack-by-attack analysis:**
+
+| Attack | Outcome | Why |
+|--------|---------|-----|
+| `fetch('/consent/{id}')` to read nonce | ❌ Blocked | `Sec-Fetch-Dest: empty` ≠ `document` — server returns 403 |
+| `XMLHttpRequest` to read nonce | ❌ Blocked | Same — `Sec-Fetch-Dest: empty` |
+| `fetch('/consent/{id}/approve')` to auto-approve | ❌ Blocked | Plugin doesn't know the nonce |
+| Read popup DOM via `window.opener` | ❌ Blocked | COOP mismatch severed the opener relationship |
+| Hidden `<iframe src="/consent/{id}">` | ❌ Blocked | `Sec-Fetch-Dest: iframe` ≠ `document` — server returns 403 |
+| `<object>` / `<embed>` to load consent page | ❌ Blocked | `Sec-Fetch-Dest: object`/`embed` ≠ `document` |
+| `<link rel="prefetch">` | ❌ Blocked | `Sec-Fetch-Dest: empty` |
+| Clickjack the popup | ❌ Impossible | Popup is a standalone OS window — parent can't overlay or reposition it |
+| Create a form that POSTs to approve endpoint | ❌ Blocked | Plugin doesn't have the nonce to include in the form |
+| Navigate main page to consent URL | ⚠️ User sees it | Obvious to user (page navigates away), and nonce is one-time |
+
+**The remaining attack: Service Workers**
+
+A Service Worker registered by a malicious plugin could intercept the popup's navigation request, read the response body, extract the nonce, and relay it back to the plugin. SW interception happens before COOP and Fetch Metadata checks — the SW sees the raw navigation request and can clone the response.
+
+**Defense: block Service Worker registration at the server.**
+
+When a browser registers a Service Worker, it fetches the SW script with a special `Service-Worker: script` request header. This header is a "forbidden header name" — JavaScript cannot set it; only the browser's SW registration machinery does. The backend can block SW registration for the entire origin:
+
+```go
+// In the Go backend's HTTP handler
+func handleRequest(w http.ResponseWriter, r *http.Request) {
+    if r.Header.Get("Service-Worker") == "script" {
+        http.Error(w, "Service Worker registration not allowed", http.StatusForbidden)
+        return
+    }
+    // ... normal handling
+}
+```
+
+With this single check, no Service Worker can be registered on the Headlamp origin. This closes the SW attack vector without affecting normal script loading, CSS, images, or API calls. The `Service-Worker` header is only sent during SW script fetches — regular `<script>` tags don't include it.
+
+**Additional depth defense (optional):**
+
+- **Consent page self-check:** The consent page JS verifies `navigator.serviceWorker.controller === null`. If a pre-existing SW is controlling the page (registered before the server-side block was deployed), the page refuses to render and shows a warning.
+- **CSP `worker-src 'none'`:** Set on the main Headlamp page to prevent all worker registration client-side. More aggressive — also blocks Web Workers and Shared Workers.
+- **Freeze `navigator.serviceWorker.register`:** Before loading plugins, Headlamp sets `Object.defineProperty(navigator.serviceWorker, 'register', { value: () => Promise.reject(new Error('blocked')), writable: false })`. Fragile but effective against casual attackers.
+
+**`Sec-Fetch-*` headers can't be spoofed by JavaScript.** Headers starting with `Sec-` are "forbidden header names" in the Fetch spec — `fetch()` and `XMLHttpRequest.setRequestHeader()` silently ignore attempts to set them. They are set exclusively by the browser based on the actual request context. This makes them reliable for server-side validation against malicious same-origin JS.
+
+**COOP mismatch behavior:** When the main page has no COOP (defaults to `unsafe-none`) and the popup responds with `Cross-Origin-Opener-Policy: same-origin`, the browser detects the mismatch and places them in separate browsing context groups. The parent's `window.open()` returns an opaque `WindowProxy` — it can check `.closed` but cannot access `.document`, `.location`, or any DOM property. This is true even though both pages are same-origin (same scheme + host + port). COOP overrides same-origin access at the browsing context level.
+
+**Comparison: same-port COOP popup vs different-port popup:**
+
+| Property | Same-port COOP popup | Different-port popup |
+|----------|---------------------|---------------------|
+| Origin isolation | COOP + Fetch Metadata (browsing context level) | Full Same-Origin Policy (origin level) |
+| `fetch()` to consent endpoint | Blocked by Sec-Fetch check (server-side) | Blocked by CORS (browser-side) |
+| DOM access to popup | Blocked by COOP (browser-side) | Blocked by SOP (browser-side) |
+| SW attack | Blocked by SW registration check (server-side) | N/A (different origin) |
+| Clickjacking | Immune (standalone popup window) | Immune (standalone popup window) |
+| Deployment complexity | None — single port | Extra port to expose |
+| Kubernetes / Docker | No extra Service or port mapping | Extra Service, port mapping, firewall rules |
+| Ingress compatibility | No changes needed | Second port or sub-domain routing |
+| Browser support | Chrome 83+, Firefox 79+, Safari 15.2+ (COOP); Chrome 76+, Firefox 90+ (Sec-Fetch) | All browsers (SOP is universal) |
+| Defense depth | 3 layers (Sec-Fetch + COOP + nonce + SW block) | 1 layer (SOP) — but that one layer is absolute |
+
+**Recommendation:**
+
+The same-port COOP popup approach is the recommended consent mechanism for all browser-based deployment modes:
+
+- **Localhost/headless**: Same-port COOP popup. SW registration blocked server-side.
+- **In-cluster**: Admin pre-approval via Helm (no consent UI needed). COOP popup available as opt-in for interactive use.
+- **Behind ingress**: Same-port COOP popup. No ingress changes needed.
+
+**Popup blocker handling:** The consent popup is always opened via a user gesture (user clicks "Review command"), so popup blockers allow it. If an aggressive enterprise popup blocker still intervenes, fall back to full-page navigation to `/consent/{consentId}?returnUrl=...` — the consent page redirects back after approval. No plugins are loaded on the consent page, so full-page navigation is inherently secure.
 
 #### Approach 4: Terminal prompt (headless with visible terminal) — SECURE ✅
 
@@ -811,15 +893,14 @@ runCommand:
 |------|-------------------|---------|-----------|
 | **Desktop (Electron)** | Native OS dialog (`dialog.showMessageBoxSync`) | ✅ | Runs in main process, outside renderer JS context |
 | **Headless (terminal visible)** | Terminal prompt (Go backend stdin/stdout) | ✅ | Separate I/O channel, inaccessible to browser JS. Good for SSH. |
-| **Headless (no terminal)** | Cross-origin popup (primary) | ✅ | Inherently immune to clickjacking. Best a11y (standard window, no iframe focus boundary). |
-| **Headless (no terminal, popup blocked)** | Cross-origin iframe with typed code (fallback) | ✅ | Same-Origin Policy + Origin header check + typed code defeats clickjacking. Falls back when popup blockers detected. |
+| **Headless (no terminal)** | Same-port COOP popup | ✅ | COOP severs opener, Sec-Fetch blocks programmatic access, nonce prevents direct approval. Popup is inherently immune to clickjacking. |
 | **In-cluster** | Admin pre-approval (Helm/ConfigMap) | ✅ | No runtime consent, server-side enforcement only |
 | **Any mode** | In-page React dialog | ❌ | Same JS context as plugins, trivially bypassable |
-| **Any mode** | Same-origin popup (same port) | ❌ | Same origin = full DOM access from plugin code |
+| **Any mode** | Same-origin popup without COOP | ❌ | Same origin = full DOM access from plugin code |
 
 #### Recommended consent flow
 
-**Headless auto-detection:** The backend can detect whether stdin is a TTY (`golang.org/x/term` `term.IsTerminal(int(os.Stdin.Fd()))` in Go). If yes → terminal prompt. If no (e.g., started from desktop icon, stdin is /dev/null) → cross-origin popup, falling back to iframe if popup is blocked.
+**Headless auto-detection:** The backend can detect whether stdin is a TTY (`golang.org/x/term` `term.IsTerminal(int(os.Stdin.Fd()))` in Go). If yes → terminal prompt. If no (e.g., started from desktop icon, stdin is /dev/null) → same-port COOP popup.
 
 ```
 Consent flow (headless — terminal available):
@@ -840,13 +921,13 @@ Consent flow (headless — no terminal, e.g., desktop icon):
                                       ├─ checkAllowlist ✓
                                       ├─ checkConsent (config file)
                                       │   └─ Not consented?
-                                      │       ├─ Generate consentId + confirmation code
-                                      │       ├─ Return 202 with consentId + consentPort
-                                      │       ├─ Frontend tries cross-origin popup
-                                      │       │  (detects popup blocker → falls back to iframe)
-                                      │       ├─ User types confirmation code + clicks Confirm
-                                      │       ├─ Consent server verifies Origin + code
-                                      │       └─ Frontend retries, backend sees approval
+                                      │       ├─ Generate consentId + nonce
+                                      │       ├─ Return 202 with consentId
+                                      │       ├─ Frontend shows "Review command" prompt
+                                      │       ├─ User clicks → COOP popup opens
+                                      │       ├─ User clicks Approve in popup
+                                      │       ├─ Backend validates nonce
+                                      │       └─ Plugin polls, backend sees approval
                                       └─ spawn('minikube', ['status'])
 
 Consent flow (in-cluster):
@@ -961,17 +1042,140 @@ Both share:
 
 ## Implementation phases
 
-1. **Go backend endpoints** — `POST /start`, `GET /stream`, `POST /consent` with permission secret validation
+1. **Go backend endpoints** — `POST /start`, `GET /stream`, `POST /consent` with permission secret validation; `Service-Worker: script` header blocking middleware
 2. **Frontend HTTP fallback** — `runCommandViaHTTP` alongside existing IPC path
 3. **Plugin loader backend secrets** — `permissionSecretsFromApp` fetches from backend when not in Electron
 4. **Consent: terminal prompt** — Go backend checks `term.IsTerminal(os.Stdin)`, prompts via stdin/stdout, saves choice to config
-5. **Consent: cross-origin popup** — Go backend starts consent server on separate port, serves minimal consent HTML, uses single-use consentId nonces
+5. **Consent: same-port COOP popup** — Consent handler on same port with `Cross-Origin-Opener-Policy: same-origin`, Sec-Fetch filtering, server-side nonce
 6. **Helm configuration** — `runCommand.enabled`, `runCommand.allowedCommands`, `runCommand.preApprovedCommands`
+
+## Could runCommand be used for terminal access?
+
+**Short answer: Yes — the runCommand infrastructure can be extended to support a full interactive terminal on the backend server. WebSocket is the right transport (not SSE). Headlamp already has all the frontend pieces (XTerm.js, channel protocol, `useTerminalStream` hook).**
+
+### What "terminal access" means here
+
+Headlamp already supports terminal access to **pods** via `kubectl exec` — the frontend has XTerm.js (`frontend/src/components/common/Terminal.tsx`), WebSocket streaming (`frontend/src/lib/k8s/useTerminalStream.ts`), and the Go backend proxies WebSocket connections to the Kubernetes API server.
+
+A **local terminal** is different: it runs a shell (bash, sh, zsh) on the **backend server machine** itself, not inside a pod. Use cases:
+
+- **Headless mode**: User accesses Headlamp remotely and needs a shell on the server (for kubectl, helm, minikube, debugging)
+- **Desktop mode**: Less useful (user can open their own terminal), but provides a unified experience
+- **In-cluster**: Potentially dangerous (shell on the cluster node) — should be disabled by default
+
+### How it would work
+
+The Go backend spawns a PTY (pseudo-terminal) process and bridges it to a WebSocket:
+
+```go
+import (
+    "github.com/creack/pty"
+    "github.com/gorilla/websocket"
+)
+
+func handleTerminal(w http.ResponseWriter, r *http.Request) {
+    // Same security checks as runCommand
+    checkPermissionSecret(r)
+    checkHeadlampBackendToken(r)
+    checkConsent(r, "terminal")
+
+    conn, _ := upgrader.Upgrade(w, r, nil)
+    defer conn.Close()
+
+    // Spawn shell in a PTY
+    cmd := exec.Command("bash")
+    ptmx, _ := pty.Start(cmd)
+    defer ptmx.Close()
+
+    // PTY output → WebSocket (using same channel protocol as pod exec)
+    go func() {
+        buf := make([]byte, 4096)
+        for {
+            n, err := ptmx.Read(buf)
+            if err != nil { return }
+            // Channel 1 = StdOut
+            msg := append([]byte{1}, buf[:n]...)
+            conn.WriteMessage(websocket.BinaryMessage, msg)
+        }
+    }()
+
+    // WebSocket → PTY input / resize
+    for {
+        _, msg, err := conn.ReadMessage()
+        if err != nil { return }
+        channel := msg[0]
+        data := msg[1:]
+        switch channel {
+        case 0: // StdIn
+            ptmx.Write(data)
+        case 4: // Resize
+            cols, rows := parseResize(data)
+            pty.Setsize(ptmx, &pty.Winsize{Cols: cols, Rows: rows})
+        }
+    }
+}
+```
+
+### Why WebSocket, not SSE
+
+| Property | WebSocket | SSE + POST |
+|----------|-----------|------------|
+| Latency per keystroke | 1 message | 1 HTTP POST per keystroke |
+| Bidirectional | Native | Emulated (separate channel) |
+| Terminal resize | In-band (channel 4) | Separate POST endpoint |
+| Existing infrastructure | ✅ Headlamp already proxies K8s WebSocket | ❌ New SSE infrastructure |
+| XTerm.js integration | ✅ `useTerminalStream` hook already handles WebSocket | ❌ New hook needed |
+
+SSE is fine for one-off commands (runCommand), but terminal I/O needs low-latency bidirectional communication — WebSocket is the right choice.
+
+### Reuse from existing code
+
+The frontend already has everything needed:
+
+| Component | File | Reuse |
+|-----------|------|-------|
+| XTerm.js terminal UI | `Terminal.tsx` | Reuse component, change WebSocket URL |
+| Channel protocol (StdIn/Out/Err/Resize) | `useTerminalStream.ts` | Reuse directly — same channel encoding |
+| WebSocket connection | `streamingApi.ts` | Reuse `stream()` function |
+| Terminal resize handling | `useTerminalStream.ts` | Reuse FitAddon + resize channel |
+
+The main new code is in the Go backend: PTY spawning + WebSocket handler (~100 lines). Plus a new route/component to open the terminal UI.
+
+### Relationship to runCommand
+
+| | runCommand | Terminal |
+|---|-----------|----------|
+| **Purpose** | One-off commands (minikube status, az login) | Interactive shell session |
+| **Lifetime** | Short — run → output → exit | Long — open → interact → close |
+| **Transport** | SSE (output) + POST (stdin, if needed) | WebSocket (bidirectional) |
+| **Process** | `exec.Command` (no PTY) | `pty.Start` (PTY for terminal emulation) |
+| **Command scope** | Allowlisted commands only | Shell (bash, sh) — much broader |
+| **Security** | Permission secret + consent + allowlist | Permission secret + consent + opt-in flag |
+| **ANSI codes** | Not needed (structured output) | Essential (colors, cursor, tab completion) |
+
+They share the same security model (permission secrets, consent, backend token) but have different execution patterns. Terminal access should be a **separate endpoint** (`/api/v1/terminal`) with its own permission secret (`terminal-access`), not an extension of runCommand.
+
+### Security considerations
+
+A local terminal is more powerful than runCommand (arbitrary commands vs. allowlist). Additional safeguards:
+
+- **Opt-in**: Disabled by default. Enabled via `--enable-terminal` flag or Helm `terminal.enabled: true`
+- **Shell restriction**: Configurable shell command (default: user's login shell). Admin can restrict to specific shells.
+- **Audit logging**: All terminal sessions logged with user identity, start/end time, and optionally command history
+- **Session timeout**: Auto-close after configurable idle timeout (default: 30 minutes)
+- **In-cluster**: Disabled by default. If enabled, the terminal runs on the Headlamp pod — not on cluster nodes. Admin must explicitly opt in via Helm.
+- **Consent**: Same COOP popup mechanism as runCommand. First terminal session requires user consent. Choice can be saved.
+
+### Implementation phases (terminal-specific)
+
+1. **Go backend**: WebSocket endpoint at `/api/v1/terminal` using `creack/pty`, with permission secret and consent checks
+2. **Frontend**: New "Terminal" component that reuses `useTerminalStream` with the local terminal WebSocket URL
+3. **UI integration**: Terminal tab/panel in the Headlamp UI (like pod terminal, but for the backend server)
+4. **Configuration**: `--enable-terminal`, `--terminal-shell`, `--terminal-idle-timeout` CLI flags; Helm `terminal.*` values
 
 ## Open questions
 
-1. **WebSocket vs SSE for streaming** — SSE is simpler (unidirectional) but WebSocket supports stdin. Could start with SSE and add WebSocket later if stdin is needed.
+1. **WebSocket vs SSE for runCommand streaming** — SSE is simpler for one-off commands. WebSocket is needed for terminal access. Could support both: SSE for runCommand, WebSocket for terminal.
 2. **In-cluster runCommand** — Should this be disabled entirely, or configurable per-command? The minikube plugin doesn't make sense in-cluster, but future plugins might need local commands.
-3. **Consent port stability** — The consent server runs on a random port. Should it be configurable (e.g., `--consent-port 4467`) so that popup blocker exceptions can be saved?
-4. **Popup blocker UX** — If the popup is blocked, the frontend falls back to a clickable link. Should there be a third fallback (e.g., admin pre-approval via config file)?
-5. **Same port for consent** — A different port is required for Same-Origin Policy isolation on localhost. For in-cluster, sub-domain isolation (`consent.headlamp.svc`) or admin pre-approval can avoid the second port. See [Same port / different path analysis](#same-port--different-path--could-it-work) for details.
+3. **Terminal access scope** — Should the terminal be a full shell, or restricted to specific commands? A full shell is most useful but highest risk. Could offer both modes.
+4. **Terminal in-cluster** — The terminal runs on the Headlamp pod. Is this useful? Kubernetes admins might want `kubectl` access from the pod. Should be heavily restricted and opt-in.
