@@ -422,27 +422,81 @@ The consent server sets `Content-Security-Policy: frame-ancestors http://localho
 
 ##### Head-to-head comparison
 
+**Security:**
+
 | Property | Cross-origin iframe | Cross-origin popup |
 |----------|--------------------|--------------------|
-| **UX** | ✅ Inline, no window switching | ⚠️ Separate window, may go behind main window |
-| **Popup blockers** | ✅ Not affected | ❌ May be blocked unless user-gesture-triggered |
 | **DOM access by plugin** | ❌ Blocked (cross-origin) | ❌ Blocked (cross-origin) |
 | **fetch/XHR by plugin** | ❌ Blocked (no CORS headers) | ❌ Blocked (no CORS headers) |
 | **Form submission by plugin** | ❌ Blocked (Origin header check) | ❌ Blocked (Origin header check) |
 | **Clickjacking** | ⚠️ Possible — needs typed code defense | ✅ Not possible — separate OS window |
 | **Plugin removes/hides UI** | ⚠️ Can remove iframe from DOM | ✅ Cannot close/hide a separate window |
-| **User notices consent** | ⚠️ Inline element may be overlooked | ✅ Separate window is hard to miss |
 | **Implementation complexity** | Medium (iframe + typed code + self-check) | Low (just window.open) |
+
+**UX and accessibility:**
+
+| Property | Cross-origin iframe | Cross-origin popup |
+|----------|--------------------|--------------------|
+| **Visual context** | ✅ Inline — user stays in the app | ⚠️ Separate window — may go behind main window or be missed on multi-monitor setups |
+| **User notices consent** | ⚠️ Inline element may be overlooked among other content | ✅ Separate window demands attention (OS-level focus) |
+| **Popup blockers** | ✅ Not affected | ⚠️ May be blocked — detectable, falls back to iframe |
+| **Keyboard navigation** | ⚠️ User must Tab into the iframe (cross-origin iframes receive focus, but the boundary may confuse users). Focus trapping inside the iframe is possible but the parent page can't programmatically move focus into it. | ✅ Popup is a standalone page — normal Tab/Shift-Tab works. Focus is automatically in the new window. No focus-trapping issues. |
+| **Screen readers** | ⚠️ Cross-origin iframes are announced as "frame" with the page title. Screen readers *can* navigate into them, but the transition is jarring — the user leaves the main page's virtual buffer and enters a new document context. Some screen readers (JAWS, NVDA) handle this well; others may not announce the iframe content proactively. The `<iframe title="Headlamp: Command Approval">` attribute helps, but the two-document experience is suboptimal. | ✅ Popup opens as a new browser window/tab — screen readers treat it as a normal page. The `window.open()` triggers a "new window" announcement. The consent page is a simple, focused document with a heading, description, input, and buttons — ideal for linear screen reader navigation. |
+| **Touch / mobile** | ✅ Inline — works normally on touch devices | ⚠️ Popup may open in a new tab on mobile browsers, breaking the flow |
+| **Mouse workflow** | ✅ User types code + clicks inline — no window switching | ⚠️ User must switch to popup, type code, click, then return to main window |
+| **Keyboard-only workflow** | ⚠️ Tab into iframe → type code → Tab to Confirm → Enter. The iframe boundary means extra Tab presses. | ✅ Popup focuses automatically → type code → Tab to Confirm → Enter → window closes. Straightforward. |
+| **High-contrast / zoom** | ✅ Both inherit the OS high-contrast mode. Iframe scales with page zoom. | ✅ Both inherit the OS high-contrast mode. Popup has its own zoom level. |
+
+##### Popup blocker detection
+
+Popup blockers can be reliably detected immediately after `window.open()`:
+
+```javascript
+function openConsentPopup(url) {
+  const popup = window.open(url, 'headlamp-consent', 'width=450,height=350');
+
+  // Detection: blocked popups return null or a closed window
+  if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+    // Popup was blocked — fall back to iframe
+    showConsentIframe(url);
+    return null;
+  }
+
+  // Additional check: some blockers allow the call but close immediately
+  setTimeout(() => {
+    if (popup.closed) {
+      showConsentIframe(url);
+    }
+  }, 1000);
+
+  return popup;
+}
+```
+
+This detection is well-supported across browsers (Chrome, Firefox, Safari, Edge) and allows seamless fallback without user intervention.
 
 ##### Recommendation
 
-**Best UX + security: cross-origin iframe with typed confirmation code.** The typed code defeats clickjacking (the main weakness vs popup) while keeping the consent inline. Falls back to popup if the iframe is removed from the DOM or fails to load.
+**Primary: cross-origin popup.** Best security (inherently immune to clickjacking, no additional defenses needed) and best a11y (standard page, no iframe focus boundaries, screen readers treat it as a normal window). The popup window demands user attention and has a clean keyboard flow.
 
-**Simpler alternative: cross-origin popup.** No clickjacking defense needed. Use if UX tradeoff is acceptable.
+**Fallback: cross-origin iframe with typed confirmation code.** When popup blockers prevent the popup, the frontend detects this (see above) and falls back to an inline iframe. The typed confirmation code defeats clickjacking (the main iframe weakness). The iframe should include `title="Headlamp: Command Approval"` for screen reader users, and the consent page should auto-focus the code input field for keyboard accessibility.
 
-Both are secure against direct API bypass (CORS + Origin header) and DOM manipulation (Same-Origin Policy).
+**Both approaches** are secure against direct API bypass (CORS + Origin header) and DOM manipulation (Same-Origin Policy). Both use the same consent server on a different port — the only difference is `window.open()` vs `<iframe src="...">`.
 
-##### How it works (both iframe and popup)
+##### Accessibility requirements for the consent page
+
+The consent page (served by the consent server on the different port) should follow these a11y guidelines regardless of whether it's displayed in a popup or iframe:
+
+- **Heading structure:** `<h1>` for "Command Approval" — screen readers use headings for navigation
+- **Auto-focus:** The confirmation code `<input>` should have `autofocus` so keyboard users can immediately start typing
+- **Label association:** `<label for="code-input">` explicitly associated with the input field
+- **Button roles:** Standard `<button>` elements (not `<div onclick>`) for Confirm/Deny — ensures keyboard Enter/Space activation
+- **ARIA live region:** If the consent page shows a status message (e.g., "Approved — closing..."), use `aria-live="polite"` so screen readers announce it
+- **Color contrast:** Minimum 4.5:1 contrast ratio for text, 3:1 for large text (WCAG AA)
+- **Focus visible:** Ensure `:focus-visible` outlines are not suppressed — keyboard users need to see where focus is
+- **Iframe-specific:** When displayed in an iframe, set `<iframe title="Headlamp: Command Approval" role="dialog" aria-label="Command approval required">` so screen readers announce the purpose before the user navigates into it
+
+##### How it works (popup with iframe fallback)
 
 ```
 Main app (localhost:4466)              Consent server (localhost:4467)
@@ -451,9 +505,11 @@ Main app (localhost:4466)              Consent server (localhost:4467)
    → Backend returns 202 +
      consentUrl + consentId
 
-2. Frontend embeds iframe (or opens popup):
-   src='http://localhost:4467
-     /consent/{consentId}'
+2. Frontend tries popup:
+   window.open('http://localhost:4467
+     /consent/{consentId}')
+   → If blocked: falls back to iframe
+     <iframe src="...same URL...">
                                        3. Consent page loads
                                           (minimal HTML, no plugins,
                                            no Headlamp JS bundle)
@@ -571,8 +627,8 @@ Consent page HTML (minimal — no Headlamp bundle, no plugin code, no React):
 ```
 
 **Edge cases:**
-- **Iframe removed by plugin:** Frontend detects the iframe was removed from DOM (MutationObserver) and falls back to opening a popup instead.
-- **Popup blocked:** Frontend shows a clickable link: "Click here to approve command in a new tab."
+- **Popup blocked:** Frontend detects blocked popup (see popup blocker detection above) and immediately falls back to cross-origin iframe with typed confirmation code. No user action needed — the fallback is automatic and seamless.
+- **Iframe removed by plugin:** If using iframe fallback, frontend detects removal via MutationObserver and shows a clickable link: "Click here to approve command in a new tab." This is a last-resort manual fallback.
 - **Multiple consent requests:** Each gets its own consentId and confirmation code. The consent server can show a list of pending requests.
 - **Consent port discovery:** Main backend returns the consent port in its API (e.g., `GET /api/v1/config` includes `consentPort: 4467`).
 
@@ -627,15 +683,15 @@ runCommand:
 |------|-------------------|---------|-----------|
 | **Desktop (Electron)** | Native OS dialog (`dialog.showMessageBoxSync`) | ✅ | Runs in main process, outside renderer JS context |
 | **Headless (terminal visible)** | Terminal prompt (Go backend stdin/stdout) | ✅ | Separate I/O channel, inaccessible to browser JS. Good for SSH. |
-| **Headless (no terminal)** | Cross-origin iframe with typed code (best UX) | ✅ | Same-Origin Policy + Origin header check + typed code defeats clickjacking |
-| **Headless (no terminal, fallback)** | Cross-origin popup on different port | ✅ | Inherently immune to clickjacking. Fallback if iframe is removed. |
+| **Headless (no terminal)** | Cross-origin popup (primary) | ✅ | Inherently immune to clickjacking. Best a11y (standard window, no iframe focus boundary). |
+| **Headless (no terminal, popup blocked)** | Cross-origin iframe with typed code (fallback) | ✅ | Same-Origin Policy + Origin header check + typed code defeats clickjacking. Falls back when popup blockers detected. |
 | **In-cluster** | Admin pre-approval (Helm/ConfigMap) | ✅ | No runtime consent, server-side enforcement only |
 | **Any mode** | In-page React dialog | ❌ | Same JS context as plugins, trivially bypassable |
 | **Any mode** | Same-origin popup (same port) | ❌ | Same origin = full DOM access from plugin code |
 
 #### Recommended consent flow
 
-**Headless auto-detection:** The backend can detect whether stdin is a TTY (`golang.org/x/term` `term.IsTerminal(int(os.Stdin.Fd()))` in Go). If yes → terminal prompt. If no (e.g., started from desktop icon, stdin is /dev/null) → cross-origin iframe, falling back to popup if iframe is removed.
+**Headless auto-detection:** The backend can detect whether stdin is a TTY (`golang.org/x/term` `term.IsTerminal(int(os.Stdin.Fd()))` in Go). If yes → terminal prompt. If no (e.g., started from desktop icon, stdin is /dev/null) → cross-origin popup, falling back to iframe if popup is blocked.
 
 ```
 Consent flow (headless — terminal available):
@@ -658,8 +714,8 @@ Consent flow (headless — no terminal, e.g., desktop icon):
                                       │   └─ Not consented?
                                       │       ├─ Generate consentId + confirmation code
                                       │       ├─ Return 202 with consentId + consentPort
-                                      │       ├─ Frontend shows cross-origin iframe
-                                      │       │  (falls back to popup if iframe removed)
+                                      │       ├─ Frontend tries cross-origin popup
+                                      │       │  (detects popup blocker → falls back to iframe)
                                       │       ├─ User types confirmation code + clicks Confirm
                                       │       ├─ Consent server verifies Origin + code
                                       │       └─ Frontend retries, backend sees approval
