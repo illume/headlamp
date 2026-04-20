@@ -281,11 +281,168 @@ The browser treats same-origin popups identically to iframes in the same page �
 
 **Verdict: ❌ Same origin = no isolation. Same problem as in-page React dialog.**
 
-#### Approach 3: Cross-origin popup via different port — SECURE ✅
+#### Approach 3: Cross-origin consent on a different port — SECURE ✅
 
-A popup opened on a **different port** (e.g., `localhost:4467` when the app runs on `localhost:4466`) is treated as a **different origin** by the browser. The Same-Origin Policy then enforces complete isolation.
+Both iframes and popups on a **different port** (e.g., `localhost:4467` when the app runs on `localhost:4466`) are treated as a **different origin** by the browser. The Same-Origin Policy then enforces isolation. But iframes and popups have different security properties — this section analyzes both.
 
-**How it works:**
+##### Shared security properties (iframe and popup)
+
+Both cross-origin iframes and popups share these defenses:
+
+| Attack | Attempt | Result | Why |
+|--------|---------|--------|-----|
+| **Direct API call (fetch/XHR)** | Plugin calls `fetch('http://localhost:4467/consent/abc/approve', {method:'POST'})` | ❌ Blocked | Cross-origin. Consent server sets no `Access-Control-Allow-Origin` headers. Browser blocks the preflight or response. |
+| **DOM access** | `iframe.contentDocument.querySelector('#approve').click()` or `popup.document.querySelector(...)` | ❌ Blocked | Cross-origin. Browser throws `SecurityError`. |
+| **Read content** | `iframe.contentDocument.body.innerHTML` or `popup.document.body.innerHTML` | ❌ Blocked | Same cross-origin restriction. |
+| **postMessage spoofing** | Plugin sends `postMessage({type:'auto-approve'})` to iframe/popup | ❌ No effect | Consent page does not listen for messages from the parent/opener. Consent flows from consent page → consent server (same origin :4467), not from parent → consent page. |
+| **Intercept postMessage result** | Plugin listens for `message` events from :4467 | ⚠️ Can observe | Harmless — consent already recorded server-side. Result message is informational only. |
+
+##### Form submission bypass — and how to block it
+
+**Important:** HTML `<form>` submissions bypass CORS. A plugin can create a form targeting the consent endpoint:
+
+```javascript
+// Malicious plugin on :4466
+const form = document.createElement('form');
+form.method = 'POST';
+form.action = 'http://localhost:4467/consent/abc123/approve';
+document.body.appendChild(form);
+form.submit();  // This POST goes through! No CORS block.
+```
+
+**Defense: Origin header checking.** The browser automatically sets the `Origin` header on all cross-origin POST requests, including form submissions. JavaScript **cannot forge the `Origin` header** — it is a "forbidden" header name.
+
+- Form submitted from plugin on `:4466` → `Origin: http://localhost:4466` → **consent server rejects**
+- Form submitted from inside iframe/popup on `:4467` → `Origin: http://localhost:4467` → **consent server accepts**
+
+```go
+func approveConsent(w http.ResponseWriter, r *http.Request) {
+    origin := r.Header.Get("Origin")
+    expectedOrigin := fmt.Sprintf("http://localhost:%d", consentPort)
+    if origin != expectedOrigin && origin != "" {
+        http.Error(w, "Invalid origin", http.StatusForbidden)
+        return
+    }
+    // ... process consent
+}
+```
+
+This closes the form submission bypass for both iframe and popup approaches.
+
+##### Where iframe and popup differ: clickjacking
+
+This is the key security difference between the two approaches.
+
+**Cross-origin iframe (embedded in the page):**
+
+The iframe renders inside the Headlamp page. Plugins control the parent page's DOM, which means they can manipulate the iframe element **from the outside** — even though they can't access its internal DOM.
+
+| Clickjacking attack | How it works | Difficulty |
+|---------------------|-------------|------------|
+| **Transparent overlay** | Plugin positions a transparent `<div>` over the iframe's "Allow" button. User thinks they're clicking something else, but the click passes through to the iframe button. | Medium |
+| **Resize to tiny** | `iframe.style.width = '1px'; iframe.style.height = '1px'` — makes the iframe nearly invisible, then positions it precisely under the user's cursor | Medium |
+| **Opacity manipulation** | `iframe.style.opacity = '0.01'` — iframe is functionally invisible but still receives clicks | Easy |
+| **Remove and replace** | Plugin removes the real iframe from the DOM and inserts a fake one that auto-approves | Easy (but fake iframe is same-origin, so can't call :4467 — mitigated by Origin check) |
+| **Reposition** | Plugin moves the iframe off-screen or behind other elements, then creates a fake visible "consent UI" | Easy |
+
+**Cross-origin popup (separate window):**
+
+The popup is a separate OS-level window. The plugin has **no control** over its position, size, appearance, or z-ordering.
+
+| Clickjacking attack | How it works | Result |
+|---------------------|-------------|--------|
+| **Transparent overlay** | Can't overlay content on a separate window | ❌ Not possible |
+| **Resize** | `popup.resizeTo()` blocked by browsers for cross-origin windows | ❌ Not possible |
+| **Opacity** | No API to change another window's opacity | ❌ Not possible |
+| **Remove/replace** | Can't remove a window from the DOM (it's not in the DOM) | ❌ Not possible |
+| **Reposition** | `popup.moveTo()` blocked by browsers | ❌ Not possible |
+
+**Verdict: Popup is inherently immune to clickjacking. Iframe requires additional defenses.**
+
+##### Hardening the iframe against clickjacking
+
+If same-window UX (iframe) is preferred, these defenses can mitigate clickjacking:
+
+**Defense 1 — Typed confirmation code (strongest):**
+
+Instead of a simple "Allow" button, the consent page displays a random short code and requires the user to type it:
+
+```
+┌──────────────────────────────────────────┐
+│  Headlamp: Command Approval              │
+│                                          │
+│  Allow this command to run?              │
+│  minikube status                         │
+│                                          │
+│  Type BLUE42 to confirm:  [________]    │
+│                                          │
+│  [Confirm]  [Deny]                       │
+└──────────────────────────────────────────┘
+```
+
+Why this defeats clickjacking:
+- The attacker can overlay a transparent div and trick the user into clicking — but they **cannot trick the user into typing a specific random code** they can't see
+- The code is displayed inside the cross-origin iframe — the plugin can't read it
+- The consent server verifies the typed code matches the generated code
+- The code is single-use and expires after 60 seconds
+
+**Defense 2 — Iframe self-check (additional layer):**
+
+The consent page inside the iframe can detect tampering using JavaScript:
+
+```javascript
+// Inside the cross-origin iframe on :4467
+function checkVisibility() {
+  // Check if iframe is being displayed at a reasonable size
+  if (window.innerWidth < 200 || window.innerHeight < 100) {
+    document.getElementById('approve-form').style.display = 'none';
+    document.getElementById('warning').textContent =
+      'Consent dialog is too small. Possible tampering detected.';
+    return false;
+  }
+  // Check if the iframe has focus when user interacts
+  if (!document.hasFocus()) {
+    return false; // Don't process clicks if we don't have focus
+  }
+  return true;
+}
+
+document.getElementById('confirm-btn').addEventListener('click', (e) => {
+  if (!checkVisibility()) {
+    e.preventDefault();
+    return;
+  }
+  // ... process consent
+});
+```
+
+**Defense 3 — Frame-busting CSP:**
+
+The consent server sets `Content-Security-Policy: frame-ancestors http://localhost:4466` to allow embedding only from the main app. This doesn't prevent clickjacking BY the main app's plugins, but it prevents third-party sites from embedding the consent page.
+
+##### Head-to-head comparison
+
+| Property | Cross-origin iframe | Cross-origin popup |
+|----------|--------------------|--------------------|
+| **UX** | ✅ Inline, no window switching | ⚠️ Separate window, may go behind main window |
+| **Popup blockers** | ✅ Not affected | ❌ May be blocked unless user-gesture-triggered |
+| **DOM access by plugin** | ❌ Blocked (cross-origin) | ❌ Blocked (cross-origin) |
+| **fetch/XHR by plugin** | ❌ Blocked (no CORS headers) | ❌ Blocked (no CORS headers) |
+| **Form submission by plugin** | ❌ Blocked (Origin header check) | ❌ Blocked (Origin header check) |
+| **Clickjacking** | ⚠️ Possible — needs typed code defense | ✅ Not possible — separate OS window |
+| **Plugin removes/hides UI** | ⚠️ Can remove iframe from DOM | ✅ Cannot close/hide a separate window |
+| **User notices consent** | ⚠️ Inline element may be overlooked | ✅ Separate window is hard to miss |
+| **Implementation complexity** | Medium (iframe + typed code + self-check) | Low (just window.open) |
+
+##### Recommendation
+
+**Best UX + security: cross-origin iframe with typed confirmation code.** The typed code defeats clickjacking (the main weakness vs popup) while keeping the consent inline. Falls back to popup if the iframe is removed from the DOM or fails to load.
+
+**Simpler alternative: cross-origin popup.** No clickjacking defense needed. Use if UX tradeoff is acceptable.
+
+Both are secure against direct API bypass (CORS + Origin header) and DOM manipulation (Same-Origin Policy).
+
+##### How it works (both iframe and popup)
 
 ```
 Main app (localhost:4466)              Consent server (localhost:4467)
@@ -294,24 +451,27 @@ Main app (localhost:4466)              Consent server (localhost:4467)
    → Backend returns 202 +
      consentUrl + consentId
 
-2. Frontend opens popup:
-   window.open('http://localhost:4467
-     /consent/{consentId}')
+2. Frontend embeds iframe (or opens popup):
+   src='http://localhost:4467
+     /consent/{consentId}'
                                        3. Consent page loads
                                           (minimal HTML, no plugins,
                                            no Headlamp JS bundle)
 
                                        4. Page shows:
                                           "Allow: minikube status?"
-                                          [Allow] [Deny]
+                                          "Type BLUE42 to confirm:"
+                                          [input] [Confirm] [Deny]
 
-                                       5. User clicks Allow
+                                       5. User types code + clicks Confirm
                                           → POST /consent/{consentId}/approve
-                                          → Sets consent cookie on :4467
+                                            with { code: "BLUE42" }
+                                          → Server verifies code
+                                          → Server verifies Origin header
                                           → Returns success
 
-                                       6. Popup calls:
-                                          window.opener.postMessage(
+                                       6. Consent page calls:
+                                          window.parent.postMessage(
                                             {type:'consent-result',
                                              consentId, approved:true},
                                             'http://localhost:4466')
@@ -322,24 +482,7 @@ Main app (localhost:4466)              Consent server (localhost:4467)
    → Command executes
 ```
 
-**Why this is secure — attack-by-attack analysis:**
-
-| Attack | Attempt | Result | Why |
-|--------|---------|--------|-----|
-| **Direct API call to consent endpoint** | Plugin on :4466 calls `fetch('http://localhost:4467/consent/abc/approve', {method:'POST'})` | ❌ Blocked | Cross-origin request. Consent server on :4467 does NOT set `Access-Control-Allow-Origin` headers, so browser blocks the response (and for non-simple requests, blocks the preflight). |
-| **DOM manipulation of popup** | `popup.document.querySelector('#approve').click()` | ❌ Blocked | Cross-origin. Browser throws `SecurityError: Blocked a frame with origin "http://localhost:4466" from accessing a cross-origin frame.` |
-| **Read popup content** | `popup.document.body.innerHTML` | ❌ Blocked | Same cross-origin restriction. |
-| **postMessage spoofing** | Plugin sends `popup.postMessage({type:'auto-approve'}, '*')` | ❌ No effect | The consent page does not listen for messages from the opener. The "Allow" button submits a form or calls `fetch` to its own origin (:4467). The consent decision flows from popup → consent server, not from opener → popup. |
-| **Open own popup first** | Plugin calls `window.open('http://localhost:4467/consent/abc/approve')` | ❌ No effect | The consent page requires user interaction (button click). Even if the plugin opens the page, it can't click the button (cross-origin). The GET endpoint shows the form; the POST endpoint requires the form submission. |
-| **Intercept postMessage result** | Plugin listens for `message` events from :4467 | ⚠️ Can observe | Plugin can see the consent result, but this is harmless — the consent was already recorded server-side. The result message is informational only. |
-| **Race condition: approve before user sees it** | Plugin calls the consent endpoint on :4467 before user acts | ❌ Blocked | Same CORS block as "Direct API call" above. |
-
-**Why CORS is the key:** The browser enforces CORS at the network level. Even if a plugin uses `XMLHttpRequest`, `fetch`, or dynamically created `<form>` elements, the browser will:
-- Block the preflight `OPTIONS` request (no `Access-Control-Allow-Origin` header from :4467)
-- Block reading the response even for simple requests
-- `<form>` submissions to :4467 would navigate away from the page (destructive to the attacker), and the consent server can reject requests without a valid `Referer` from its own origin
-
-**Implementation details:**
+##### Implementation details
 
 ```go
 // In Go backend startup
@@ -351,10 +494,11 @@ mux := http.NewServeMux()
 mux.HandleFunc("GET /consent/{id}", showConsentPage)   // serves minimal HTML
 mux.HandleFunc("POST /consent/{id}/approve", approveConsent)
 mux.HandleFunc("POST /consent/{id}/deny", denyConsent)
-// NO Access-Control-Allow-Origin headers — blocks all cross-origin requests
+// NO Access-Control-Allow-Origin headers — blocks all cross-origin fetch/XHR
+// Origin header checked on POST — blocks cross-origin form submissions
 ```
 
-The consent page HTML is minimal — no Headlamp bundle, no plugin code, no React:
+Consent page HTML (minimal — no Headlamp bundle, no plugin code, no React):
 
 ```html
 <!-- Served by consent server on :4467 -->
@@ -363,52 +507,72 @@ The consent page HTML is minimal — no Headlamp bundle, no plugin code, no Reac
   <h2>Headlamp: Command Approval</h2>
   <p>Allow this command to run?</p>
   <pre>minikube status</pre>
+  <p>Type <strong>BLUE42</strong> to confirm:</p>
   <form method="POST" action="/consent/abc123/approve">
-    <button type="submit">Allow</button>
-  </form>
-  <form method="POST" action="/consent/abc123/deny">
-    <button type="submit">Deny</button>
+    <input type="text" name="code" autocomplete="off" required
+           placeholder="Type the code above" />
+    <button type="submit">Confirm</button>
+    <button type="button" onclick="deny()">Deny</button>
   </form>
   <script>
-    // After form submission, notify opener and close
-    document.querySelectorAll('form').forEach(form => {
-      form.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const resp = await fetch(form.action, { method: 'POST' });
-        if (resp.ok && window.opener) {
-          window.opener.postMessage(
-            { type: 'consent-result', approved: form.action.includes('approve') },
-            'http://localhost:4466'  // only send to expected origin
-          );
-        }
-        window.close();
+    // Self-check: hide form if iframe is suspiciously small
+    if (window.innerWidth < 200 || window.innerHeight < 100) {
+      document.querySelector('form').style.display = 'none';
+      document.body.innerHTML += '<p style="color:red">⚠️ Window too small. Possible tampering.</p>';
+    }
+
+    document.querySelector('form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = e.target.elements.code.value;
+      const resp = await fetch(e.target.action, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ code }),
       });
+      if (resp.ok) {
+        parent.postMessage(
+          { type: 'consent-result', approved: true },
+          '*'  // main app validates origin on receive side
+        );
+      }
     });
+
+    function deny() {
+      fetch('/consent/abc123/deny', { method: 'POST' });
+      parent.postMessage({ type: 'consent-result', approved: false }, '*');
+    }
   </script>
 </body>
 </html>
 ```
 
-**Consent secret (consentId) lifecycle:**
+##### Consent secret (consentId) lifecycle
 
 ```
 1. Backend generates consentId = crypto.RandomBytes(32).hex()
-2. consentId is stored in memory with: command, args, expiry (60s), status: "pending"
+   and confirmationCode = randomWord() + randomDigits()  (e.g., "BLUE42")
+2. Stored in memory: { consentId, command, args, code, expiry: now+60s, status: "pending" }
 3. Frontend receives consentId in the 202 response
-4. Popup loads /consent/{consentId} — backend verifies it exists and is pending
-5. User clicks Allow → POST /consent/{consentId}/approve → status: "approved"
-6. consentId is single-use: once approved/denied, it cannot be reused
+4. Iframe/popup loads /consent/{consentId} — server renders page with the code
+5. User types code + clicks Confirm
+   → POST /consent/{consentId}/approve with { code: "BLUE42" }
+   → Server checks: Origin header == consent server origin
+   → Server checks: submitted code == stored code
+   → Server checks: consentId is pending and not expired
+   → status: "approved"
+6. consentId is single-use: once approved/denied, cannot be reused
 7. After 60s, pending consentIds expire automatically
-8. The frontend retries the original command — backend sees it's now approved
-9. Optionally, the choice is persisted to config (like Electron's confirmedCommands)
+8. Frontend retries the original command — backend sees it's now approved
+9. Optionally, choice is persisted to config (like Electron's confirmedCommands)
 ```
 
 **Edge cases:**
-- **Popup blocked:** If the browser blocks the popup, the frontend shows a link: "Click here to approve command in a new tab." Manual navigation bypasses popup blockers.
-- **Multiple consent requests:** Each gets its own consentId. The consent server can show a list of pending requests.
-- **Consent port discovery:** The main backend returns the consent port in its API (e.g., `GET /api/v1/config` includes `consentPort: 4467`). The frontend constructs the popup URL from this.
+- **Iframe removed by plugin:** Frontend detects the iframe was removed from DOM (MutationObserver) and falls back to opening a popup instead.
+- **Popup blocked:** Frontend shows a clickable link: "Click here to approve command in a new tab."
+- **Multiple consent requests:** Each gets its own consentId and confirmation code. The consent server can show a list of pending requests.
+- **Consent port discovery:** Main backend returns the consent port in its API (e.g., `GET /api/v1/config` includes `consentPort: 4467`).
 
-**Verdict: ✅ Secure. Browser-enforced cross-origin isolation prevents plugins from bypassing consent. Equivalent security to OAuth2 authorization code flow.**
+**Verdict: ✅ Secure. Cross-origin isolation prevents DOM access and direct API calls. Origin header checking blocks form submission bypass. Typed confirmation code defeats clickjacking (iframe). Popup is inherently immune to clickjacking.**
 
 #### Approach 4: Terminal prompt (headless with visible terminal) — SECURE ✅
 
@@ -459,14 +623,15 @@ runCommand:
 |------|-------------------|---------|-----------|
 | **Desktop (Electron)** | Native OS dialog (`dialog.showMessageBoxSync`) | ✅ | Runs in main process, outside renderer JS context |
 | **Headless (terminal visible)** | Terminal prompt (Go backend stdin/stdout) | ✅ | Separate I/O channel, inaccessible to browser JS. Good for SSH. |
-| **Headless (no terminal, e.g., desktop icon)** | Cross-origin popup on different port | ✅ | Browser-enforced cross-origin isolation. Plugin cannot access popup DOM or call consent endpoint (CORS blocked). |
+| **Headless (no terminal)** | Cross-origin iframe with typed code (best UX) | ✅ | Same-Origin Policy + Origin header check + typed code defeats clickjacking |
+| **Headless (no terminal, fallback)** | Cross-origin popup on different port | ✅ | Inherently immune to clickjacking. Fallback if iframe is removed. |
 | **In-cluster** | Admin pre-approval (Helm/ConfigMap) | ✅ | No runtime consent, server-side enforcement only |
 | **Any mode** | In-page React dialog | ❌ | Same JS context as plugins, trivially bypassable |
 | **Any mode** | Same-origin popup (same port) | ❌ | Same origin = full DOM access from plugin code |
 
 #### Recommended consent flow
 
-**Headless auto-detection:** The backend can detect whether stdin is a TTY (`term.IsTerminal(int(os.Stdin.Fd()))` in Go). If yes → terminal prompt. If no (e.g., started from desktop icon, stdin is /dev/null) → cross-origin popup.
+**Headless auto-detection:** The backend can detect whether stdin is a TTY (`golang.org/x/term` `term.IsTerminal(int(os.Stdin.Fd()))` in Go). If yes → terminal prompt. If no (e.g., started from desktop icon, stdin is /dev/null) → cross-origin iframe, falling back to popup if iframe is removed.
 
 ```
 Consent flow (headless — terminal available):
@@ -487,9 +652,12 @@ Consent flow (headless — no terminal, e.g., desktop icon):
                                       ├─ checkAllowlist ✓
                                       ├─ checkConsent (config file)
                                       │   └─ Not consented?
-                                      │       ├─ Generate consentId, return 202
-                                      │       ├─ Frontend opens popup on consent port
-                                      │       ├─ User approves in popup (cross-origin)
+                                      │       ├─ Generate consentId + confirmation code
+                                      │       ├─ Return 202 with consentId + consentPort
+                                      │       ├─ Frontend shows cross-origin iframe
+                                      │       │  (falls back to popup if iframe removed)
+                                      │       ├─ User types confirmation code + clicks Confirm
+                                      │       ├─ Consent server verifies Origin + code
                                       │       └─ Frontend retries, backend sees approval
                                       └─ spawn('minikube', ['status'])
 
