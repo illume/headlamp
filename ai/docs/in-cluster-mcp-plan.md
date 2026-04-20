@@ -1,461 +1,281 @@
 # Plan: MCP Support Across All Headlamp Runtime Modes
 
+## Recommendation
+
+**For in-cluster: support only HTTP/HTTPS MCP servers, with backend-side tool approval using a secret token (like `HEADLAMP_BACKEND_TOKEN`).**
+
+This avoids the complexity and security risk of spawning child processes inside the cluster pod. The Go backend proxies HTTP/HTTPS MCP calls, validates tool approvals server-side, and uses the existing `HEADLAMP_BACKEND_TOKEN` pattern to authenticate the frontend.
+
+### Why this approach
+
+- **HTTP/HTTPS-only is simpler and safer.** No child process management, no sidecar containers, no Unix sockets. MCP servers are standalone services reachable by URL — the same as any microservice.
+- **Backend-side approval reuses a proven pattern.** Headlamp already uses `HEADLAMP_BACKEND_TOKEN` (random 32-byte hex, set by Electron, checked by Go backend) to protect Helm and plugin routes. Extending this to MCP endpoints is minimal effort.
+- **Admin controls what MCP servers are available.** Config comes from Helm values / ConfigMap — users cannot add arbitrary servers.
+
+### Alternatives considered
+
+| Approach | Pros | Cons | Why not chosen |
+|----------|------|------|----------------|
+| **A. HTTP/HTTPS-only + backend token** (chosen) | Simple, no process spawning, reuses existing auth, admin-controlled config | Cannot use stdio MCP servers in-cluster | stdio servers can expose an HTTP endpoint instead; most MCP servers already support SSE or Streamable HTTP |
+| **B. Sidecar stdio servers** | Supports existing stdio MCP servers unchanged | Requires sidecar containers, shared volumes or Unix sockets, complex Helm templates, larger attack surface | Operational complexity outweighs benefit; stdio servers can add HTTP transport |
+| **C. Go backend spawns stdio processes** | Supports stdio without sidecars | Arbitrary command execution inside the pod, difficult to sandbox, violates least-privilege | Unacceptable security risk in multi-user clusters |
+| **D. Node.js sidecar running `@langchain/mcp-adapters`** | Reuses existing TypeScript MCP client code | Extra container, extra dependency, two runtimes to maintain | Adds complexity for no user-visible benefit |
+| **E. Frontend connects directly to MCP servers** | No backend proxy needed | Exposes MCP server URLs/tokens to browser, CORS issues, no centralized auth/approval/audit | Breaks security model for multi-user deployments |
+
+### Key tradeoffs
+
+- **stdio not supported in-cluster** — MCP server authors must expose an HTTP endpoint. This is the direction the MCP spec is moving (Streamable HTTP transport, spec 2025-03-26). Most popular MCP servers already support SSE or HTTP.
+- **Backend becomes a proxy** — Adds latency (~1ms) but gains centralized auth, approval, audit logging, and rate limiting.
+- **Token-based auth is simple but not zero-trust** — Sufficient for Headlamp's threat model (backend and frontend are co-deployed; the token prevents unauthorized callers, not insider threats).
+
+---
+
 ## Problem
 
-The ai-assistant plugin's MCP (Model Context Protocol) support currently only works in the **Electron desktop app**. It relies on:
+MCP support currently only works in the **Electron desktop app** via Electron IPC + stdio child processes. It needs to work in all four Headlamp runtime modes:
 
-1. **Electron IPC** — `ElectronMCPClient` communicates with the main process via `window.desktopApi.mcp.*`
-2. **stdio transport** — MCP servers are spawned as local child processes (`makeMcpServers` returns `transport: 'stdio'`)
-3. **Local filesystem** — settings are read from/written to local JSON files (`mcp-tools-settings.json`)
-4. **Process spawning** — `expandEnvAndResolvePaths` resolves local env vars and paths for command-line tools
+| Mode | MCP today | MCP with this plan |
+|------|-----------|-------------------|
+| **Desktop app** (Electron) | ✅ Works | ✅ Unchanged |
+| **Headless** (`--headless`) | ⚠️ No `window.desktopApi` in browser | ✅ Via Go backend proxy |
+| **In-cluster** (K8s pod) | ❌ No Electron | ✅ Via Go backend proxy (HTTP/HTTPS MCP servers only) |
+| **CLI** (`headlamp-ai`) | ✅ Works | ✅ Unchanged |
 
-MCP needs to work in **all four** Headlamp runtime modes:
-
-| Runtime mode | Description | MCP today |
-|---|---|---|
-| **Desktop app** | Electron with full BrowserWindow | ✅ Works (Electron IPC + stdio) |
-| **Headless desktop** | Electron `--headless` flag, UI in system browser | ⚠️ Electron main process spawns MCP servers, but browser has no `window.desktopApi` |
-| **In-cluster** | Go backend in Kubernetes pod, frontend served as static files | ❌ No Electron, no local processes |
-| **CLI** (`headlamp-ai`) | Node.js CLI, no browser | ✅ Works (direct `MultiServerMCPClient` in-process) |
-
-## Goals
-
-1. Enable MCP tool usage in the ai-assistant plugin when Headlamp is deployed **in-cluster**.
-2. Ensure MCP works when Headlamp runs in **headless mode** (`--headless`).
-3. Keep the existing **desktop app** MCP path working with no regressions.
-4. Keep the **CLI** MCP path working (it already manages MCP servers in-process).
-5. Apply appropriate security controls for each runtime mode's trust model.
-
-## Architecture Overview
+## Architecture
 
 ```
-┌────────────────────────────────────────────────────────────────────┐
-│  Consumers                                                         │
-│                                                                    │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐  ┌────────┐ │
-│  │ Desktop app  │  │ Headless     │  │ In-cluster   │  │ CLI    │ │
-│  │ (Electron)   │  │ (--headless) │  │ (browser)    │  │        │ │
-│  └──────┬───────┘  └──────┬───────┘  └──────┬───────┘  └───┬────┘ │
-│         │                 │                 │               │      │
-│         ▼                 ▼                 ▼               │      │
-│  ┌─────────────────────────────────────────────────┐        │      │
-│  │         MCPClientInterface (abstraction)         │        │      │
-│  │                                                  │        │      │
-│  │  ElectronMCPClient  │ HTTPMCPClient              │        │      │
-│  │  (desktop only)     │ (in-cluster + headless)    │        │      │
-│  └──────┬───────────────┴──────────┬────────────────┘        │      │
-│         │                          │                         │      │
-│         ▼                          ▼                         ▼      │
-│  Electron IPC              Headlamp Go backend       Direct Node.js│
-│  (main process)            (MCP proxy endpoints)     MCP client    │
-│         │                          │                         │      │
-│         ▼                          ▼                         ▼      │
-│  Local stdio               stdio (sidecar)           Local stdio   │
-│  MCP servers               SSE (remote)              MCP servers   │
-│                             Streamable HTTP (remote)               │
-└────────────────────────────────────────────────────────────────────┘
+Desktop app          Headless / In-cluster         CLI
+─────────────        ─────────────────────        ─────
+ElectronMCPClient    HTTPMCPClient                 Direct MultiServerMCPClient
+      │                    │                             │
+  Electron IPC        Go backend                    In-process
+      │              /api/v1/mcp/*                       │
+ stdio child         ┌─────┴──────┐               stdio child
+ processes           │            │               processes
+              SSE servers  Streamable HTTP
+              (remote)     servers (remote)
 ```
 
-### Per-Mode MCP Data Flow
-
-**Desktop app (Electron with BrowserWindow):**
-- Browser renderer → `ElectronMCPClient` → Electron IPC → main process `MCPClient` → `MultiServerMCPClient` → stdio child processes
-- Settings: local file `mcp-tools-settings.json` (user-writable)
-- Trust: single user, full local access
-
-**Headless desktop (`--headless`):**
-- System browser → `HTTPMCPClient` → Headlamp Go backend (localhost) → stdio/SSE/Streamable HTTP MCP servers
-- Settings: same local file as desktop, passed to Go backend at startup
-- Trust: single user (localhost only), same trust as desktop
-
-**In-cluster:**
-- Browser → `HTTPMCPClient` → Go backend MCP proxy endpoints → sidecar (stdio) or remote (SSE/Streamable HTTP) MCP servers
-- Settings: ConfigMap/Helm values (admin-managed), no user-writable config
-- Trust: multi-user, authenticated, RBAC-enforced
-
-**CLI (`headlamp-ai`):**
-- CLI process → direct `MultiServerMCPClient` (no HTTP, no browser)
-- Settings: `--config` file, env vars, or auto-discovered from `~/.config/Headlamp/`
-- Trust: single user, local terminal
+**Key design decisions:**
+1. Plugin auto-detects mode: `window.desktopApi` → `ElectronMCPClient`, else → `HTTPMCPClient`
+2. Go backend only connects to HTTP/HTTPS MCP servers (SSE or Streamable HTTP) — no stdio in-cluster
+3. MCP config in-cluster comes from Helm values / ConfigMap (admin-only)
+4. Tool approval enforced server-side in Go backend using `HEADLAMP_BACKEND_TOKEN` pattern
 
 ## Phases
 
-### Phase 1: Abstract the MCP Client Interface
+### Phase 1: MCPClientInterface abstraction
 
-**Status:** Not started
 **Effort:** Small
 
-Create an `MCPClientInterface` that both `ElectronMCPClient` and a new `HTTPMCPClient` can implement. The `ToolManager` should depend on this interface, not directly on `ElectronMCPClient`.
+Extract interface from `ElectronMCPClient` so both it and `HTTPMCPClient` share a contract:
 
 ```typescript
-// ai/src/mcp/MCPClientInterface.ts
-export interface MCPClientInterface {
+interface MCPClientInterface {
   isAvailable(): boolean;
   getTools(): Promise<MCPTool[]>;
-  executeTool(toolName: string, args: Record<string, any>, toolCallId?: string): Promise<any>;
+  executeTool(name: string, args: Record<string, any>): Promise<any>;
   getStatus(): Promise<{ isInitialized: boolean; hasClient: boolean }>;
   resetClient(): Promise<boolean>;
-  getConfig(): Promise<{ success: boolean; config?: any; error?: string }>;
-  getToolsConfig(): Promise<{ success: boolean; config?: any; error?: string }>;
-  getEnabledTools(): Promise<MCPTool[]>;
 }
 ```
 
-Changes needed:
-- [ ] Define `MCPClientInterface` in `ai/src/mcp/MCPClientInterface.ts`
-- [ ] Make `ElectronMCPClient` implement `MCPClientInterface`
-- [ ] Update `ToolManager` constructor to accept `MCPClientInterface` instead of creating `ElectronMCPClient` directly
-- [ ] Export interface from `@headlamp-k8s/ai`
-- [ ] CLI is unaffected (it manages MCP servers in-process, does not use `MCPClientInterface`)
+- `ToolManager` depends on `MCPClientInterface` instead of `ElectronMCPClient` directly
+- Desktop and CLI unchanged
 
-### Phase 2: Backend MCP Proxy Endpoint
+### Phase 2: Go backend MCP proxy
 
-**Status:** Not started
-**Effort:** Medium
+**Effort:** Medium — this is the core work
 
-Add an MCP proxy endpoint to the Headlamp Go backend that:
-- Accepts MCP tool list/execute requests from the frontend over HTTP
-- Manages MCP server connections server-side (stdio, SSE, or Streamable HTTP)
-- Handles MCP server lifecycle (start, stop, restart)
-- Reads MCP configuration from a ConfigMap, environment variables, or local settings file
-- Works in **both** in-cluster and headless modes
+Add MCP proxy endpoints to the Headlamp Go backend:
 
 ```
-POST /api/v1/mcp/tools          → list available tools
-POST /api/v1/mcp/execute        → execute a tool
-GET  /api/v1/mcp/status         → connection status
-POST /api/v1/mcp/reset          → restart MCP connections
-GET  /api/v1/mcp/config         → get current MCP configuration
+POST /api/v1/mcp/tools     → list tools from all configured MCP servers
+POST /api/v1/mcp/execute   → execute a tool (with approval check)
+GET  /api/v1/mcp/status    → connection status
+POST /api/v1/mcp/reset     → reconnect to MCP servers
 ```
 
-Implementation options for the Go backend:
-1. **Go MCP SDK** — Use an MCP client library for Go (e.g., [mcp-go](https://github.com/mark3labs/mcp-go)) to connect to MCP servers directly
-2. **Node.js sidecar** — Run `@langchain/mcp-adapters` `MultiServerMCPClient` in a Node.js sidecar that the Go backend proxies to
+**Authentication:** Reuse `checkHeadlampBackendToken` for desktop/headless mode. In-cluster mode uses existing Headlamp auth (Bearer token / OIDC cookie) — same as every other Headlamp API endpoint.
 
-Option 1 (Go MCP SDK) is preferred for simplicity and single-binary deployment.
+**Tool approval (backend-side):**
+- Frontend sends tool execution request with user's approval decision
+- Backend validates the approval token before forwarding to MCP server
+- Admin can pre-approve specific tools via ConfigMap (e.g., all read-only tools)
+- Backend logs every tool execution with user identity for audit
 
-Changes needed:
-- [ ] Add MCP proxy handler in `backend/pkg/mcp/`
-- [ ] Support stdio transport (sidecar MCP servers, local MCP servers in headless)
-- [ ] Support SSE transport (remote MCP servers)
-- [ ] Support Streamable HTTP transport (MCP spec 2025-03-26)
-- [ ] Configuration via environment variables and/or ConfigMap (in-cluster), or local file (headless)
-- [ ] Authentication/authorization for MCP endpoints (reuse existing Headlamp auth)
-- [ ] Endpoints disabled by default, enabled only when MCP config is present
-- [ ] Tests
+**MCP server connections:** Go backend uses [mcp-go](https://github.com/mark3labs/mcp-go) SDK to connect to MCP servers via SSE or Streamable HTTP. No stdio support in-cluster.
 
-### Phase 3: HTTP MCP Client for Browser
+**Config source:**
+- In-cluster: ConfigMap mounted as file (from Helm `ai.mcp.servers`)
+- Headless: local `mcp-tools-settings.json` passed via env var at startup
+- Endpoints disabled when no MCP config is present
 
-**Status:** Not started
+### Phase 3: HTTPMCPClient for browser
+
 **Effort:** Small
 
-Create `HTTPMCPClient` implementing `MCPClientInterface` that communicates with the backend MCP proxy. Used in **both** in-cluster and headless modes.
-
 ```typescript
-// ai/src/mcp/HTTPMCPClient.ts
-export class HTTPMCPClient implements MCPClientInterface {
-  private baseUrl: string;
-
-  constructor(baseUrl: string = '') {
-    this.baseUrl = baseUrl;
-  }
-
+class HTTPMCPClient implements MCPClientInterface {
   isAvailable(): boolean {
-    // Available in browser when Electron desktop API is not present (headless or in-cluster)
     return typeof window !== 'undefined' && !window.desktopApi;
   }
 
-  async executeTool(toolName: string, args: Record<string, any>): Promise<any> {
-    const response = await fetch(`${this.baseUrl}/api/v1/mcp/execute`, {
+  async executeTool(name: string, args: Record<string, any>): Promise<any> {
+    const resp = await fetch('/api/v1/mcp/execute', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'same-origin', // include auth cookies
-      body: JSON.stringify({ toolName, args }),
+      headers: { 'Content-Type': 'application/json', ...getHeadlampAPIHeaders() },
+      body: JSON.stringify({ toolName: name, args }),
     });
-    const data = await response.json();
-    if (!data.success) throw new Error(data.error);
-    return data.result;
+    return resp.json();
   }
-  // ... other methods follow same pattern
 }
 ```
 
-Changes needed:
-- [ ] Implement `HTTPMCPClient` in `ai/src/mcp/HTTPMCPClient.ts`
-- [ ] Export from `@headlamp-k8s/ai` (Node.js-safe, no Electron deps)
-- [ ] Auto-detect environment: `window.desktopApi` exists → `ElectronMCPClient`, else → `HTTPMCPClient`
-- [ ] Forward auth tokens/cookies on all requests
-- [ ] Tests
+Uses `getHeadlampAPIHeaders()` to include `X-HEADLAMP_BACKEND-TOKEN` automatically.
 
-### Phase 4: MCP Configuration via Helm/ConfigMap
+### Phase 4: Helm/ConfigMap configuration
 
-**Status:** Not started
 **Effort:** Small
 
-Enable MCP server configuration for in-cluster deployments:
-
 ```yaml
-# values.yaml addition
+# values.yaml
 ai:
   mcp:
     enabled: false
-    servers: []
-    # Example:
-    # servers:
-    #   - name: "kubernetes-tools"
-    #     command: "/usr/local/bin/mcp-k8s"
-    #     args: ["--namespace", "default"]
-    #     enabled: true
-    #   - name: "remote-mcp"
-    #     url: "https://mcp-server.example.com/sse"
-    #     transport: "sse"
-    #     enabled: true
+    servers:
+      - name: "my-mcp-server"
+        url: "https://mcp-server.internal:8080/sse"
+        transport: "sse"    # or "streamable-http"
+        enabled: true
+    # Tool approval settings
+    preApprovedTools: []     # tools that skip user approval (e.g., read-only)
+    rateLimit: 60            # max tool calls per user per minute
+    timeoutSeconds: 120      # max execution time per tool call
 ```
 
-Changes needed:
-- [ ] Extend `MCPServer` type to support `url` and `transport` fields
-- [ ] Update Helm chart `values.yaml` with `ai.mcp` section
-- [ ] Add ConfigMap template to Helm chart
-- [ ] Backend reads MCP config from ConfigMap mount or env vars
-- [ ] Document Helm configuration in `charts/headlamp/README.md`
+Maps to a ConfigMap that the Go backend reads.
 
-### Phase 5: AI Provider Configuration for In-Cluster
+### Phase 5: AI provider configuration
 
-**Status:** Not started
-**Effort:** Small
+**Effort:** Small — independent of MCP
 
 ```yaml
-# values.yaml addition
 ai:
-  provider: ""        # e.g., "openai", "anthropic", "ollama"
-  model: ""           # e.g., "gpt-4", "claude-3-sonnet"
-  apiKeySecret: ""    # Kubernetes Secret name containing API key
-  baseUrl: ""         # e.g., "http://ollama.default.svc:11434"
+  provider: ""            # openai, anthropic, ollama, etc.
+  model: ""
+  apiKeySecret: ""        # K8s Secret name
+  baseUrl: ""             # for Ollama or custom endpoints
 ```
 
-Changes needed:
-- [ ] Add `ai.provider` section to Helm `values.yaml`
-- [ ] Backend endpoint to serve AI config (without exposing secrets)
-- [ ] Option: backend-side AI proxy (keeps API keys out of browser)
-- [ ] Document configuration options
+API keys stay in K8s Secrets, read by backend only. Frontend never sees them.
 
-### Phase 6: MCP Server Sidecar Pattern
+### Phase 6: Headless mode integration
 
-**Status:** Not started
-**Effort:** Medium
+**Effort:** Small — depends on Phase 2+3
 
-For stdio-based MCP servers in-cluster, use a sidecar container pattern:
-
-```yaml
-containers:
-  - name: headlamp
-    image: ghcr.io/headlamp-k8s/headlamp:latest
-  - name: mcp-kubernetes
-    image: my-mcp-server:latest
-    ports:
-      - containerPort: 8080
-        name: mcp-sse
-```
-
-Changes needed:
-- [ ] Document sidecar deployment pattern
-- [ ] Add Helm chart support for sidecar containers
-- [ ] Example manifests for common MCP servers
-
-### Phase 7: Headless Mode MCP Support
-
-**Status:** Not started
-**Effort:** Small (depends on Phase 2 + 3)
-
-When Headlamp runs with `--headless`, the Electron main process starts the Go backend but the UI opens in the system browser. The system browser does not have `window.desktopApi`.
-
-**Approach:** The Go backend MCP proxy (Phase 2) serves MCP to the system browser via `HTTPMCPClient`. The Electron main process passes MCP config to the Go backend via environment variable or config file at startup.
-
-Changes needed:
-- [ ] Electron main process: pass MCP settings to Go backend when `--headless`
-- [ ] Go backend: read MCP config from file/env
-- [ ] System browser: `HTTPMCPClient` auto-detects (no `desktopApi` → HTTP)
-- [ ] Test headless mode MCP round-trip
-
-## Transport Support Matrix
-
-| Transport | Desktop | Headless | In-Cluster | CLI |
-|-----------|---------|----------|------------|-----|
-| stdio | ✅ Current | ✅ Phase 7 | ✅ Sidecar (Phase 6) | ✅ Current |
-| SSE | ❌ Not yet | ✅ Phase 2 | ✅ Phase 2 | ❌ Not yet |
-| Streamable HTTP | ❌ Not yet | ✅ Phase 2 | ✅ Phase 2 | ❌ Not yet |
+When `--headless`, Electron main process passes MCP settings to the Go backend via env var or temp config file. System browser uses `HTTPMCPClient` (auto-detected because `window.desktopApi` is absent).
 
 ## MCP Type Extensions
 
 ```typescript
-// Proposed MCPServer type
 interface MCPServer {
   name: string;
   enabled: boolean;
-  env?: Record<string, string>;
 
-  // stdio transport (existing)
+  // HTTP/HTTPS transport (in-cluster + headless)
+  url?: string;
+  transport?: 'sse' | 'streamable-http';
+  headers?: Record<string, string>;
+  authSecretRef?: string;   // K8s Secret name for auth tokens
+
+  // stdio transport (desktop + CLI only)
   command?: string;
   args?: string[];
-
-  // SSE / Streamable HTTP transport
-  url?: string;
-  transport?: 'stdio' | 'sse' | 'streamable-http';
-
-  // Auth for remote MCP servers
-  headers?: Record<string, string>;
-  authSecretRef?: string;  // Kubernetes Secret name (in-cluster only)
+  env?: Record<string, string>;
 }
 ```
 
-## Security Analysis
+## Transport Support
 
-This section applies STRIDE threat modeling to the MCP proxy architecture and maps findings to the **OWASP Top 10 for LLM Applications (2025)**, **OWASP Agentic AI Top 10**, and **OWASP MCP Top 10**.
+| Transport | Desktop | Headless | In-Cluster | CLI |
+|-----------|---------|----------|------------|-----|
+| stdio | ✅ | ❌ | ❌ | ✅ |
+| SSE | ❌ | ✅ | ✅ | ❌ |
+| Streamable HTTP | ❌ | ✅ | ✅ | ❌ |
 
-### STRIDE Threat Model
+## Security Analysis (STRIDE)
 
-#### S — Spoofing (Identity)
+### S — Spoofing
 
-| Threat | Modes affected | OWASP mapping | Mitigation |
-|--------|---------------|---------------|------------|
-| Unauthenticated caller invokes MCP proxy endpoints | In-cluster, Headless | MCP-07: Insufficient Auth | All `/api/v1/mcp/*` endpoints require the same auth as existing Headlamp API (Bearer token or OIDC session cookie). Reuse `ParseClusterAndToken` from `backend/pkg/auth/auth.go`. Return 401 for unauthenticated requests. |
-| Attacker on same machine calls headless MCP proxy | Headless | MCP-07 | Go backend binds to `localhost` only in headless mode. Consider a per-session startup token passed via URL fragment to prevent other local processes from using the proxy. |
-| MCP server impersonation (rogue SSE/HTTP endpoint) | In-cluster | MCP-09: Shadow MCP Servers | Only connect to servers listed in admin-managed ConfigMap. Validate TLS certs for remote servers. Reject non-TLS URLs unless `allowInsecure: true` is explicitly set. |
+| Threat | Mitigation |
+|--------|------------|
+| Unauthenticated MCP proxy call (in-cluster) | All `/api/v1/mcp/*` endpoints require existing Headlamp auth (Bearer token / OIDC). Return 401 otherwise. |
+| Unauthenticated MCP proxy call (headless) | `checkHeadlampBackendToken` — same pattern as Helm/plugin routes. Backend binds to localhost. |
+| Rogue MCP server impersonation | Only connect to servers in admin-managed ConfigMap. TLS required; reject plain HTTP unless explicitly overridden. |
 
-**Desktop app and CLI:** Not affected — no HTTP endpoints, process-internal IPC or in-process calls.
+### T — Tampering
 
-#### T — Tampering (Data Integrity)
+| Threat | Mitigation |
+|--------|------------|
+| User adds malicious MCP server (in-cluster) | No config endpoint. MCP server list is read-only from frontend. Changes require Helm upgrade. |
+| Tool argument injection | Validate `toolName` against known server tools. Validate args against tool `inputSchema`. |
+| Poisoned tool output influences LLM | Treat all tool output as untrusted content. Never allow it to override system prompts. |
 
-| Threat | Modes affected | OWASP mapping | Mitigation |
-|--------|---------------|---------------|------------|
-| User modifies MCP server list to add a malicious server | In-cluster | MCP-09: Shadow MCP Servers, Agentic-04: Supply Chain | MCP config is read-only from the frontend. No `mcp-update-config` endpoint in the Go backend for in-cluster mode. Config changes require Helm upgrade or ConfigMap edit by cluster admin. |
-| Tool arguments manipulated to cause unintended actions | All modes | MCP-05: Command Injection, LLM-01: Prompt Injection | Validate `toolName` against known tools from configured servers. Validate arguments against tool's `inputSchema` via `validateToolArgs`. Sanitize server names (alphanumeric + hyphens only). |
-| MCP server returns poisoned tool output that influences the LLM | All modes | Agentic-06: Memory & Context Poisoning, MCP-03: Tool Poisoning | Treat all MCP tool output as untrusted. Do not allow tool output to override system prompts or inject new tool calls. Log tool outputs for audit. |
+### R — Repudiation
 
-#### R — Repudiation (Audit Trail)
+| Threat | Mitigation |
+|--------|------------|
+| Unaudited tool execution (in-cluster) | Structured JSON logs: user identity, tool name, args summary, result status, timestamp. |
+| Cannot attribute AI actions to user | Backend associates every tool call with the authenticated user from the HTTP request. |
 
-| Threat | Modes affected | OWASP mapping | Mitigation |
-|--------|---------------|---------------|------------|
-| MCP tool execution with no audit trail — attacker actions undetectable | In-cluster | MCP-08: Lack of Audit/Telemetry, Agentic-08: Cascading Failures | Log every MCP tool execution: timestamp, authenticated user, tool name, argument summary (redact sensitive values), result status. Structured JSON logs to stdout for Kubernetes log collection. |
-| AI-initiated tool calls cannot be attributed to the requesting user | In-cluster | Agentic-03: Identity & Privilege Abuse | The Go backend must associate every tool execution with the authenticated user's identity from the HTTP request. Pass the user's Kubernetes token through to MCP tools that call the Kubernetes API. |
+### I — Information Disclosure
 
-**Desktop and CLI:** Single-user — existing console logging is sufficient.
+| Threat | Mitigation |
+|--------|------------|
+| API keys leaked to browser | Keys in K8s Secrets, read by backend only. Frontend gets provider name + model, never keys. |
+| MCP server credentials exposed | `authSecretRef` references K8s Secret. Backend resolves it server-side. |
+| Tool leaks cluster data to wrong user | MCP tools that call K8s API use requesting user's token, not service account. |
 
-#### I — Information Disclosure
+### D — Denial of Service
 
-| Threat | Modes affected | OWASP mapping | Mitigation |
-|--------|---------------|---------------|------------|
-| API keys leaked to browser | In-cluster | LLM-02: Sensitive Information Disclosure | AI provider API keys stored in Kubernetes Secrets, read by backend only. Frontend receives provider name and model, never the key. MCP server auth tokens also in Secrets via `authSecretRef`. |
-| System prompt or internal context exposed via tool output | All modes | LLM-07: System Prompt Leakage | Do not include API keys, internal URLs, or sensitive config in the system prompt sent to the LLM. Sanitize tool output before displaying to the user. |
-| MCP tool leaks cluster data to unauthorized users | In-cluster | MCP-10: Context Over-Sharing | MCP tools that call the Kubernetes API must use the requesting user's token, not the Headlamp service account. This enforces Kubernetes RBAC on every tool action. |
-| Config endpoint exposes secrets | In-cluster, Headless | LLM-02 | The `/api/v1/mcp/config` endpoint returns server names and transport types but never credentials, tokens, or secret values. |
+| Threat | Mitigation |
+|--------|------------|
+| Tool call flooding | Per-user rate limit (configurable, default 60/min). |
+| Long-running tool blocks resources | Server-side timeout (configurable, default 2 min). Global concurrency limit. |
 
-#### D — Denial of Service
+### E — Elevation of Privilege
 
-| Threat | Modes affected | OWASP mapping | Mitigation |
-|--------|---------------|---------------|------------|
-| User floods MCP proxy with tool calls | In-cluster | LLM-10: Unbounded Consumption | Rate-limit MCP tool executions per user (e.g., 60 calls/minute). Configure via Helm values. |
-| Long-running MCP tool blocks backend resources | In-cluster, Headless | LLM-10 | Enforce server-side timeout on tool calls (configurable, default 2 minutes). Global concurrency limit on simultaneous MCP executions. |
-| AI model API cost exhaustion | In-cluster | LLM-10 | Rate-limit AI model API calls. Budget alerts via provider dashboards. Optional: backend-side proxy with per-user quotas. |
+| Threat | Mitigation |
+|--------|------------|
+| Tool runs with service account privileges | MCP tools use requesting user's Bearer token for K8s API calls. |
+| Prompt injection triggers dangerous tools | Tool approval flow. Admin pre-approves read-only tools; write tools require explicit user approval. |
 
-#### E — Elevation of Privilege
+### OWASP Mapping
 
-| Threat | Modes affected | OWASP mapping | Mitigation |
-|--------|---------------|---------------|------------|
-| MCP tool executes with service account instead of user permissions | In-cluster | Agentic-03: Identity & Privilege Abuse, MCP-02: Privilege Escalation | MCP tools calling the Kubernetes API must use the requesting user's Bearer token. Never use the Headlamp pod's service account for user-initiated tool calls. |
-| LLM prompt injection tricks agent into calling dangerous tools | All modes | LLM-01: Prompt Injection, LLM-06: Excessive Agency, Agentic-01: Goal Hijack | Tool approval flow (existing `ToolApprovalHandler`). Separate read-only tools (auto-approvable) from write tools (require explicit user approval). In-cluster: admin can pre-approve specific tools via ConfigMap. |
-| Sidecar container escapes to host or other pods | In-cluster | Agentic-04: Supply Chain | Sidecar MCP servers run as non-root, drop all capabilities, use read-only root filesystem, no service account token mount. Pin container images by digest. |
-
-### Key Mitigations Summary
-
-Based on the STRIDE analysis, these are the mitigations that must be implemented:
-
-**Authentication & Authorization (all HTTP-served modes):**
-- Reuse existing Headlamp auth for all MCP endpoints.
-- User's Kubernetes token passed through to MCP tools that call K8s API (never use service account).
-- In headless mode, bind to localhost only.
-
-**MCP Server Trust (in-cluster):**
-- Admin-only config via ConfigMap; no user-writable MCP server configuration.
-- TLS required for remote MCP servers; reject plain HTTP unless explicitly overridden.
-- Pin sidecar images by digest.
-
-**Input Validation (all modes):**
-- Validate tool names against configured server tool lists.
-- Validate tool arguments against `inputSchema`.
-- Sanitize MCP server names (alphanumeric + hyphens).
-
-**Audit Logging (in-cluster):**
-- Structured JSON logs for every tool execution with user identity, tool name, status.
-- Sufficient for incident response and compliance.
-
-**Resource Protection (in-cluster):**
-- Per-user rate limits on tool calls.
-- Server-side execution timeout.
-- Global concurrency limit.
-
-**Secret Management (in-cluster):**
-- API keys and MCP auth tokens in Kubernetes Secrets only.
-- Backend reads secrets; frontend never sees them.
-
-**Tool Approval (all modes):**
-- Existing `ToolApprovalHandler` interface supports pluggable approval per mode.
-- In-cluster: admin pre-approval list, per-user approval state, configurable TTL.
-- Read-only tools (GET) can have lower approval threshold than write tools.
-
-### Network Segmentation (In-Cluster)
-
-Recommended NetworkPolicy:
-
-```yaml
-apiVersion: networking.k8s.io/v1
-kind: NetworkPolicy
-metadata:
-  name: headlamp-mcp-egress
-spec:
-  podSelector:
-    matchLabels:
-      app: headlamp  # Match your actual Headlamp pod labels
-  policyTypes:
-    - Egress
-  egress:
-    - to: [{ namespaceSelector: {} }]  # DNS
-      ports: [{ port: 53, protocol: UDP }]
-    - to: [{ ipBlock: { cidr: <API_SERVER>/32 } }]  # K8s API
-      ports: [{ port: 443, protocol: TCP }]
-    - to: [{ ipBlock: { cidr: 0.0.0.0/0 } }]  # AI provider + remote MCP
-      ports: [{ port: 443, protocol: TCP }]
-```
-
-Sidecar MCP servers communicate via localhost within the pod — no external network exposure.
+Key threats map to:
+- **OWASP LLM Top 10:** LLM-01 (Prompt Injection), LLM-02 (Sensitive Info Disclosure), LLM-06 (Excessive Agency), LLM-10 (Unbounded Consumption)
+- **OWASP Agentic AI Top 10:** ASI-01 (Goal Hijack), ASI-03 (Identity Abuse), ASI-04 (Supply Chain)
+- **OWASP MCP Top 10:** MCP-02 (Privilege Escalation), MCP-05 (Command Injection), MCP-07 (Insufficient Auth), MCP-09 (Shadow Servers)
 
 ## Backward Compatibility
 
-All changes must maintain backward compatibility:
-
-1. **Desktop app**: `ElectronMCPClient` continues to work via Electron IPC unchanged.
-2. **Headless mode**: Go backend gains MCP proxy endpoints. Electron main process passes MCP settings to Go backend.
-3. **CLI**: Manages `MultiServerMCPClient` in-process. No changes needed.
-4. **Plugin**: Auto-detects environment via `MCPClientInterface` — `window.desktopApi` → `ElectronMCPClient`, absent → `HTTPMCPClient`.
+1. **Desktop app** — `ElectronMCPClient` unchanged. stdio transport continues to work.
+2. **CLI** — `MultiServerMCPClient` in-process. No changes.
+3. **Headless** — New: Go backend proxy + `HTTPMCPClient`. Electron passes config to backend.
+4. **In-cluster** — New: Go backend proxy + `HTTPMCPClient`. HTTP/HTTPS MCP servers only.
 
 ## Implementation Priority
 
-1. **Phase 1** (Abstract MCP Client) — Prerequisite. Small, low-risk refactor.
-2. **Phase 3** (HTTP MCP Client) — Parallel with Phase 2 using a mock backend.
-3. **Phase 2** (Backend Proxy) — Core. Largest effort. Enables headless + in-cluster.
-4. **Phase 7** (Headless Mode) — Small integration once Phase 2 + 3 done.
-5. **Phase 4** (Helm Config) — In-cluster configuration.
-6. **Phase 5** (AI Provider Config) — Independent of MCP.
-7. **Phase 6** (Sidecar Pattern) — Docs and Helm helpers.
+1. Phase 1 (MCPClientInterface) — prerequisite, small refactor
+2. Phase 3 (HTTPMCPClient) — can develop against mock backend
+3. Phase 2 (Go backend proxy) — core work, enables headless + in-cluster
+4. Phase 6 (Headless integration) — small once Phase 2+3 done
+5. Phase 4 (Helm config) — in-cluster configuration
+6. Phase 5 (AI provider config) — independent of MCP
 
 ## Open Questions
 
-1. **Go vs Node.js for MCP client** — Go MCP SDK (simpler deployment) vs Node.js sidecar (reuses `@langchain/mcp-adapters`)?
-
-2. **Per-user vs shared MCP config** — Desktop/headless: per-user (local file). In-cluster: shared ConfigMap, or per-user stored in backend keyed by identity?
-
-3. **AI provider proxy** — Backend proxies all AI API calls (keys server-side, recommended for in-cluster) vs frontend-direct (simpler but keys in browser memory)?
-
-4. **SSE/Streamable HTTP in desktop** — Should the desktop app also gain SSE/HTTP transport for remote MCP servers via the Go backend proxy?
-
-5. **Headless MCP config passing** — Electron → Go backend: temp config file, env var, or CLI argument?
+1. **Per-user vs shared MCP config in-cluster** — Shared ConfigMap (simpler, admin-controlled) vs per-user stored in backend?
+2. **AI provider proxy** — Should the backend proxy all AI API calls (keys server-side) or let the frontend call providers directly?
+3. **SSE/HTTP transport for desktop** — Should the desktop app also gain HTTP transport for remote MCP servers via the Go backend?
