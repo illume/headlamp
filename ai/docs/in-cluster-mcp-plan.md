@@ -2,31 +2,37 @@
 
 ## Recommendation
 
-**For in-cluster: support only HTTP/HTTPS MCP servers, with backend-side tool approval using a secret token (like `HEADLAMP_BACKEND_TOKEN`).**
+**Use the Go backend as MCP proxy in all non-desktop modes, with plugin-isolated permission secrets modeled on the existing `runCommand` security system.**
 
-This avoids the complexity and security risk of spawning child processes inside the cluster pod. The Go backend proxies HTTP/HTTPS MCP calls, validates tool approvals server-side, and uses the existing `HEADLAMP_BACKEND_TOKEN` pattern to authenticate the frontend.
+| Mode | MCP transport | Auth | stdio? |
+|------|--------------|------|--------|
+| **Desktop** (Electron) | Electron IPC → stdio | Permission secrets via IPC | ✅ |
+| **Headless** (`--headless`) | Go backend → stdio or HTTP | `HEADLAMP_BACKEND_TOKEN` + permission secrets | ✅ |
+| **In-cluster** (K8s pod) | Go backend → HTTP/HTTPS only | Bearer/OIDC + permission secrets | ❌ |
+| **CLI** (`headlamp-ai`) | In-process | N/A (single user) | ✅ |
 
 ### Why this approach
 
-- **HTTP/HTTPS-only is simpler and safer.** No child process management, no sidecar containers, no Unix sockets. MCP servers are standalone services reachable by URL — the same as any microservice.
-- **Backend-side approval reuses a proven pattern.** Headlamp already uses `HEADLAMP_BACKEND_TOKEN` (random 32-byte hex, set by Electron, checked by Go backend) to protect Helm and plugin routes. Extending this to MCP endpoints is minimal effort.
-- **Admin controls what MCP servers are available.** Config comes from Helm values / ConfigMap — users cannot add arbitrary servers.
+- **Headless gets stdio.** The Go backend runs on the user's machine — same trust boundary as Electron. It can safely spawn MCP child processes, just like Electron spawns `minikube`.
+- **In-cluster stays HTTP-only.** No child process spawning inside a shared pod. MCP servers are standalone services reachable by URL.
+- **Plugin isolation reuses the `runCommand` permission secret pattern.** Electron already generates per-command random tokens, sends them once to the renderer, and the plugin loader distributes only matching secrets to each plugin. The same pattern works for MCP: only the ai-assistant plugin receives the MCP permission secret.
+- **Backend-side approval mirrors Electron's consent flow.** Instead of an Electron dialog, the backend checks the permission secret + approval token before executing a tool.
 
 ### Alternatives considered
 
 | Approach | Pros | Cons | Why not chosen |
 |----------|------|------|----------------|
-| **A. HTTP/HTTPS-only + backend token** (chosen) | Simple, no process spawning, reuses existing auth, admin-controlled config | Cannot use stdio MCP servers in-cluster | stdio servers can expose an HTTP endpoint instead; most MCP servers already support SSE or Streamable HTTP |
-| **B. Sidecar stdio servers** | Supports existing stdio MCP servers unchanged | Requires sidecar containers, shared volumes or Unix sockets, complex Helm templates, larger attack surface | Operational complexity outweighs benefit; stdio servers can add HTTP transport |
-| **C. Go backend spawns stdio processes** | Supports stdio without sidecars | Arbitrary command execution inside the pod, difficult to sandbox, violates least-privilege | Unacceptable security risk in multi-user clusters |
-| **D. Node.js sidecar running `@langchain/mcp-adapters`** | Reuses existing TypeScript MCP client code | Extra container, extra dependency, two runtimes to maintain | Adds complexity for no user-visible benefit |
-| **E. Frontend connects directly to MCP servers** | No backend proxy needed | Exposes MCP server URLs/tokens to browser, CORS issues, no centralized auth/approval/audit | Breaks security model for multi-user deployments |
+| **A. Backend proxy + permission secrets** (chosen) | Reuses proven `runCommand` isolation pattern, supports stdio in headless, HTTP in-cluster, centralized audit | Backend must manage MCP connections and child processes | Pattern already exists in Electron; Go implementation is straightforward |
+| **B. HTTP-only everywhere (no headless stdio)** | Simpler backend — no process spawning | Breaks existing stdio MCP servers in headless mode; forces users to deploy HTTP wrappers | Unnecessary limitation when backend runs on user's machine |
+| **C. Sidecar stdio servers (in-cluster)** | Supports stdio MCP servers unchanged | Requires sidecar containers, shared volumes, complex Helm templates | Operational complexity outweighs benefit |
+| **D. Go backend spawns stdio in-cluster** | Supports stdio without sidecars | Arbitrary command execution inside the pod, violates least-privilege | Unacceptable security risk in multi-user clusters |
+| **E. Frontend connects directly to MCP servers** | No backend proxy needed | Exposes MCP server URLs/tokens to browser, CORS issues, no centralized auth | Breaks security model for multi-user deployments |
 
 ### Key tradeoffs
 
-- **stdio not supported in-cluster** — MCP server authors must expose an HTTP endpoint. This is the direction the MCP spec is moving (Streamable HTTP transport, spec 2025-03-26). Most popular MCP servers already support SSE or HTTP.
-- **Backend becomes a proxy** — Adds latency (~1ms) but gains centralized auth, approval, audit logging, and rate limiting.
-- **Token-based auth is simple but not zero-trust** — Sufficient for Headlamp's threat model (backend and frontend are co-deployed; the token prevents unauthorized callers, not insider threats).
+- **Headless gets stdio, in-cluster does not.** Headless runs on the user's machine (single-user, same trust as Electron). In-cluster runs in a shared pod (multi-user). The trust boundary determines what's safe.
+- **Backend becomes a proxy** — adds ~1ms latency but gains centralized auth, approval, audit logging, and rate limiting.
+- **Permission secrets add per-plugin isolation** — prevents other plugins from calling MCP tools, even if they share the same browser context. This is the same defense-in-depth used for `runCommand`. See also [Backend runCommand Proposal](./backend-run-command-proposal.md) for how this pattern extends to general `runCommand` through the backend.
 
 ---
 
@@ -37,30 +43,31 @@ MCP support currently only works in the **Electron desktop app** via Electron IP
 | Mode | MCP today | MCP with this plan |
 |------|-----------|-------------------|
 | **Desktop app** (Electron) | ✅ Works | ✅ Unchanged |
-| **Headless** (`--headless`) | ⚠️ No `window.desktopApi` in browser | ✅ Via Go backend proxy |
+| **Headless** (`--headless`) | ⚠️ No `window.desktopApi` in browser | ✅ Via Go backend proxy (stdio + HTTP) |
 | **In-cluster** (K8s pod) | ❌ No Electron | ✅ Via Go backend proxy (HTTP/HTTPS MCP servers only) |
 | **CLI** (`headlamp-ai`) | ✅ Works | ✅ Unchanged |
 
 ## Architecture
 
 ```
-Desktop app          Headless / In-cluster         CLI
-─────────────        ─────────────────────        ─────
-ElectronMCPClient    HTTPMCPClient                 Direct MultiServerMCPClient
-      │                    │                             │
-  Electron IPC        Go backend                    In-process
-      │              /api/v1/mcp/*                       │
- stdio child         ┌─────┴──────┐               stdio child
- processes           │            │               processes
-              SSE servers  Streamable HTTP
-              (remote)     servers (remote)
+Desktop app          Headless                In-cluster             CLI
+─────────────        ────────                ──────────             ─────
+ElectronMCPClient    HTTPMCPClient           HTTPMCPClient          Direct
+      │                    │                      │                   │
+  Electron IPC        Go backend              Go backend          In-process
+      │              /api/v1/mcp/*           /api/v1/mcp/*             │
+ stdio child         ┌─────┴──────┐         ┌─────┴──────┐      stdio child
+ processes           │            │         │            │      processes
+               stdio child   SSE/HTTP   SSE servers  Streamable
+               processes     servers    (remote)     HTTP servers
 ```
 
 **Key design decisions:**
 1. Plugin auto-detects mode: `window.desktopApi` → `ElectronMCPClient`, else → `HTTPMCPClient`
-2. Go backend only connects to HTTP/HTTPS MCP servers (SSE or Streamable HTTP) — no stdio in-cluster
-3. MCP config in-cluster comes from Helm values / ConfigMap (admin-only)
-4. Tool approval enforced server-side in Go backend using `HEADLAMP_BACKEND_TOKEN` pattern
+2. Headless: Go backend spawns stdio child processes (same machine, single-user trust) AND connects to HTTP/HTTPS MCP servers
+3. In-cluster: Go backend connects to HTTP/HTTPS MCP servers only — no stdio
+4. MCP config in-cluster comes from Helm values / ConfigMap (admin-only)
+5. Plugin isolation via permission secrets — only the ai-assistant plugin receives MCP tokens (same pattern as `runCommand`, see [runCmd security research](#runcmd-security-research))
 
 ## Phases
 
@@ -106,7 +113,16 @@ POST /api/v1/mcp/reset     → reconnect to MCP servers
 - Admin can pre-approve specific tools via ConfigMap (e.g., all read-only tools)
 - Backend logs every tool execution with user identity for audit
 
-**MCP server connections:** Go backend uses [mcp-go](https://github.com/mark3labs/mcp-go) SDK to connect to MCP servers via SSE or Streamable HTTP. No stdio support in-cluster.
+**MCP server connections:**
+- Headless: Go backend uses [mcp-go](https://github.com/mark3labs/mcp-go) SDK to connect to MCP servers via SSE or Streamable HTTP, AND spawns stdio child processes for stdio MCP servers (safe because backend runs on user's machine)
+- In-cluster: HTTP/HTTPS only — no stdio child process spawning
+
+**Plugin isolation (permission secrets):**
+- Backend generates a random MCP permission secret at startup (like Electron's `permissionSecrets`)
+- Secret is sent to the frontend once (via `GET /api/v1/mcp/permission-secret`, protected by `HEADLAMP_BACKEND_TOKEN` or K8s auth)
+- Plugin loader distributes the secret only to the ai-assistant plugin (same `getAllowedPermissions` mechanism as `runCommand`)
+- All `/api/v1/mcp/*` requests must include the permission secret in `X-MCP-Permission-Secret` header
+- This ensures only the ai-assistant plugin can call MCP endpoints, even if other plugins share the same browser context
 
 **Config source:**
 - In-cluster: ConfigMap mounted as file (from Helm `ai.mcp.servers`)
@@ -178,6 +194,18 @@ API keys stay in K8s Secrets, read by backend only. Frontend never sees them.
 
 When `--headless`, Electron main process passes MCP settings to the Go backend via env var or temp config file. System browser uses `HTTPMCPClient` (auto-detected because `window.desktopApi` is absent).
 
+### Phase 7: Headless stdio support
+
+**Effort:** Medium — depends on Phase 2+6
+
+Add stdio child process spawning to the Go backend for headless mode:
+
+- Backend reads MCP server configs from the settings file passed by Electron
+- For servers with `command` (stdio transport): spawn child process, communicate via stdin/stdout
+- For servers with `url` (HTTP transport): connect via SSE or Streamable HTTP
+- Gate stdio spawning on `!useInCluster` — only when backend runs on user’s machine
+- Apply same command consent logic as Electron: check `confirmedCommands` in settings, prompt user on first use
+
 ## MCP Type Extensions
 
 ```typescript
@@ -191,7 +219,7 @@ interface MCPServer {
   headers?: Record<string, string>;
   authSecretRef?: string;   // K8s Secret name for auth tokens
 
-  // stdio transport (desktop + CLI only)
+  // stdio transport (desktop, headless, + CLI)
   command?: string;
   args?: string[];
   env?: Record<string, string>;
@@ -202,7 +230,7 @@ interface MCPServer {
 
 | Transport | Desktop | Headless | In-Cluster | CLI |
 |-----------|---------|----------|------------|-----|
-| stdio | ✅ | ❌ | ❌ | ✅ |
+| stdio | ✅ | ✅ | ❌ | ✅ |
 | SSE | ❌ | ✅ | ✅ | ❌ |
 | Streamable HTTP | ❌ | ✅ | ✅ | ❌ |
 
@@ -260,11 +288,70 @@ Key threats map to:
 - **OWASP Agentic AI Top 10:** ASI-01 (Goal Hijack), ASI-03 (Identity Abuse), ASI-04 (Supply Chain)
 - **OWASP MCP Top 10:** MCP-02 (Privilege Escalation), MCP-05 (Command Injection), MCP-07 (Insufficient Auth), MCP-09 (Shadow Servers)
 
+## runCmd Security Research
+
+The existing `runCommand` system in Electron uses a multi-layered security model that can be adapted for MCP. Here is how it works today and how it maps to MCP.
+
+### How runCommand works today (Electron)
+
+**Layer 1 — Permission secrets (plugin isolation):**
+- Electron main process generates random numbers per command type at startup (`setupRunCmdHandlers` in `app/electron/runCmd.ts`)
+- Secrets are sent to the renderer exactly once via IPC (`plugin-permission-secrets` channel)
+- The plugin loader (`frontend/src/plugin/index.ts`) distributes only matching secrets to each plugin via `getAllowedPermissions`
+- Each plugin gets a pre-bound `pluginRunCommand` that embeds private copies of `desktopApi.send`/`receive` and the plugin's allowed secrets
+- Plugins run in a sandboxed `new Function()` scope and cannot access the parent scope's `permissionSecrets` variable
+- Defense: a malicious plugin cannot call `runCommand` because it doesn't have the correct permission secret
+
+**Layer 2 — Command allowlist:**
+- `validateCommandData` only accepts `['minikube', 'az', 'scriptjs']`
+- Defense: even with a valid secret, only pre-approved commands can run
+
+**Layer 3 — User consent (Electron dialog):**
+- `checkCommandConsent` shows an Electron dialog on first use, saves the user's choice to settings
+- Defense: user must explicitly approve each command; choice is persisted
+
+**Layer 4 — Script path validation:**
+- `scriptjs` commands must resolve to a path within the plugins directory
+- Defense: prevents arbitrary script execution outside plugin boundaries
+
+### How this maps to MCP
+
+| runCommand layer | MCP equivalent |
+|------------------|----------------|
+| Permission secrets (per-plugin random token) | MCP permission secret — backend generates random token, distributed only to ai-assistant plugin via `getAllowedPermissions` |
+| Command allowlist (`['minikube', 'az', 'scriptjs']`) | Tool allowlist — backend only executes tools from admin-configured MCP servers |
+| User consent (Electron dialog) | Tool approval flow — frontend shows approval dialog, backend validates approval before execution |
+| Script path validation | N/A for HTTP MCP; for stdio, validate command against allowlist in MCP config |
+
+### Key insight: only one plugin gets MCP access
+
+The `getAllowedPermissions` callback in the plugin loader is the gatekeeper. Today it checks `identifyPackages` to match `@headlamp-k8s/minikube`. For MCP, it would additionally check for the ai-assistant plugin and distribute the MCP permission secret only to it:
+
+```typescript
+// In getAllowedPermissions callback (frontend/src/plugin/index.ts)
+if (isPackage['@headlamp-k8s/ai-assistant']) {
+  secretsToReturn['mcp-execute'] = secrets['mcp-execute'];
+  secretsToReturn['mcp-tools'] = secrets['mcp-tools'];
+}
+```
+
+This ensures that even if a malicious plugin tries to call `/api/v1/mcp/execute`, it cannot because it doesn't have the `mcp-execute` permission secret.
+
+For a detailed proposal on extending `runCommand` itself to work through the Go backend (not just MCP), see [Backend runCommand Proposal](./backend-run-command-proposal.md).
+
+### Could MCP use runCommand for tool execution?
+
+**No.** The execution models are fundamentally different — see [detailed analysis](./backend-run-command-proposal.md#could-mcp-use-runcommand-directly) in the backend runCommand proposal. In short:
+
+- `runCommand` spawns a **short-lived process per call** and streams raw text. MCP stdio keeps a **long-lived process running** and uses **bidirectional JSON-RPC**.
+- Forcing MCP through `runCommand` would mean spawning a new MCP server per tool call (~2-5s overhead vs ~5ms), losing connection state, and requiring a JSON-RPC parser on top of text streams.
+- **The security model should be shared** (permission secrets, backend token, consent), **not the execution path.** The Go backend should have two subsystems (`runCommandHandler` + `mcpHandler`) behind a common auth layer.
+
 ## Backward Compatibility
 
 1. **Desktop app** — `ElectronMCPClient` unchanged. stdio transport continues to work.
 2. **CLI** — `MultiServerMCPClient` in-process. No changes.
-3. **Headless** — New: Go backend proxy + `HTTPMCPClient`. Electron passes config to backend.
+3. **Headless** — New: Go backend proxy + `HTTPMCPClient`. Supports stdio (via backend child processes) and HTTP MCP servers.
 4. **In-cluster** — New: Go backend proxy + `HTTPMCPClient`. HTTP/HTTPS MCP servers only.
 
 ## Implementation Priority
@@ -274,7 +361,8 @@ Key threats map to:
 3. Phase 2 (Go backend proxy) — core work, enables headless + in-cluster
 4. Phase 6 (Headless integration) — small once Phase 2+3 done
 5. Phase 4 (Helm config) — in-cluster configuration
-6. Phase 5 (AI provider config) — independent of MCP
+6. Phase 7 (Headless stdio) — adds stdio spawning to Go backend for headless
+7. Phase 5 (AI provider config) — independent of MCP
 
 ## Open Questions
 
