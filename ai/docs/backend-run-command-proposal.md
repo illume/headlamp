@@ -532,14 +532,18 @@ Consent page HTML (minimal — no Headlamp bundle, no plugin code, no React):
       if (resp.ok) {
         parent.postMessage(
           { type: 'consent-result', approved: true },
-          '*'  // main app validates origin on receive side
+          mainAppOrigin  // only send to expected origin, never '*'
         );
       }
     });
 
+    // mainAppOrigin is injected by the consent server when rendering the page
+    // e.g., 'http://localhost:4466' — derived from runtime configuration
+    const mainAppOrigin = '{{MAIN_APP_ORIGIN}}';
+
     function deny() {
       fetch('/consent/abc123/deny', { method: 'POST' });
-      parent.postMessage({ type: 'consent-result', approved: false }, '*');
+      parent.postMessage({ type: 'consent-result', approved: false }, mainAppOrigin);
     }
   </script>
 </body>
