@@ -634,6 +634,53 @@ Consent page HTML (minimal — no Headlamp bundle, no plugin code, no React):
 
 **Verdict: ✅ Secure. Cross-origin isolation prevents DOM access and direct API calls. Origin header checking blocks form submission bypass. Typed confirmation code defeats clickjacking (iframe). Popup is inherently immune to clickjacking.**
 
+##### Same port / different path — could it work?
+
+The analysis above assumes the consent UI runs on a **different port** (e.g., `:4467` vs `:4466`). But deploying two ports is operationally inconvenient — Kubernetes Services, ingress rules, Docker port mappings, and firewall rules all need the extra port. Could a **different path on the same port** (e.g., `/consent/...` on `:4466`) provide the same security?
+
+**Short answer: No — same port = same origin = no browser isolation. But there are practical workarounds.**
+
+**Why same-origin paths don't isolate:**
+
+The browser's Same-Origin Policy is defined by `scheme + host + port`. Two paths on the same `http://localhost:4466` share the same origin — regardless of the path. This means:
+
+| Attack | Same port, different path | Different port |
+|--------|--------------------------|----------------|
+| `fetch('/consent/abc/approve', {method:'POST'})` | ✅ **Works** — same origin, no CORS block | ❌ Blocked — cross-origin, no CORS headers |
+| `iframe.contentDocument.querySelector('#approve').click()` | ✅ **Works** — same origin, full DOM access | ❌ Blocked — cross-origin SecurityError |
+| Plugin reads consent page content | ✅ **Works** — same origin | ❌ Blocked — cross-origin |
+
+A same-port consent path is equivalent to Approach 1 (in-page React dialog) — the plugin can bypass it trivially by calling the endpoint directly.
+
+**Server-side defenses that DON'T help on the same origin:**
+
+- **CORS headers:** CORS only restricts **cross-origin** requests. Same-origin requests bypass CORS entirely — the browser never checks `Access-Control-*` headers.
+- **Different Content-Type:** The plugin can set any `Content-Type` on a same-origin fetch — no preflight needed.
+- **CSRF tokens:** The plugin runs in the same origin, so it has access to the same cookies and tokens. CSRF tokens protect against *cross-site* forgery, not same-origin abuse.
+- **`Sec-Fetch-*` headers:** These are set by the browser on navigation requests (e.g., `Sec-Fetch-Mode: navigate`) but a plugin using `fetch()` will have `Sec-Fetch-Mode: cors` — distinguishable in theory, but `Sec-Fetch-*` headers can only tell you *how* a request was made, not *who* made it. Both the real consent page and a malicious plugin call from the same origin will have the same `Sec-Fetch-Site: same-origin`.
+
+**What DOES work for same-port isolation:**
+
+1. **Custom header requirement:** The consent endpoint could require a custom header (e.g., `X-Consent-Token: <nonce>`) that is only known to the consent page itself (embedded in the HTML at render time, not available via any API). But since the plugin runs in the same origin, it can load the consent page in an iframe, read the nonce from the DOM (`iframe.contentDocument`), and use it. **Not secure on same origin.**
+
+2. **Double-submit cookie with SameSite:** A cookie set with `Path=/consent/` and `SameSite=Strict` would only be sent on requests to `/consent/*`. But a plugin on the same origin can still read this cookie via `document.cookie` (unless it's `HttpOnly`), and even if `HttpOnly`, it can navigate to `/consent/approve` via a form submission and the cookie goes along. **Not secure on same origin.**
+
+3. **Separate origin via reverse proxy:** Deploy one port externally but use a reverse proxy (nginx/Envoy) to map `/consent/*` to a separate internal service on a different port. The browser sees one port, but the backend has isolation. **However:** the browser still sees the same origin. The proxy only changes the backend routing, not the browser's Same-Origin Policy. The plugin can still `fetch('/consent/...')` and it reaches the consent endpoint. **Not secure from the browser's perspective.**
+
+**The only same-port option that's secure: sub-domain isolation.**
+
+If the main app runs on `headlamp.example.com` and the consent UI runs on `consent.headlamp.example.com` (pointing to the same server, same port, different sub-domain), the browser treats them as **different origins**. Same-Origin Policy kicks in. This works for production deployments behind a DNS, but not for `localhost` development (where sub-domains aren't available without `/etc/hosts` hacks).
+
+**Practical recommendation:**
+
+| Scenario | Approach | Why |
+|----------|----------|-----|
+| **Headless (localhost)** | Different port (`:4467`) | Only reliable way to get cross-origin isolation on localhost. The consent server is a lightweight Go HTTP handler — starting it on a second port is trivial. |
+| **In-cluster (Kubernetes)** | Sub-domain (`consent.headlamp.svc`) or admin pre-approval | Sub-domain gives cross-origin isolation on a single port. But admin pre-approval (Approach 5) is simpler and already recommended for in-cluster. |
+| **Behind ingress** | Sub-domain or admin pre-approval | If a second port is hard to expose, use sub-domain routing. Or skip the consent UI entirely with admin pre-approval. |
+
+**Bottom line:** A different port is the simplest reliable way to get Same-Origin Policy isolation, especially for localhost/headless. For production Kubernetes deployments where a second port is inconvenient, admin pre-approval (Helm config) eliminates the need for a browser consent UI entirely. Sub-domain isolation is a middle ground for cases where you need browser-based consent but can't expose a second port.
+
 #### Approach 4: Terminal prompt (headless with visible terminal) — SECURE ✅
 
 For headless mode when the user has terminal access (e.g., SSH session, or started from a terminal), the Go backend prompts via terminal stdout/stdin:
@@ -731,42 +778,51 @@ Consent flow (in-cluster):
                                       └─ exec.Command(...)
 ```
 
-## Could MCP use runCommand directly?
+## Could MCP be implemented on top of runCommand?
 
-**Short answer: No for tool execution. Partially for the security model.**
+**Short answer: Technically possible with the proposed stdin support — but impractical. Better to share the security model while keeping separate execution paths.**
 
-MCP and `runCommand` have fundamentally different communication patterns. Reusing the `runCommand` infrastructure for MCP tool execution would require significant rearchitecting that yields no benefit. However, the **security model** (permission secrets, allowlists, consent) should absolutely be shared.
+The proposed HTTP-based runCommand includes `POST /run-command/{id}/input` for sending stdin to a running process. This means runCommand now supports bidirectional communication — the missing piece that previously made MCP-over-runCommand impossible. So the question deserves a fresh look.
 
-### Why the execution models don't match
+### How it would work (theoretically)
 
-| Aspect | runCommand | MCP stdio server | MCP HTTP server |
-|--------|-----------|-----------------|----------------|
-| **Process lifetime** | Short-lived (one per invocation) | Long-lived (one per session, serves many tool calls) | External service (always running) |
-| **Communication** | Unidirectional streaming (stdout/stderr → caller) | Bidirectional JSON-RPC over stdin/stdout | HTTP request/response |
-| **Protocol** | Raw text streams | JSON-RPC 2.0 with structured messages | SSE or Streamable HTTP |
-| **Multiplexing** | One command = one process | One process = many concurrent tool calls | One server = many concurrent tool calls |
-| **Return value** | Exit code + stream data | Structured JSON-RPC response per tool call | HTTP response body |
-
-**runCommand spawns a new process per invocation.** When a plugin calls `pluginRunCommand('minikube', ['status'], {})`, Electron spawns `minikube status`, streams its output, and the process exits. Each call is independent.
-
-**MCP stdio keeps one process running for many tool calls.** `MultiServerMCPClient` spawns the MCP server process once (e.g., `npx @modelcontextprotocol/server-filesystem`), keeps it running, and sends JSON-RPC requests over stdin / reads responses from stdout. The process stays alive across hundreds of tool calls.
+With the proposed stdin endpoint, MCP stdio could work like this:
 
 ```
-runCommand pattern (one process per call):
-  pluginRunCommand('minikube', ['status']) → spawn → stdout stream → exit
-  pluginRunCommand('minikube', ['start'])  → spawn → stdout stream → exit
+1. POST /run-command/start
+   { command: "npx", args: ["@modelcontextprotocol/server-filesystem", "/path"] }
+   → Returns { id: "abc123" }
 
-MCP stdio pattern (one process, many calls):
-  spawn server process once
-    ├── JSON-RPC request: list_tools    → JSON-RPC response
-    ├── JSON-RPC request: call_tool(A)  → JSON-RPC response
-    ├── JSON-RPC request: call_tool(B)  → JSON-RPC response
-    └── ... (process stays running)
+2. GET /run-command/abc123/stream
+   → SSE stream of stdout (JSON-RPC responses from MCP server)
+
+3. POST /run-command/abc123/input
+   { data: '{"jsonrpc":"2.0","method":"tools/list","id":1}\n' }
+   → Sends JSON-RPC request to MCP server's stdin
+
+4. SSE stream delivers:
+   event: stdout
+   data: {"jsonrpc":"2.0","result":{"tools":[...]},"id":1}
 ```
 
-### What COULD be shared
+This is technically a bidirectional channel over HTTP — stdin via POST, stdout via SSE. The MCP JSON-RPC protocol could ride on top of it.
 
-Even though the execution model is different, these aspects of `runCommand` can be reused for MCP:
+### Why it's still not the right approach
+
+Even though it's technically possible, building MCP on runCommand creates problems:
+
+| Issue | Detail |
+|-------|--------|
+| **Process lifecycle mismatch** | runCommand is designed for short-lived processes. MCP servers run for the entire session (minutes to hours). runCommand would need process keepalive, reconnection, and health monitoring — features that don't belong in a "run a command" abstraction. |
+| **JSON-RPC framing over SSE** | runCommand streams raw text lines. MCP JSON-RPC responses can be multi-line JSON objects. The SSE stream would need a JSON-RPC message parser to reassemble responses from text chunks. This is fragile — stdout buffering, partial writes, and interleaved stderr all complicate parsing. |
+| **Request-response correlation** | MCP multiplexes concurrent tool calls over one connection using JSON-RPC request IDs. runCommand's SSE stream delivers raw stdout — the caller must parse JSON-RPC, match response IDs to pending requests, and handle out-of-order delivery. This is reimplementing an MCP client inside the runCommand caller. |
+| **No HTTP MCP support** | runCommand is fundamentally a process-spawning API. MCP HTTP/SSE servers (the in-cluster model) can't be reached via runCommand at all — they need HTTP client calls, not process spawning. A unified MCP layer needs to handle both stdio and HTTP transports. |
+| **Error semantics** | runCommand reports exit codes and stderr streams. MCP reports JSON-RPC error objects with codes and structured data. Mapping between the two adds unnecessary complexity. |
+| **Abstraction leak** | Plugins using MCP would need to know they're talking to a runCommand session, construct JSON-RPC by hand, parse SSE streams, and manage the long-lived process. This defeats the purpose of an MCP abstraction layer. |
+
+### What SHOULD be shared
+
+The security infrastructure is the right thing to share — not the execution path:
 
 1. **Permission secret generation and distribution** — Same `cryptoRandom()` approach, same `getAllowedPermissions` gatekeeper in the plugin loader. MCP just needs its own secret names (`mcp-execute`, `mcp-tools`) alongside the existing `runCmd-*` names.
 
@@ -775,15 +831,6 @@ Even though the execution model is different, these aspects of `runCommand` can 
 3. **Consent storage** — Same `confirmedCommands` pattern in settings, extended with a `confirmedMcpTools` section.
 
 4. **Command/tool allowlist validation** — Same concept: `runCommand` validates against `['minikube', 'az', 'scriptjs']`, MCP validates against admin-configured server/tool list.
-
-### What would break if we forced MCP through runCommand
-
-If we tried to implement MCP tool calls as `runCommand` invocations:
-
-- **Each tool call would spawn a new MCP server process**, wait for initialization, execute one tool, then kill it. This turns a ~5ms tool call into a ~2-5 second operation (MCP servers need time to start, discover tools, etc.).
-- **No connection reuse.** MCP servers often maintain state (open files, database connections, cached data). Killing and restarting per call loses all state.
-- **JSON-RPC framing lost.** `runCommand` streams raw text. MCP needs structured JSON-RPC messages with request IDs, error codes, and typed responses. We'd have to build a parser on top of `runCommand`'s text streams.
-- **Bidirectional communication impossible.** `runCommand` can only read stdout/stderr — it cannot write to stdin. MCP requires writing JSON-RPC requests to stdin.
 
 ### Recommendation
 
@@ -809,6 +856,8 @@ The Go backend should have **two separate subsystems** that share a common auth/
 - `mcpHandler` — manages long-lived MCP server connections (stdio or HTTP), executes JSON-RPC tool calls
 
 Both validate permission secrets from the same pool, both check `HEADLAMP_BACKEND_TOKEN`, both log to the same audit system.
+
+**Could you build MCP on runCommand?** Yes — the stdin endpoint makes it technically possible. But you'd be building a full MCP client (JSON-RPC framing, request correlation, process lifecycle management) on top of a raw text streaming API. It's simpler and more robust to build the MCP handler as a peer of runCommand that shares the same auth layer.
 
 ## Relationship to MCP
 
@@ -844,3 +893,4 @@ Both share:
 2. **In-cluster runCommand** — Should this be disabled entirely, or configurable per-command? The minikube plugin doesn't make sense in-cluster, but future plugins might need local commands.
 3. **Consent port stability** — The consent server runs on a random port. Should it be configurable (e.g., `--consent-port 4467`) so that popup blocker exceptions can be saved?
 4. **Popup blocker UX** — If the popup is blocked, the frontend falls back to a clickable link. Should there be a third fallback (e.g., admin pre-approval via config file)?
+5. **Same port for consent** — A different port is required for Same-Origin Policy isolation on localhost. For in-cluster, sub-domain isolation (`consent.headlamp.svc`) or admin pre-approval can avoid the second port. See [Same port / different path analysis](#same-port--different-path--could-it-work) for details.
