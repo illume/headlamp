@@ -681,6 +681,87 @@ If the main app runs on `headlamp.example.com` and the consent UI runs on `conse
 
 **Bottom line:** A different port is the simplest reliable way to get Same-Origin Policy isolation, especially for localhost/headless. For production Kubernetes deployments where a second port is inconvenient, admin pre-approval (Helm config) eliminates the need for a browser consent UI entirely. Sub-domain isolation is a middle ground for cases where you need browser-based consent but can't expose a second port.
 
+##### Could iframe `sandbox` work if same-path isolation doesn't?
+
+A natural follow-up: if same-origin paths don't isolate the consent UI from plugins, could the `<iframe sandbox>` attribute provide that isolation instead — all on a single port?
+
+**Short answer: Yes, but the sandbox has to go around the *plugin*, not the consent UI — and that's an architectural change, not a one-line fix.**
+
+**What `sandbox` actually does:**
+
+The `sandbox` attribute applies to the iframe it's declared on. It restricts what code **inside** that iframe can do — script execution, form submission, popups, top-navigation, etc. Crucially, **`sandbox` without `allow-same-origin` forces the iframe into a unique (null) origin**, which means the Same-Origin Policy then treats it as a different origin even when served from the same scheme+host+port.
+
+So `sandbox` can create a cross-origin boundary on a single port — but it makes whatever is inside the iframe "the different origin," not what's outside.
+
+**Option A: Sandbox the consent UI (what you might try first) — DOESN'T HELP**
+
+```html
+<!-- Main page on :4466 (plugin lives here) -->
+<iframe src="/consent/abc" sandbox="allow-scripts allow-forms"></iframe>
+```
+
+This is backwards. The threat is a hostile plugin in the **parent** page (DOM access, clickjacking, direct fetch). `sandbox` on the consent iframe:
+
+- Does nothing to stop the parent plugin from calling `fetch('/consent/abc/approve')` directly — the plugin isn't in the sandbox.
+- Does nothing to stop clickjacking (plugin still controls the parent DOM — overlay, resize, reposition).
+- Does give the iframe a unique origin, so `iframe.contentDocument` access is blocked — but we already had that mitigation via CORS + Origin header on a different port; this doesn't add protection against the remaining attack surface.
+
+The parent is the attacker. Sandboxing the victim doesn't protect the victim.
+
+**Option B: Sandbox the plugin — WORKS, but is a bigger change**
+
+```html
+<!-- Main page on :4466 (trusted) -->
+<iframe src="/plugin/foo" sandbox="allow-scripts"></iframe>
+<!-- Plugin now has a null origin; it's cross-origin to :4466 -->
+```
+
+With `sandbox="allow-scripts"` (no `allow-same-origin`), the plugin iframe has a **null origin**. From its perspective, everything served from `:4466` — including the main app, its APIs, and `/consent/...` — is cross-origin. So:
+
+| Attack | Outcome |
+|--------|---------|
+| `fetch('/consent/abc/approve')` from plugin | ❌ Blocked by CORS (null → :4466 is cross-origin; no `Access-Control-Allow-Origin: null`) |
+| `parent.document.querySelector(...)` | ❌ Blocked (cross-origin) |
+| Read cookies, localStorage of :4466 | ❌ Blocked (unique origin has no access) |
+| Clickjack consent UI rendered in parent | ❌ Plugin can't reach parent DOM |
+
+This genuinely isolates plugins from the main page — including the consent UI — on a **single port**. It's the same isolation model the sandboxed iframe gives to untrusted HTML (e.g., embedded ads, user-uploaded content).
+
+**But: this is a plugin-system redesign, not a consent-UI fix.**
+
+Headlamp plugins today run via `new Function()` in the main page's context (see `frontend/src/plugin/runPlugin.ts`). They call `@kinvolk/headlamp-plugin` APIs directly (registerSidebarEntry, registerRoute, registerAppBarAction, etc.), share the React tree with the host app, and use same-origin `fetch()` to hit the backend. Moving to `sandbox="allow-scripts"` (null origin) breaks all of that:
+
+| Concern | Impact |
+|--------|--------|
+| Plugin API access | Currently direct JS calls. Would need `postMessage`-based RPC for every Headlamp API a plugin uses. Hundreds of entry points. |
+| UI integration | Plugins register React components that render in the host tree. Sandboxed plugins can't share React trees — every plugin becomes a child iframe with its own React root. Layout, theming, modals, and context menus all become cross-document. |
+| Backend API calls | Plugin `fetch('/api/v1/clusters/...')` becomes cross-origin. Backend must send `Access-Control-Allow-Origin: null` (risky — matches any sandboxed page on the internet) or `*` with no credentials, and plugins can no longer use auth cookies. |
+| Performance | Each plugin = separate document, separate JS context, separate React root, separate React Query cache. Memory and load time increase with plugin count. |
+| Existing plugins | Every published plugin would need to be rewritten against a new postMessage RPC API. Breaking change. |
+
+There are web apps that do this — VS Code webviews, Figma plugins, Notion embeds — but all of them designed it in from day one. Retrofitting sandboxed plugins onto Headlamp is a multi-release project with a long compatibility tail.
+
+**Option C: `sandbox` with `allow-same-origin` — DEFEATS THE ISOLATION**
+
+Tempting compromise: `sandbox="allow-scripts allow-same-origin"` so the plugin can still call Headlamp APIs normally. This **does not give you a unique origin**; the plugin is same-origin with `:4466` again, and every same-origin attack from the earlier analysis comes back. Plus it still applies other sandbox restrictions (top navigation, popups), which mostly hurt legitimate plugin UX without helping security. Worst of both worlds.
+
+**Summary:**
+
+| Sandbox target | Isolates consent UI on one port? | Compatible with current plugin model? |
+|---------------|----------------------------------|--------------------------------------|
+| Sandbox consent iframe (Option A) | ❌ No — attacker is in parent | ✅ Yes |
+| Sandbox plugin iframe, no `allow-same-origin` (Option B) | ✅ Yes | ❌ No — requires postMessage plugin API |
+| Sandbox plugin iframe, with `allow-same-origin` (Option C) | ❌ No — still same origin | ✅ Yes |
+
+**Recommendation:**
+
+For this proposal, stick with the earlier guidance:
+
+- **Localhost/headless:** Different port — trivial to add, gives cross-origin isolation immediately, no plugin rewrites.
+- **In-cluster:** Admin pre-approval (no consent UI) or sub-domain isolation.
+
+Sandboxed plugins (Option B) are a genuinely good long-term architecture and would let consent UI, plugin isolation, and third-party plugin hosting all share a single port — but that belongs in a separate RFC about the plugin system itself, not a consent-UI proposal. If/when Headlamp plugins move to a sandboxed model, the "different port for consent" requirement relaxes naturally; until then, a second port is the cheapest path to real isolation.
+
 #### Approach 4: Terminal prompt (headless with visible terminal) — SECURE ✅
 
 For headless mode when the user has terminal access (e.g., SSH session, or started from a terminal), the Go backend prompts via terminal stdout/stdin:
