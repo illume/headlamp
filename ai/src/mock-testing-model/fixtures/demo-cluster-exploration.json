@@ -1,0 +1,30 @@
+{
+  "name": "cluster-exploration-demo",
+  "description": "A scripted demo conversation exploring a Kubernetes cluster — suitable for walkthroughs and presentations. Each turn plays back in order regardless of what the user types.",
+  "sequence": [
+    {
+      "prompt": "Hello",
+      "response": "Hello! I'm the Headlamp AI assistant. I can help you explore and manage your Kubernetes cluster. What would you like to know?"
+    },
+    {
+      "prompt": "What nodes are in the cluster?",
+      "response": "Your cluster has the following nodes:\n\n| Name | Status | Roles | Version |\n|------|--------|-------|---------|\n| node-0 | Ready | control-plane | v1.32.0 |\n| node-1 | Ready | worker | v1.32.0 |\n| node-2 | Ready | worker | v1.32.0 |\n\nAll nodes are healthy and running Kubernetes v1.32.0. You can view detailed node information in Headlamp under **Cluster** > **Nodes**."
+    },
+    {
+      "prompt": "What pods are running in the default namespace?",
+      "response": "Here are the pods in the **default** namespace:\n\n| Name | Status | Restarts | Age |\n|------|--------|----------|-----|\n| nginx-deployment-abc123 | Running | 0 | 2h |\n| nginx-deployment-def456 | Running | 0 | 2h |\n| nginx-deployment-ghi789 | Running | 0 | 2h |\n\nAll 3 pods are healthy with zero restarts. They belong to the `nginx-deployment` Deployment."
+    },
+    {
+      "prompt": "Can you show me the nginx deployment details?",
+      "response": "Here are the details for the **nginx-deployment**:\n\n```yaml\napiVersion: apps/v1\nkind: Deployment\nmetadata:\n  name: nginx-deployment\n  namespace: default\nspec:\n  replicas: 3\n  selector:\n    matchLabels:\n      app: nginx\n  template:\n    spec:\n      containers:\n      - name: nginx\n        image: nginx:1.25\n        ports:\n        - containerPort: 80\n        resources:\n          requests:\n            cpu: 100m\n            memory: 128Mi\n```\n\nThe deployment is running **3/3 replicas** with the `nginx:1.25` image. You can view this in Headlamp by navigating to **Workloads** > **Deployments** > **nginx-deployment**."
+    },
+    {
+      "prompt": "How do I scale it to 5 replicas?",
+      "response": "To scale **nginx-deployment** to 5 replicas:\n\n```bash\nkubectl scale deployment/nginx-deployment --replicas=5\n```\n\nOr you can do it directly in Headlamp:\n1. Go to **Workloads** > **Deployments** > **nginx-deployment**\n2. Click the **Edit** button\n3. Change `replicas` from 3 to 5\n4. Save the changes\n\nThe Deployment controller will create 2 additional Pods to reach the desired count."
+    },
+    {
+      "prompt": "What services are available?",
+      "response": "Here are the services in the **default** namespace:\n\n| Name | Type | Cluster IP | Ports |\n|------|------|-----------|-------|\n| kubernetes | ClusterIP | 10.96.0.1 | 443/TCP |\n| nginx-service | ClusterIP | 10.96.45.12 | 80/TCP |\n\nThe `nginx-service` routes traffic to the nginx deployment pods on port 80. You can view services in Headlamp under **Network** > **Services**."
+    }
+  ]
+}

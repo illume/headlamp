@@ -40,10 +40,14 @@
     "./components": {
       "types": "./dist/components/index.d.ts",
       "import": "./dist/components/index.js"
+    },
+    "./mock-testing-model": {
+      "types": "./dist/mock-testing-model/index.d.ts",
+      "import": "./dist/mock-testing-model/index.js"
     }
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && cp -r src/mock-testing-model/fixtures dist/mock-testing-model/fixtures",
     "clean": "rm -rf dist",
     "format": "prettier --config package.json --write src/",
     "format:check": "prettier --config package.json --check src/",
