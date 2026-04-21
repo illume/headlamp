@@ -415,7 +415,7 @@ For cloud-specific skills, we can **reuse upstream repos** where they exist:
   Headlamp just needs to point at this repo as a skill source.
 - **Flux/GitOps:** [fluxcd/agent-skills](https://github.com/fluxcd/agent-skills)
   covers GitOps workflows, manifest generation, and cluster debugging.
-- **EKS/GKE:** No upstream repos exist yet. If there is demand, we create
+- **EKS/GKE:** No upstream skill repos exist as of April 2025. If there is demand, we create
   them in `headlamp-k8s/skills` and invite cloud provider teams to
   contribute.
 
@@ -443,12 +443,12 @@ Users install with:
 # In Headlamp settings UI:
 # Add skill source → https://github.com/headlamp-k8s/skills → main
 
-# Or in Helm values:
+# Or in Helm values (pin to a tag for production):
 ai:
   skills:
     sources:
       - url: https://github.com/headlamp-k8s/skills
-        ref: main
+        ref: v1.0.0  # Use tags for reproducibility; 'main' for latest
 ```
 
 ### Publishing to the agentskills.io ecosystem
