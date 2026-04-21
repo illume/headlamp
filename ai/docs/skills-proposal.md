@@ -28,6 +28,185 @@
 
 ---
 
+## What the industry is doing
+
+### Skills formats across the ecosystem
+
+| Project / Tool | Format | Distribution | Key idea |
+|----------------|--------|-------------|----------|
+| **GitHub Copilot** | `.github/skills/*/SKILL.md` | Git repo directories | YAML front-matter + Markdown instructions; auto-loaded when prompt matches description |
+| **Claude Code** | `AGENTS.md` / `.agents/skills/` | Git repo or `flux-operator skills install` | Cross-tool standard via `agentskills.io`; skills are context docs, not executable code |
+| **VS Code Copilot** | `.github/instructions/*.instructions.md` | Git repo files with `applyTo` glob patterns | Path-scoped instructions; always-on context rules |
+| **Flux agent-skills** | `SKILL.md` per skill directory | Git repo, installable via `npx skills add fluxcd/agent-skills` | Skills = Markdown runbooks + MCP server references; `flux-operator-mcp` for live cluster access |
+| **Azure Skills** | `skills/*/SKILL.md` | Git repo (`microsoft/azure-skills`) | Curated by Microsoft; domain-specific (AKS, networking, etc.) |
+| **Solo.io / kagent** | Agent registry + CRDs | Kubernetes-native (CRDs, operator) | Full agent lifecycle management; skills are K8s resources |
+| **Holmes (Robusta)** | YAML runbooks + Python toolsets | Helm chart + pip package | AI-driven K8s investigation; runbooks define trigger→collect→diagnose→report flows |
+| **K8sGPT** | Go analyzers compiled into binary | Single binary / operator | Each analyzer is a Go struct; not dynamically extensible |
+| **LangChain/LangGraph** | `@tool` decorator / `DynamicTool` class | npm/pip packages (`@langchain/community`) | Tools are code (Python/TypeScript classes); distributed via package managers; community tools in `@langchain/community` |
+| **agentskills.io** | `SKILL.md` standard | Cross-tool convention | Vendor-agnostic; skills discoverable by Copilot, Claude, Cursor, Gemini |
+
+### Key industry convergence
+
+1. **Markdown is the universal format.** Every major platform uses Markdown (with optional YAML front-matter) for skills. Not JSON, not YAML-only, not code.
+2. **Git repos are the distribution channel.** Azure, Flux, GitHub Copilot all load skills from Git directories — no registry servers, no package managers for prompt skills.
+3. **`SKILL.md` is becoming a cross-tool standard.** The `agentskills.io` convention means the same skill files work across Copilot, Claude, Cursor, and Gemini.
+4. **MCP is the action layer.** When skills need to *do* things (not just *know* things), MCP servers provide the tool interface.
+5. **Runbooks bridge knowledge and action.** Holmes/Robusta show that the most useful AI skills are structured troubleshooting procedures that combine knowledge (what to check) with tool calls (how to check it).
+
+### What we can reuse
+
+| Source | What to reuse | How |
+|--------|--------------|-----|
+| **`agentskills.io` / GitHub Copilot `SKILL.md`** | Format standard | Adopt the same `SKILL.md` front-matter schema — skills written for Copilot work in Headlamp and vice versa |
+| **Azure Skills repo** | AKS/Azure content | Load `microsoft/azure-skills` as a skill source — instant Azure guidance |
+| **Flux agent-skills** | GitOps knowledge + MCP server | Load `fluxcd/agent-skills` for GitOps skills; `flux-operator-mcp` as an MCP skill |
+| **Holmes (Robusta)** | Troubleshooting runbooks | Adapt Holmes' investigation patterns (CrashLoopBackOff, OOMKilled, NodeNotReady) as prompt skills; reference Holmes' toolsets concept for future tool skills |
+| **LangChain `@langchain/community`** | Tool class pattern | Headlamp's `ToolBase` already mirrors LangChain's `DynamicTool` pattern; community tools can be wrapped |
+| **CNCF ecosystem** | K8sGPT analyzers as knowledge | Convert K8sGPT's analyzer logic (what it checks and why) into prompt skill content |
+
+---
+
+## MVP — most valuable first
+
+Based on what users actually ask for in Kubernetes AI tools (troubleshooting, operational guidance, security audits), what the industry is converging on (Markdown skills in Git repos), and what we can reuse immediately, the MVP focuses on: **prompt skills loaded from local directories, using the `SKILL.md` cross-tool standard**.
+
+### What users want most
+
+| Rank | Feature | Why it's popular | MVP? |
+|------|---------|-----------------|------|
+| 1 | **Troubleshooting guidance** | #1 request — "Why is my pod in CrashLoopBackOff?" with context-specific advice | ✅ Prompt skill |
+| 2 | **Operational playbooks** | Runbooks for common tasks (scale, upgrade, rollback) as AI-ready knowledge | ✅ Prompt skill |
+| 3 | **Platform-specific knowledge** | AKS, EKS, GKE, OpenShift — each has quirks the LLM doesn't know | ✅ Prompt skill (reuse Azure Skills) |
+| 4 | **Headlamp UI navigation** | LLM doesn't know Headlamp's menu structure without being told | ✅ Built-in prompt skill |
+| 5 | **Security & compliance audits** | RBAC review, network policy checks, CIS benchmark guidance | ✅ Prompt skill |
+| 6 | **GitOps operations** | Flux/Argo workflows via MCP tools | Phase 2 (MCP skill) |
+| 7 | **Cost optimization** | Resource right-sizing recommendations | Phase 2 (needs tool calls) |
+
+### Most useful skills features (prioritized)
+
+| Priority | Feature | Value | Effort |
+|----------|---------|-------|--------|
+| **P0** | Load Markdown skills from directory | Enables all prompt skills | Low |
+| **P0** | `SKILL.md` front-matter parsing (name, description, tags) | Metadata for UI + cross-tool compatibility | Low |
+| **P0** | Inject into system prompt with delimiters | Makes skills actually work | Low |
+| **P1** | Settings UI: list, toggle, preview | Users can manage skills | Medium |
+| **P1** | Ship 3 built-in skills | Immediate value out of the box | Low |
+| **P1** | `--skills-dir` CLI flag | CLI users get skills too | Low |
+| **P2** | Size budget display | Prevents prompt overflow | Low |
+| **P2** | Git repo fetching | Load Azure/Flux/community skills | Medium |
+| **P3** | MCP skill auto-registration | Skills that *do* things | Medium |
+| **P3** | Skill update detection + diff | Keep skills current safely | Medium |
+
+### MVP scope
+
+Ship prompt skills from **local directories** first. This delivers the highest value with the least infrastructure:
+
+**In:**
+- Load `.md` files from a configured directory (e.g. `~/.config/Headlamp/skills/` or `--skills-dir` flag)
+- Parse `SKILL.md` front-matter for metadata (name, description, tags) — compatible with `agentskills.io` / GitHub Copilot format
+- Inject content into system prompt with delimiters
+- Settings UI: list installed skills, toggle enable/disable, preview content
+- Size budget display (how much prompt space is used)
+- Ship 3 built-in skills: `kubernetes-troubleshooting`, `headlamp-navigation`, `kubernetes-security`
+
+**Out (later phases):**
+- Git repository fetching (Phase 1b)
+- MCP skills (Phase 2)
+- Skill updates, diffing, integrity checks (Phase 3)
+- In-cluster / Helm skills (Phase 4)
+- Tool skills (Phase 5)
+
+### Why local-first
+
+1. **No network dependencies** — works offline, in air-gapped environments, in CI.
+2. **No security surface** — no Git fetching, no remote URLs, no supply-chain risk.
+3. **Fastest to ship** — read files from disk, parse front-matter, inject into prompt.
+4. **Users can start immediately** — copy a `.md` file into a directory and restart.
+5. **Validates the format** — proves `SKILL.md` metadata and prompt injection work before adding complexity.
+6. **Cross-tool compatible** — same `SKILL.md` format works in GitHub Copilot, Claude, Cursor.
+
+### Built-in skills to ship with MVP
+
+**`kubernetes-troubleshooting`** — the most requested feature (adapted from Holmes/K8sGPT investigation patterns):
+```markdown
+---
+name: kubernetes-troubleshooting
+description: Common Kubernetes troubleshooting procedures
+tags: [kubernetes, troubleshooting, debugging]
+---
+
+# Kubernetes Troubleshooting Guide
+
+When a user asks about pod issues, check these common causes:
+
+## CrashLoopBackOff
+1. Check logs: suggest using the Logs tab in Headlamp
+2. Check resource limits: look for OOMKilled in pod status
+3. Check image: verify the image exists and is pullable
+
+## OOMKilled
+1. Check container memory limits vs actual usage
+2. Suggest increasing limits or optimizing the application
+3. Show how to view resource metrics in Headlamp
+
+## ImagePullBackOff
+1. Verify image name and tag exist
+2. Check imagePullSecrets configuration
+3. Test registry connectivity
+...
+```
+
+**`headlamp-navigation`** — helps the LLM guide users through Headlamp's UI:
+```markdown
+---
+name: headlamp-navigation
+description: How to navigate Headlamp's UI to find Kubernetes resources
+tags: [headlamp, navigation, ui]
+---
+
+# Headlamp Navigation Guide
+
+When guiding users to Kubernetes resources in Headlamp:
+- Pods: Sidebar → Workloads → Pods
+- Services: Sidebar → Network → Services
+- ConfigMaps: Sidebar → Configuration → Config Maps
+- Secrets: Sidebar → Configuration → Secrets
+- Nodes: Sidebar → Cluster → Nodes
+...
+```
+
+**`kubernetes-security`** — RBAC and security posture guidance:
+```markdown
+---
+name: kubernetes-security
+description: Kubernetes security best practices and RBAC guidance
+tags: [kubernetes, security, rbac, compliance]
+---
+
+# Kubernetes Security Guide
+
+## RBAC Review
+When asked about permissions or access:
+1. Check ClusterRoles and ClusterRoleBindings
+2. Look for overly permissive roles (cluster-admin bindings)
+3. Suggest least-privilege alternatives
+...
+```
+
+### MVP timeline estimate
+
+| Task | Effort |
+|------|--------|
+| `SKILL.md` parser (front-matter + Markdown) | 1 day |
+| Skills directory loader (local + `--skills-dir` flag) | 1 day |
+| Prompt injection with delimiters | 0.5 day |
+| Settings UI (list, toggle, preview) | 2 days |
+| Built-in skills content (3 skills) | 1.5 days |
+| Tests | 1 day |
+| **Total** | **~1 week** |
+
+---
+
 ## Skill types in detail
 
 ### 1. Prompt skills (Markdown documents)
