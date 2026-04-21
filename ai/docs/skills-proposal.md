@@ -579,73 +579,60 @@ Clicking a skill shows its content, metadata, and status:
 
 ## Learn: Skills resources
 
-Curated references for understanding skills systems — standards, frameworks, Kubernetes-specific tools, and broader agent architecture.
+Curated references for understanding agent skills — the standard, how Kubernetes projects ship them, the LangChain tool model Headlamp builds on, and the broader agent architecture. Each entry explains *why* it matters for Headlamp's skills system.
 
-### Standards and specifications
+### The `SKILL.md` standard
 
-| Resource | What you'll learn |
-|----------|------------------|
-| [Agent Skills specification](https://agentskills.io/specification) | The cross-tool open standard for `SKILL.md` — YAML front-matter schema, folder conventions, progressive loading. Adopted by 26+ tools including Copilot, Claude, Cursor, Gemini. |
-| [agentskills/agentskills](https://github.com/agentskills/agentskills) | Canonical GitHub repo for the Agent Skills standard — full spec, reference SDK, example skills. |
-| [Manage agent skills with GitHub CLI](https://github.blog/changelog/2026-04-16-manage-agent-skills-with-github-cli/) | `gh skill install/list/remove` commands (GitHub CLI v2.90.0+) — one-command skill management across tools. |
-| [GitHub Copilot: Adding agent skills](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/cloud-agent/add-skills) | Official GitHub docs on creating and using `SKILL.md` skills with Copilot. |
+The industry is converging on a single, cross-tool format for agent skills. Understanding it is essential — Headlamp should adopt it so skills work in Copilot, Claude, Cursor, and Headlamp interchangeably.
 
-### Kubernetes AI skills in practice
+- **[Agent Skills specification](https://agentskills.io/specification)** — The formal spec for the `SKILL.md` format: YAML front-matter schema (`name`, `description`, max lengths), folder conventions, and the "progressive loading" pattern where agents read only the description until a skill is triggered. Important because it defines the contract Headlamp's parser must implement.
+- **[agentskills/agentskills](https://github.com/agentskills/agentskills)** — The canonical GitHub repo with the full spec text, a reference SDK, and example skills. The best place to verify edge cases in front-matter parsing and understand what "cross-tool compatible" means in practice.
+- **[GitHub Copilot: Adding agent skills](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/cloud-agent/add-skills)** — GitHub's official guide to creating `SKILL.md` skills. Shows the end-to-end authoring flow that Headlamp should match: write a Markdown file, drop it in a directory, and the agent picks it up.
+- **[Manage agent skills with GitHub CLI](https://github.blog/changelog/2026-04-16-manage-agent-skills-with-github-cli/)** — The `gh skill install/list/remove` commands (GitHub CLI v2.90.0+). Shows the one-command install UX that Headlamp's Git-based skill loading (Phase 1b) should match.
 
-| Resource | What you'll learn |
-|----------|------------------|
-| [fluxcd/agent-skills](https://github.com/fluxcd/agent-skills) | Flux project's official agent skills — GitOps knowledge, manifest generation, cluster debugging. Shows how a CNCF project distributes AI skills. |
-| [Introducing the MCP Server for Flux](https://stefanprodan.com/blog/2025/flux-mcp-server-into/) — Stefan Prodan | How Flux connects AI assistants to live clusters via MCP. Architecture, security model (read-only, impersonation, secret masking), and Kubernetes-native design. |
-| [microsoft/azure-skills](https://github.com/microsoft/azure-skills) | Microsoft's curated Azure skills — AKS, networking, security. Reference implementation for enterprise skill repos. |
-| [MicrosoftDocs/Agent-Skills](https://github.com/MicrosoftDocs/Agent-Skills) | Azure cloud development skills — broader set of domain-specific skills for AI assistants. |
-| [robusta-dev/holmesgpt](https://github.com/robusta-dev/holmesgpt) | Holmes — AI-driven K8s investigation. Shows how runbooks (trigger → collect evidence → AI diagnosis → report) work in practice. Reusable patterns for troubleshooting skills. |
-| [k8sgpt-ai/k8sgpt](https://github.com/k8sgpt-ai/k8sgpt) | K8sGPT — K8s troubleshooting powered by analyzers. Each analyzer is a focused diagnostic (CrashLoopBackOff, OOMKilled, etc.) — good model for what skill content should cover. |
-| [Solo.io kagent](https://kagent.dev) | Kubernetes-native agent management — agents and skills as CRDs, MCP + A2A protocol support, agent registry. |
+### How Kubernetes projects ship skills
 
-### LangChain / LangGraph tools documentation
+These are the projects Headlamp can directly reuse content from. They also demonstrate proven distribution patterns for Kubernetes-specific AI knowledge.
 
-| Resource | What you'll learn |
-|----------|------------------|
-| [LangChain.js: Custom tools](https://js.langchain.com/docs/how_to/custom_tools/) | How to create tools with `DynamicTool` and `DynamicStructuredTool` using Zod schemas — the pattern Headlamp's `ToolBase` follows. |
-| [LangChain.js: Tool calling](https://js.langchain.com/docs/concepts/tool_calling/) | How LLMs select and invoke tools — binding tools to models, structured output, tool call messages. |
-| [LangGraph.js: ToolNode](https://langchain-ai.github.io/langgraphjs/reference/classes/langgraph.prebuilt.ToolNode.html) | Prebuilt node that executes tool calls in a LangGraph agent — parallel execution, error handling. |
-| [LangGraph.js: Tutorials](https://langchain-ai.github.io/langgraphjs/tutorials/) | End-to-end tutorials for building agents with tools — ReAct pattern, memory, retrieval. |
-| [@langchain/community](https://www.npmjs.com/package/@langchain/community) | Community-contributed tools distributed via npm — shows how the LangChain ecosystem packages and shares tools. |
-| [@langchain/mcp-adapters](https://www.npmjs.com/package/@langchain/mcp-adapters) | Bridges MCP servers to LangChain tools — the adapter Headlamp uses to connect MCP tools to the LangChain agent. |
+- **[fluxcd/agent-skills](https://github.com/fluxcd/agent-skills)** — The Flux project's official skills for GitOps: manifest generation, repo auditing, cluster debugging. Important because it's the best example of a CNCF project distributing AI skills via the `SKILL.md` standard. Headlamp can load this repo as a skill source out of the box.
+- **[Introducing the MCP Server for Flux](https://stefanprodan.com/blog/2025/flux-mcp-server-into/)** — Stefan Prodan's blog post on the Flux MCP server. Important because it shows the architecture for connecting AI assistants to live K8s clusters via MCP — read-only modes, impersonation, secret masking. Directly informs how Headlamp's MCP skills (Phase 2) should work.
+- **[microsoft/azure-skills](https://github.com/microsoft/azure-skills)** — Microsoft's curated Azure skills including AKS cluster management. Important as a reference implementation for enterprise skill repos — shows how a large organization structures, versions, and distributes domain-specific skills.
+- **[robusta-dev/holmesgpt](https://github.com/robusta-dev/holmesgpt)** — Holmes, an AI-driven Kubernetes investigation tool. Important because its runbook pattern (trigger → collect evidence → AI diagnosis → report) is exactly what Headlamp's troubleshooting prompt skills should capture. Holmes' investigation patterns for CrashLoopBackOff, OOMKilled, and NodeNotReady are directly reusable as skill content.
+- **[k8sgpt-ai/k8sgpt](https://github.com/k8sgpt-ai/k8sgpt)** — K8sGPT's analyzer-per-problem-type pattern (one focused diagnostic per failure mode) is a good model for structuring prompt skill content. Each analyzer's logic — what to check, what it means, what to do — can be adapted into Markdown skills.
+
+### LangChain / LangGraph tools
+
+Headlamp's `ToolBase` class and `ToolManager` are built on LangChain's tool abstraction. Understanding these docs is essential for implementing tool skills (Phase 5) and for any contributor extending the AI assistant.
+
+- **[LangChain.js: Custom tools](https://js.langchain.com/docs/how_to/custom_tools/)** — How to create `DynamicTool` and `DynamicStructuredTool` with Zod schemas. Important because Headlamp's `ToolBase.createLangChainTool()` follows this exact pattern — contributors need to understand the underlying abstraction.
+- **[LangChain.js: Tool calling](https://js.langchain.com/docs/concepts/tool_calling/)** — How LLMs select and invoke tools: binding tools to models, structured output, tool call messages. Important for understanding how the AI assistant decides which tools to use — the mechanism that MCP and tool skills plug into.
+- **[LangGraph.js: ToolNode](https://langchain-ai.github.io/langgraphjs/reference/classes/langgraph.prebuilt.ToolNode.html)** — The prebuilt node for executing tool calls in a LangGraph agent, with parallel execution and error handling. Important because Headlamp's `ToolOrchestrator` performs similar grouping of read-only vs write tools.
+- **[@langchain/mcp-adapters](https://www.npmjs.com/package/@langchain/mcp-adapters)** — The adapter that bridges MCP servers to LangChain tools. Important because this is the exact package Headlamp uses — MCP skills ultimately flow through this adapter.
+
+### Awesome lists and skill discovery
+
+These curated lists show the breadth of the skills ecosystem and are useful for finding specific skills to support or adapt.
+
+- **[VoltAgent/awesome-agent-skills](https://github.com/VoltAgent/awesome-agent-skills)** — The largest curated list of agent skills (1000+), organized by provider (Anthropic, Microsoft, Vercel, Stripe, Cloudflare, etc.). Important for discovering existing skills that Headlamp users might want to load — and for understanding what the community considers a "skill" vs a "tool" vs a "plugin".
+- **[libukai/awesome-agent-skills](https://github.com/libukai/awesome-agent-skills)** — Categorized skill collections with analysis of the Agent Skills standard itself. The [DeepWiki analysis](https://deepwiki.com/libukai/awesome-agent-skills/1.1-the-agent-skills-standard) is particularly useful for understanding adoption patterns and cross-tool compatibility.
 
 ### Books
 
-| Book | Author | Publisher | Why it's relevant |
-|------|--------|-----------|------------------|
-| *AI Agents in Action* (2025) | Micheal Lanham | Manning | Comprehensive guide to building production agents — covers tool design, multi-agent collaboration, memory systems. Ch. 5–7 on tool architecture. |
-| *AI Agents and Applications: With LangChain, LangGraph, and MCP* (2026) | Roberto Infante | Manning | Deep dive into LangChain/LangGraph agent patterns, tool orchestration, and MCP integration. Directly applicable to Headlamp's stack. |
-| *Learning LangChain* (2025) | Mayo Oshin, Nuno Campos | O'Reilly | Step-by-step LangChain mastery — RAG, tool integrations, deployment. Written by early LangChain contributors. |
+- ***AI Agents and Applications: With LangChain, LangGraph, and MCP*** (2026) — Roberto Infante, Manning. The most directly relevant book: covers LangChain/LangGraph tool orchestration and MCP integration — the same stack Headlamp uses. Chapters on tool design patterns, agent evaluation, and production deployment are directly applicable.
+- ***AI Agents in Action*** (2025) — Micheal Lanham, Manning. Broader coverage of agent architecture: Ch. 5 "Empowering agents with actions" covers tool design, Ch. 8 covers memory systems, Ch. 10–11 cover evaluation and feedback loops. Useful for understanding the full agent lifecycle that skills plug into.
+- ***Learning LangChain*** (2025) — Mayo Oshin & Nuno Campos, O'Reilly. Written by early LangChain contributors. Covers tool integrations and RAG end-to-end. Useful as a reference for contributors who need to understand the LangChain internals that Headlamp builds on.
 
-### Conference talks
+### Conference talks and videos
 
-| Talk | Event | Why it's relevant |
-|------|-------|------------------|
-| [Beyond ChatOps: Agentic AI in Kubernetes — What Works, What Breaks, and What's Next](https://kccncna2025.sched.com/event/27Ff5/) | KubeCon NA 2025 | Panel with Microsoft, Solo.io, Robusta — covers real-world agent failures, evaluation strategies, and design patterns for K8s AI tools. |
-| [Agent-Driven MCP for AI Workloads on Kubernetes](https://www.youtube.com/watch?v=KiFnN4h2zKE) | KubeCon NA 2025 | Microsoft session — agents automating K8s operations via MCP without manual YAML editing. |
-| [Supercharge Your Dev Workflows with GitHub Copilot Custom Skills](https://techcommunity.microsoft.com/blog/azuredevcommunityblog/supercharge-your-dev-workflows-with-github-copilot-custom-skills/4510012) | Microsoft Tech Community | Deep dive into `SKILL.md` format, skill authoring, and distribution via Git repos. |
+- **[Beyond ChatOps: Agentic AI in Kubernetes — What Works, What Breaks, and What's Next](https://kccncna2025.sched.com/event/27Ff5/)** — KubeCon NA 2025 panel with Microsoft, Solo.io, and Robusta. Important because it covers real-world failures of K8s AI agents (hallucinations, tool misuse, evaluation gaps) — lessons that directly inform how skills should be designed and what guardrails are needed.
+- **[Agent-Driven MCP for AI Workloads on Kubernetes](https://www.youtube.com/watch?v=KiFnN4h2zKE)** — KubeCon NA 2025, Microsoft. Live demo of agents automating K8s operations via MCP. Shows what MCP skills should enable in practice: GPU topology calculation, scaling, deployment — without hand-editing YAML.
+- **[Agentic DevOps: Running AI MCP Tools on Kubernetes with kagent](https://agenticdevops.fm/episodes/running-ai-mcp-tools-on-kubernetes-with-kagent)** — Bret Fisher podcast. Hands-on discussion of kagent's approach to agent skills as Kubernetes CRDs, security model, and MCP integration. Useful for comparing kagent's operator-based approach with Headlamp's plugin-based approach.
 
-### Videos
+### Blog posts
 
-| Video | Why it's relevant |
-|-------|------------------|
-| [Deploy AI Agents and MCPs to Kubernetes: Is kagent and kmcp Worth It?](https://www.youtube.com/watch?v=3jkGJvmUMYE) | Honest hands-on review of kagent/kmcp — shows agent definition via YAML, MCP server connection, and current limitations. |
-| [Agentic DevOps: Running AI MCP Tools on Kubernetes with kagent](https://agenticdevops.fm/episodes/running-ai-mcp-tools-on-kubernetes-with-kagent) — Bret Fisher | Podcast with live demos — MCP standard, security considerations, multi-agent collaboration in K8s. |
-| [AI Agents Operating AKS: Real Kubernetes Demo with MCP](https://www.youtube.com/watch?v=omRANsNreEI) | Live demo of an AI agent managing AKS via MCP — full-stack demo useful for understanding what skills should enable. |
-| [Build Powerful AI Agents with MCP — Free Beginner Masterclass](https://www.youtube.com/watch?v=4kOGb-5C73U) | MCP fundamentals, building production agents, orchestrating multiple agents — good starting point for contributors new to MCP. |
-
-### Blog posts and articles
-
-| Article | Why it's relevant |
-|---------|------------------|
-| [Agent Skills, Plugins and Marketplace: The Complete Guide](https://chris-ayers.com/posts/agent-skills-plugins-marketplace/) | Comprehensive overview of the skills + plugins + marketplace ecosystem — covers GitHub Copilot skills, MCP servers, hooks, and custom agents. |
-| [The Agent Skills Standard](https://deepwiki.com/libukai/awesome-agent-skills/1.1-the-agent-skills-standard) | Deep technical dive into the `agentskills.io` standard — adoption map, format details, cross-tool compatibility analysis. |
-| [Kubernetes MCP Server: AI-Powered Cluster Management](https://developers.redhat.com/articles/2025/09/25/kubernetes-mcp-server-ai-powered-cluster-management) — Red Hat | Red Hat's guide to the K8s MCP server — architecture, security, and production deployment patterns. |
-| [AI-Assisted GitOps with Flux Operator MCP Server](https://fluxcd.io/blog/2025/05/ai-assisted-gitops/) — Flux project | Official Flux blog post on MCP-powered GitOps — troubleshooting, config comparison, dependency visualization. |
+- **[Agent Skills, Plugins and Marketplace: The Complete Guide](https://chris-ayers.com/posts/agent-skills-plugins-marketplace/)** — Best single-article overview of the entire skills ecosystem: `SKILL.md` format, MCP servers, custom agents, hooks, marketplace. Important for understanding how all the pieces fit together and where Headlamp's skills system sits in the landscape.
+- **[AI-Assisted GitOps with Flux Operator MCP Server](https://fluxcd.io/blog/2025/05/ai-assisted-gitops/)** — Official Flux blog post. Shows how MCP enables troubleshooting, config comparison, and dependency visualization in a GitOps workflow. Important because Flux is a CNCF project — their approach validates the MCP skills pattern.
+- **[Kubernetes MCP Server: AI-Powered Cluster Management](https://developers.redhat.com/articles/2025/09/25/kubernetes-mcp-server-ai-powered-cluster-management)** — Red Hat's guide. Covers architecture, security, and production deployment patterns for K8s MCP servers. Important for understanding how enterprise users expect MCP skills to be deployed and secured.
 
 ---
 
