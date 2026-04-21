@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // COOP Popup Consent — Proof of Concept
-// No third-party dependencies. Run: node server.js
+// No third-party dependencies. Run: node server.cjs
 // Then open http://localhost:4466 in your browser.
 
 const http = require('http');
@@ -417,7 +417,7 @@ server.listen(PORT, () => {
   console.log(`
 ╔══════════════════════════════════════════════════════════════╗
 ║  COOP Popup Consent — Proof of Concept                      ║
-║  Open http://localhost:${PORT} in your browser                ║
+║  Open http://localhost:${PORT} in your browser              ║
 ║                                                              ║
 ║  Click "Open consent popup" for the legitimate flow.         ║
 ║  Click attack buttons to verify each vector is blocked.      ║
