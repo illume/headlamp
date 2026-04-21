@@ -370,6 +370,104 @@ ai:
 
 ---
 
+## Publishing strategy
+
+### Where should skills be published?
+
+Skills follow the Git-native distribution model the industry has converged on.
+The table below shows where each category of skill should live:
+
+| Skill | Repo | Maintained by | Rationale |
+|-------|------|---------------|-----------|
+| `headlamp-navigation` | `headlamp-k8s/headlamp` (in-tree, `ai/skills/`) | Headlamp maintainers | Tightly coupled to Headlamp's sidebar and routing — changes whenever the UI changes. Must stay in sync. |
+| `kubernetes-troubleshooting` | `headlamp-k8s/skills` (dedicated skills repo) | Headlamp + community | General K8s knowledge — not specific to Headlamp's code. A separate repo lets the community contribute troubleshooting runbooks without touching the main codebase. |
+| `kubernetes-security` | `headlamp-k8s/skills` | Headlamp + community | Same rationale — security guidance evolves independently and benefits from community review. |
+| Cloud provider skills (AKS, EKS, GKE) | Upstream repos (`microsoft/azure-skills`, etc.) or `headlamp-k8s/skills` | Cloud provider teams or community | Prefer upstream when available (Azure Skills already exists). Create in `headlamp-k8s/skills` when no upstream exists yet. |
+| Enterprise/internal skills | Private Git repo | Enterprise platform team | Internal runbooks, compliance checklists, custom tooling. Never published publicly. |
+
+### Do we need to create these ourselves?
+
+**Yes for the first three — they are the bootstrap set.** Nobody else will create
+Headlamp-specific skills. The community can improve them over time, but the
+initial content must come from the Headlamp team:
+
+1. **`headlamp-navigation`** — only Headlamp maintainers know the exact
+   sidebar paths, URL routes, and component names. This skill has to ship
+   in-tree (co-located with the code it describes). It should be updated
+   alongside UI changes.
+
+2. **`kubernetes-troubleshooting`** — generic Kubernetes knowledge is
+   well-documented (K8s docs, Holmes, K8sGPT). We can adapt patterns from
+   [Holmes runbooks](https://github.com/robusta-dev/holmesgpt) and
+   [K8sGPT analyzers](https://github.com/k8sgpt-ai/k8sgpt) into
+   Headlamp-flavored Markdown. The initial version (~50 troubleshooting
+   patterns) would take ~2 days to write. Community contributions would
+   expand it over time.
+
+3. **`kubernetes-security`** — adapt from public RBAC guides, CIS
+   benchmarks, and Pod Security Standards documentation. Initial version
+   covers RBAC review, PodSecurityPolicy/PSA, network policies, and
+   secret management. ~1 day to write the initial content.
+
+For cloud-specific skills, we can **reuse upstream repos** where they exist:
+- **Azure:** [microsoft/azure-skills](https://github.com/microsoft/azure-skills)
+  already ships AKS, networking, and storage skills in `SKILL.md` format.
+  Headlamp just needs to point at this repo as a skill source.
+- **Flux/GitOps:** [fluxcd/agent-skills](https://github.com/fluxcd/agent-skills)
+  covers GitOps workflows, manifest generation, and cluster debugging.
+- **EKS/GKE:** No upstream repos exist yet. If there is demand, we create
+  them in `headlamp-k8s/skills` and invite cloud provider teams to
+  contribute.
+
+### Recommended repo structure for `headlamp-k8s/skills`
+
+```
+headlamp-k8s/skills/
+├── README.md                        # How to use, contribute, and install
+├── CONTRIBUTING.md                  # SKILL.md format guide, review checklist
+├── skills/
+│   ├── kubernetes-troubleshooting/
+│   │   └── SKILL.md                 # CrashLoopBackOff, OOMKilled, etc.
+│   ├── kubernetes-security/
+│   │   └── SKILL.md                 # RBAC, PSA, network policies
+│   ├── kubernetes-networking/
+│   │   └── SKILL.md                 # Service types, DNS, ingress debugging
+│   └── kubernetes-storage/
+│       └── SKILL.md                 # PV/PVC troubleshooting, CSI drivers
+└── .github/
+    └── CODEOWNERS                   # Review requirements per skill
+```
+
+Users install with:
+```bash
+# In Headlamp settings UI:
+# Add skill source → https://github.com/headlamp-k8s/skills → main
+
+# Or in Helm values:
+ai:
+  skills:
+    sources:
+      - url: https://github.com/headlamp-k8s/skills
+        ref: main
+```
+
+### Publishing to the agentskills.io ecosystem
+
+The `SKILL.md` format is compatible with the
+[agentskills.io standard](https://agentskills.io), which means Headlamp
+skills are automatically discoverable by other tools (GitHub Copilot,
+Claude, Cursor, Windsurf). Publishing to `headlamp-k8s/skills` with
+proper `SKILL.md` front-matter makes them available cross-platform.
+
+To maximize reach:
+- Use the `SKILL.md` file name (not `skill.md` or `README.md`).
+- Include `tags` in front-matter for discoverability.
+- Add `tool: headlamp` in front-matter so tools can filter by platform.
+- Submit to the [awesome-agent-skills](https://github.com/punkpeye/awesome-agent-skills)
+  list once the initial skills are stable.
+
+---
+
 ## STRIDE security analysis
 
 ### Threat model scope
