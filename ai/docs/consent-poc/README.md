@@ -57,8 +57,30 @@ For older browsers without `Sec-Fetch-*` headers, the server allows the request
 (headers are absent), but COOP + nonce still provide protection. The consent page
 would be visible to `fetch()` but the nonce can't be replayed after use.
 
+## E2E tests (Playwright)
+
+The attack table above is verified by 19 Playwright tests that prove the
+security model works end-to-end — 13 HTTP-layer tests (Sec-Fetch filter, nonce
+validation, nonce replay, Service Worker blocking, 404s) and 6 browser-flow
+tests (popup approval happy path, COOP opener severing, and the in-page attack
+buttons).
+
+```bash
+cd ai/docs/consent-poc
+npm install
+npx playwright install chromium
+npm test
+```
+
+The Playwright config auto-starts `server.cjs` as its `webServer`, so you don't
+have to run the server separately. `@playwright/test` is the only dev
+dependency; the PoC server itself remains dependency-free.
+
 ## Files
 
 - `server.cjs` — Node.js HTTP server (no dependencies). Implements all endpoints,
   security checks, and serves HTML inline. Uses `.cjs` extension because the parent
   `ai/package.json` has `"type": "module"`.
+- `playwright.config.ts` — Playwright config; auto-starts `server.cjs` on port 4466.
+- `tests/consent-poc.spec.ts` — 19 e2e tests covering the attack table above.
+- `package.json` — only `@playwright/test` as a dev dependency.
