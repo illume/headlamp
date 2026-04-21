@@ -6,7 +6,7 @@
   "scripts": {
     "start": "node server.cjs",
     "test": "playwright test",
-    "test:install": "playwright install chromium"
+    "test:install": "playwright install chromium firefox webkit"
   },
   "devDependencies": {
     "@playwright/test": "^1.42.1"

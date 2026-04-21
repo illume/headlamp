@@ -59,28 +59,81 @@ would be visible to `fetch()` but the nonce can't be replayed after use.
 
 ## E2E tests (Playwright)
 
-The attack table above is verified by 19 Playwright tests that prove the
-security model works end-to-end — 13 HTTP-layer tests (Sec-Fetch filter, nonce
-validation, nonce replay, Service Worker blocking, 404s) and 6 browser-flow
-tests (popup approval happy path, COOP opener severing, and the in-page attack
-buttons).
+The attack table above is verified by a comprehensive Playwright suite that
+runs across **Chromium, Firefox, and WebKit** — 53 tests per browser
+(**159 total**).
 
 ```bash
 cd ai/docs/consent-poc
 npm install
-npx playwright install chromium
+npm run test:install   # downloads chromium + firefox + webkit
 npm test
 ```
 
-The Playwright config auto-starts `server.cjs` as its `webServer`, so you don't
-have to run the server separately. `@playwright/test` is the only dev
-dependency; the PoC server itself remains dependency-free.
+The Playwright config auto-starts **two** servers as `webServer`:
+
+- `server.cjs` on port `4466` — the protected server under test.
+- `vulnerable-server.cjs` on port `4467` — a deliberately-vulnerable twin with
+  the three server-side protections (Sec-Fetch, COOP, Service-Worker block)
+  removed.
+
+The twin is used as a **negative control**: every protection test is paired
+with the same attack against the twin, which must succeed there. This proves
+the positive tests aren't tautological false positives — they would genuinely
+catch a regression that removed the protection.
+
+### Test suites
+
+- `tests/consent-poc.spec.ts` — 19 tests covering the attack table above
+  (HTTP-level Sec-Fetch filtering, COOP header, nonce validation, nonce
+  replay, Service Worker blocking) and browser-level attack buttons.
+- `tests/consent-poc-adversarial.spec.ts` — 34 additional tests that attack
+  from different angles:
+  - **Negative-control twin**: twin serves `/consent` without COOP, leaks
+    nonce to `fetch()`, serves `/sw.js` despite `Service-Worker: script`.
+  - **Raw-socket header verification**: Node `net.Socket` sends hand-crafted
+    HTTP/1.1 and asserts on literal response bytes
+    (`Cross-Origin-Opener-Policy: same-origin` present on main, absent on twin;
+    403 body contains no 32-hex string).
+  - **`Sec-Fetch-Dest` fuzz**: 17 destinations × (main blocked, twin leaks).
+  - **`Service-Worker` header block**: across 5 paths + lowercase variant +
+    without-header control.
+  - **Inside the popup**: `window.opener === null` (cross-browser-portable
+    COOP assertion).
+  - **`postMessage` isolation**: opener → popup `postMessage` does not arrive.
+  - **Nonce entropy**: 20 consents yield 20 distinct 32-hex nonces.
+  - **Browser negative control**: the twin's main page actually leaks the
+    nonce via `fetch()` from a real page context.
+
+### Browser compatibility notes
+
+All 159 tests pass on Chromium, Firefox, and WebKit. A few mechanisms differ
+in *how* they block — but in every case they block, and the tests are written
+to accept the different legitimate outcomes:
+
+| Aspect | Chromium | Firefox | WebKit |
+|--------|----------|---------|--------|
+| `popup.document.title` on COOP-severed popup | throws `SecurityError` | returns `''` (WindowProxy) | returns `''` (WindowProxy) |
+| `popup.location.href` on COOP-severed popup | throws `SecurityError` | returns `''` | returns `'about:blank'` |
+| `window.opener` inside the popup | `null` | `null` | `null` |
+| `postMessage` from opener → COOP-severed popup | not delivered | not delivered | not delivered |
+
+In all three browsers the attacker cannot read the real title
+("Approve Command") or the real URL (which contains the `consentId`), so the
+security property holds. `window.opener === null` inside the popup is the
+cross-browser-portable primitive and is asserted by
+`consent-poc-adversarial.spec.ts`.
 
 ## Files
 
 - `server.cjs` — Node.js HTTP server (no dependencies). Implements all endpoints,
   security checks, and serves HTML inline. Uses `.cjs` extension because the parent
   `ai/package.json` has `"type": "module"`.
-- `playwright.config.ts` — Playwright config; auto-starts `server.cjs` on port 4466.
+- `vulnerable-server.cjs` — deliberately-vulnerable twin (port 4467) used as a
+  negative control by the adversarial tests.
+- `playwright.config.ts` — Playwright config; auto-starts both servers and
+  runs the suite on chromium, firefox, and webkit.
 - `tests/consent-poc.spec.ts` — 19 e2e tests covering the attack table above.
+- `tests/consent-poc-adversarial.spec.ts` — 34 adversarial / negative-control
+  tests.
 - `package.json` — only `@playwright/test` as a dev dependency.

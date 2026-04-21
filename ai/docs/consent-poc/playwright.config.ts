@@ -17,11 +17,13 @@
 import { defineConfig, devices } from '@playwright/test';
 
 const PORT = 4466;
+const VULN_PORT = 4467;
 const baseURL = `http://localhost:${PORT}`;
+const vulnURL = `http://localhost:${VULN_PORT}`;
 
 export default defineConfig({
   testDir: './tests',
-  timeout: 15 * 1000,
+  timeout: 30 * 1000,
   expect: { timeout: 5000 },
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
@@ -34,15 +36,25 @@ export default defineConfig({
     trace: 'on-first-retry',
   },
   projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'firefox', use: { ...devices['Desktop Firefox'] } },
+    { name: 'webkit', use: { ...devices['Desktop Safari'] } },
+  ],
+  // Start BOTH the protected server and the deliberately-vulnerable twin.
+  // The adversarial tests cross-check every protection against the twin
+  // to prove the tests would actually fail if the protection disappeared.
+  webServer: [
     {
-      name: 'chromium',
-      use: { ...devices['Desktop Chrome'] },
+      command: 'node server.cjs',
+      url: baseURL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 10 * 1000,
+    },
+    {
+      command: 'node vulnerable-server.cjs',
+      url: vulnURL,
+      reuseExistingServer: !process.env.CI,
+      timeout: 10 * 1000,
     },
   ],
-  webServer: {
-    command: 'node server.cjs',
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 10 * 1000,
-  },
 });

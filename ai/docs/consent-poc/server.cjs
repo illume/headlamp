@@ -243,19 +243,32 @@ function mainPage() {
       }
       // Wait for popup to load
       await new Promise(r => setTimeout(r, 1500));
-      try {
-        // Try to access the popup's document
-        const doc = popupRef.document;
-        const title = doc.title;
-        log('❌ VULNERABILITY: read popup title: ' + title, false);
-      } catch (e) {
-        log('✅ popup DOM access blocked (COOP): ' + e.message, true);
+
+      // Semantic check: the attacker has leaked real data only if they can
+      // observe the real title ("Approve Command") or the real URL that
+      // contains the consentId. Empty strings / "about:blank" / throws all
+      // mean the browser kept the opener severed.
+      let title = null, locHref = null, titleErr = null, locErr = null;
+      try { title = popupRef.document.title; } catch (e) { titleErr = e.message; }
+      try { locHref = popupRef.location.href; } catch (e) { locErr = e.message; }
+
+      const realTitleLeaked = title && title.includes('Approve Command');
+      const realUrlLeaked = locHref && /\\/consent\\/[a-f0-9]/.test(locHref);
+
+      if (realTitleLeaked) {
+        log('❌ VULNERABILITY: read real popup title: ' + title, false);
+      } else if (titleErr) {
+        log('✅ popup title access blocked (throw): ' + titleErr, true);
+      } else {
+        log('✅ popup title access yielded no real data: "' + (title || '') + '"', true);
       }
-      try {
-        const loc = popupRef.location.href;
-        log('❌ VULNERABILITY: read popup location: ' + loc, false);
-      } catch (e) {
-        log('✅ popup location access blocked (COOP): ' + e.message, true);
+
+      if (realUrlLeaked) {
+        log('❌ VULNERABILITY: read real popup location: ' + locHref, false);
+      } else if (locErr) {
+        log('✅ popup location access blocked (throw): ' + locErr, true);
+      } else {
+        log('✅ popup location access yielded no real data: "' + (locHref || '') + '"', true);
       }
     }
 

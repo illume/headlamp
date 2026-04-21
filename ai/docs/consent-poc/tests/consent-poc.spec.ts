@@ -192,19 +192,28 @@ test.describe('consent-poc — browser flow', () => {
     await expect(page.locator('#log')).not.toContainText('VULNERABILITY');
   });
 
-  test('COOP severs opener: main page cannot read popup DOM or location', async ({ page }) => {
+  test('COOP severs opener: main page cannot read popup DOM or location', async ({ page, browserName }) => {
     await page.goto('/');
     await page.getByRole('button', { name: /Attack 5:/i }).click();
 
-    // The attack script tries popup.document and popup.location.href.
-    // With COOP: same-origin on the popup and no COOP on the opener,
-    // Chromium forces a browsing-context-group swap and both accesses
-    // throw SecurityError.
+    // Cross-browser semantics differ for a COOP-severed opener:
+    //   - Chromium: accessing popup.document / popup.location throws SecurityError.
+    //   - Firefox:  returns a cross-origin WindowProxy; title === '', location.href === ''.
+    //   - WebKit:   returns empty title and location.href === 'about:blank'.
+    // In every case the browser prevents the real title ("Approve Command") and
+    // the real URL (which contains the consentId) from leaking. The PoC's attack
+    // code distinguishes "throw", "no real data", and "real data leaked"; we only
+    // accept the first two and forbid anything resembling a real leak.
     await expect(page.locator('#log')).toContainText(
-      /popup DOM access blocked|popup location access blocked/,
+      /popup title access (blocked|yielded no real data)/,
       { timeout: 5000 }
     );
-    await expect(page.locator('#log')).not.toContainText('VULNERABILITY');
+    await expect(page.locator('#log')).toContainText(
+      /popup location access (blocked|yielded no real data)/,
+      { timeout: 5000 }
+    );
+    const logText = await page.locator('#log').innerText();
+    expect(logText, `browser=${browserName}`).not.toContain('VULNERABILITY');
   });
 
   test('attack 1 (fetch) blocked from the page', async ({ page }) => {
