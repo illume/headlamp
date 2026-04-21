@@ -1,4 +1,4 @@
-# Skills System for Headlamp AI Assistant
+# Skills System Proposal for Headlamp AI Assistant
 
 ## Recommendation
 
@@ -619,7 +619,7 @@ These curated lists show the breadth of the skills ecosystem and are useful for 
 ### Books
 
 - ***AI Agents and Applications: With LangChain, LangGraph, and MCP*** (2026) — Roberto Infante, Manning. The most directly relevant book: covers LangChain/LangGraph tool orchestration and MCP integration — the same stack Headlamp uses. Chapters on tool design patterns, agent evaluation, and production deployment are directly applicable.
-- ***AI Agents in Action*** (2025) — Micheal Lanham, Manning. Broader coverage of agent architecture: Ch. 5 "Empowering agents with actions" covers tool design, Ch. 8 covers memory systems, Ch. 10–11 cover evaluation and feedback loops. Useful for understanding the full agent lifecycle that skills plug into.
+- ***AI Agents in Action*** (2025) — Michael Lanham, Manning. Broader coverage of agent architecture: Ch. 5 "Empowering agents with actions" covers tool design, Ch. 8 covers memory systems, Ch. 10–11 cover evaluation and feedback loops. Useful for understanding the full agent lifecycle that skills plug into.
 - ***Learning LangChain*** (2025) — Mayo Oshin & Nuno Campos, O'Reilly. Written by early LangChain contributors. Covers tool integrations and RAG end-to-end. Useful as a reference for contributors who need to understand the LangChain internals that Headlamp builds on.
 
 ### Conference talks and videos
