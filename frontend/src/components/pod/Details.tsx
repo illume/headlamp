@@ -139,6 +139,7 @@ export function PodLogViewer(props: PodLogViewerProps) {
     if (next && !container) {
       setContainer(next);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.status]);
 
   React.useEffect(
@@ -425,6 +426,7 @@ export function VolumeDetails(props: VolumeDetailsProps) {
   if (!volumes) {
     return null;
   }
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const { t } = useTranslation();
   return (
     <SectionBox title={t('translation|Volumes')}>

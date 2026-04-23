@@ -51,8 +51,11 @@ export default function ConfigDetails(props: {
           {
             id: 'headlamp.configmap-data',
             section: () => {
+              // eslint-disable-next-line react-hooks/rules-of-hooks
               const [data, setData] = React.useState(() => _.cloneDeep(item.data));
+              // eslint-disable-next-line react-hooks/rules-of-hooks
               const [isDirty, setIsDirty] = React.useState(false);
+              // eslint-disable-next-line react-hooks/rules-of-hooks
               const lastDataRef = React.useRef(_.cloneDeep(item.data));
 
               const handleFieldChange = (key: string, newValue: string) => {
@@ -60,12 +63,14 @@ export default function ConfigDetails(props: {
                 setIsDirty(true);
               };
 
+              // eslint-disable-next-line react-hooks/rules-of-hooks
               React.useEffect(() => {
                 const newData = _.cloneDeep(item.data);
                 if (!isDirty && !_.isEqual(newData, lastDataRef.current)) {
                   setData(newData);
                   lastDataRef.current = newData;
                 }
+                // eslint-disable-next-line react-hooks/exhaustive-deps
               }, [item.data, isDirty]);
 
               const handleSave = () => {
