@@ -122,7 +122,7 @@
     "tsc": "tsc",
     "make-version": "node ./make-env.js",
     "star": "cross-env REACT_APP_HEADLAMP_BACKEND_TOKEN=headlamp rsbuild dev",
-    "build:star": "rsbuild build"
+    "build:rsbuild": "rsbuild build"
   },
   "browserslist": {
     "production": [

@@ -244,7 +244,7 @@ frontend-build:
 
 .PHONY: frontend-build-rsbuild
 frontend-build-rsbuild:
-	cd frontend && npm run build:star
+	cd frontend && npm run build:rsbuild
 
 .PHONY: frontend-build-storybook
 frontend-build-storybook:
