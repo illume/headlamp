@@ -242,6 +242,10 @@ frontend: frontend-install
 frontend-build:
 	cd frontend && npm run build
 
+.PHONY: frontend-build-rsbuild
+frontend-build-rsbuild:
+	cd frontend && npm run build:star
+
 .PHONY: frontend-build-storybook
 frontend-build-storybook:
 	cd frontend && npm run build-storybook
