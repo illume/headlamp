@@ -17,16 +17,10 @@
 const assert: typeof import('node:assert/strict') = require('node:assert/strict');
 const test: typeof import('node:test') = require('node:test');
 
-const {
-  MERGE_MAIN_MESSAGE,
-  COMMIT_GUIDELINES_MESSAGE,
-  bufferFromResponseData,
-  hasCommitGuidelineProblems,
-  hasCommitsAfterLastCopilotCommit,
-  hasFailedSnapshots,
-  isMergeMainCommit,
-  unzipLogArchive,
-} = require('./pr-review-helper.ts');
+const { hasCommitsAfterLastCopilotCommit } = require('./copilot-review.ts');
+const { COMMIT_GUIDELINES_MESSAGE, hasCommitGuidelineProblems } = require('./commit-guidelines.ts');
+const { MERGE_MAIN_MESSAGE, isMergeMainCommit } = require('./merge-main.ts');
+const { bufferFromResponseData, hasFailedSnapshots, unzipLogArchive } = require('./snapshots.ts');
 
 type TestCommit = {
   author: { login: string };

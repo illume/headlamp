@@ -11,5 +11,6 @@
     "target": "ES2023",
     "types": ["node"]
   },
-  "include": ["pr-review-helper.ts"]
+  "include": ["*.ts"],
+  "exclude": ["*.test.ts"]
 }

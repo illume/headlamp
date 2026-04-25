@@ -2,6 +2,16 @@
 
 The PR Review Helper is a GitHub Actions helper for lightweight pull request follow-up. It looks at PR commits, comments, reviews, and selected frontend workflow failures, then posts at most one marker-based comment or review for each condition.
 
+Each review behavior lives in its own TypeScript file:
+
+- `copilot-review.ts` requests a new Copilot review after contributor commits.
+- `copilot-comments.ts` requests changes when Copilot review comments are still latest.
+- `merge-main.ts` comments on merge-main commits.
+- `snapshots.ts` comments on failed frontend snapshots.
+- `commit-guidelines.ts` comments on commit-message guideline problems.
+
+`pr-review-helper.ts` is only the workflow entry point and orchestration layer.
+
 ## Request Copilot review after contributor commits
 
 When the PR has a Copilot-authored commit and one or more newer commits after it, the helper requests `copilot-pull-request-reviewer` again. This catches the case where Copilot already pushed or suggested changes, then the contributor added more commits that should be reviewed.
