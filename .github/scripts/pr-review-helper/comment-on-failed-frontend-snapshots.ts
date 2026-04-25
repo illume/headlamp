@@ -86,6 +86,7 @@ function unzipLogArchive(zipBytes: Buffer): string {
     return childProcess.execFileSync("unzip", ["-p", zipPath], {
       encoding: "utf8",
       maxBuffer: 50 * 1024 * 1024,
+      // Invalid archives are reported through the caught exception below.
       stdio: ["ignore", "pipe", "ignore"],
     });
   } finally {
