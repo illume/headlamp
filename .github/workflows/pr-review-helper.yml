@@ -26,15 +26,32 @@ concurrency:
 jobs:
   pr-review-helper:
     if: >-
-      github.event_name != 'workflow_run' ||
+      github.actor != 'github-actions[bot]' &&
+      (github.event_name != 'workflow_run' ||
       (github.event.workflow_run.event == 'pull_request' &&
-      github.event.workflow_run.conclusion == 'failure')
-    runs-on: ubuntu-22.04
+      github.event.workflow_run.conclusion == 'failure'))
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+        with:
+          persist-credentials: false
+          fetch-depth: 1
+
+      - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        with:
+          node-version: 24.x
+
+      - name: Install PR review helper dependencies
+        run: npm ci --ignore-scripts
+
+      - name: Type check PR review helper
+        run: npx tsc --project .github/scripts/pr-review-helper/tsconfig.json
+
+      - name: Test PR review helper
+        run: node --test .github/scripts/pr-review-helper/pr-review-helper.test.ts
 
       - uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           script: |
-            const helper = require('./.github/scripts/pr-review-helper.js');
+            const helper = require('./.github/scripts/pr-review-helper/pr-review-helper.ts');
             await helper.run({ github, context, core });

@@ -14,17 +14,37 @@
  * limitations under the License.
  */
 
-const assert = require('node:assert/strict');
-const test = require('node:test');
+const assert: typeof import('node:assert/strict') = require('node:assert/strict');
+const test: typeof import('node:test') = require('node:test');
 
 const {
+  COMMIT_GUIDELINES_MESSAGE,
+  bufferFromResponseData,
   hasCommitGuidelineProblems,
   hasCommitsAfterLastCopilotCommit,
   hasFailedSnapshots,
   isMergeMainCommit,
-} = require('./pr-review-helper');
+  unzipLogArchive,
+} = require('./pr-review-helper.ts');
 
-function commit(message, authorLogin = 'contributor') {
+type TestCommit = {
+  author: { login: string };
+  committer: { login: string };
+  commit: {
+    message: string;
+    author: { name: string; email: string };
+    committer: { name: string; email: string };
+  };
+};
+
+/**
+ * Builds a minimal pull request commit fixture.
+ *
+ * @param message - Commit message to include in the fixture.
+ * @param authorLogin - GitHub login for the commit author and committer.
+ * @returns A commit fixture shaped like the GitHub API response.
+ */
+function commit(message: string, authorLogin = 'contributor'): TestCommit {
   return {
     author: { login: authorLogin },
     committer: { login: authorLogin },
@@ -65,8 +85,22 @@ test('detects commit guideline problems', () => {
   assert.equal(hasCommitGuidelineProblems([commit('frontend: Add PR helper\n\nFixes #123')]), true);
 });
 
+test('links the commit guidelines message to website and GitHub docs', () => {
+  assert.match(COMMIT_GUIDELINES_MESSAGE, /https:\/\/headlamp\.dev\/docs\/latest\/development\/contributing\/#commit-guidelines/);
+  assert.match(COMMIT_GUIDELINES_MESSAGE, /https:\/\/github\.com\/headlamp-k8s\/headlamp\/blob\/main\/docs\/contributing\.md#commit-guidelines/);
+});
+
 test('detects failed snapshot logs', () => {
   assert.equal(hasFailedSnapshots('Snapshots:   2 failed, 10 passed'), true);
   assert.equal(hasFailedSnapshots('Snapshot Summary\n › 1 snapshot obsolete'), true);
   assert.equal(hasFailedSnapshots('Tests:       12 passed'), false);
+});
+
+test('extracts GitHub job log zip archives before scanning', () => {
+  const zipBytes = Buffer.from(
+    'UEsDBBQAAAAIAFEsmVzc7efNIgAAACAAAAAKAAAAMF90ZXN0LnR4dAvOSywozsgvKbZSUFAwVEhLzMxJTdFRMFIoSCwuTk3hAgBQSwECFAMUAAAACABRLJlc3O3nzSIAAAAgAAAACgAAAAAAAAAAAAAAgAEAAAAAMF90ZXN0LnR4dFBLBQYAAAAAAQABADgAAABKAAAAAAA=',
+    'base64'
+  );
+
+  assert.equal(hasFailedSnapshots(unzipLogArchive(bufferFromResponseData(zipBytes))), true);
 });
