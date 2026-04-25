@@ -186,15 +186,13 @@ test("detects commit guideline problems", () => {
   );
 });
 
-test("links the commit guidelines message to website and GitHub docs", () => {
+test("includes commit guideline details in the guidance message", () => {
+  assert.match(COMMIT_GUIDELINES_MESSAGE, /Linux kernel style/);
   assert.match(
     COMMIT_GUIDELINES_MESSAGE,
-    /https:\/\/headlamp\.dev\/docs\/latest\/development\/contributing\/#commit-guidelines/,
+    /Use the title format `<area>: <description of changes>`/,
   );
-  assert.match(
-    COMMIT_GUIDELINES_MESSAGE,
-    /https:\/\/github\.com\/headlamp-k8s\/headlamp\/blob\/main\/docs\/contributing\.md#commit-guidelines/,
-  );
+  assert.match(COMMIT_GUIDELINES_MESSAGE, /Do not include `Fixes #NN`/);
 });
 
 test("adds collapsible details to guidance comments", () => {
@@ -379,12 +377,14 @@ test("parses local and dry-run CLI arguments", () => {
       repoName: "illume/headlamp",
       pullNumber: 110,
       dryRun: true,
+      help: false,
     },
   );
   assert.deepEqual(parseCliArgs(["illume/headlamp/110", "--dry-run"]), {
     repoName: "illume/headlamp",
     pullNumber: 110,
     dryRun: true,
+    help: false,
   });
   assert.deepEqual(
     parseCliArgs(["--pr", "https://github.com/illume/headlamp/pull/110"]),
@@ -392,8 +392,22 @@ test("parses local and dry-run CLI arguments", () => {
       repoName: "illume/headlamp",
       pullNumber: 110,
       dryRun: false,
+      help: false,
     },
   );
+  assert.deepEqual(
+    parseCliArgs(["https://github.com/illume/headlamp/pull/110", "--dry-run"]),
+    {
+      repoName: "illume/headlamp",
+      pullNumber: 110,
+      dryRun: true,
+      help: false,
+    },
+  );
+  assert.deepEqual(parseCliArgs(["--help"]), {
+    dryRun: false,
+    help: true,
+  });
   assert.deepEqual(parsePullRequestTarget("illume/headlamp/110"), {
     repoName: "illume/headlamp",
     pullNumber: 110,

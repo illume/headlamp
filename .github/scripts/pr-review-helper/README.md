@@ -52,7 +52,7 @@ The check is idempotent because the comment includes a hidden marker and the hel
 
 File: `pr-review-helper.ts`
 
-The helper is self-contained in this folder. Install its local dependencies once:
+The helper is self-contained in this folder. It uses Node's TypeScript strip-types support; the workflow runs it with Node 24. Install its local dependencies once:
 
 ```bash
 cd .github/scripts/pr-review-helper
@@ -71,9 +71,9 @@ The local command reads the token from `gh auth token`, so any non-dry-run comme
 Run the helper for a particular PR with either `OWNER/REPO/NUMBER`, a full GitHub pull request URL, or separate `--repo` and `--pull` arguments:
 
 ```bash
-node pr-review-helper.ts illume/headlamp/110
-node pr-review-helper.ts https://github.com/illume/headlamp/pull/110
-node pr-review-helper.ts --repo illume/headlamp --pull 110
+npx --no-install headlamp-pr-review-helper illume/headlamp/110
+npx --no-install headlamp-pr-review-helper https://github.com/illume/headlamp/pull/110
+npx --no-install headlamp-pr-review-helper --repo illume/headlamp --pull 110
 ```
 
 ## Dry run locally
@@ -83,8 +83,8 @@ File: `pr-review-helper.ts`
 Add `--dry-run` to print the mutating GitHub API calls the helper would make without creating comments, reviews, or review requests:
 
 ```bash
-node pr-review-helper.ts illume/headlamp/110 --dry-run
-node pr-review-helper.ts https://github.com/illume/headlamp/pull/110 --dry-run
+npx --no-install headlamp-pr-review-helper illume/headlamp/110 --dry-run
+npx --no-install headlamp-pr-review-helper https://github.com/illume/headlamp/pull/110 --dry-run
 ```
 
 Dry-run mode still reads PR data from GitHub so it can report the same decisions the real run would make.
@@ -93,7 +93,7 @@ Dry-run mode still reads PR data from GitHub so it can report the same decisions
 
 File: `package.json`
 
-From this folder, use Prettier for formatting and ESLint for linting:
+From this folder, use Prettier for formatting and ESLint for linting. The package also exposes the `headlamp-pr-review-helper` bin for `npx`:
 
 ```bash
 npm run format

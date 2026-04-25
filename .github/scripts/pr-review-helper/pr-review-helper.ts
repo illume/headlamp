@@ -1,3 +1,4 @@
+#!/usr/bin/env -S node --experimental-strip-types
 /*
  * Copyright 2026 The Kubernetes Authors
  *
@@ -25,6 +26,13 @@ import type {
 
 const childProcess: typeof import("node:child_process") = require("node:child_process");
 const processModule: typeof import("node:process") = require("node:process");
+
+const USAGE = [
+  "Usage:",
+  "  npx --no-install headlamp-pr-review-helper OWNER/REPO/NUMBER [--dry-run]",
+  "  npx --no-install headlamp-pr-review-helper https://github.com/OWNER/REPO/pull/NUMBER [--dry-run]",
+  "  npx --no-install headlamp-pr-review-helper --repo OWNER/REPO --pull NUMBER [--dry-run]",
+].join("\n");
 
 const { commentsFromReviews } = require("./github-helpers.ts");
 const {
@@ -328,9 +336,16 @@ function parseCliArgs(args: string[]): {
   repoName?: string;
   pullNumber?: number;
   dryRun: boolean;
+  help: boolean;
 } {
-  const parsed: { repoName?: string; pullNumber?: number; dryRun: boolean } = {
+  const parsed: {
+    repoName?: string;
+    pullNumber?: number;
+    dryRun: boolean;
+    help: boolean;
+  } = {
     dryRun: false,
+    help: false,
   };
 
   for (let index = 0; index < args.length; index++) {
@@ -345,7 +360,8 @@ function parseCliArgs(args: string[]): {
       const target = parsePullRequestTarget(args[++index]);
       parsed.repoName = target.repoName;
       parsed.pullNumber = target.pullNumber;
-    } else if (arg === "--help") {
+    } else if (arg === "--help" || arg === "-h") {
+      parsed.help = true;
       return parsed;
     } else if (!arg.startsWith("-") && !parsed.repoName && !parsed.pullNumber) {
       const target = parsePullRequestTarget(arg);
@@ -372,11 +388,14 @@ async function main(args: string[]): Promise<void> {
   const core: Core = actionsCore;
   const parsed = parseCliArgs(args);
 
+  if (parsed.help) {
+    console.log(USAGE);
+    return;
+  }
+
   if (parsed.repoName || parsed.pullNumber || parsed.dryRun) {
     if (!parsed.repoName || !parsed.pullNumber) {
-      throw new Error(
-        "Usage: node pr-review-helper.ts OWNER/REPO/NUMBER [--dry-run]",
-      );
+      throw new Error(USAGE);
     }
 
     const github = actionsGithub.getOctokit(tokenFromGh()) as GitHubClient;
@@ -418,4 +437,5 @@ module.exports = {
   pullNumberForEvent,
   run,
   tokenFromGh,
+  USAGE,
 };

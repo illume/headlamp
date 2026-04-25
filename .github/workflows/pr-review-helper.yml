@@ -65,4 +65,4 @@ jobs:
         working-directory: .github/scripts/pr-review-helper
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node pr-review-helper.ts
+        run: npx --no-install headlamp-pr-review-helper
