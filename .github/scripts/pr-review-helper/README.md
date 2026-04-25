@@ -71,9 +71,9 @@ The local command reads the token from `gh auth token`, so any non-dry-run comme
 Run the helper for a particular PR with either `OWNER/REPO/NUMBER`, a full GitHub pull request URL, or separate `--repo` and `--pull` arguments:
 
 ```bash
-npx --no-install headlamp-pr-review-helper illume/headlamp/110
-npx --no-install headlamp-pr-review-helper https://github.com/illume/headlamp/pull/110
-npx --no-install headlamp-pr-review-helper --repo illume/headlamp --pull 110
+npx ./.github/scripts/pr-review-helper illume/headlamp/110
+npx ./.github/scripts/pr-review-helper https://github.com/illume/headlamp/pull/110
+npx ./.github/scripts/pr-review-helper --repo illume/headlamp --pull 110
 ```
 
 ## Dry run locally
@@ -83,8 +83,8 @@ File: `pr-review-helper.ts`
 Add `--dry-run` to print the mutating GitHub API calls the helper would make without creating comments, reviews, or review requests:
 
 ```bash
-npx --no-install headlamp-pr-review-helper illume/headlamp/110 --dry-run
-npx --no-install headlamp-pr-review-helper https://github.com/illume/headlamp/pull/110 --dry-run
+npx ./.github/scripts/pr-review-helper illume/headlamp/110 --dry-run
+npx ./.github/scripts/pr-review-helper https://github.com/illume/headlamp/pull/110 --dry-run
 ```
 
 Dry-run mode still reads PR data from GitHub so it can report the same decisions the real run would make.
@@ -93,7 +93,7 @@ Dry-run mode still reads PR data from GitHub so it can report the same decisions
 
 File: `package.json`
 
-From this folder, use Prettier for formatting and ESLint for linting. The package also exposes the `headlamp-pr-review-helper` bin for `npx`:
+Use Prettier for formatting and ESLint for linting from this folder. The package also exposes the `headlamp-pr-review-helper` bin, so from the repository root it can be run with `npx ./.github/scripts/pr-review-helper ...`:
 
 ```bash
 npm run format

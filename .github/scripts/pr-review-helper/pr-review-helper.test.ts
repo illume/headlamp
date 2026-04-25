@@ -190,6 +190,10 @@ test("includes commit guideline details in the guidance message", () => {
   assert.match(COMMIT_GUIDELINES_MESSAGE, /Linux kernel style/);
   assert.match(
     COMMIT_GUIDELINES_MESSAGE,
+    /https:\/\/headlamp\.dev\/docs\/latest\/development\/contributing\/#commit-guidelines/,
+  );
+  assert.match(
+    COMMIT_GUIDELINES_MESSAGE,
     /Use the title format `<area>: <description of changes>`/,
   );
   assert.match(COMMIT_GUIDELINES_MESSAGE, /Do not include `Fixes #NN`/);

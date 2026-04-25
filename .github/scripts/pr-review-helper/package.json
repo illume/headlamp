@@ -1,7 +1,6 @@
 {
   "name": "headlamp-pr-review-helper",
   "version": "0.0.0",
-  "private": true,
   "type": "commonjs",
   "scripts": {
     "format": "prettier --write .",
@@ -11,8 +10,6 @@
     "typecheck": "tsc --project tsconfig.json"
   },
   "devDependencies": {
-    "@actions/core": "^3.0.1",
-    "@actions/github": "^9.1.1",
     "@types/node": "^22.0.0",
     "eslint": "^10.2.1",
     "prettier": "^3.8.3",
@@ -25,5 +22,9 @@
   },
   "bin": {
     "headlamp-pr-review-helper": "./pr-review-helper.ts"
+  },
+  "dependencies": {
+    "@actions/core": "^3.0.1",
+    "@actions/github": "^9.1.1"
   }
 }

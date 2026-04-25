@@ -29,9 +29,9 @@ const processModule: typeof import("node:process") = require("node:process");
 
 const USAGE = [
   "Usage:",
-  "  npx --no-install headlamp-pr-review-helper OWNER/REPO/NUMBER [--dry-run]",
-  "  npx --no-install headlamp-pr-review-helper https://github.com/OWNER/REPO/pull/NUMBER [--dry-run]",
-  "  npx --no-install headlamp-pr-review-helper --repo OWNER/REPO --pull NUMBER [--dry-run]",
+  "  npx ./.github/scripts/pr-review-helper OWNER/REPO/NUMBER [--dry-run]",
+  "  npx ./.github/scripts/pr-review-helper https://github.com/OWNER/REPO/pull/NUMBER [--dry-run]",
+  "  npx ./.github/scripts/pr-review-helper --repo OWNER/REPO --pull NUMBER [--dry-run]",
 ].join("\n");
 
 const { commentsFromReviews } = require("./github-helpers.ts");
