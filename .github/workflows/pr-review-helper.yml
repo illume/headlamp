@@ -59,4 +59,4 @@ jobs:
       - name: Run PR review helper
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node .github/scripts/pr-review-helper/pr-review-helper.ts
+        run: node --experimental-strip-types .github/scripts/pr-review-helper/pr-review-helper.ts

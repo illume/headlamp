@@ -53,7 +53,7 @@ The check is idempotent because the comment includes a hidden marker and the hel
 Run the helper locally against a pull request with the GitHub CLI authenticated as the user who should post any comments:
 
 ```bash
-node .github/scripts/pr-review-helper/pr-review-helper.ts --repo illume/headlamp --pull 110
+node --experimental-strip-types .github/scripts/pr-review-helper/pr-review-helper.ts --repo illume/headlamp --pull 110
 ```
 
 The local command reads the token from `gh auth token`, so any comments, reviews, or review requests are made as that authenticated user.
@@ -63,7 +63,7 @@ The local command reads the token from `gh auth token`, so any comments, reviews
 Add `--dry-run` to see which mutating GitHub API calls the helper would make without creating comments, reviews, or review requests:
 
 ```bash
-node .github/scripts/pr-review-helper/pr-review-helper.ts --repo illume/headlamp --pull 110 --dry-run
+node --experimental-strip-types .github/scripts/pr-review-helper/pr-review-helper.ts --repo illume/headlamp --pull 110 --dry-run
 ```
 
 Dry-run mode still reads PR data from GitHub so it can report the same decisions the real run would make.
