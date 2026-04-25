@@ -14,17 +14,35 @@
  * limitations under the License.
  */
 
-import type { ActionContext, CommentLike, Core, GitHubClient, PullRequestCommit, PullRequestData } from './types.ts';
+import type {
+  ActionContext,
+  CommentLike,
+  Core,
+  GitHubClient,
+  PullRequestCommit,
+  PullRequestData,
+} from "./types.ts";
 
-const childProcess: typeof import('node:child_process') = require('node:child_process');
-const processModule: typeof import('node:process') = require('node:process');
+const childProcess: typeof import("node:child_process") = require("node:child_process");
+const processModule: typeof import("node:process") = require("node:process");
 
-const { commentsFromReviews } = require('./github-helpers.ts');
-const { hasCommitsAfterLastCopilotCommit, requestCopilotReview } = require('./request-copilot-review.ts');
-const { requestChangesForLatestCopilotComments } = require('./request-changes-for-copilot-comments.ts');
-const { commentOnMergeMainCommit } = require('./comment-on-merge-main-commit.ts');
-const { commentOnCommitGuidelineProblems } = require('./comment-on-commit-guideline-problems.ts');
-const { handleWorkflowRun } = require('./comment-on-failed-frontend-snapshots.ts');
+const { commentsFromReviews } = require("./github-helpers.ts");
+const {
+  hasCommitsAfterLastCopilotCommit,
+  requestCopilotReview,
+} = require("./request-copilot-review.ts");
+const {
+  requestChangesForLatestCopilotComments,
+} = require("./request-changes-for-copilot-comments.ts");
+const {
+  commentOnMergeMainCommit,
+} = require("./comment-on-merge-main-commit.ts");
+const {
+  commentOnCommitGuidelineProblems,
+} = require("./comment-on-commit-guideline-problems.ts");
+const {
+  handleWorkflowRun,
+} = require("./comment-on-failed-frontend-snapshots.ts");
 
 /**
  * Fetches all PR data needed by the review helper in parallel.
@@ -39,30 +57,36 @@ async function listPullRequestData(
   github: GitHubClient,
   owner: string,
   repo: string,
-  pullNumber: number
+  pullNumber: number,
 ): Promise<PullRequestData> {
-  const [pull, commits, issueComments, reviewComments, reviews] = await Promise.all([
-    github.rest.pulls.get({ owner, repo, pull_number: pullNumber }),
-    github.paginate(github.rest.pulls.listCommits, { owner, repo, pull_number: pullNumber, per_page: 100 }),
-    github.paginate(github.rest.issues.listComments, {
-      owner,
-      repo,
-      issue_number: pullNumber,
-      per_page: 100,
-    }),
-    github.paginate(github.rest.pulls.listReviewComments, {
-      owner,
-      repo,
-      pull_number: pullNumber,
-      per_page: 100,
-    }),
-    github.paginate(github.rest.pulls.listReviews, {
-      owner,
-      repo,
-      pull_number: pullNumber,
-      per_page: 100,
-    }),
-  ]);
+  const [pull, commits, issueComments, reviewComments, reviews] =
+    await Promise.all([
+      github.rest.pulls.get({ owner, repo, pull_number: pullNumber }),
+      github.paginate(github.rest.pulls.listCommits, {
+        owner,
+        repo,
+        pull_number: pullNumber,
+        per_page: 100,
+      }),
+      github.paginate(github.rest.issues.listComments, {
+        owner,
+        repo,
+        issue_number: pullNumber,
+        per_page: 100,
+      }),
+      github.paginate(github.rest.pulls.listReviewComments, {
+        owner,
+        repo,
+        pull_number: pullNumber,
+        per_page: 100,
+      }),
+      github.paginate(github.rest.pulls.listReviews, {
+        owner,
+        repo,
+        pull_number: pullNumber,
+        per_page: 100,
+      }),
+    ]);
 
   const typedCommits = commits as PullRequestCommit[];
   const typedIssueComments = issueComments as CommentLike[];
@@ -95,20 +119,33 @@ async function handlePullRequest(
   github: GitHubClient,
   context: ActionContext,
   core: Core,
-  pullNumber: number
+  pullNumber: number,
 ): Promise<void> {
   const { owner, repo } = context.repo;
   const data = await listPullRequestData(github, owner, repo, pullNumber);
 
   if (hasCommitsAfterLastCopilotCommit(data.commits)) {
-    await requestCopilotReview(github, owner, repo, pullNumber, data.pull, core);
+    await requestCopilotReview(
+      github,
+      owner,
+      repo,
+      pullNumber,
+      data.pull,
+      core,
+    );
   }
 
   if (await commentOnMergeMainCommit(github, owner, repo, pullNumber, data)) {
     return;
   }
 
-  await requestChangesForLatestCopilotComments(github, owner, repo, pullNumber, data);
+  await requestChangesForLatestCopilotComments(
+    github,
+    owner,
+    repo,
+    pullNumber,
+    data,
+  );
   await commentOnCommitGuidelineProblems(github, owner, repo, pullNumber, data);
 }
 
@@ -121,7 +158,7 @@ async function handlePullRequest(
  */
 async function pullNumberForEvent(
   _github: GitHubClient,
-  context: ActionContext
+  context: ActionContext,
 ): Promise<number | null> {
   if (context.payload.pull_request) {
     return context.payload.pull_request.number;
@@ -132,7 +169,7 @@ async function pullNumberForEvent(
   }
 
   if (context.payload.review?.pull_request_url) {
-    return Number(context.payload.review.pull_request_url.split('/').pop());
+    return Number(context.payload.review.pull_request_url.split("/").pop());
   }
 
   return null;
@@ -152,19 +189,25 @@ function dryRunGitHubClient(github: GitHubClient, core: Core): GitHubClient {
       ...github.rest,
       pulls: {
         ...github.rest.pulls,
-        requestReviewers: async parameters => {
-          core.info(`[dry-run] Would request reviewers: ${JSON.stringify(parameters)}`);
+        requestReviewers: async (parameters) => {
+          core.info(
+            `[dry-run] Would request reviewers: ${JSON.stringify(parameters)}`,
+          );
           return {};
         },
-        createReview: async parameters => {
-          core.info(`[dry-run] Would create pull request review: ${JSON.stringify(parameters)}`);
+        createReview: async (parameters) => {
+          core.info(
+            `[dry-run] Would create pull request review: ${JSON.stringify(parameters)}`,
+          );
           return {};
         },
       },
       issues: {
         ...github.rest.issues,
-        createComment: async parameters => {
-          core.info(`[dry-run] Would create issue comment: ${JSON.stringify(parameters)}`);
+        createComment: async (parameters) => {
+          core.info(
+            `[dry-run] Would create issue comment: ${JSON.stringify(parameters)}`,
+          );
           return {};
         },
       },
@@ -184,20 +227,24 @@ async function run(options: {
   dryRun?: boolean;
 }): Promise<void> {
   const { context, core } = options;
-  const github = options.dryRun ? dryRunGitHubClient(options.github, core) : options.github;
+  const github = options.dryRun
+    ? dryRunGitHubClient(options.github, core)
+    : options.github;
 
   if (options.dryRun) {
-    core.info('Running PR review helper in dry-run mode. No comments, reviews, or review requests will be created.');
+    core.info(
+      "Running PR review helper in dry-run mode. No comments, reviews, or review requests will be created.",
+    );
   }
 
-  if (context.eventName === 'workflow_run') {
+  if (context.eventName === "workflow_run") {
     await handleWorkflowRun(github, context, core);
     return;
   }
 
   const pullNumber = await pullNumberForEvent(github, context);
   if (!pullNumber) {
-    core.info('No pull request found for this event.');
+    core.info("No pull request found for this event.");
     return;
   }
 
@@ -210,7 +257,9 @@ async function run(options: {
  * @returns A GitHub token from `gh auth token`.
  */
 function tokenFromGh(): string {
-  return childProcess.execFileSync('gh', ['auth', 'token'], { encoding: 'utf8' }).trim();
+  return childProcess
+    .execFileSync("gh", ["auth", "token"], { encoding: "utf8" })
+    .trim();
 }
 
 /**
@@ -220,14 +269,17 @@ function tokenFromGh(): string {
  * @param pullNumber - Pull request number.
  * @returns Local action context.
  */
-function localPullRequestContext(repoName: string, pullNumber: number): ActionContext {
-  const [owner, repo] = repoName.split('/');
+function localPullRequestContext(
+  repoName: string,
+  pullNumber: number,
+): ActionContext {
+  const [owner, repo] = repoName.split("/");
   if (!owner || !repo) {
-    throw new Error('Expected --repo in owner/repo form.');
+    throw new Error("Expected --repo in owner/repo form.");
   }
 
   return {
-    eventName: 'pull_request_target',
+    eventName: "pull_request_target",
     repo: { owner, repo },
     payload: { pull_request: { number: pullNumber } },
   };
@@ -239,18 +291,24 @@ function localPullRequestContext(repoName: string, pullNumber: number): ActionCo
  * @param args - Command-line arguments after the script name.
  * @returns Parsed repository, pull request number, and dry-run flag.
  */
-function parseCliArgs(args: string[]): { repoName?: string; pullNumber?: number; dryRun: boolean } {
-  const parsed: { repoName?: string; pullNumber?: number; dryRun: boolean } = { dryRun: false };
+function parseCliArgs(args: string[]): {
+  repoName?: string;
+  pullNumber?: number;
+  dryRun: boolean;
+} {
+  const parsed: { repoName?: string; pullNumber?: number; dryRun: boolean } = {
+    dryRun: false,
+  };
 
   for (let index = 0; index < args.length; index++) {
     const arg = args[index];
-    if (arg === '--dry-run') {
+    if (arg === "--dry-run") {
       parsed.dryRun = true;
-    } else if (arg === '--repo') {
+    } else if (arg === "--repo") {
       parsed.repoName = args[++index];
-    } else if (arg === '--pull') {
+    } else if (arg === "--pull") {
       parsed.pullNumber = Number(args[++index]);
-    } else if (arg === '--help') {
+    } else if (arg === "--help") {
       return parsed;
     } else {
       throw new Error(`Unknown argument: ${arg}`);
@@ -266,8 +324,8 @@ function parseCliArgs(args: string[]): { repoName?: string; pullNumber?: number;
  * @param args - Command-line arguments after the script name.
  */
 async function main(args: string[]): Promise<void> {
-  const actionsGithubPackage = '@actions/github';
-  const actionsCorePackage = '@actions/core';
+  const actionsGithubPackage = "@actions/github";
+  const actionsCorePackage = "@actions/core";
   const actionsGithub = await import(actionsGithubPackage);
   const actionsCore = await import(actionsCorePackage);
   const core: Core = actionsCore;
@@ -275,7 +333,9 @@ async function main(args: string[]): Promise<void> {
 
   if (parsed.repoName || parsed.pullNumber || parsed.dryRun) {
     if (!parsed.repoName || !parsed.pullNumber) {
-      throw new Error('Usage: node .github/scripts/pr-review-helper/pr-review-helper.ts --repo OWNER/REPO --pull NUMBER [--dry-run]');
+      throw new Error(
+        "Usage: node .github/scripts/pr-review-helper/pr-review-helper.ts --repo OWNER/REPO --pull NUMBER [--dry-run]",
+      );
     }
 
     const github = actionsGithub.getOctokit(tokenFromGh()) as GitHubClient;
@@ -290,7 +350,7 @@ async function main(args: string[]): Promise<void> {
 
   const token = processModule.env.GITHUB_TOKEN;
   if (!token) {
-    throw new Error('GITHUB_TOKEN must be set when running in GitHub Actions.');
+    throw new Error("GITHUB_TOKEN must be set when running in GitHub Actions.");
   }
 
   await run({
@@ -301,7 +361,7 @@ async function main(args: string[]): Promise<void> {
 }
 
 if (require.main === module) {
-  main(processModule.argv.slice(2)).catch(error => {
+  main(processModule.argv.slice(2)).catch((error) => {
     console.error(error);
     processModule.exitCode = 1;
   });

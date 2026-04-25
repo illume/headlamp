@@ -14,17 +14,23 @@
  * limitations under the License.
  */
 
-import type { ActionContext, CommentLike, Core, GitHubClient, WorkflowRunJob } from './types.ts';
+import type {
+  ActionContext,
+  CommentLike,
+  Core,
+  GitHubClient,
+  WorkflowRunJob,
+} from "./types.ts";
 
 const SNAPSHOT_MESSAGE =
-  'You might need to update the frontend test snapshots. Use `cd frontend && npm run test -- -u`';
+  "You might need to update the frontend test snapshots. Use `cd frontend && npm run test -- -u`";
 
-const fs: typeof import('node:fs') = require('node:fs');
-const os: typeof import('node:os') = require('node:os');
-const path: typeof import('node:path') = require('node:path');
-const childProcess: typeof import('node:child_process') = require('node:child_process');
+const fs: typeof import("node:fs") = require("node:fs");
+const os: typeof import("node:os") = require("node:os");
+const path: typeof import("node:path") = require("node:path");
+const childProcess: typeof import("node:child_process") = require("node:child_process");
 
-const { MARKERS, commentOnce } = require('./github-helpers.ts');
+const { MARKERS, commentOnce } = require("./github-helpers.ts");
 
 /**
  * Checks whether a test log indicates failed, obsolete, or mismatched snapshots.
@@ -46,8 +52,8 @@ function hasFailedSnapshots(log: string): boolean {
  * @returns Raw response bytes.
  */
 function bufferFromResponseData(data: unknown): Buffer {
-  if (typeof data === 'string') {
-    return Buffer.from(data, 'utf8');
+  if (typeof data === "string") {
+    return Buffer.from(data, "utf8");
   }
 
   if (Buffer.isBuffer(data)) {
@@ -62,7 +68,7 @@ function bufferFromResponseData(data: unknown): Buffer {
     return Buffer.from(data.buffer, data.byteOffset, data.byteLength);
   }
 
-  return Buffer.from(String(data || ''), 'utf8');
+  return Buffer.from(String(data || ""), "utf8");
 }
 
 /**
@@ -72,15 +78,15 @@ function bufferFromResponseData(data: unknown): Buffer {
  * @returns Concatenated unzipped log file contents.
  */
 function unzipLogArchive(zipBytes: Buffer): string {
-  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'headlamp-pr-helper-'));
-  const zipPath = path.join(tmpDir, 'logs.zip');
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "headlamp-pr-helper-"));
+  const zipPath = path.join(tmpDir, "logs.zip");
 
   try {
     fs.writeFileSync(zipPath, zipBytes);
-    return childProcess.execFileSync('unzip', ['-p', zipPath], {
-      encoding: 'utf8',
+    return childProcess.execFileSync("unzip", ["-p", zipPath], {
+      encoding: "utf8",
       maxBuffer: 50 * 1024 * 1024,
-      stdio: ['ignore', 'pipe', 'ignore'],
+      stdio: ["ignore", "pipe", "ignore"],
     });
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -102,21 +108,26 @@ async function downloadJobLogs(
   owner: string,
   repo: string,
   jobId: number,
-  core: Core
+  core: Core,
 ): Promise<string> {
-  const response = await github.request('GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs', {
-    owner,
-    repo,
-    job_id: jobId,
-  });
+  const response = await github.request(
+    "GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs",
+    {
+      owner,
+      repo,
+      job_id: jobId,
+    },
+  );
 
   const logBytes = bufferFromResponseData(response.data);
   try {
     return unzipLogArchive(logBytes);
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    core.warning(`Failed to extract logs for job ${jobId}; skipping snapshot detection: ${message}`);
-    return '';
+    core.warning(
+      `Failed to extract logs for job ${jobId}; skipping snapshot detection: ${message}`,
+    );
+    return "";
   }
 }
 
@@ -130,34 +141,41 @@ async function downloadJobLogs(
 async function handleWorkflowRun(
   github: GitHubClient,
   context: ActionContext,
-  core: Core
+  core: Core,
 ): Promise<void> {
   const run = context.payload.workflow_run;
-  if (run?.conclusion !== 'failure' || !run.pull_requests?.length) {
+  if (run?.conclusion !== "failure" || !run.pull_requests?.length) {
     return;
   }
 
   const { owner, repo } = context.repo;
   const pullNumber = run.pull_requests[0].number;
-  const jobs = (await github.paginate(github.rest.actions.listJobsForWorkflowRun, {
-    owner,
-    repo,
-    run_id: run.id,
-    per_page: 100,
-  })) as WorkflowRunJob[];
+  const jobs = (await github.paginate(
+    github.rest.actions.listJobsForWorkflowRun,
+    {
+      owner,
+      repo,
+      run_id: run.id,
+      per_page: 100,
+    },
+  )) as WorkflowRunJob[];
   const failedFrontendTestJobs = jobs.filter(
-    job => job.conclusion === 'failure' && /(^|\b)test(\b|$)/i.test(job.name || '')
+    (job) =>
+      job.conclusion === "failure" && /(^|\b)test(\b|$)/i.test(job.name || ""),
   );
 
   for (const job of failedFrontendTestJobs) {
     const log = await downloadJobLogs(github, owner, repo, job.id, core);
     if (hasFailedSnapshots(log)) {
-      const issueComments = (await github.paginate(github.rest.issues.listComments, {
-        owner,
-        repo,
-        issue_number: pullNumber,
-        per_page: 100,
-      })) as CommentLike[];
+      const issueComments = (await github.paginate(
+        github.rest.issues.listComments,
+        {
+          owner,
+          repo,
+          issue_number: pullNumber,
+          per_page: 100,
+        },
+      )) as CommentLike[];
       await commentOnce(
         github,
         owner,
@@ -165,13 +183,13 @@ async function handleWorkflowRun(
         pullNumber,
         issueComments,
         MARKERS.snapshots,
-        SNAPSHOT_MESSAGE
+        SNAPSHOT_MESSAGE,
       );
       return;
     }
   }
 
-  core.info('No failed frontend snapshots found in failed test job logs.');
+  core.info("No failed frontend snapshots found in failed test job logs.");
 }
 
 module.exports = {

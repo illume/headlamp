@@ -78,8 +78,14 @@ export type Core = {
 };
 
 export type GitHubClient = {
-  paginate(route: unknown, parameters: Record<string, unknown>): Promise<unknown[]>;
-  request(route: string, parameters: Record<string, unknown>): Promise<{ data: unknown }>;
+  paginate(
+    route: unknown,
+    parameters: Record<string, unknown>,
+  ): Promise<unknown[]>;
+  request(
+    route: string,
+    parameters: Record<string, unknown>,
+  ): Promise<{ data: unknown }>;
   rest: {
     pulls: {
       get(parameters: Record<string, unknown>): Promise<{ data: PullRequest }>;

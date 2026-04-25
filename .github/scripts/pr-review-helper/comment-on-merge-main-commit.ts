@@ -14,20 +14,24 @@
  * limitations under the License.
  */
 
-import type { GitHubClient, PullRequestCommit, PullRequestData } from './types.ts';
+import type {
+  GitHubClient,
+  PullRequestCommit,
+  PullRequestData,
+} from "./types.ts";
 
 const MERGE_MAIN_MESSAGE = [
-  'can you please rebase against main to remove the merge main commit?',
-  '',
-  '<details>',
-  '<summary>Why this matters</summary>',
-  '',
-  'Merge commits from `main` make the PR history harder to review. Please rebase your branch on top of the latest `main` instead, then update the PR with the rebased commits.',
-  '',
-  '</details>',
-].join('\n');
+  "can you please rebase against main to remove the merge main commit?",
+  "",
+  "<details>",
+  "<summary>Why this matters</summary>",
+  "",
+  "Merge commits from `main` make the PR history harder to review. Please rebase your branch on top of the latest `main` instead, then update the PR with the rebased commits.",
+  "",
+  "</details>",
+].join("\n");
 
-const { MARKERS, commentOnce } = require('./github-helpers.ts');
+const { MARKERS, commentOnce } = require("./github-helpers.ts");
 
 /**
  * Checks whether a commit title appears to merge the main branch into the PR branch.
@@ -36,7 +40,7 @@ const { MARKERS, commentOnce } = require('./github-helpers.ts');
  * @returns True when the title starts with merge and mentions main or master.
  */
 function isMergeMainCommit(commit: PullRequestCommit): boolean {
-  const title = (commit.commit?.message || '').split('\n')[0].toLowerCase();
+  const title = (commit.commit?.message || "").split("\n")[0].toLowerCase();
   return /^merge\b/.test(title) && /\b(main|master)\b/.test(title);
 }
 
@@ -55,9 +59,12 @@ async function commentOnMergeMainCommit(
   owner: string,
   repo: string,
   pullNumber: number,
-  data: PullRequestData
+  data: PullRequestData,
 ): Promise<boolean> {
-  if (data.commentEvents.length !== 0 || !data.commits.some(isMergeMainCommit)) {
+  if (
+    data.commentEvents.length !== 0 ||
+    !data.commits.some(isMergeMainCommit)
+  ) {
     return false;
   }
 
@@ -68,7 +75,7 @@ async function commentOnMergeMainCommit(
     pullNumber,
     data.issueComments,
     MARKERS.mergeMain,
-    MERGE_MAIN_MESSAGE
+    MERGE_MAIN_MESSAGE,
   );
   return true;
 }

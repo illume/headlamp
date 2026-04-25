@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-import type { CommentLike, GitHubClient } from './types.ts';
+import type { CommentLike, GitHubClient } from "./types.ts";
 
 /** Hidden markers used to keep helper comments and reviews idempotent. */
 const MARKERS = {
-  mergeMain: '<!-- headlamp-pr-helper:merge-main -->',
-  copilotComments: '<!-- headlamp-pr-helper:copilot-comments -->',
-  snapshots: '<!-- headlamp-pr-helper:snapshots -->',
-  commitGuidelines: '<!-- headlamp-pr-helper:commit-guidelines -->',
+  mergeMain: "<!-- headlamp-pr-helper:merge-main -->",
+  copilotComments: "<!-- headlamp-pr-helper:copilot-comments -->",
+  snapshots: "<!-- headlamp-pr-helper:snapshots -->",
+  commitGuidelines: "<!-- headlamp-pr-helper:commit-guidelines -->",
 };
 
 /**
@@ -32,7 +32,7 @@ const MARKERS = {
  * @returns True when any body contains the marker.
  */
 function hasMarker(comments: CommentLike[], marker: string): boolean {
-  return comments.some(comment => (comment.body || '').includes(marker));
+  return comments.some((comment) => (comment.body || "").includes(marker));
 }
 
 /**
@@ -54,8 +54,12 @@ function withMarker(marker: string, message: string): string {
  */
 function commentsFromReviews(reviews: CommentLike[]): CommentLike[] {
   return reviews
-    .filter(review => review.body)
-    .map(review => ({ ...review, body: review.body, created_at: review.submitted_at || review.created_at }));
+    .filter((review) => review.body)
+    .map((review) => ({
+      ...review,
+      body: review.body,
+      created_at: review.submitted_at || review.created_at,
+    }));
 }
 
 /**
@@ -77,7 +81,7 @@ async function commentOnce(
   pullNumber: number,
   comments: CommentLike[],
   marker: string,
-  message: string
+  message: string,
 ): Promise<boolean> {
   if (hasMarker(comments, marker)) {
     return false;
@@ -112,7 +116,7 @@ async function requestChangesOnce(
   pullNumber: number,
   reviews: CommentLike[],
   marker: string,
-  message: string
+  message: string,
 ): Promise<boolean> {
   if (hasMarker(reviews, marker)) {
     return false;
@@ -122,7 +126,7 @@ async function requestChangesOnce(
     owner,
     repo,
     pull_number: pullNumber,
-    event: 'REQUEST_CHANGES',
+    event: "REQUEST_CHANGES",
     body: withMarker(marker, message),
   });
 

@@ -14,9 +14,15 @@
  * limitations under the License.
  */
 
-import type { Core, GitHubClient, GitHubUser, PullRequest, PullRequestCommit } from './types.ts';
+import type {
+  Core,
+  GitHubClient,
+  GitHubUser,
+  PullRequest,
+  PullRequestCommit,
+} from "./types.ts";
 
-const COPILOT_REVIEWER = 'copilot-pull-request-reviewer';
+const COPILOT_REVIEWER = "copilot-pull-request-reviewer";
 
 /**
  * Checks whether a GitHub user-like value is one of the Copilot identities used for review automation.
@@ -25,16 +31,16 @@ const COPILOT_REVIEWER = 'copilot-pull-request-reviewer';
  * @returns True when the login belongs to Copilot.
  */
 function isCopilotUser(user: GitHubUser): boolean {
-  const login = typeof user === 'string' ? user : user?.login;
+  const login = typeof user === "string" ? user : user?.login;
   if (!login) {
     return false;
   }
 
   return [
-    'copilot',
-    'copilot[bot]',
-    'github-copilot[bot]',
-    'copilot-pull-request-reviewer',
+    "copilot",
+    "copilot[bot]",
+    "github-copilot[bot]",
+    "copilot-pull-request-reviewer",
   ].includes(login.toLowerCase());
 }
 
@@ -48,10 +54,10 @@ function isCopilotCommit(commit: PullRequestCommit): boolean {
   return (
     isCopilotUser(commit.author) ||
     isCopilotUser(commit.committer) ||
-    /copilot/i.test(commit.commit?.author?.name || '') ||
-    /copilot/i.test(commit.commit?.committer?.name || '') ||
-    /copilot/i.test(commit.commit?.author?.email || '') ||
-    /copilot/i.test(commit.commit?.committer?.email || '')
+    /copilot/i.test(commit.commit?.author?.name || "") ||
+    /copilot/i.test(commit.commit?.committer?.name || "") ||
+    /copilot/i.test(commit.commit?.author?.email || "") ||
+    /copilot/i.test(commit.commit?.committer?.email || "")
   );
 }
 
@@ -61,9 +67,13 @@ function isCopilotCommit(commit: PullRequestCommit): boolean {
  * @param commits - PR commits in chronological order from GitHub.
  * @returns True when at least one commit appears after the last Copilot commit.
  */
-function hasCommitsAfterLastCopilotCommit(commits: PullRequestCommit[]): boolean {
+function hasCommitsAfterLastCopilotCommit(
+  commits: PullRequestCommit[],
+): boolean {
   const lastCopilotCommitIndex = commits.map(isCopilotCommit).lastIndexOf(true);
-  return lastCopilotCommitIndex >= 0 && lastCopilotCommitIndex < commits.length - 1;
+  return (
+    lastCopilotCommitIndex >= 0 && lastCopilotCommitIndex < commits.length - 1
+  );
 }
 
 /**
@@ -83,10 +93,10 @@ async function requestCopilotReview(
   repo: string,
   pullNumber: number,
   pull: PullRequest,
-  core: Core
+  core: Core,
 ): Promise<boolean> {
   const requestedReviewers = pull.requested_reviewers || [];
-  if (requestedReviewers.some(reviewer => isCopilotUser(reviewer))) {
+  if (requestedReviewers.some((reviewer) => isCopilotUser(reviewer))) {
     return false;
   }
 

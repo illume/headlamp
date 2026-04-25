@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-import type { CommentLike, GitHubClient, PullRequestData } from './types.ts';
+import type { CommentLike, GitHubClient, PullRequestData } from "./types.ts";
 
 const COPILOT_COMMENTS_MESSAGE =
-  'Thanks for this! Can you please address the open review comments?';
+  "Thanks for this! Can you please address the open review comments?";
 
-const { MARKERS, requestChangesOnce } = require('./github-helpers.ts');
-const { isCopilotUser } = require('./request-copilot-review.ts');
+const { MARKERS, requestChangesOnce } = require("./github-helpers.ts");
+const { isCopilotUser } = require("./request-copilot-review.ts");
 
 /**
  * Finds the newest Copilot review comment timestamp.
@@ -28,11 +28,13 @@ const { isCopilotUser } = require('./request-copilot-review.ts');
  * @param reviewComments - Pull request review comments from GitHub.
  * @returns The latest Copilot review comment timestamp in milliseconds, or null if none exist.
  */
-function latestCopilotReviewCommentAt(reviewComments: CommentLike[]): number | null {
+function latestCopilotReviewCommentAt(
+  reviewComments: CommentLike[],
+): number | null {
   const copilotComments = reviewComments
-    .filter(comment => isCopilotUser(comment.user))
-    .map(comment => new Date(comment.created_at || '').getTime())
-    .filter(timestamp => !Number.isNaN(timestamp));
+    .filter((comment) => isCopilotUser(comment.user))
+    .map((comment) => new Date(comment.created_at || "").getTime())
+    .filter((timestamp) => !Number.isNaN(timestamp));
 
   return copilotComments.length ? Math.max(...copilotComments) : null;
 }
@@ -45,8 +47,8 @@ function latestCopilotReviewCommentAt(reviewComments: CommentLike[]): number | n
  * @returns True when any event has a later created timestamp.
  */
 function hasCommentsAfter(timestamp: number, events: CommentLike[]): boolean {
-  return events.some(event => {
-    const eventTimestamp = new Date(event.created_at || '').getTime();
+  return events.some((event) => {
+    const eventTimestamp = new Date(event.created_at || "").getTime();
     return !Number.isNaN(eventTimestamp) && eventTimestamp > timestamp;
   });
 }
@@ -65,10 +67,15 @@ async function requestChangesForLatestCopilotComments(
   owner: string,
   repo: string,
   pullNumber: number,
-  data: PullRequestData
+  data: PullRequestData,
 ): Promise<void> {
-  const latestCopilotComment = latestCopilotReviewCommentAt(data.reviewComments);
-  if (latestCopilotComment && !hasCommentsAfter(latestCopilotComment, data.commentEvents)) {
+  const latestCopilotComment = latestCopilotReviewCommentAt(
+    data.reviewComments,
+  );
+  if (
+    latestCopilotComment &&
+    !hasCommentsAfter(latestCopilotComment, data.commentEvents)
+  ) {
     await requestChangesOnce(
       github,
       owner,
@@ -76,7 +83,7 @@ async function requestChangesForLatestCopilotComments(
       pullNumber,
       data.reviews,
       MARKERS.copilotComments,
-      COPILOT_COMMENTS_MESSAGE
+      COPILOT_COMMENTS_MESSAGE,
     );
   }
 }

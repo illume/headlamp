@@ -14,32 +14,36 @@
  * limitations under the License.
  */
 
-import type { GitHubClient, PullRequestCommit, PullRequestData } from './types.ts';
+import type {
+  GitHubClient,
+  PullRequestCommit,
+  PullRequestData,
+} from "./types.ts";
 
 const COMMIT_GUIDELINES_MESSAGE = [
-  'Can you please have a look at the git commits to see if they meet the contribution guidelines? We use a Linux kernel style of git commits detailed in the [contributing guide](https://headlamp.dev/docs/latest/development/contributing/#commit-guidelines) ([GitHub source](https://github.com/headlamp-k8s/headlamp/blob/main/docs/contributing.md#commit-guidelines)). Please see previous git commits with git log for examples.',
-  '',
-  '<details>',
-  '<summary>Commit guidelines</summary>',
-  '',
-  '- Use atomic commits focused on a single change.',
-  '- Use the title format `<area>: <description of changes>`.',
-  '- Keep the title and body lines under 72 characters.',
-  '- Explain the intention and why the change is needed.',
-  '- Make commit titles meaningful and describe what changed.',
-  '- Do not add code that a later commit rewrites; squash or reorder commits instead.',
-  '- Do not include `Fixes #NN` in commit messages.',
-  '',
-  'Good examples:',
-  '',
-  '- `frontend: HomeButton: Fix so it navigates to home`',
-  '- `backend: config: Add enable-dynamic-clusters flag`',
-  '',
-  '</details>',
-].join('\n');
+  "Can you please have a look at the git commits to see if they meet the contribution guidelines? We use a Linux kernel style of git commits detailed in the [contributing guide](https://headlamp.dev/docs/latest/development/contributing/#commit-guidelines) ([GitHub source](https://github.com/headlamp-k8s/headlamp/blob/main/docs/contributing.md#commit-guidelines)). Please see previous git commits with git log for examples.",
+  "",
+  "<details>",
+  "<summary>Commit guidelines</summary>",
+  "",
+  "- Use atomic commits focused on a single change.",
+  "- Use the title format `<area>: <description of changes>`.",
+  "- Keep the title and body lines under 72 characters.",
+  "- Explain the intention and why the change is needed.",
+  "- Make commit titles meaningful and describe what changed.",
+  "- Do not add code that a later commit rewrites; squash or reorder commits instead.",
+  "- Do not include `Fixes #NN` in commit messages.",
+  "",
+  "Good examples:",
+  "",
+  "- `frontend: HomeButton: Fix so it navigates to home`",
+  "- `backend: config: Add enable-dynamic-clusters flag`",
+  "",
+  "</details>",
+].join("\n");
 
-const { MARKERS, commentOnce } = require('./github-helpers.ts');
-const { isMergeMainCommit } = require('./comment-on-merge-main-commit.ts');
+const { MARKERS, commentOnce } = require("./github-helpers.ts");
+const { isMergeMainCommit } = require("./comment-on-merge-main-commit.ts");
 
 /**
  * Checks whether a commit message follows the repository commit-message guidelines.
@@ -48,8 +52,8 @@ const { isMergeMainCommit } = require('./comment-on-merge-main-commit.ts');
  * @returns True when the title has an area prefix, is short enough, and avoids issue-closing text.
  */
 function matchesCommitGuidelines(commit: PullRequestCommit): boolean {
-  const message = commit.commit?.message || '';
-  const title = message.split('\n')[0];
+  const message = commit.commit?.message || "";
+  const title = message.split("\n")[0];
 
   if (!title || title.length > 72 || /\bfixes\s+#\d+/i.test(message)) {
     return false;
@@ -65,7 +69,9 @@ function matchesCommitGuidelines(commit: PullRequestCommit): boolean {
  * @returns True when at least one relevant commit does not match the guidelines.
  */
 function hasCommitGuidelineProblems(commits: PullRequestCommit[]): boolean {
-  return commits.some(commit => !isMergeMainCommit(commit) && !matchesCommitGuidelines(commit));
+  return commits.some(
+    (commit) => !isMergeMainCommit(commit) && !matchesCommitGuidelines(commit),
+  );
 }
 
 /**
@@ -82,7 +88,7 @@ async function commentOnCommitGuidelineProblems(
   owner: string,
   repo: string,
   pullNumber: number,
-  data: PullRequestData
+  data: PullRequestData,
 ): Promise<void> {
   if (!hasCommitGuidelineProblems(data.commits)) {
     return;
@@ -95,7 +101,7 @@ async function commentOnCommitGuidelineProblems(
     pullNumber,
     data.issueComments,
     MARKERS.commitGuidelines,
-    COMMIT_GUIDELINES_MESSAGE
+    COMMIT_GUIDELINES_MESSAGE,
   );
 }
 
