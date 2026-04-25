@@ -655,16 +655,14 @@ async function handleWorkflowRun(
 /**
  * Gets the pull request number from supported GitHub event payloads.
  *
- * @param github - Authenticated GitHub client from actions/github-script.
+ * @param _github - Authenticated GitHub client from actions/github-script.
  * @param context - GitHub Actions event context.
  * @returns Pull request number, or null when the event is not associated with a PR.
  */
 async function pullNumberForEvent(
-  github: GitHubClient,
+  _github: GitHubClient,
   context: ActionContext
 ): Promise<number | null> {
-  void github;
-
   if (context.payload.pull_request) {
     return context.payload.pull_request.number;
   }
