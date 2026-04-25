@@ -18,6 +18,7 @@ const assert: typeof import('node:assert/strict') = require('node:assert/strict'
 const test: typeof import('node:test') = require('node:test');
 
 const {
+  MERGE_MAIN_MESSAGE,
   COMMIT_GUIDELINES_MESSAGE,
   bufferFromResponseData,
   hasCommitGuidelineProblems,
@@ -88,6 +89,11 @@ test('detects commit guideline problems', () => {
 test('links the commit guidelines message to website and GitHub docs', () => {
   assert.match(COMMIT_GUIDELINES_MESSAGE, /https:\/\/headlamp\.dev\/docs\/latest\/development\/contributing\/#commit-guidelines/);
   assert.match(COMMIT_GUIDELINES_MESSAGE, /https:\/\/github\.com\/headlamp-k8s\/headlamp\/blob\/main\/docs\/contributing\.md#commit-guidelines/);
+});
+
+test('adds collapsible details to guidance comments', () => {
+  assert.match(MERGE_MAIN_MESSAGE, /<details>[\s\S]*<summary>Why this matters<\/summary>/);
+  assert.match(COMMIT_GUIDELINES_MESSAGE, /<details>[\s\S]*<summary>Commit guidelines<\/summary>/);
 });
 
 test('detects failed snapshot logs', () => {

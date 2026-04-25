@@ -20,17 +20,37 @@ const path: typeof import('node:path') = require('node:path');
 const childProcess: typeof import('node:child_process') = require('node:child_process');
 
 const COPILOT_REVIEWER = 'copilot-pull-request-reviewer';
-const MERGE_MAIN_MESSAGE = 'can you please rebase against main to remove the merge main commit?';
+const MERGE_MAIN_MESSAGE = `can you please rebase against main to remove the merge main commit?
+
+<details>
+<summary>Why this matters</summary>
+
+Merge commits from \`main\` make the PR history harder to review. Please rebase your branch on top of the latest \`main\` instead, then update the PR with the rebased commits.
+
+</details>`;
 const COPILOT_COMMENTS_MESSAGE =
   'Thanks for this! Can you please address the open review comments?';
 const SNAPSHOT_MESSAGE =
   'You might need to update the frontend test snapshots. Use `cd frontend && npm run test -- -u`';
-const COMMIT_GUIDELINES_MESSAGE =
-  'Can you please have a look at the git commits to see if they meet the contribution guidelines? ' +
-  'We use a Linux kernel style of git commits detailed in the ' +
-  '[contributing guide](https://headlamp.dev/docs/latest/development/contributing/#commit-guidelines) ' +
-  '([GitHub source](https://github.com/headlamp-k8s/headlamp/blob/main/docs/contributing.md#commit-guidelines)). ' +
-  'Please see previous git commits with git log for examples.';
+const COMMIT_GUIDELINES_MESSAGE = `Can you please have a look at the git commits to see if they meet the contribution guidelines? We use a Linux kernel style of git commits detailed in the [contributing guide](https://headlamp.dev/docs/latest/development/contributing/#commit-guidelines) ([GitHub source](https://github.com/headlamp-k8s/headlamp/blob/main/docs/contributing.md#commit-guidelines)). Please see previous git commits with git log for examples.
+
+<details>
+<summary>Commit guidelines</summary>
+
+- Use atomic commits focused on a single change.
+- Use the title format \`<area>: <description of changes>\`.
+- Keep the title and body lines under 72 characters.
+- Explain the intention and why the change is needed.
+- Make commit titles meaningful and describe what changed.
+- Do not add code that a later commit rewrites; squash or reorder commits instead.
+- Do not include \`Fixes #NN\` in commit messages.
+
+Good examples:
+
+- \`frontend: HomeButton: Fix so it navigates to home\`
+- \`backend: config: Add enable-dynamic-clusters flag\`
+
+</details>`;
 
 const MARKERS = {
   mergeMain: '<!-- headlamp-pr-helper:merge-main -->',

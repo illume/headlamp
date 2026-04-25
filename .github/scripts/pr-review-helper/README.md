@@ -16,7 +16,7 @@ This treats the latest Copilot review comments as still awaiting a response. The
 
 ## Ask contributors to rebase merge-main commits
 
-When a PR has no comment or review discussion yet and contains a commit whose title starts with `merge` and mentions `main` or `master`, the helper posts a one-time comment asking the contributor to rebase against main.
+When a PR has no comment or review discussion yet and contains a commit whose title starts with `merge` and mentions `main` or `master`, the helper posts a one-time comment asking the contributor to rebase against main. The comment includes a collapsible details section explaining that merge commits from `main` make PR history harder to review.
 
 ## Suggest frontend snapshot updates
 
@@ -24,8 +24,12 @@ When the `Build Frontend` workflow fails for a PR, the helper checks failed test
 
 ## Nudge on commit guideline problems
 
-When a non-merge-main commit title does not match the repository commit-message guidelines, is longer than 72 characters, or includes `Fixes #NN`, the helper posts a one-time comment pointing contributors to the commit guidelines on the Headlamp website and in the GitHub docs source.
+When a non-merge-main commit title does not match the repository commit-message guidelines, is longer than 72 characters, or includes `Fixes #NN`, the helper posts a one-time comment pointing contributors to the commit guidelines on the Headlamp website and in the GitHub docs source. The comment includes a collapsible details section with the key commit-message rules and examples.
 
 ## Support pull requests from forks
 
 The workflow uses `pull_request_target` for PR updates and checks out the trusted base branch helper code, not the fork's head commit. That lets the helper request reviews and post comments on forked PRs without running untrusted fork code with write permissions.
+
+## Skip helper-created events
+
+The workflow skips events where `github.actor` is `github-actions[bot]`. The helper creates comments and reviews itself, so this guard prevents the helper from starting follow-up runs for its own output.
