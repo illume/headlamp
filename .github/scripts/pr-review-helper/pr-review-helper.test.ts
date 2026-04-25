@@ -55,8 +55,6 @@ function commit(message: string, authorLogin = 'contributor'): TestCommit {
   };
 }
 
-
-
 /** Builds a minimal GitHub client mock for helper tests. */
 function githubMock(options: {
   issueComments?: CommentLike[];
@@ -169,7 +167,6 @@ test('extracts GitHub job log zip archives before scanning', () => {
 
   assert.equal(hasFailedSnapshots(unzipLogArchive(bufferFromResponseData(zipBytes))), true);
 });
-
 
 test('skips duplicate issue comments when an idempotency marker exists', async () => {
   let created = 0;
