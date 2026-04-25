@@ -85,6 +85,8 @@
     "image:verify-image-digests": "node tools/verify-image-digests.js"
   },
   "devDependencies": {
+    "@actions/core": "^3.0.1",
+    "@actions/github": "^9.1.1",
     "@types/node": "^22.0.0",
     "concurrently": "^8.2.2",
     "typescript": "^5.6.2"

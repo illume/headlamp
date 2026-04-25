@@ -185,6 +185,21 @@ For general guidelines on making PRs/commits easier to review, please check
 out Kinvolk's
 [contribution guidelines on git](https://github.com/kinvolk/contribution/tree/master/topics/git.md).
 
+Headlamp uses a Linux kernel style for git commits. In particular:
+
+- Use atomic commits focused on a single change.
+- Use the title format `<area>: <description of changes>`.
+- Keep the title and body lines under 72 characters.
+- Explain the intention and why the change is needed.
+- Make commit titles meaningful and describe what changed.
+- Do not add code that a later commit rewrites; squash or reorder commits instead.
+- Do not include `Fixes #NN` in commit messages.
+
+Good examples:
+
+- `frontend: HomeButton: Fix so it navigates to home`
+- `backend: config: Add enable-dynamic-clusters flag`
+
 ## Testing
 
 The frontend is tested via Storybook-related snapshots. So new components should have

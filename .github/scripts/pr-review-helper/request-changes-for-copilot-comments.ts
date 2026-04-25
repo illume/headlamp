@@ -16,11 +16,11 @@
 
 import type { CommentLike, GitHubClient, PullRequestData } from './types.ts';
 
-const { MARKERS, requestChangesOnce } = require('./github-helpers.ts');
-const { isCopilotUser } = require('./request-copilot-review.ts');
-
 const COPILOT_COMMENTS_MESSAGE =
   'Thanks for this! Can you please address the open review comments?';
+
+const { MARKERS, requestChangesOnce } = require('./github-helpers.ts');
+const { isCopilotUser } = require('./request-copilot-review.ts');
 
 /**
  * Finds the newest Copilot review comment timestamp.
@@ -54,7 +54,7 @@ function hasCommentsAfter(timestamp: number, events: CommentLike[]): boolean {
 /**
  * Requests changes when Copilot review comments are still the latest PR discussion.
  *
- * @param github - Authenticated GitHub client from actions/github-script.
+ * @param github - Authenticated GitHub client.
  * @param owner - Repository owner.
  * @param repo - Repository name.
  * @param pullNumber - Pull request number.

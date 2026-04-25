@@ -69,7 +69,7 @@ function hasCommitsAfterLastCopilotCommit(commits: PullRequestCommit[]): boolean
 /**
  * Requests Copilot review unless Copilot is already requested.
  *
- * @param github - Authenticated GitHub client from actions/github-script.
+ * @param github - Authenticated GitHub client.
  * @param owner - Repository owner.
  * @param repo - Repository name.
  * @param pullNumber - Pull request number.

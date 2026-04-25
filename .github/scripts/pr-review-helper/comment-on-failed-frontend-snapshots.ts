@@ -16,15 +16,15 @@
 
 import type { ActionContext, CommentLike, Core, GitHubClient, WorkflowRunJob } from './types.ts';
 
+const SNAPSHOT_MESSAGE =
+  'You might need to update the frontend test snapshots. Use `cd frontend && npm run test -- -u`';
+
 const fs: typeof import('node:fs') = require('node:fs');
 const os: typeof import('node:os') = require('node:os');
 const path: typeof import('node:path') = require('node:path');
 const childProcess: typeof import('node:child_process') = require('node:child_process');
 
 const { MARKERS, commentOnce } = require('./github-helpers.ts');
-
-const SNAPSHOT_MESSAGE =
-  'You might need to update the frontend test snapshots. Use `cd frontend && npm run test -- -u`';
 
 /**
  * Checks whether a test log indicates failed, obsolete, or mismatched snapshots.
@@ -80,6 +80,7 @@ function unzipLogArchive(zipBytes: Buffer): string {
     return childProcess.execFileSync('unzip', ['-p', zipPath], {
       encoding: 'utf8',
       maxBuffer: 50 * 1024 * 1024,
+      stdio: ['ignore', 'pipe', 'ignore'],
     });
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
@@ -89,17 +90,19 @@ function unzipLogArchive(zipBytes: Buffer): string {
 /**
  * Downloads and unzips the logs for a workflow job.
  *
- * @param github - Authenticated GitHub client from actions/github-script.
+ * @param github - Authenticated GitHub client.
  * @param owner - Repository owner.
  * @param repo - Repository name.
  * @param jobId - Workflow job id.
+ * @param core - GitHub Actions core logger.
  * @returns Plain-text log contents.
  */
 async function downloadJobLogs(
   github: GitHubClient,
   owner: string,
   repo: string,
-  jobId: number
+  jobId: number,
+  core: Core
 ): Promise<string> {
   const response = await github.request('GET /repos/{owner}/{repo}/actions/jobs/{job_id}/logs', {
     owner,
@@ -110,15 +113,17 @@ async function downloadJobLogs(
   const logBytes = bufferFromResponseData(response.data);
   try {
     return unzipLogArchive(logBytes);
-  } catch {
-    return logBytes.toString('utf8');
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    core.warning(`Failed to extract logs for job ${jobId}; skipping snapshot detection: ${message}`);
+    return '';
   }
 }
 
 /**
  * Handles a failed frontend workflow run and comments when failed snapshots are found.
  *
- * @param github - Authenticated GitHub client from actions/github-script.
+ * @param github - Authenticated GitHub client.
  * @param context - GitHub Actions event context.
  * @param core - GitHub Actions core logger.
  */
@@ -145,7 +150,7 @@ async function handleWorkflowRun(
   );
 
   for (const job of failedFrontendTestJobs) {
-    const log = await downloadJobLogs(github, owner, repo, job.id);
+    const log = await downloadJobLogs(github, owner, repo, job.id, core);
     if (hasFailedSnapshots(log)) {
       const issueComments = (await github.paginate(github.rest.issues.listComments, {
         owner,

@@ -16,8 +16,6 @@
 
 import type { GitHubClient, PullRequestCommit, PullRequestData } from './types.ts';
 
-const { MARKERS, commentOnce } = require('./github-helpers.ts');
-
 const MERGE_MAIN_MESSAGE = [
   'can you please rebase against main to remove the merge main commit?',
   '',
@@ -28,6 +26,8 @@ const MERGE_MAIN_MESSAGE = [
   '',
   '</details>',
 ].join('\n');
+
+const { MARKERS, commentOnce } = require('./github-helpers.ts');
 
 /**
  * Checks whether a commit title appears to merge the main branch into the PR branch.
@@ -43,7 +43,7 @@ function isMergeMainCommit(commit: PullRequestCommit): boolean {
 /**
  * Comments once when an otherwise undiscussed PR contains a merge-main commit.
  *
- * @param github - Authenticated GitHub client from actions/github-script.
+ * @param github - Authenticated GitHub client.
  * @param owner - Repository owner.
  * @param repo - Repository name.
  * @param pullNumber - Pull request number.

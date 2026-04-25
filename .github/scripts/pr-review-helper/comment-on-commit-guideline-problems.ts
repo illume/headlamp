@@ -16,9 +16,6 @@
 
 import type { GitHubClient, PullRequestCommit, PullRequestData } from './types.ts';
 
-const { MARKERS, commentOnce } = require('./github-helpers.ts');
-const { isMergeMainCommit } = require('./comment-on-merge-main-commit.ts');
-
 const COMMIT_GUIDELINES_MESSAGE = [
   'Can you please have a look at the git commits to see if they meet the contribution guidelines? We use a Linux kernel style of git commits detailed in the [contributing guide](https://headlamp.dev/docs/latest/development/contributing/#commit-guidelines) ([GitHub source](https://github.com/headlamp-k8s/headlamp/blob/main/docs/contributing.md#commit-guidelines)). Please see previous git commits with git log for examples.',
   '',
@@ -40,6 +37,9 @@ const COMMIT_GUIDELINES_MESSAGE = [
   '',
   '</details>',
 ].join('\n');
+
+const { MARKERS, commentOnce } = require('./github-helpers.ts');
+const { isMergeMainCommit } = require('./comment-on-merge-main-commit.ts');
 
 /**
  * Checks whether a commit message follows the repository commit-message guidelines.
@@ -71,7 +71,7 @@ function hasCommitGuidelineProblems(commits: PullRequestCommit[]): boolean {
 /**
  * Posts a one-time comment when any PR commit does not match the commit guidelines.
  *
- * @param github - Authenticated GitHub client from actions/github-script.
+ * @param github - Authenticated GitHub client.
  * @param owner - Repository owner.
  * @param repo - Repository name.
  * @param pullNumber - Pull request number.

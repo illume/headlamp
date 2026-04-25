@@ -61,7 +61,7 @@ function commentsFromReviews(reviews: CommentLike[]): CommentLike[] {
 /**
  * Posts an issue comment if the helper has not already posted the same marker.
  *
- * @param github - Authenticated GitHub client from actions/github-script.
+ * @param github - Authenticated GitHub client.
  * @param owner - Repository owner.
  * @param repo - Repository name.
  * @param pullNumber - Pull request number.
@@ -96,7 +96,7 @@ async function commentOnce(
 /**
  * Requests changes on a pull request if the helper has not already posted the same marker.
  *
- * @param github - Authenticated GitHub client from actions/github-script.
+ * @param github - Authenticated GitHub client.
  * @param owner - Repository owner.
  * @param repo - Repository name.
  * @param pullNumber - Pull request number.

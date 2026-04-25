@@ -16,6 +16,9 @@
 
 import type { ActionContext, CommentLike, Core, GitHubClient, PullRequestCommit, PullRequestData } from './types.ts';
 
+const childProcess: typeof import('node:child_process') = require('node:child_process');
+const processModule: typeof import('node:process') = require('node:process');
+
 const { commentsFromReviews } = require('./github-helpers.ts');
 const { hasCommitsAfterLastCopilotCommit, requestCopilotReview } = require('./request-copilot-review.ts');
 const { requestChangesForLatestCopilotComments } = require('./request-changes-for-copilot-comments.ts');
@@ -26,7 +29,7 @@ const { handleWorkflowRun } = require('./comment-on-failed-frontend-snapshots.ts
 /**
  * Fetches all PR data needed by the review helper in parallel.
  *
- * @param github - Authenticated GitHub client from actions/github-script.
+ * @param github - Authenticated GitHub client.
  * @param owner - Repository owner.
  * @param repo - Repository name.
  * @param pullNumber - Pull request number.
@@ -83,9 +86,9 @@ async function listPullRequestData(
 /**
  * Runs all pull-request checks and posts the needed review assistance.
  *
- * @param github - Authenticated GitHub client from actions/github-script.
- * @param context - GitHub Actions event context.
- * @param core - GitHub Actions core logger.
+ * @param github - Authenticated GitHub client.
+ * @param context - GitHub Actions or local event context.
+ * @param core - Logger compatible with GitHub Actions core.
  * @param pullNumber - Pull request number.
  */
 async function handlePullRequest(
@@ -112,8 +115,8 @@ async function handlePullRequest(
 /**
  * Gets the pull request number from supported GitHub event payloads.
  *
- * @param _github - Authenticated GitHub client from actions/github-script.
- * @param context - GitHub Actions event context.
+ * @param _github - Authenticated GitHub client.
+ * @param context - GitHub Actions or local event context.
  * @returns Pull request number, or null when the event is not associated with a PR.
  */
 async function pullNumberForEvent(
@@ -136,16 +139,56 @@ async function pullNumberForEvent(
 }
 
 /**
- * Entry point used by the PR Review Helper workflow.
+ * Wraps mutating GitHub API calls so dry-run mode reports actions without creating them.
  *
- * @param options - GitHub Script runtime objects.
+ * @param github - Authenticated GitHub client.
+ * @param core - Logger compatible with GitHub Actions core.
+ * @returns A GitHub client that performs reads normally and logs writes.
+ */
+function dryRunGitHubClient(github: GitHubClient, core: Core): GitHubClient {
+  return {
+    ...github,
+    rest: {
+      ...github.rest,
+      pulls: {
+        ...github.rest.pulls,
+        requestReviewers: async parameters => {
+          core.info(`[dry-run] Would request reviewers: ${JSON.stringify(parameters)}`);
+          return {};
+        },
+        createReview: async parameters => {
+          core.info(`[dry-run] Would create pull request review: ${JSON.stringify(parameters)}`);
+          return {};
+        },
+      },
+      issues: {
+        ...github.rest.issues,
+        createComment: async parameters => {
+          core.info(`[dry-run] Would create issue comment: ${JSON.stringify(parameters)}`);
+          return {};
+        },
+      },
+    },
+  };
+}
+
+/**
+ * Entry point used by the PR Review Helper workflow and local CLI.
+ *
+ * @param options - Runtime objects and options.
  */
 async function run(options: {
   github: GitHubClient;
   context: ActionContext;
   core: Core;
+  dryRun?: boolean;
 }): Promise<void> {
-  const { github, context, core } = options;
+  const { context, core } = options;
+  const github = options.dryRun ? dryRunGitHubClient(options.github, core) : options.github;
+
+  if (options.dryRun) {
+    core.info('Running PR review helper in dry-run mode. No comments, reviews, or review requests will be created.');
+  }
 
   if (context.eventName === 'workflow_run') {
     await handleWorkflowRun(github, context, core);
@@ -161,9 +204,116 @@ async function run(options: {
   await handlePullRequest(github, context, core, pullNumber);
 }
 
+/**
+ * Reads a GitHub token for local runs from the GitHub CLI.
+ *
+ * @returns A GitHub token from `gh auth token`.
+ */
+function tokenFromGh(): string {
+  return childProcess.execFileSync('gh', ['auth', 'token'], { encoding: 'utf8' }).trim();
+}
+
+/**
+ * Builds a lightweight local context for a single pull request.
+ *
+ * @param repoName - Repository name in owner/repo form.
+ * @param pullNumber - Pull request number.
+ * @returns Local action context.
+ */
+function localPullRequestContext(repoName: string, pullNumber: number): ActionContext {
+  const [owner, repo] = repoName.split('/');
+  if (!owner || !repo) {
+    throw new Error('Expected --repo in owner/repo form.');
+  }
+
+  return {
+    eventName: 'pull_request_target',
+    repo: { owner, repo },
+    payload: { pull_request: { number: pullNumber } },
+  };
+}
+
+/**
+ * Parses CLI arguments for local runs.
+ *
+ * @param args - Command-line arguments after the script name.
+ * @returns Parsed repository, pull request number, and dry-run flag.
+ */
+function parseCliArgs(args: string[]): { repoName?: string; pullNumber?: number; dryRun: boolean } {
+  const parsed: { repoName?: string; pullNumber?: number; dryRun: boolean } = { dryRun: false };
+
+  for (let index = 0; index < args.length; index++) {
+    const arg = args[index];
+    if (arg === '--dry-run') {
+      parsed.dryRun = true;
+    } else if (arg === '--repo') {
+      parsed.repoName = args[++index];
+    } else if (arg === '--pull') {
+      parsed.pullNumber = Number(args[++index]);
+    } else if (arg === '--help') {
+      return parsed;
+    } else {
+      throw new Error(`Unknown argument: ${arg}`);
+    }
+  }
+
+  return parsed;
+}
+
+/**
+ * Runs the helper from a GitHub Actions job or as a local CLI.
+ *
+ * @param args - Command-line arguments after the script name.
+ */
+async function main(args: string[]): Promise<void> {
+  const actionsGithubPackage = '@actions/github';
+  const actionsCorePackage = '@actions/core';
+  const actionsGithub = await import(actionsGithubPackage);
+  const actionsCore = await import(actionsCorePackage);
+  const core: Core = actionsCore;
+  const parsed = parseCliArgs(args);
+
+  if (parsed.repoName || parsed.pullNumber || parsed.dryRun) {
+    if (!parsed.repoName || !parsed.pullNumber) {
+      throw new Error('Usage: node .github/scripts/pr-review-helper/pr-review-helper.ts --repo OWNER/REPO --pull NUMBER [--dry-run]');
+    }
+
+    const github = actionsGithub.getOctokit(tokenFromGh()) as GitHubClient;
+    await run({
+      github,
+      context: localPullRequestContext(parsed.repoName, parsed.pullNumber),
+      core,
+      dryRun: parsed.dryRun,
+    });
+    return;
+  }
+
+  const token = processModule.env.GITHUB_TOKEN;
+  if (!token) {
+    throw new Error('GITHUB_TOKEN must be set when running in GitHub Actions.');
+  }
+
+  await run({
+    github: actionsGithub.getOctokit(token) as GitHubClient,
+    context: actionsGithub.context as ActionContext,
+    core,
+  });
+}
+
+if (require.main === module) {
+  main(processModule.argv.slice(2)).catch(error => {
+    console.error(error);
+    processModule.exitCode = 1;
+  });
+}
+
 module.exports = {
+  dryRunGitHubClient,
   handlePullRequest,
   listPullRequestData,
+  localPullRequestContext,
+  parseCliArgs,
   pullNumberForEvent,
   run,
+  tokenFromGh,
 };
