@@ -286,6 +286,39 @@ function localPullRequestContext(
 }
 
 /**
+ * Parses a pull request target from owner/repo/number or a GitHub pull request URL.
+ *
+ * @param target - Pull request target, such as `illume/headlamp/110` or a full PR URL.
+ * @returns Repository name and pull request number.
+ */
+function parsePullRequestTarget(target: string): {
+  repoName: string;
+  pullNumber: number;
+} {
+  const urlMatch = target.match(
+    /^https:\/\/github\.com\/([^/]+)\/([^/]+)\/pull\/(\d+)(?:[/?#].*)?$/,
+  );
+  if (urlMatch) {
+    return {
+      repoName: `${urlMatch[1]}/${urlMatch[2]}`,
+      pullNumber: Number(urlMatch[3]),
+    };
+  }
+
+  const shortMatch = target.match(/^([^/]+)\/([^/]+)\/(\d+)$/);
+  if (shortMatch) {
+    return {
+      repoName: `${shortMatch[1]}/${shortMatch[2]}`,
+      pullNumber: Number(shortMatch[3]),
+    };
+  }
+
+  throw new Error(
+    "Expected pull request target as OWNER/REPO/NUMBER or https://github.com/OWNER/REPO/pull/NUMBER.",
+  );
+}
+
+/**
  * Parses CLI arguments for local runs.
  *
  * @param args - Command-line arguments after the script name.
@@ -308,8 +341,16 @@ function parseCliArgs(args: string[]): {
       parsed.repoName = args[++index];
     } else if (arg === "--pull") {
       parsed.pullNumber = Number(args[++index]);
+    } else if (arg === "--pr") {
+      const target = parsePullRequestTarget(args[++index]);
+      parsed.repoName = target.repoName;
+      parsed.pullNumber = target.pullNumber;
     } else if (arg === "--help") {
       return parsed;
+    } else if (!arg.startsWith("-") && !parsed.repoName && !parsed.pullNumber) {
+      const target = parsePullRequestTarget(arg);
+      parsed.repoName = target.repoName;
+      parsed.pullNumber = target.pullNumber;
     } else {
       throw new Error(`Unknown argument: ${arg}`);
     }
@@ -334,7 +375,7 @@ async function main(args: string[]): Promise<void> {
   if (parsed.repoName || parsed.pullNumber || parsed.dryRun) {
     if (!parsed.repoName || !parsed.pullNumber) {
       throw new Error(
-        "Usage: node .github/scripts/pr-review-helper/pr-review-helper.ts --repo OWNER/REPO --pull NUMBER [--dry-run]",
+        "Usage: node pr-review-helper.ts OWNER/REPO/NUMBER [--dry-run]",
       );
     }
 
@@ -373,6 +414,7 @@ module.exports = {
   listPullRequestData,
   localPullRequestContext,
   parseCliArgs,
+  parsePullRequestTarget,
   pullNumberForEvent,
   run,
   tokenFromGh,

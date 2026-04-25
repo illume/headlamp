@@ -50,23 +50,55 @@ The check is idempotent because the comment includes a hidden marker and the hel
 
 ## Run locally
 
-Run the helper locally against a pull request with the GitHub CLI authenticated as the user who should post any comments:
+File: `pr-review-helper.ts`
+
+The helper is self-contained in this folder. Install its local dependencies once:
 
 ```bash
-node --experimental-strip-types .github/scripts/pr-review-helper/pr-review-helper.ts --repo illume/headlamp --pull 110
+cd .github/scripts/pr-review-helper
+npm install
 ```
 
-The local command reads the token from `gh auth token`, so any comments, reviews, or review requests are made as that authenticated user.
+Authenticate the GitHub CLI as the user who should create comments, reviews, or review requests:
+
+```bash
+gh auth login
+gh auth status
+```
+
+The local command reads the token from `gh auth token`, so any non-dry-run comments, reviews, or review requests are made as that authenticated user.
+
+Run the helper for a particular PR with either `OWNER/REPO/NUMBER`, a full GitHub pull request URL, or separate `--repo` and `--pull` arguments:
+
+```bash
+node pr-review-helper.ts illume/headlamp/110
+node pr-review-helper.ts https://github.com/illume/headlamp/pull/110
+node pr-review-helper.ts --repo illume/headlamp --pull 110
+```
 
 ## Dry run locally
 
-Add `--dry-run` to see which mutating GitHub API calls the helper would make without creating comments, reviews, or review requests:
+File: `pr-review-helper.ts`
+
+Add `--dry-run` to print the mutating GitHub API calls the helper would make without creating comments, reviews, or review requests:
 
 ```bash
-node --experimental-strip-types .github/scripts/pr-review-helper/pr-review-helper.ts --repo illume/headlamp --pull 110 --dry-run
+node pr-review-helper.ts illume/headlamp/110 --dry-run
+node pr-review-helper.ts https://github.com/illume/headlamp/pull/110 --dry-run
 ```
 
 Dry-run mode still reads PR data from GitHub so it can report the same decisions the real run would make.
+
+## Format and lint locally
+
+File: `package.json`
+
+From this folder, use Prettier for formatting and ESLint for linting:
+
+```bash
+npm run format
+npm run lint
+```
 
 ## Support pull requests from forks
 

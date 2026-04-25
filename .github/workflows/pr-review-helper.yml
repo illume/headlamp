@@ -42,21 +42,27 @@ jobs:
           node-version: 24.x
 
       - name: Install PR review helper dependencies
+        working-directory: .github/scripts/pr-review-helper
         run: npm ci --ignore-scripts
 
       - name: Format check PR review helper
-        run: npm run pr-review-helper:format-check
+        working-directory: .github/scripts/pr-review-helper
+        run: npm run format-check
 
       - name: Lint PR review helper
-        run: npm run pr-review-helper:lint
+        working-directory: .github/scripts/pr-review-helper
+        run: npm run lint
 
       - name: Type check PR review helper
-        run: npx tsc --project .github/scripts/pr-review-helper/tsconfig.json
+        working-directory: .github/scripts/pr-review-helper
+        run: npm run typecheck
 
       - name: Test PR review helper
-        run: node --test .github/scripts/pr-review-helper/pr-review-helper.test.ts
+        working-directory: .github/scripts/pr-review-helper
+        run: npm test
 
       - name: Run PR review helper
+        working-directory: .github/scripts/pr-review-helper
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: node --experimental-strip-types .github/scripts/pr-review-helper/pr-review-helper.ts
+        run: node pr-review-helper.ts

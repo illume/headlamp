@@ -48,6 +48,7 @@ const {
   dryRunGitHubClient,
   localPullRequestContext,
   parseCliArgs,
+  parsePullRequestTarget,
 } = require("./pr-review-helper.ts");
 
 import type { CommentLike, GitHubClient, PullRequestData } from "./types.ts";
@@ -378,6 +379,30 @@ test("parses local and dry-run CLI arguments", () => {
       repoName: "illume/headlamp",
       pullNumber: 110,
       dryRun: true,
+    },
+  );
+  assert.deepEqual(parseCliArgs(["illume/headlamp/110", "--dry-run"]), {
+    repoName: "illume/headlamp",
+    pullNumber: 110,
+    dryRun: true,
+  });
+  assert.deepEqual(
+    parseCliArgs(["--pr", "https://github.com/illume/headlamp/pull/110"]),
+    {
+      repoName: "illume/headlamp",
+      pullNumber: 110,
+      dryRun: false,
+    },
+  );
+  assert.deepEqual(parsePullRequestTarget("illume/headlamp/110"), {
+    repoName: "illume/headlamp",
+    pullNumber: 110,
+  });
+  assert.deepEqual(
+    parsePullRequestTarget("https://github.com/illume/headlamp/pull/110"),
+    {
+      repoName: "illume/headlamp",
+      pullNumber: 110,
     },
   );
   assert.deepEqual(localPullRequestContext("illume/headlamp", 110), {
