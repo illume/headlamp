@@ -50,16 +50,14 @@ function withMarker(marker: string, message: string): string {
  * Converts pull request reviews into comment-like events for latest-activity checks.
  *
  * @param reviews - Pull request reviews from GitHub.
- * @returns Review bodies with a normalized created_at field.
+ * @returns Review events with a normalized created_at field.
  */
 function commentsFromReviews(reviews: CommentLike[]): CommentLike[] {
-  return reviews
-    .filter((review) => review.body)
-    .map((review) => ({
-      ...review,
-      body: review.body,
-      created_at: review.submitted_at || review.created_at,
-    }));
+  return reviews.map((review) => ({
+    ...review,
+    body: review.body || "",
+    created_at: review.submitted_at || review.created_at,
+  }));
 }
 
 /**

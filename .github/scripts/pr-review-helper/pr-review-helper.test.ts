@@ -41,6 +41,7 @@ const {
 } = require("./comment-on-failed-frontend-snapshots.ts");
 const {
   MARKERS,
+  commentsFromReviews,
   commentOnce,
   requestChangesOnce,
 } = require("./github-helpers.ts");
@@ -264,6 +265,39 @@ test("skips duplicate request-changes reviews when an idempotency marker exists"
       MARKERS.copilotComments,
       "message",
     ),
+    false,
+  );
+  assert.equal(created, 0);
+});
+
+test("counts empty-body reviews as pull request discussion", async () => {
+  const reviewEvents = commentsFromReviews([
+    {
+      body: null,
+      created_at: "2026-04-25T07:00:00Z",
+      submitted_at: "2026-04-25T07:05:00Z",
+    },
+  ]);
+
+  assert.deepEqual(reviewEvents, [
+    {
+      body: "",
+      created_at: "2026-04-25T07:05:00Z",
+      submitted_at: "2026-04-25T07:05:00Z",
+    },
+  ]);
+
+  let created = 0;
+  const github = githubMock({ onCreateComment: () => created++ });
+  assert.equal(
+    await commentOnMergeMainCommit(github, "illume", "headlamp", 110, {
+      pull: {},
+      commits: [commit("Merge branch 'main' into feature")],
+      issueComments: [],
+      reviewComments: [],
+      reviews: [],
+      commentEvents: reviewEvents,
+    }),
     false,
   );
   assert.equal(created, 0);
