@@ -21,7 +21,7 @@ const os: typeof import('node:os') = require('node:os');
 const path: typeof import('node:path') = require('node:path');
 const childProcess: typeof import('node:child_process') = require('node:child_process');
 
-const { MARKERS, commentOnce } = require('./comments.ts');
+const { MARKERS, commentOnce } = require('./github-helpers.ts');
 
 const SNAPSHOT_MESSAGE =
   'You might need to update the frontend test snapshots. Use `cd frontend && npm run test -- -u`';

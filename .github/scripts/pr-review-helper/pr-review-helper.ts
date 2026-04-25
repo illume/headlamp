@@ -16,12 +16,12 @@
 
 import type { ActionContext, CommentLike, Core, GitHubClient, PullRequestCommit, PullRequestData } from './types.ts';
 
-const { commentsFromReviews } = require('./comments.ts');
-const { hasCommitsAfterLastCopilotCommit, requestCopilotReview } = require('./copilot-review.ts');
-const { requestChangesForLatestCopilotComments } = require('./copilot-comments.ts');
-const { commentOnMergeMainCommit } = require('./merge-main.ts');
-const { commentOnCommitGuidelineProblems } = require('./commit-guidelines.ts');
-const { handleWorkflowRun } = require('./snapshots.ts');
+const { commentsFromReviews } = require('./github-helpers.ts');
+const { hasCommitsAfterLastCopilotCommit, requestCopilotReview } = require('./request-copilot-review.ts');
+const { requestChangesForLatestCopilotComments } = require('./request-changes-for-copilot-comments.ts');
+const { commentOnMergeMainCommit } = require('./comment-on-merge-main-commit.ts');
+const { commentOnCommitGuidelineProblems } = require('./comment-on-commit-guideline-problems.ts');
+const { handleWorkflowRun } = require('./comment-on-failed-frontend-snapshots.ts');
 
 /**
  * Fetches all PR data needed by the review helper in parallel.

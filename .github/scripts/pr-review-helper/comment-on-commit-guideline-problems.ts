@@ -16,8 +16,8 @@
 
 import type { GitHubClient, PullRequestCommit, PullRequestData } from './types.ts';
 
-const { MARKERS, commentOnce } = require('./comments.ts');
-const { isMergeMainCommit } = require('./merge-main.ts');
+const { MARKERS, commentOnce } = require('./github-helpers.ts');
+const { isMergeMainCommit } = require('./comment-on-merge-main-commit.ts');
 
 const COMMIT_GUIDELINES_MESSAGE = [
   'Can you please have a look at the git commits to see if they meet the contribution guidelines? We use a Linux kernel style of git commits detailed in the [contributing guide](https://headlamp.dev/docs/latest/development/contributing/#commit-guidelines) ([GitHub source](https://github.com/headlamp-k8s/headlamp/blob/main/docs/contributing.md#commit-guidelines)). Please see previous git commits with git log for examples.',

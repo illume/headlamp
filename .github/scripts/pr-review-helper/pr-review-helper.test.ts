@@ -17,10 +17,10 @@
 const assert: typeof import('node:assert/strict') = require('node:assert/strict');
 const test: typeof import('node:test') = require('node:test');
 
-const { hasCommitsAfterLastCopilotCommit } = require('./copilot-review.ts');
-const { COMMIT_GUIDELINES_MESSAGE, hasCommitGuidelineProblems } = require('./commit-guidelines.ts');
-const { MERGE_MAIN_MESSAGE, isMergeMainCommit } = require('./merge-main.ts');
-const { bufferFromResponseData, hasFailedSnapshots, unzipLogArchive } = require('./snapshots.ts');
+const { hasCommitsAfterLastCopilotCommit } = require('./request-copilot-review.ts');
+const { COMMIT_GUIDELINES_MESSAGE, hasCommitGuidelineProblems } = require('./comment-on-commit-guideline-problems.ts');
+const { MERGE_MAIN_MESSAGE, isMergeMainCommit } = require('./comment-on-merge-main-commit.ts');
+const { bufferFromResponseData, hasFailedSnapshots, unzipLogArchive } = require('./comment-on-failed-frontend-snapshots.ts');
 
 type TestCommit = {
   author: { login: string };

@@ -16,8 +16,8 @@
 
 import type { CommentLike, GitHubClient, PullRequestData } from './types.ts';
 
-const { MARKERS, requestChangesOnce } = require('./comments.ts');
-const { isCopilotUser } = require('./copilot-review.ts');
+const { MARKERS, requestChangesOnce } = require('./github-helpers.ts');
+const { isCopilotUser } = require('./request-copilot-review.ts');
 
 const COPILOT_COMMENTS_MESSAGE =
   'Thanks for this! Can you please address the open review comments?';

@@ -16,7 +16,7 @@
 
 import type { GitHubClient, PullRequestCommit, PullRequestData } from './types.ts';
 
-const { MARKERS, commentOnce } = require('./comments.ts');
+const { MARKERS, commentOnce } = require('./github-helpers.ts');
 
 const MERGE_MAIN_MESSAGE = [
   'can you please rebase against main to remove the merge main commit?',
