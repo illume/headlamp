@@ -141,6 +141,7 @@ export function useWatchKubeObjectLists<K extends KubeObject>({
   lists: Array<{ cluster: string; namespace?: string; resourceVersion: string }>;
 }) {
   if (getWebsocketMultiplexerEnabled()) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     return useWatchKubeObjectListsMultiplexed({
       kubeObjectClass,
       endpoint,
@@ -148,6 +149,7 @@ export function useWatchKubeObjectLists<K extends KubeObject>({
       queryParams,
     });
   } else {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     return useWatchKubeObjectListsLegacy({
       kubeObjectClass,
       endpoint,

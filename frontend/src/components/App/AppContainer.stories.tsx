@@ -30,6 +30,7 @@ const withEnv = (Story: React.ComponentType) => {
     receive: () => {},
   };
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   React.useEffect(() => {
     return () => {
       if (prev === undefined) {

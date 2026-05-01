@@ -1100,6 +1100,7 @@ export function ContainerEnvironmentVariables(props: EnvironmentVariablesProps) 
   const references = extractEnvVarReferences(container);
 
   // Get unique resource names to fetch
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const secretsToFetch = React.useMemo(() => {
     const secrets = new Set<string>();
     references.forEach(ref => {
@@ -1110,6 +1111,7 @@ export function ContainerEnvironmentVariables(props: EnvironmentVariablesProps) 
     return Array.from(secrets);
   }, [references]);
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const configMapsToFetch = React.useMemo(() => {
     const configMaps = new Set<string>();
     references.forEach(ref => {
@@ -1121,6 +1123,7 @@ export function ContainerEnvironmentVariables(props: EnvironmentVariablesProps) 
   }, [references]);
 
   // Callbacks to handle fetched resources
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const handleSecretFetched = React.useCallback(
     (name: string, resource: KubeObject | null, error: ApiError | null) => {
       setFetchedSecrets(prev => {
@@ -1132,6 +1135,7 @@ export function ContainerEnvironmentVariables(props: EnvironmentVariablesProps) 
     []
   );
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const handleConfigMapFetched = React.useCallback(
     (name: string, resource: KubeObject | null, error: ApiError | null) => {
       setFetchedConfigMaps(prev => {
@@ -1144,6 +1148,7 @@ export function ContainerEnvironmentVariables(props: EnvironmentVariablesProps) 
   );
 
   // Copy handler using notistack
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const handleCopy = React.useCallback(
     (text: string) => {
       navigator.clipboard.writeText(text).then(

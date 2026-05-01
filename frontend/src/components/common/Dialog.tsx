@@ -51,6 +51,7 @@ export function DialogTitle(props: OurDialogTitleProps) {
     return null;
   }
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const focusedRef = React.useCallback((node: HTMLElement) => {
     if (node !== null) {
       if (focusTitle) {

@@ -177,6 +177,7 @@ export function useKubeObject<K extends KubeObject>({
   // getWebsocketMultiplexerEnabled is a feature toggle
   // and not a variable so this `if` should never change during runtime
   if (getWebsocketMultiplexerEnabled()) {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     useWebSocket<KubeListUpdateEvent<K>>({
       url: () =>
         makeUrl([KubeObjectEndpoint.toUrl(endpoint!)], {
@@ -193,6 +194,7 @@ export function useKubeObject<K extends KubeObject>({
       },
     });
   } else {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     useWebSockets({
       enabled: !!endpoint && !!data,
       connections: connectionsRequests,

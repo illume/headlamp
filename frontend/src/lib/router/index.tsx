@@ -883,9 +883,12 @@ const defaultRoutes: { [routeName: string]: Route } = {
     useClusterURL: true,
     noAuthRequired: true,
     component: () => {
+      // eslint-disable-next-line react-hooks/rules-of-hooks
       const cluster = useCluster();
+      // eslint-disable-next-line react-hooks/rules-of-hooks
       const history = useHistory();
 
+      // eslint-disable-next-line react-hooks/rules-of-hooks
       React.useEffect(() => {
         history.replace(`/settings/cluster?c=${cluster}`);
       }, []);

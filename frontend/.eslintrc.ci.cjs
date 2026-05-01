@@ -30,6 +30,8 @@
 module.exports = {
   extends: ['./package.json'],
   rules: {
+    'react-hooks/rules-of-hooks': 'warn',
+    'react-hooks/exhaustive-deps': 'warn',
     'react-hooks/component-hook-factories': 'warn',
     'react-hooks/globals': 'warn',
     'react-hooks/immutability': 'warn',

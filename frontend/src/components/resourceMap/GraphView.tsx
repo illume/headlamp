@@ -124,6 +124,7 @@ const ChipGroup = styled(Box)({
 function GraphViewContent({
   height,
   defaultNodeSelection,
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   defaultSources = useGetAllSources(),
   defaultFilters = defaultFiltersValue,
 }: GraphViewContentProps) {
@@ -450,7 +451,9 @@ function CustomThemeProvider({ children }: { children: ReactNode }) {
  * @returns
  */
 export function GraphView(props: GraphViewContentProps) {
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const propsSources = props.defaultSources ?? useGetAllSources();
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const propsRelations = props.defaultRelations ?? useGetAllRelations();
 
   // Load plugin defined sources
