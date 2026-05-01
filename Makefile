@@ -314,7 +314,7 @@ run-only-app:
 	cd app && npm install && node ./scripts/setup-plugins.js && npm run dev-only-app
 
 frontend-lint:
-	cd frontend && npm run lint && npm run format-check
+	cd frontend && npm run ci-lint && npm run format-check
 
 frontend-lint-fix:
 	cd frontend && npm run lint -- --fix && npm run format
