@@ -54,11 +54,13 @@ export default function NodeShellSettings(props: SettingsProps) {
   const nodeShellLabelID = 'node-shell-enabled-label';
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setClusterSettings(!!cluster ? loadClusterSettings(cluster || '') : null);
   }, [cluster]);
 
   useEffect(() => {
     if (clusterSettings?.nodeShellTerminal?.namespace !== userNamespace) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUserNamespace(clusterSettings?.nodeShellTerminal?.namespace ?? '');
     }
 
@@ -72,6 +74,7 @@ export default function NodeShellSettings(props: SettingsProps) {
     if (clusterSettings !== null) {
       storeClusterSettings(cluster || '', clusterSettings);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cluster, clusterSettings]);
 
   //const selectedClusterData = data?.[selectedCluster] || {};
@@ -157,6 +160,7 @@ export default function NodeShellSettings(props: SettingsProps) {
         clearTimeout(timeoutHandle);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userNamespace]);
 
   useEffect(() => {
@@ -174,6 +178,7 @@ export default function NodeShellSettings(props: SettingsProps) {
         clearTimeout(timeoutHandle);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userImage]);
 
   return (

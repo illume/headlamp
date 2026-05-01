@@ -64,6 +64,7 @@ function CrInstancesView({ crds }: { crds: CRD[]; key: string }) {
       crdsFailedToLoad,
       allFailed: crdsFailedToLoad.length === queries.length,
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, queries);
 
   if (isLoading) {

@@ -403,6 +403,7 @@ export class KubeObject<T extends KubeObjectInterface | KubeEvent = any> {
         this.isNamespaced,
         namespacesFromParams
       );
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [cluster, clusters, fallbackClusters, namespace, this.isNamespaced]);
 
     // eslint-disable-next-line react-hooks/rules-of-hooks

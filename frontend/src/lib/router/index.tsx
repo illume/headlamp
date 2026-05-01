@@ -891,6 +891,7 @@ const defaultRoutes: { [routeName: string]: Route } = {
       // eslint-disable-next-line react-hooks/rules-of-hooks
       React.useEffect(() => {
         history.replace(`/settings/cluster?c=${cluster}`);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
       }, []);
 
       return <></>;

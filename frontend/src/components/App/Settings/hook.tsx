@@ -24,7 +24,9 @@ export const useSettings = function (settingName?: string) {
   const [settingEntries, setSettingEntries] = useState(storeSettingEntries);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSettingEntries(settingEntries);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storeSettingEntries]);
 
   return settingEntries;

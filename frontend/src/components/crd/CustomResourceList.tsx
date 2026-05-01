@@ -169,6 +169,7 @@ export function CustomResourceListTable(props: CustomResourceTableProps) {
     }
 
     return colsToDisplay;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [crd, additionalPrinterCols, isMultiCluster]);
 
   return (

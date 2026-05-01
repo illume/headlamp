@@ -76,6 +76,7 @@ export default function SecretDetails(props: {
                     lastDataRef.current = newData;
                   }
                 }
+                // eslint-disable-next-line react-hooks/exhaustive-deps
               }, [item.data]);
 
               const handleFieldChange = (key: string, newValue: string) => {

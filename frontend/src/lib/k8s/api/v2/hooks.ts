@@ -130,6 +130,7 @@ export function useKubeObject<K extends KubeObject>({
   const queryKey = useMemo(
     () =>
       kubeObjectQueryKey({ cluster, name, namespace, endpoint, queryParams: cleanedUpQueryParams }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [endpoint, namespace, name]
   );
 
@@ -171,6 +172,7 @@ export function useKubeObject<K extends KubeObject>({
         },
       },
     ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [endpoint]);
 
   // Breaking rules of hooks here a little but

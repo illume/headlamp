@@ -66,6 +66,7 @@ export default function RevisionHistorySection(props: RevisionHistorySectionProp
     let isActive = true;
 
     if (!historyGetter) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setRevisions([]);
       setError(null);
       setLoading(false);
@@ -95,6 +96,7 @@ export default function RevisionHistorySection(props: RevisionHistorySectionProp
     return () => {
       isActive = false;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [resource?.metadata?.uid, resource?.metadata?.resourceVersion]);
 
   if (!getHistory) {

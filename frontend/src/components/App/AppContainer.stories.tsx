@@ -39,6 +39,7 @@ const withEnv = (Story: React.ComponentType) => {
         (window as any).desktopApi = prev;
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

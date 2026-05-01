@@ -147,6 +147,7 @@ export default function EditorDialog(props: EditorDialogProps) {
     }
 
     // Determine the format (YAML or JSON) and serialize to string
+    // eslint-disable-next-line react-hooks/immutability
     const format = looksLikeJson(originalCodeRef.current.code) ? 'json' : 'yaml';
     const itemCode = format === 'json' ? JSON.stringify(clonedItem) : yaml.dump(clonedItem);
 
@@ -174,6 +175,7 @@ export default function EditorDialog(props: EditorDialogProps) {
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item, hideManagedFields]);
 
   React.useEffect(() => {

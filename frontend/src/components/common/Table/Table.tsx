@@ -136,6 +136,7 @@ function usePageURLState(
   const [zeroIndexPage, setZeroIndexPage] = useState(page - 1);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setZeroIndexPage((zeroIndexPage: number) => {
       if (page - 1 !== zeroIndexPage) {
         return page - 1;
@@ -147,6 +148,7 @@ function usePageURLState(
 
   useEffect(() => {
     setPage(zeroIndexPage + 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [zeroIndexPage]);
 
   return [zeroIndexPage, setZeroIndexPage];
@@ -214,6 +216,7 @@ export default function Table<RowItem extends Record<string, any>>({
 
   const storeRowsPerPageOptions = useSettings('tableRowsPerPageOptions');
   const rowsPerPageOptions = rowsPerPage || storeRowsPerPageOptions;
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const defaultRowsPerPage = useMemo(() => getTablesRowsPerPage(rowsPerPageOptions[0]), []);
   const [pageSize, setPageSize] = useURLState(shouldReflectInURL ? 'perPage' : '', {
     defaultValue: defaultRowsPerPage,
@@ -409,6 +412,7 @@ export default function Table<RowItem extends Record<string, any>>({
     } else if (!shouldHideActions && visibility['actions'] === false) {
       table.setColumnVisibility(prev => ({ ...prev, actions: true }));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [table.getState().columnVisibility, tableColumns, table]);
 
   const gridTemplateColumns = useMemo(() => {
@@ -435,8 +439,10 @@ export default function Table<RowItem extends Record<string, any>>({
     }
 
     return preGridTemplateColumns;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     tableProps.columns,
+    // eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/use-memo
     table.getState()?.columnVisibility,
     tableProps.state?.columnVisibility,
     tableProps.enableRowActions,

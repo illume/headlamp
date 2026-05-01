@@ -203,6 +203,7 @@ function GraphViewContent({
     const visibleGraph = collapseGraph(graph, { selectedNodeId, expandAll });
 
     return { visibleGraph, fullGraph: graph };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filteredGraph, groupBy, selectedNodeId, expandAll, allNamespaces]);
 
   const viewport = useGraphViewport();
@@ -234,6 +235,7 @@ function GraphViewContent({
     if (selectedNodeId) {
       return findGroupContaining(visibleGraph, selectedNodeId, true);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedNodeId, visibleGraph, findGroupContaining]);
 
   const graphSize = getGraphSize(visibleGraph);
@@ -241,6 +243,7 @@ function GraphViewContent({
     if (expandAll && graphSize > 50) {
       setExpandAll(false);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [graphSize]);
 
   const contextValue = useMemo(

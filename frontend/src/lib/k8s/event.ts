@@ -242,6 +242,7 @@ class Event extends KubeObject<KubeEvent> {
       });
 
       return res;
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queries, clusterNames]);
 
     return result;
@@ -276,6 +277,7 @@ class Event extends KubeObject<KubeEvent> {
       }
 
       setWarningList(newWarningsList);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [newWarningsList]);
 
     return warningList;

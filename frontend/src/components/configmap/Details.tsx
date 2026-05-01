@@ -70,6 +70,7 @@ export default function ConfigDetails(props: {
                   setData(newData);
                   lastDataRef.current = newData;
                 }
+                // eslint-disable-next-line react-hooks/exhaustive-deps
               }, [item.data, isDirty]);
 
               const handleSave = () => {
