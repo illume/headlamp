@@ -213,7 +213,7 @@ sub-second feedback loop and which belong on the multi-minute one.
 - Root `package.json` — `frontend:lint`, `frontend:lint:slow`,
   `frontend:lint:slow:fix`, `frontend:lint:fix` passthrough scripts.
 - `Makefile` — `frontend-lint` target (`npm run lint:slow && npm run format-check`).
-- `.github/workflows/frontend.yml` — runs `cd frontend && npm run lint:slow && npm run format-check` on every push and pull request.
+- `.github/workflows/frontend.yml` — runs `npm run frontend:lint:slow` on every push and pull request.
 
 ## Property testing (fuzzing)
 
