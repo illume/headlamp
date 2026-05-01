@@ -24,7 +24,7 @@
 // versions (e.g. via `plugins/headlamp-plugin`) that don't define them.
 //
 // Used by:
-//   - `npm run ci-lint` in `frontend/`
+//   - `npm run lint:ci` in `frontend/`
 //   - `lint-staged` (husky pre-commit) in `frontend/package.json`
 //   - the root `frontend:lint` script (CI)
 module.exports = {

@@ -3,7 +3,7 @@
   // (component-hook-factories, immutability, purity, refs, set-state-in-effect,
   // set-state-in-render, static-components, use-memo, ...) are reported in the
   // editor by default. The default `frontend/package.json` eslintConfig keeps
-  // these off so `npm run lint` stays fast; CI and husky go through ci-lint.
+  // these off so `npm run lint` stays fast; CI and husky go through lint:ci.
   "eslint.workingDirectories": [
     { "directory": "frontend", "changeProcessCWD": true }
   ],
