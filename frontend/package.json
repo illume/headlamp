@@ -187,7 +187,7 @@
     ],
     "rules": {
       "react-hooks/rules-of-hooks": "warn",
-      "react-hooks/exhaustive-deps": "off",
+      "react-hooks/exhaustive-deps": "warn",
       "react-hooks/component-hook-factories": "off",
       "react-hooks/globals": "off",
       "react-hooks/immutability": "off",

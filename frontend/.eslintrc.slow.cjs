@@ -16,12 +16,15 @@
 
 // CI-only ESLint config.
 //
-// This re-enables the slower `react-hooks/*` rules from
+// This re-enables the slow React-Compiler family of rules from
 // eslint-plugin-react-hooks v7+ on top of the defaults declared in
-// `package.json#eslintConfig`. The default config (used by `npm run lint`)
-// keeps these rules off so day-to-day local linting stays fast and is not
-// affected by transitive resolutions of older eslint-plugin-react-hooks
-// versions (e.g. via `plugins/headlamp-plugin`) that don't define them.
+// `package.json#eslintConfig`.
+//
+// All 10 of these rules share a single React-Compiler analysis pass:
+// enabling any one of them costs the full ~13 s and ~85 MB peak-RSS,
+// and adding the other 9 on top is essentially free. The default config
+// already enables the cheap legacy rules (`rules-of-hooks` and
+// `exhaustive-deps`, which together cost ~0.5 s on this tree).
 //
 // Used by:
 //   - `npm run lint:slow` in `frontend/`
@@ -30,8 +33,6 @@
 module.exports = {
   extends: ['./package.json'],
   rules: {
-    'react-hooks/rules-of-hooks': 'warn',
-    'react-hooks/exhaustive-deps': 'warn',
     'react-hooks/component-hook-factories': 'warn',
     'react-hooks/globals': 'warn',
     'react-hooks/immutability': 'warn',
