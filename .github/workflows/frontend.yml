@@ -49,7 +49,7 @@ jobs:
 
       - name: Run linter
         run: |
-          make frontend-lint
+          cd frontend && npm run lint:ci && npm run format-check
 
   test:
     name: test

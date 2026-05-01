@@ -1,19 +1,20 @@
 ../app/electron/*.js
 
 # Gitignored copies of frontend/src/ that get populated locally under
-# plugins/headlamp-plugin/src/ by the plugin's setup scripts (see
-# plugins/headlamp-plugin/src/.gitignore). ESLint does not respect
-# .gitignore, so we list them here explicitly to keep `npm run lint`
-# (and `npm run lint:ci`) clean — the originals in frontend/src/ are
-# already linted, and the copies don't carry the inline disable
-# directives that the originals do.
-../plugins/headlamp-plugin/src/assets/
+# plugins/headlamp-plugin/src/ by the plugin's build script (see
+# plugins/headlamp-plugin/src/.gitignore). ESLint does not honor
+# .gitignore, so we list these here to (a) avoid lint regressions
+# if a future change to the originals removes an inline directive
+# but the plugin copy still has the old form, and (b) avoid scanning
+# ~700 duplicate .ts/.tsx files (otherwise lint takes ~70% longer).
+# Only entries that actually contain .js/.ts/.tsx are listed; the
+# gitignored assets/, resources/ and react-app-env.d.ts entries from
+# plugins/headlamp-plugin/src/.gitignore have no JS/TS so they don't
+# need to be repeated here.
 ../plugins/headlamp-plugin/src/components/
 ../plugins/headlamp-plugin/src/helpers/
 ../plugins/headlamp-plugin/src/i18n/
 ../plugins/headlamp-plugin/src/lib/
 ../plugins/headlamp-plugin/src/plugin/
 ../plugins/headlamp-plugin/src/redux/
-../plugins/headlamp-plugin/src/resources/
 ../plugins/headlamp-plugin/src/stateless/
-../plugins/headlamp-plugin/src/react-app-env.d.ts
