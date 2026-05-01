@@ -85,29 +85,26 @@ This shows an alert when an a11y issue is detected.
 The frontend has two lint modes that share the same ESLint base config but
 differ in which rules are enforced and how strictly warnings are treated.
 
+The slow React Compiler `react-hooks/*` rules are checked in three places:
+the husky **pre-commit hook**, the **VSCode** editor, and **CI** — but
+**not** in `npm run lint`. The pre-commit hook and VSCode each operate on
+a small set of files at a time so the cost is negligible there, whereas
+`npm run lint` runs over the whole tree and needs to stay fast.
+
 ### `npm run lint` (local development)
 
-Run this while you're working on changes. It is the fast, permissive mode:
+The fast, permissive mode you run while editing:
 
 ```bash
 cd frontend && npm run lint        # check
 cd frontend && npm run lint -- --fix   # auto-fix what it can
 ```
 
-From the repository root the equivalent passthroughs are:
+Or from the repo root: `npm run frontend:lint` / `npm run frontend:lint:fix`.
 
-```bash
-npm run frontend:lint
-npm run frontend:lint:fix
-```
-
-Local lint uses the ESLint config embedded in `frontend/package.json`
-(`eslintConfig`). To keep iteration fast and avoid noise from older transitive
-versions of `eslint-plugin-react-hooks` pulled in via
-`plugins/headlamp-plugin`, most of the slow `react-hooks/*` rules are turned
-**off** here. Only `react-hooks/rules-of-hooks` is left on as `warn` so that
-the most fundamental hook misuse (e.g. calling a hook conditionally) still
-shows up during everyday development.
+It uses the ESLint config in `frontend/package.json` (`eslintConfig`).
+Only `react-hooks/rules-of-hooks` is enabled (as `warn`); the rest of the
+slow `react-hooks/*` rules are off here.
 
 ### `npm run lint:ci` (CI / pre-commit / strict)
 
@@ -141,41 +138,21 @@ It differs from `npm run lint` in two ways:
    `react-hooks/*` rule as `warn`.
 2. It passes `--max-warnings 0`, which makes any warning a hard failure.
 
-Together those two changes mean that every `react-hooks/*` warning must be
-addressed before CI will pass — see
-[Fixing new violations](#fixing-new-violations) below.
-
 > **Why a separate `.eslintrc.ci.cjs` file instead of CLI overrides?**
 > Earlier attempts used `npm run lint -- --rule 'name: warn'` to flip the
 > rules on for CI. That triggers a zsh / macOS shell-quoting bug when the
 > arguments are forwarded through `npm run … --`, which silently dropped some
 > of the rules. A real config file avoids that whole class of problem.
 
-### How the React Hooks rules are configured
+### React Hooks rules enforced in CI
 
-Headlamp uses `eslint-plugin-react-hooks` v7+, which ships several rules
-beyond the classic `rules-of-hooks` and `exhaustive-deps`. The full set
-that is enforced in CI is:
-
-| Rule                                   | What it catches |
-| -------------------------------------- | --------------- |
-| `react-hooks/rules-of-hooks`           | Hooks called conditionally, in loops, or outside React functions. |
-| `react-hooks/exhaustive-deps`          | Missing or unnecessary dependencies in `useEffect` / `useMemo` / `useCallback`. |
-| `react-hooks/component-hook-factories` | Hooks/components created from factory functions in unsafe ways. |
-| `react-hooks/globals`                  | Reading mutable globals during render. |
-| `react-hooks/immutability`             | Mutating props, state or hook arguments. |
-| `react-hooks/purity`                   | Calling impure functions (e.g. `Date.now`, `Math.random`) during render. |
-| `react-hooks/refs`                     | Reading or writing refs during render. |
-| `react-hooks/set-state-in-effect`      | `setState` calls inside an effect that can cause cascading renders. |
-| `react-hooks/set-state-in-render`      | `setState` calls during render. |
-| `react-hooks/static-components`        | Components defined inside another component's render. |
-| `react-hooks/unsupported-syntax`       | Patterns the React Compiler can't reason about. |
-| `react-hooks/use-memo`                 | Misuse of `useMemo` (non-inline functions, non-array deps, …). |
-
-For day-to-day development all of these except `rules-of-hooks` are turned
-off in the base config (so `npm run lint` stays fast). They are re-enabled
-as `warn` in `frontend/.eslintrc.ci.cjs` and, combined with
-`--max-warnings 0`, become blocking in CI.
+`eslint-plugin-react-hooks` v7+ rules enabled in `lint:ci`:
+`rules-of-hooks`, `exhaustive-deps`, `component-hook-factories`, `globals`,
+`immutability`, `purity`, `refs`, `set-state-in-effect`,
+`set-state-in-render`, `static-components`, `unsupported-syntax`,
+`use-memo`. See the
+[plugin docs](https://react.dev/reference/eslint-plugin-react-hooks)
+for what each one catches.
 
 ### Why the React Compiler rules are kept out of `npm run lint`
 
@@ -223,72 +200,6 @@ before pushing.
 In other words: nothing is being skipped — every check still runs before
 code lands. The split is purely about which checks belong on the
 sub-second feedback loop and which belong on the multi-minute one.
-
-### Fixing new violations
-
-**New `react-hooks/*` violations should be fixed, not suppressed.** These
-rules exist to catch real correctness bugs (stale closures, accidental
-re-renders, mutation of frozen state, components recreated on every render,
-…), and the project's policy is to keep `lint:ci` green by repairing the
-underlying code.
-
-If `npm run lint:ci` reports a warning on code you wrote or modified:
-
-1. Read the rule's documentation
-   ([React Hooks lint rules](https://react.dev/reference/eslint-plugin-react-hooks))
-   to understand what bug it is pointing at.
-2. Refactor the code so the warning goes away — typically by completing a
-   dependency array, lifting a component definition out of render, replacing
-   an in-effect `setState` with a derived value, etc.
-3. Re-run `npm run frontend:lint:ci` (or `npm run frontend:lint:ci:fix` to
-   apply ESLint's autofixes plus Prettier) to confirm it is clean.
-
-### Existing inline suppressions
-
-You will see a number of `// eslint-disable-next-line react-hooks/…`
-comments scattered through `frontend/src/`. These are a **one-time
-grandfathering** of violations that already existed when the strict
-`react-hooks/*` rules were turned on, captured inline so that
-`npm run lint:ci` could be made green without rewriting unrelated code in
-the same change. They are technical debt, not a template.
-
-Guidelines:
-
-- **Do not add new suppressions** to silence a warning you introduced. Fix
-  the underlying issue instead.
-- **Do not widen** suppressions by turning a rule off in
-  `frontend/.eslintrc.ci.cjs` or `frontend/package.json`'s `eslintConfig`.
-  All suppression must stay local to the offending line.
-- When you happen to touch a file that has an existing suppression, prefer
-  removing it as part of your change (by fixing the violation it was
-  hiding) rather than carrying it forward.
-
-For reference, the inline form looks like this in regular TS/JSX
-(including JSX expressions inside parentheses):
-
-```tsx
-// eslint-disable-next-line react-hooks/exhaustive-deps
-React.useEffect(() => {
-  doSomething(item);
-}, []);
-```
-
-Multiple rules on the same line can be combined:
-
-```tsx
-// eslint-disable-next-line react-hooks/exhaustive-deps, react-hooks/set-state-in-effect
-React.useEffect(() => setCount(c => c + 1), []);
-```
-
-Inside JSX **child** content (between an opening and closing tag, where
-`//` would be parsed as text), the JSX comment form is required:
-
-```tsx
-<Wrapper>
-  {/* eslint-disable-next-line react-hooks/static-components */}
-  <ChildDefinedDuringRender />
-</Wrapper>
-```
 
 ### Where each piece lives
 
