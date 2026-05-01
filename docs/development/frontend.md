@@ -182,16 +182,20 @@ as `warn` in `frontend/.eslintrc.ci.cjs` and, combined with
 The `react-hooks/*` rules from `eslint-plugin-react-hooks` v7+ are powered
 by the React Compiler. They are excellent at catching real bugs, but they
 are also **roughly 5× slower** than the rest of the lint pass. Turning
-them on for `npm run lint` would push it from ~15 seconds to ~2.5 minutes
-on a cold cache.
+them on for `npm run lint` would push it from ~1 second to ~15 seconds on
+a typical workstation, and to multiple minutes on lower-specced hardware
+(see below).
 
 That trade-off matters because `npm run lint` is the **fast path** —
 the "quick check" developers run constantly while editing, switching
 branches, or rewriting commits. Several common workflows defeat the
 ESLint cache (e.g. `git rebase -i`, switching to a fresh worktree, CI
 without a cache hit), so the uncached time is what actually gets
-experienced. A 15-second lint stays in the flow of work; a 2.5-minute
-lint does not, and developers start skipping it.
+experienced. A 1-second lint stays in the flow of work; a 15-second
+lint does not, and developers start skipping it. It is even more true
+on common Windows lower-specced machines where it can instead take
+2.5 minutes to run lint with the React Compiler enabled! Consider that
+people might run that for bisecting 20 commits… and it adds up.
 
 So Headlamp follows a deliberate pattern that already shows up elsewhere
 in the codebase: **slower checks live on a separate, slower path, while
