@@ -177,6 +177,49 @@ off in the base config (so `npm run lint` stays fast). They are re-enabled
 as `warn` in `frontend/.eslintrc.ci.cjs` and, combined with
 `--max-warnings 0`, become blocking in CI.
 
+### Why the React Compiler rules are kept out of `npm run lint`
+
+The `react-hooks/*` rules from `eslint-plugin-react-hooks` v7+ are powered
+by the React Compiler. They are excellent at catching real bugs, but they
+are also **roughly 5× slower** than the rest of the lint pass. Turning
+them on for `npm run lint` would push it from ~15 seconds to ~2.5 minutes
+on a cold cache.
+
+That trade-off matters because `npm run lint` is the **fast path** —
+the "quick check" developers run constantly while editing, switching
+branches, or rewriting commits. Several common workflows defeat the
+ESLint cache (e.g. `git rebase -i`, switching to a fresh worktree, CI
+without a cache hit), so the uncached time is what actually gets
+experienced. A 15-second lint stays in the flow of work; a 2.5-minute
+lint does not, and developers start skipping it.
+
+So Headlamp follows a deliberate pattern that already shows up elsewhere
+in the codebase: **slower checks live on a separate, slower path, while
+the fast path stays fast.** Concretely:
+
+- `npm run tsc` — full TypeScript typechecking is **not** run as part of
+  `npm run lint`; it has its own command and runs in CI.
+- `npm run format-check` — Prettier formatting is **not** run as part of
+  `npm run lint`; it has its own command and is part of `lint:ci`.
+- Frontend integration / e2e tests (`npm run app:test:e2e`, Storybook
+  smoke tests, etc.) are **not** part of `npm run frontend:test`; they
+  run on their own slower jobs.
+- Backend integration tests are **not** part of the default `go test`
+  pass; they sit behind their own targets in the `Makefile`.
+
+The `react-hooks/*` rules slot into the same pattern. The fast path
+(`npm run lint`) keeps only `react-hooks/rules-of-hooks` — the rule that
+catches the most fundamental hook misuse — so trivial mistakes still
+surface immediately. Everything else is enforced in the slower
+`lint:ci` path that runs in CI, on the husky pre-commit hook (via
+`lint-staged`, which only lints changed files so it stays fast), and
+when a developer explicitly opts in by running `npm run frontend:lint:ci`
+before pushing.
+
+In other words: nothing is being skipped — every check still runs before
+code lands. The split is purely about which checks belong on the
+sub-second feedback loop and which belong on the multi-minute one.
+
 ### Fixing new violations
 
 **New `react-hooks/*` violations should be fixed, not suppressed.** These
