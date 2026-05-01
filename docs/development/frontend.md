@@ -115,12 +115,16 @@ Run this before opening a PR, or rely on it via `husky` pre-commit and CI:
 
 ```bash
 cd frontend && npm run lint:ci
+
+# auto-fix what ESLint can fix, then run prettier:
+cd frontend && npm run lint:ci:fix
 ```
 
 From the repository root:
 
 ```bash
 npm run frontend:lint:ci
+npm run frontend:lint:ci:fix
 ```
 
 `lint:ci` is the strict mode used by:
@@ -137,8 +141,9 @@ It differs from `npm run lint` in two ways:
    `react-hooks/*` rule as `warn`.
 2. It passes `--max-warnings 0`, which makes any warning a hard failure.
 
-Together those two changes mean that every `react-hooks/*` warning
-**must be either fixed or explicitly suppressed** in source.
+Together those two changes mean that every `react-hooks/*` warning must be
+addressed before CI will pass — see
+[Fixing new violations](#fixing-new-violations) below.
 
 > **Why a separate `.eslintrc.ci.cjs` file instead of CLI overrides?**
 > Earlier attempts used `npm run lint -- --rule 'name: warn'` to flip the
@@ -172,16 +177,47 @@ off in the base config (so `npm run lint` stays fast). They are re-enabled
 as `warn` in `frontend/.eslintrc.ci.cjs` and, combined with
 `--max-warnings 0`, become blocking in CI.
 
-### Suppressing a violation
+### Fixing new violations
 
-The CI run must come back clean (zero warnings). When a rule fires on code
-that you do not want to (or cannot safely) refactor right now, suppress it
-**inline at the point of the violation** using an ESLint disable comment.
-Do **not** widen the suppression by turning the rule off in
-`.eslintrc.ci.cjs` or `package.json`.
+**New `react-hooks/*` violations should be fixed, not suppressed.** These
+rules exist to catch real correctness bugs (stale closures, accidental
+re-renders, mutation of frozen state, components recreated on every render,
+…), and the project's policy is to keep `lint:ci` green by repairing the
+underlying code.
 
-In regular TypeScript / JavaScript code, including JSX expressions inside
-parentheses:
+If `npm run lint:ci` reports a warning on code you wrote or modified:
+
+1. Read the rule's documentation
+   ([React Hooks lint rules](https://react.dev/reference/eslint-plugin-react-hooks))
+   to understand what bug it is pointing at.
+2. Refactor the code so the warning goes away — typically by completing a
+   dependency array, lifting a component definition out of render, replacing
+   an in-effect `setState` with a derived value, etc.
+3. Re-run `npm run frontend:lint:ci` (or `npm run frontend:lint:ci:fix` to
+   apply ESLint's autofixes plus Prettier) to confirm it is clean.
+
+### Existing inline suppressions
+
+You will see a number of `// eslint-disable-next-line react-hooks/…`
+comments scattered through `frontend/src/`. These are a **one-time
+grandfathering** of violations that already existed when the strict
+`react-hooks/*` rules were turned on, captured inline so that
+`npm run lint:ci` could be made green without rewriting unrelated code in
+the same change. They are technical debt, not a template.
+
+Guidelines:
+
+- **Do not add new suppressions** to silence a warning you introduced. Fix
+  the underlying issue instead.
+- **Do not widen** suppressions by turning a rule off in
+  `frontend/.eslintrc.ci.cjs` or `frontend/package.json`'s `eslintConfig`.
+  All suppression must stay local to the offending line.
+- When you happen to touch a file that has an existing suppression, prefer
+  removing it as part of your change (by fixing the violation it was
+  hiding) rather than carrying it forward.
+
+For reference, the inline form looks like this in regular TS/JSX
+(including JSX expressions inside parentheses):
 
 ```tsx
 // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -198,7 +234,7 @@ React.useEffect(() => setCount(c => c + 1), []);
 ```
 
 Inside JSX **child** content (between an opening and closing tag, where
-`//` would be parsed as text), use the JSX comment form instead:
+`//` would be parsed as text), the JSX comment form is required:
 
 ```tsx
 <Wrapper>
@@ -207,21 +243,17 @@ Inside JSX **child** content (between an opening and closing tag, where
 </Wrapper>
 ```
 
-Each suppression should ideally be accompanied by a short comment or
-linked issue explaining why the violation is intentional, so future
-contributors know whether it can be removed.
-
 ### Where each piece lives
 
-- `frontend/package.json` — `lint`, `lint:ci`, `format`, `format-check`
-  scripts and the base `eslintConfig`.
+- `frontend/package.json` — `lint`, `lint:ci`, `lint:ci:fix`, `format`,
+  `format-check` scripts and the base `eslintConfig`.
 - `frontend/.eslintrc.ci.cjs` — strict CI config that re-enables the
   `react-hooks/*` rules.
 - `frontend/.eslintignore` — paths excluded from linting (notably the
   gitignored copies of `frontend/src/` that `plugins/headlamp-plugin/`
   scripts create locally).
 - Root `package.json` — `frontend:lint`, `frontend:lint:ci`,
-  `frontend:lint:fix` passthrough scripts.
+  `frontend:lint:ci:fix`, `frontend:lint:fix` passthrough scripts.
 - `Makefile` — `frontend-lint` target; this is what CI invokes.
 - `.github/workflows/frontend.yml` — runs `make frontend-lint` on every
   push and pull request.
