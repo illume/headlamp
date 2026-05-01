@@ -18,3 +18,14 @@
 ../plugins/headlamp-plugin/src/plugin/
 ../plugins/headlamp-plugin/src/redux/
 ../plugins/headlamp-plugin/src/stateless/
+
+# Other gitignored sibling dirs of plugins/headlamp-plugin/ that get
+# populated by `npm run build` in the plugin (see plugins/headlamp-plugin/.gitignore):
+# - examples/             (bundled copy of plugins/examples/* via scripts/bundle-examples.js)
+# - official-plugins/     (fetched from headlamp-k8s/plugins via scripts/fetch-official-plugins.js)
+# - .temp-official-plugins/ (intermediate dir used by the same fetch script)
+# Without these the frontend lint scan picks up plugin TS/TSX without the
+# project's license header etc. and fails.
+../plugins/headlamp-plugin/examples/
+../plugins/headlamp-plugin/official-plugins/
+../plugins/headlamp-plugin/.temp-official-plugins/

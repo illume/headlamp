@@ -106,39 +106,39 @@ It uses the ESLint config in `frontend/package.json` (`eslintConfig`).
 Only `react-hooks/rules-of-hooks` is enabled (as `warn`); the rest of the
 slow `react-hooks/*` rules are off here.
 
-### `npm run lint:ci` (CI / pre-commit / strict)
+### `npm run lint:slow` (CI / pre-commit / strict)
 
 Run this before opening a PR, or rely on it via `husky` pre-commit and CI:
 
 ```bash
-cd frontend && npm run lint:ci
+cd frontend && npm run lint:slow
 
 # auto-fix what ESLint can fix, then run prettier:
-cd frontend && npm run lint:ci:fix
+cd frontend && npm run lint:slow:fix
 ```
 
 From the repository root:
 
 ```bash
-npm run frontend:lint:ci
-npm run frontend:lint:ci:fix
+npm run frontend:lint:slow
+npm run frontend:lint:slow:fix
 ```
 
-`lint:ci` is the strict mode used by:
+`lint:slow` is the strict mode used by:
 
-- the GitHub Actions workflow `.github/workflows/frontend.yml` (via
-  `make frontend-lint`)
+- the GitHub Actions workflow `.github/workflows/frontend.yml`
+- the `make frontend-lint` target
 - the `husky` pre-commit hook through `lint-staged`
 - developers verifying their work locally before pushing
 
 It differs from `npm run lint` in two ways:
 
-1. It points ESLint at a dedicated config, `frontend/.eslintrc.ci.cjs`, which
+1. It points ESLint at a dedicated config, `frontend/.eslintrc.slow.cjs`, which
    `extends` the base config from `package.json` and re-enables every
    `react-hooks/*` rule as `warn`.
 2. It passes `--max-warnings 0`, which makes any warning a hard failure.
 
-> **Why a separate `.eslintrc.ci.cjs` file instead of CLI overrides?**
+> **Why a separate `.eslintrc.slow.cjs` file instead of CLI overrides?**
 > Earlier attempts used `npm run lint -- --rule 'name: warn'` to flip the
 > rules on for CI. That triggers a zsh / macOS shell-quoting bug when the
 > arguments are forwarded through `npm run … --`, which silently dropped some
@@ -146,7 +146,7 @@ It differs from `npm run lint` in two ways:
 
 ### React Hooks rules enforced in CI
 
-`eslint-plugin-react-hooks` v7+ rules enabled in `lint:ci`:
+`eslint-plugin-react-hooks` v7+ rules enabled in `lint:slow`:
 `rules-of-hooks`, `exhaustive-deps`, `component-hook-factories`, `globals`,
 `immutability`, `purity`, `refs`, `set-state-in-effect`,
 `set-state-in-render`, `static-components`, `unsupported-syntax`,
@@ -181,7 +181,7 @@ the fast path stays fast.** Concretely:
 - `npm run tsc` — full TypeScript typechecking is **not** run as part of
   `npm run lint`; it has its own command and runs in CI.
 - `npm run format-check` — Prettier formatting is **not** run as part of
-  `npm run lint`; it has its own command and is part of `lint:ci`.
+  `npm run lint`; it has its own command and is part of `lint:slow`.
 - Frontend integration / e2e tests (`npm run app:test:e2e`, Storybook
   smoke tests, etc.) are **not** part of `npm run frontend:test`; they
   run on their own slower jobs.
@@ -192,9 +192,9 @@ The `react-hooks/*` rules slot into the same pattern. The fast path
 (`npm run lint`) keeps only `react-hooks/rules-of-hooks` — the rule that
 catches the most fundamental hook misuse — so trivial mistakes still
 surface immediately. Everything else is enforced in the slower
-`lint:ci` path that runs in CI, on the husky pre-commit hook (via
+`lint:slow` path that runs in CI, on the husky pre-commit hook (via
 `lint-staged`, which only lints changed files so it stays fast), and
-when a developer explicitly opts in by running `npm run frontend:lint:ci`
+when a developer explicitly opts in by running `npm run frontend:lint:slow`
 before pushing.
 
 In other words: nothing is being skipped — every check still runs before
@@ -203,18 +203,17 @@ sub-second feedback loop and which belong on the multi-minute one.
 
 ### Where each piece lives
 
-- `frontend/package.json` — `lint`, `lint:ci`, `lint:ci:fix`, `format`,
+- `frontend/package.json` — `lint`, `lint:slow`, `lint:slow:fix`, `format`,
   `format-check` scripts and the base `eslintConfig`.
-- `frontend/.eslintrc.ci.cjs` — strict CI config that re-enables the
+- `frontend/.eslintrc.slow.cjs` — strict CI config that re-enables the
   `react-hooks/*` rules.
 - `frontend/.eslintignore` — paths excluded from linting (notably the
   gitignored copies of `frontend/src/` that `plugins/headlamp-plugin/`
   scripts create locally).
-- Root `package.json` — `frontend:lint`, `frontend:lint:ci`,
-  `frontend:lint:ci:fix`, `frontend:lint:fix` passthrough scripts.
-- `Makefile` — `frontend-lint` target; this is what CI invokes.
-- `.github/workflows/frontend.yml` — runs `make frontend-lint` on every
-  push and pull request.
+- Root `package.json` — `frontend:lint`, `frontend:lint:slow`,
+  `frontend:lint:slow:fix`, `frontend:lint:fix` passthrough scripts.
+- `Makefile` — `frontend-lint` target (`npm run lint:slow && npm run format-check`).
+- `.github/workflows/frontend.yml` — runs `cd frontend && npm run lint:slow && npm run format-check` on every push and pull request.
 
 ## Property testing (fuzzing)
 
