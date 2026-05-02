@@ -14,10 +14,16 @@
  * limitations under the License.
  */
 
-// Walks the production build directory and writes <file>.br and <file>.gz
-// sidecars next to every compressible asset above a small threshold.
-// The Go backend (`pkg/spa`) negotiates Accept-Encoding and serves these
-// precompressed files directly, so no on-the-fly compression is ever needed.
+// Walks the production build directory and writes <file>.br sidecars next to
+// every compressible asset above a small threshold. The Go backend
+// (`pkg/spa`) negotiates Accept-Encoding and serves these precompressed
+// files directly, so no on-the-fly compression is ever needed.
+//
+// Only brotli is emitted: every browser Headlamp targets supports it, and
+// emitting a parallel gzip set would double the post-build cost and disk
+// footprint for no real benefit. The backend still negotiates `gzip` and
+// will simply serve identity bytes when a `.br` sidecar is missing or the
+// client only advertises gzip.
 
 import fs from 'fs';
 import path from 'path';
@@ -64,7 +70,6 @@ if (!fs.existsSync(BUILD_DIR)) {
 
 let rawTotal = 0;
 let brTotal = 0;
-let gzTotal = 0;
 let count = 0;
 
 for (const file of walk(BUILD_DIR)) {
@@ -78,17 +83,12 @@ for (const file of walk(BUILD_DIR)) {
       [zlib.constants.BROTLI_PARAM_SIZE_HINT]: data.length,
     },
   });
-  const gz = zlib.gzipSync(data, { level: 9 });
 
   // Only keep the sidecar if it's actually smaller than the original.
   // (Some pre-minified files don't compress further.)
   if (br.length < data.length) {
     fs.writeFileSync(file + '.br', br);
     brTotal += br.length;
-  }
-  if (gz.length < data.length) {
-    fs.writeFileSync(file + '.gz', gz);
-    gzTotal += gz.length;
   }
 
   rawTotal += data.length;
@@ -97,5 +97,5 @@ for (const file of walk(BUILD_DIR)) {
 
 const fmt = b => (b / 1024 / 1024).toFixed(2) + ' MB';
 console.log(
-  `precompress-build: ${count} files, raw ${fmt(rawTotal)} -> br ${fmt(brTotal)} / gz ${fmt(gzTotal)}`
+  `precompress-build: ${count} files, raw ${fmt(rawTotal)} -> br ${fmt(brTotal)}`
 );
