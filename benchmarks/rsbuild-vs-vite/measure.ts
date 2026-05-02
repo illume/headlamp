@@ -198,17 +198,16 @@ async function main(): Promise<void> {
   await new Promise(r => setTimeout(r, 2000));
 
   // Resource sampler: runs concurrently with the browser harness, exits
-  // when the browser writes its result file.
+  // when the cdp_bench child process exits and the runner sets
+  // samplerStop. We deliberately do NOT short-circuit on the existence
+  // of browserJsonPath — that file is opened (and thus exists) before
+  // cdp_bench starts navigating, so checking for it would stop the
+  // sampler within the first tick and miss the entire navigation +
+  // reload window.
   const samples: string[] = ['ts_ms,role,pid,rss_kb,cpu_pct'];
   let samplerStop = false;
   const samplerDone = (async (): Promise<void> => {
     while (!samplerStop) {
-      try {
-        await fs.access(browserJsonPath);
-        break;
-      } catch {
-        // continue sampling
-      }
       const ts = Date.now();
       let serverStat: ProcTotals = { rssKb: 0, cpuPct: 0, samples: 0 };
       try {

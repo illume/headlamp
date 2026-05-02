@@ -261,7 +261,22 @@ for (const tool of ['rsbuild', 'vite'] as const) {
     // 2) Dist-size stats per tool — captured immediately after the
     //    cold build, before the warm rebuild and before the next
     //    tool wipes the caches.
+    //
+    //    The harness invokes `npx vite build` / `npx rsbuild build`
+    //    directly, which bypasses the frontend's `postbuild` npm
+    //    lifecycle script. Run the precompress step explicitly here
+    //    so dist_stats can include brotli sidecar counts/bytes
+    //    (otherwise br_files / br_bytes are always zero).
     if (runIdx === 1 && code === 0) {
+      await run0(
+        'node',
+        ['./scripts/precompress-build.mjs', 'build'],
+        { shell: process.platform === 'win32' }
+      ).catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : String(e);
+        console.error(`[bench] precompress (${tool}) failed: ${msg}`);
+        failures.push(`precompress ${tool}: ${msg}`);
+      });
       await captureDistStats(path.join(outDir, `dist_stats_${tool}.json`));
     }
   }

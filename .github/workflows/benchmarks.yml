@@ -51,7 +51,7 @@ jobs:
 
       - name: Install bench deps (and Playwright chromium)
         working-directory: benchmarks/rsbuild-vs-vite
-        run: npm install
+        run: npm ci
 
       - name: Typecheck bench code
         working-directory: benchmarks/rsbuild-vs-vite
