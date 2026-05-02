@@ -10,7 +10,7 @@ directory; results are produced into `results/<UTC-timestamp>/`.
 |---|---|
 | Repo branch | `copilot/make-default-build-system-rsbuild` (post Monaco trim, brotli sidecars) |
 | Host | Linux x86_64, sandbox runner |
-| Node | v20.20.2 |
+| Node | v22.x (harness requires Node ≥ 22 for `--experimental-strip-types`; numbers below were captured under Node 22 in the same sandbox) |
 | Browser | Chromium 147 (headless) driven via raw CDP |
 | rsbuild | `@rsbuild/core@2.0.3` |
 | vite | `vite@8.0.10` |

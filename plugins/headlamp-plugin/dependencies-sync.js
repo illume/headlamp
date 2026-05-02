@@ -41,9 +41,6 @@ const dependenciesFrontDoesNotHave = new Set([
   'tar',
   'vite-plugin-css-injected-by-js',
   'vite-plugin-static-copy',
-  '@storybook/addon-webpack5-compiler-swc',
-  '@storybook/react-webpack5',
-  'ts-loader',
   '@headlamp-k8s/pluginctl',
   'path-browserify',
   'process',
@@ -59,10 +56,14 @@ const dependenciesToNotCopy = [
   'typedoc-plugin-markdown',
   'typedoc-plugin-rename-defaults',
   'eslint-plugin-license-header',
-  '@rsbuild/core',
-  '@rsbuild/plugin-node-polyfill',
+  // `@rsbuild/plugin-react` is unused by the plugin's Storybook
+  // (`storybook-react-rsbuild` ships its own React integration).
+  // The other `@rsbuild/*` packages — `@rsbuild/core`,
+  // `@rsbuild/plugin-node-polyfill`, `@rsbuild/plugin-svgr` — ARE
+  // used by `plugins/headlamp-plugin/config/.storybook/main.js` and
+  // must sync from frontend/, so they are intentionally NOT listed
+  // here.
   '@rsbuild/plugin-react',
-  '@rsbuild/plugin-svgr',
   'nock',
   'vitest-websocket-mock',
   'cross-env',
