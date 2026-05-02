@@ -27,7 +27,11 @@ echo "[$NAME] dev server idle:"
 ps -p $SERVER_PID -o pid,rss=,%cpu= 2>/dev/null
 
 echo "ts_ms,role,pid,rss_kb,cpu_pct" > $SAMPLES
-( for j in $(seq 1 280); do
+# Sampler runs for up to 5 minutes (3000 × 0.1 s) so it covers cold cdp_bench
+# runs that take a while (e.g. vite + storybook on a cold optimize-deps).
+# It exits as soon as cdp_bench writes its result file.
+( for j in $(seq 1 3000); do
+    [ -s /tmp/${NAME}_browser.json ] && break
     server_rss=$(ps -o rss= --ppid $SERVER_PID -p $SERVER_PID 2>/dev/null | awk '{s+=$1}END{print s}')
     server_cpu=$(ps -o %cpu= --ppid $SERVER_PID -p $SERVER_PID 2>/dev/null | awk '{s+=$1}END{print s}')
     chr_rss=$(ps -eo rss=,comm= 2>/dev/null | awk '/chromium|chrome/{s+=$1}END{print s}')
@@ -47,6 +51,7 @@ echo "[$NAME] browser metrics (summary):"
 node -e "
   const j=JSON.parse(require('fs').readFileSync('/tmp/${NAME}_browser.json'));
   const k=v=>v==null?'n/a':v;
+  console.log('  rendered=', j.rendered,'; reloadRendered=', j.reloadRendered);
   console.log('  cold load=', k(j.cold.load_ms),'ms; DCL=', k(j.cold.domContentLoaded_ms),'ms; netIdle=', k(j.cold.networkIdle_ms),'ms');
   console.log('  cold reqs=', j.cold.requests,'; bytes=', (j.cold.bytesReceived/1e6).toFixed(2),'MB');
   console.log('  reload load=', k(j.reload.load_ms),'ms; reqs=', j.reload.requests,'; bytes=', (j.reload.bytesReceived/1e6).toFixed(2),'MB');

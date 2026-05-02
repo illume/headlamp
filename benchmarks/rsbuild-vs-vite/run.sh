@@ -48,7 +48,7 @@ python3 "$HERE/dist_stats.py" build > "$OUT/dist_stats_last.json" || true
 # Land directly on a story iframe so we measure the preview-builder, not just
 # the manager shell. SectionBox.stories.tsx exists in headlamp's source and is
 # a small, dependency-light story — same id under both builders.
-SB_URL='/iframe.html?id=sectionbox--withchildren&viewMode=story'
+SB_URL='/iframe.html?id=sectionbox--with-children&viewMode=story'
 
 # Wipe builder + storybook caches before each run so neither bundler benefits
 # from a previously warmed dep cache.

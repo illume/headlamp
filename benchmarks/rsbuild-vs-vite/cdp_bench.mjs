@@ -87,8 +87,49 @@ evHandlers.push(ev => {
 
 await send('Page.navigate', { url: targetUrl });
 
-const deadline = Date.now() + 30000;
-while (Date.now() < deadline) {
+// Wait until the page actually renders the story (not just a network-idle
+// blank document, and not Storybook's "couldn't find story" error). A
+// rendered story has substantial content in #storybook-root; a render error
+// renders to body and leaves #storybook-root empty (or hidden). We
+// deliberately do NOT key off `document.body.innerText` because addons like
+// MSW append console-style notifications there even on a successful render.
+// Generous timeout — vite's first-run dep-optimize on a cold cache can take
+// well over a minute on this codebase.
+const RENDER_TIMEOUT_MS = Number(process.env.RENDER_TIMEOUT_MS || 180000);
+const renderDeadline = Date.now() + RENDER_TIMEOUT_MS;
+let rendered = false;
+let renderDiagnostic = null;
+while (Date.now() < renderDeadline) {
+  const r = await send('Runtime.evaluate', {
+    expression: `(() => {
+      const root = document.getElementById('storybook-root');
+      const sbRootContent = root && !root.hidden ? root.innerHTML.length : 0;
+      const bodyText = document.body ? document.body.innerText : '';
+      const fcp = (performance.getEntriesByType('paint').find(e=>e.name==='first-contentful-paint')||{}).startTime;
+      // For the iframe viewMode=story path, success = #storybook-root has
+      // real content. For non-iframe pages (e.g. the manager) fall back to
+      // non-empty body.
+      const ok = fcp > 0 && (sbRootContent > 50 || (!root && bodyText.length > 100));
+      return JSON.stringify({ ok, sbRootContent, bodyText: bodyText.slice(0,300), fcp: fcp || 0 });
+    })()`,
+    returnByValue: true,
+  });
+  let s = {};
+  try { s = JSON.parse(r.result.value); } catch {}
+  renderDiagnostic = s;
+  if (s.ok) { rendered = true; break; }
+  await new Promise(r => setTimeout(r, 200));
+}
+if (!rendered) {
+  console.error('[cdp_bench] Story did not render within ' + RENDER_TIMEOUT_MS + 'ms');
+  console.error('[cdp_bench] last diagnostic: ' + JSON.stringify(renderDiagnostic));
+}
+
+// After the story has rendered, wait for the network to settle so we get a
+// stable request/byte count. The rsbuild dev server tends to settle within
+// a second; vite holds a few HMR pings open so we cap the wait.
+const idleDeadline = Date.now() + 15000;
+while (Date.now() < idleDeadline) {
   if (tLoad && lastIdleAt && (Date.now() - lastIdleAt) > 1500) { tNetIdle = lastIdleAt; break; }
   await new Promise(r => setTimeout(r, 100));
 }
@@ -121,11 +162,29 @@ const reloadCounter = ev => {
 };
 const reloadStartReqs = requests, reloadStartBytes = bytesRecv;
 await send('Page.reload', {});
-const rDeadline = Date.now() + 20000;
+// Reload waits up to 60s — generous so vite has time to re-render after HMR
+// or a cold-ish optimize-deps invalidation.
+const rDeadline = Date.now() + 60000;
 while (Date.now() < rDeadline && !tReloadLoad) await new Promise(r => setTimeout(r, 50));
+// Also re-confirm the story actually rendered after reload.
+let reloadRendered = false;
+const reloadRenderDeadline = Date.now() + 30000;
+while (Date.now() < reloadRenderDeadline) {
+  const r = await send('Runtime.evaluate', {
+    expression: `(() => {
+      const root = document.getElementById('storybook-root') || document.getElementById('root');
+      return root ? root.innerHTML.length > 0 : !!(document.body && document.body.innerText.length);
+    })()`,
+    returnByValue: true,
+  });
+  if (r.result.value) { reloadRendered = true; break; }
+  await new Promise(r => setTimeout(r, 200));
+}
 
 const out = {
   url: targetUrl,
+  rendered,
+  reloadRendered,
   cold: {
     domContentLoaded_ms: tDcl ? tDcl - tStart : null,
     load_ms: tLoad ? tLoad - tStart : null,

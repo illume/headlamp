@@ -27,6 +27,11 @@ export default {
 
   addons: ['@storybook/addon-links', '@storybook/addon-docs'],
 
+  // Same as the rsbuild Storybook config — match it for an apples-to-apples
+  // comparison. Without this MSW's mockServiceWorker.js can't register and
+  // every story fails to render.
+  staticDirs: ['../public'],
+
   core: {
     disableTelemetry: true,
   },

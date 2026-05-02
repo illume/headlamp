@@ -24,6 +24,12 @@ export default {
 
   addons: ['@storybook/addon-links', '@storybook/addon-docs'],
 
+  // Serve frontend/public/* as Storybook static assets so e.g. MSW's
+  // `mockServiceWorker.js` is reachable. Storybook with the rsbuild
+  // framework does not pick up rsbuild's `source.root`/public dir
+  // automatically the way the vite framework picks up vite's `publicDir`.
+  staticDirs: ['../public'],
+
   core: {
     disableTelemetry: true,
   },
