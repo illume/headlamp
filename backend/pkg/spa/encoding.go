@@ -11,12 +11,32 @@ import (
 // Only brotli is supported: every browser Headlamp targets ships with brotli,
 // the build pipeline only emits `.br` sidecars, and serving gzip would
 // require a parallel set of files for no real-world benefit. Encodings whose
-// quality value (`q=`) is explicitly 0 are never selected. The function does
+// quality value (`q=`) is explicitly 0 are never selected, including when
+// the wildcard `*` appears later in the same header (RFC 7231 §5.3.4: an
+// explicit q=0 for a coding overrides the wildcard). The function does
 // not parse the full RFC 7231 grammar; it implements just enough to recognise
 // the common cases produced by browsers and well-behaved HTTP clients.
 func pickEncoding(acceptEncoding string) string {
 	if acceptEncoding == "" {
 		return ""
+	}
+
+	// First pass: collect which encodings (and the wildcard) have been
+	// explicitly disabled with q=0, so that a later "*" cannot re-enable
+	// them. We deliberately make a second pass below to honour the
+	// preference order of the entries that *are* enabled.
+	disabled := map[string]bool{}
+
+	for _, raw := range strings.Split(acceptEncoding, ",") {
+		token := strings.TrimSpace(raw)
+		if token == "" {
+			continue
+		}
+
+		name, params := splitEncoding(token)
+		if hasZeroQ(params) {
+			disabled[strings.ToLower(name)] = true
+		}
 	}
 
 	for _, raw := range strings.Split(acceptEncoding, ",") {
@@ -25,26 +45,35 @@ func pickEncoding(acceptEncoding string) string {
 			continue
 		}
 
-		// Split off the parameters (e.g. "br;q=0.5").
-		name := token
-		params := ""
-		if i := strings.Index(token, ";"); i >= 0 {
-			name = strings.TrimSpace(token[:i])
-			params = token[i+1:]
-		}
-
+		name, params := splitEncoding(token)
 		// q=0 disables this encoding even if it would otherwise match.
 		if hasZeroQ(params) {
 			continue
 		}
 
 		switch strings.ToLower(name) {
-		case "br", "*":
+		case "br":
 			return "br"
+		case "*":
+			// Wildcard matches br only if br wasn't explicitly disabled
+			// elsewhere in this same header.
+			if !disabled["br"] {
+				return "br"
+			}
 		}
 	}
 
 	return ""
+}
+
+// splitEncoding splits an Accept-Encoding token like "br;q=0.5" into its
+// coding name and parameter list (without the leading ";").
+func splitEncoding(token string) (string, string) {
+	if i := strings.Index(token, ";"); i >= 0 {
+		return strings.TrimSpace(token[:i]), token[i+1:]
+	}
+
+	return token, ""
 }
 
 // hasZeroQ reports whether an Accept-Encoding parameter list contains q=0
@@ -52,6 +81,7 @@ func pickEncoding(acceptEncoding string) string {
 func hasZeroQ(params string) bool {
 	for _, p := range strings.Split(params, ";") {
 		p = strings.TrimSpace(p)
+
 		eq := strings.IndexByte(p, '=')
 		if eq < 0 {
 			continue

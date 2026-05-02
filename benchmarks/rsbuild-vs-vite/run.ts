@@ -28,6 +28,12 @@ const stamp = new Date().toISOString().replace(/[-:]/g, '').replace(/\..*/, 'Z')
 const outDir = path.join(__dirname, 'results', stamp);
 await fs.mkdir(outDir, { recursive: true });
 
+// Track non-fatal subtask failures so we can still produce as much data as
+// possible per run, but fail the overall process at the end. This makes
+// `npm run bench` exit non-zero in CI when any builder/measurement is
+// broken instead of silently uploading partial results.
+const failures: string[] = [];
+
 interface RunOptions {
   cwd?: string;
   env?: NodeJS.ProcessEnv;
@@ -155,7 +161,9 @@ for (const tool of ['rsbuild', 'vite'] as const) {
     );
     await fs.writeFile(path.join(outDir, `build_${tool}_${runIdx}.log`), log);
     if (code !== 0) {
-      console.error(`[bench] ${tool} build run ${runIdx} exited with ${code}`);
+      const msg = `${tool} build run ${runIdx} exited with ${code}`;
+      console.error(`[bench] ${msg}`);
+      failures.push(msg);
     }
   }
 }
@@ -184,6 +192,7 @@ for (const tool of ['rsbuild', 'vite'] as const) {
   }).catch((e: unknown) => {
     const msg = e instanceof Error ? e.message : String(e);
     console.error(`[bench] dist_stats failed: ${msg}`);
+    failures.push(`dist_stats: ${msg}`);
   });
 }
 
@@ -240,6 +249,7 @@ async function runMeasure({
   }).catch((e: unknown) => {
     const msg = e instanceof Error ? e.message : String(e);
     console.error(`[bench] measure ${name} failed: ${msg}`);
+    failures.push(`measure ${name}: ${msg}`);
   });
 }
 
@@ -289,3 +299,9 @@ await runMeasure({
 });
 
 console.log(`Results in ${outDir}`);
+
+if (failures.length > 0) {
+  console.error(`[bench] ${failures.length} subtask(s) failed:`);
+  for (const f of failures) console.error(`  - ${f}`);
+  process.exit(1);
+}

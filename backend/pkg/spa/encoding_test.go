@@ -16,14 +16,12 @@ import (
 )
 
 // writeFile is a small helper to create an arbitrary file under dir.
-func writeFile(t *testing.T, dir, name string, content []byte) string {
+func writeFile(t *testing.T, dir, name string, content []byte) {
 	t.Helper()
 
 	full := filepath.Join(dir, name)
-	require.NoError(t, os.MkdirAll(filepath.Dir(full), 0o755))
+	require.NoError(t, os.MkdirAll(filepath.Dir(full), 0o750))
 	require.NoError(t, os.WriteFile(full, content, 0o644)) //nolint:gosec
-
-	return full
 }
 
 // TestSpaHandlerServesPrecompressedSidecar verifies that the on-disk
@@ -54,6 +52,7 @@ func TestSpaHandlerServesPrecompressedSidecar(t *testing.T) {
 		{"identity when no encoding header", "", originalJS, ""},
 		{"identity when brotli is disabled", "br;q=0", originalJS, ""},
 		{"brotli via wildcard", "*", brBytes, "br"},
+		{"q=0 for br with wildcard later still disables br", "br;q=0, *;q=0.5", originalJS, ""},
 		{"unsupported encoding falls through to identity", "deflate", originalJS, ""},
 	}
 
@@ -155,7 +154,7 @@ func TestEmbeddedSpaHandlerServesPrecompressedSidecar(t *testing.T) {
 // rewrites its body for baseURL substitution.
 func TestEmbeddedSpaHandlerNeverServesEncodedIndex(t *testing.T) {
 	files := map[string]*fstest.MapFile{
-		"static/index.html":    {Data: []byte(getTestHTML())},
+		"static/index.html": {Data: []byte(getTestHTML())},
 		// A bogus index.html.br that, if served, would produce wrong bytes.
 		"static/index.html.br": {Data: []byte("SHOULD-NEVER-BE-SERVED")},
 	}

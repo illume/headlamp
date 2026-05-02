@@ -291,3 +291,14 @@ const out: BenchOutput = {
 process.stdout.write(JSON.stringify(out, null, 2) + '\n');
 
 await browser.close();
+
+// Surface render failures to the caller. The JSON is still on stdout, so
+// run.ts can log it, but the non-zero exit code makes the parent treat
+// this measurement as failed instead of publishing bogus timings as if
+// the page had loaded successfully.
+if (!rendered || !reloadRendered) {
+  console.error(
+    `[cdp_bench] exit 1: rendered=${rendered} reloadRendered=${reloadRendered}`
+  );
+  process.exit(1);
+}

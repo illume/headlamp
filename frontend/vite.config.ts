@@ -42,7 +42,7 @@ export default defineConfig({
           'auth',
           'oidc',
           'oidc-callback',
-          'externalProxy',
+          'externalproxy',
           'drain-node',
           'drain-node-status',
           'parseKubeConfig',
@@ -87,10 +87,13 @@ export default defineConfig({
     // since it's loaded dynamically and not bundled via ESM. We do it this way
     // to support setting the localization language.
     //
-    // Headlamp only uses Monaco for YAML and JSON. Copy just the editor core,
-    // the YAML tokenizer, and the JSON language service. Other basic-languages
-    // and language services (css, html, typescript) are intentionally not
-    // copied to keep the served `assets/vs/` slim.
+    // Headlamp uses Monaco for YAML, JSON, and JavaScript (the Advanced
+    // Search editor in `src/components/advancedSearch/ResourceSearch.tsx`
+    // configures `monaco.languages.typescript.javascriptDefaults`, which is
+    // backed by the `vs/language/typescript` worker bundle). Copy the editor
+    // core plus those language services. Other basic-languages and the
+    // css/html language services are intentionally omitted to keep the
+    // served `assets/vs/` slim.
     viteStaticCopy({
       targets: [
         { src: 'node_modules/monaco-editor/min/vs/loader.js', dest: 'assets/vs/' },
@@ -101,7 +104,19 @@ export default defineConfig({
           dest: 'assets/vs/basic-languages/',
         },
         {
+          src: 'node_modules/monaco-editor/min/vs/basic-languages/javascript',
+          dest: 'assets/vs/basic-languages/',
+        },
+        {
+          src: 'node_modules/monaco-editor/min/vs/basic-languages/typescript',
+          dest: 'assets/vs/basic-languages/',
+        },
+        {
           src: 'node_modules/monaco-editor/min/vs/language/json',
+          dest: 'assets/vs/language/',
+        },
+        {
+          src: 'node_modules/monaco-editor/min/vs/language/typescript',
           dest: 'assets/vs/language/',
         },
         {
