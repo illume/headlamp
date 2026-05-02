@@ -158,7 +158,8 @@ beyond the symmetric in-process warmup nav described above.
 | jsHeap after render | **70.9 MB** | 89.5 MB | rsbuild −21 % |
 
 > Numbers are from a single Linux/Node-22 sandbox run with
-> `WARMUP_NAVIGATE_MS=60000`. Re-run `benchmarks/rsbuild-vs-vite/run.sh`
+> `WARMUP_NAVIGATE_MS=60000`. Re-run `npm run bench` (from
+> `benchmarks/rsbuild-vs-vite/`)
 > to refresh; the bench will assert `rendered=true` and `reloadRendered=true`
 > for both builders before sampling — treat any sample with
 > `rendered=false` as invalid.
@@ -246,18 +247,48 @@ because of the request-count overhead on the network thread.
 
 ## How to reproduce
 
+The benchmark harness is pure JavaScript and runs on macOS, Linux, and
+Windows (PowerShell or cmd). It uses Playwright's bundled chromium —
+no system chromium install required.
+
 ```bash
-# from repo root
+# from repo root: install frontend deps once
 cd frontend && npm ci && cd ..
-./benchmarks/rsbuild-vs-vite/run.sh
-# results land in ./benchmarks/rsbuild-vs-vite/results/<UTC-timestamp>/
+
+# install the bench's own deps (Playwright + chromium download,
+# pidusage, tree-kill). This is local to the bench dir; nothing
+# is installed globally.
+cd benchmarks/rsbuild-vs-vite
+npm install
+
+# run the suite
+npm run bench
+# results land in ./results/<UTC-timestamp>/
 ```
+
+The full suite takes ~10–20 minutes depending on the host. To re-run a
+single piece manually:
+
+```bash
+# from benchmarks/rsbuild-vs-vite/, with deps installed
+node measure.mjs vite "npx --no-install vite" 14002 "ready in|VITE"
+node cdp_bench.mjs http://localhost:14002/
+node dist_stats.mjs ../../frontend/build
+```
+
+### CI
+
+`.github/workflows/benchmarks.yml` runs the full suite on
+`ubuntu-latest`, `macos-latest`, and `windows-latest` (manual trigger
+via `workflow_dispatch`, or scheduled). Each job uploads its
+`results/<timestamp>/` directory as a workflow artifact so the numbers
+can be inspected without reproducing the run locally.
 
 The harness produces:
 
-- `build_<tool>_<run>.{log,time}` — per-bundler cold/warm production builds with `/usr/bin/time` summary.
-- `dev_<tool>.txt` — cold + warm dev navigation via headless Chromium driven by `cdp_bench.mjs`, plus a CSV of `RSS / %CPU` samples at 10 Hz for the dev server and chromium during the navigation.
-- `<tool>_browser.json` — the structured per-run browser metric blob (cold load timings, request count, bytes, FCP/LCP, JS heap, DOM nodes, V8 compile time, etc.).
+- `build_<tool>_<run>.{log,time}` — per-bundler cold/warm production builds with wall-clock + peak-RSS summary.
+- `dev_<tool>.txt` — cold + warm dev navigation via headless Chromium driven by `cdp_bench.mjs`, plus a CSV of `RSS / %CPU` samples for the dev server and chromium during the navigation.
+- `<tool>_browser.json` (in the OS temp dir) — the structured per-run browser metric blob (cold load timings, request count, bytes, FCP/LCP, JS heap, DOM nodes, V8 compile time, etc.).
 
 ### Methodology notes / caveats
 

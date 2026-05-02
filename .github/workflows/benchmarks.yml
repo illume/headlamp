@@ -1,0 +1,53 @@
+name: Benchmarks (rsbuild vs vite)
+
+# Cross-platform run of benchmarks/rsbuild-vs-vite. Manual trigger only
+# (and a scheduled monthly run) — full suite takes ~10-20 minutes per OS.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # First day of every month, 04:00 UTC.
+    - cron: '0 4 1 * *'
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    name: bench (${{ matrix.os }})
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        with:
+          node-version: 22.x
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install bench deps (and Playwright chromium)
+        working-directory: benchmarks/rsbuild-vs-vite
+        run: npm install
+
+      - name: Run benchmarks
+        working-directory: benchmarks/rsbuild-vs-vite
+        run: npm run bench
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+          name: bench-results-${{ matrix.os }}
+          path: benchmarks/rsbuild-vs-vite/results
+          if-no-files-found: warn
