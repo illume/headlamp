@@ -104,12 +104,12 @@ if (WARMUP_NAVIGATE_MS > 0) {
   // Wait fixed warmup time. Cheaper than parsing dev-server logs and is
   // symmetric across bundlers.
   await new Promise(r => setTimeout(r, WARMUP_NAVIGATE_MS));
-  // Blank the page so the next navigation is from a clean state, then
-  // clear browser cache (vite serves dep modules with no-cache anyway,
-  // but rsbuild caches; clearing keeps the comparison cold for both).
+  // Blank the page so the next navigation is from a clean state.
+  // We deliberately do NOT call `Network.clearBrowserCache` — vite's
+  // cold optimize-deps can take 15+ s on this codebase, and clearing
+  // the cache here forces it to re-run, defeating the warmup.
   await send('Page.navigate', { url: 'about:blank' });
   await new Promise(r => setTimeout(r, 500));
-  await send('Network.clearBrowserCache');
   // Reset our counters so the timed navigation reports clean numbers.
   netInflight = 0;
   bytesRecv = 0;

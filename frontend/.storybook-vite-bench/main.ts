@@ -43,12 +43,34 @@ export default {
   },
 
   viteFinal: async config => {
+    // storybook-builder-vite implicitly picks up frontend/vite.config.ts.
+    // That config installs `vite-plugin-node-polyfills`, which collides
+    // with storybook-builder-vite's OWN polyfill injection (oxc + esbuild
+    // banners) and produces `Uncaught SyntaxError: Identifier
+    // '__buffer_polyfill' has already been declared` at runtime, so the
+    // story never renders. Strip it out before doing anything else.
+    if (Array.isArray(config.plugins)) {
+      const filterTree = (plugins: any[]): any[] =>
+        plugins
+          .filter(p => {
+            if (!p) return false;
+            const name = (Array.isArray(p) ? null : p.name) || '';
+            return !/node-polyfills/i.test(name);
+          })
+          .map(p => (Array.isArray(p) ? filterTree(p) : p));
+      config.plugins = filterTree(config.plugins);
+    }
+
     // Mirror the bits of frontend/vite.config.ts that stories need:
-    // SVGR (`?react` import suffix), node polyfills, and the monaco static
-    // copy. Kept in sync with frontend/.storybook/main.ts (rsbuild) so the
-    // comparison is apples-to-apples.
+    // SVGR (`?react` import suffix) and the monaco static copy. Kept in
+    // sync with frontend/.storybook/main.ts (rsbuild) so the comparison
+    // is apples-to-apples. Re-add a single nodePolyfills() instance now
+    // that we filtered the vite.config.ts copy above — the SectionBox
+    // story's import graph pulls in @apidevtools/swagger-parser which
+    // references `process` at runtime.
     const { mergeConfig } = await import('vite');
     const svgr = (await import('vite-plugin-svgr')).default;
+    const { nodePolyfills } = await import('vite-plugin-node-polyfills');
     const { viteStaticCopy } = await import('vite-plugin-static-copy');
 
     return mergeConfig(config, {
@@ -154,14 +176,15 @@ export default {
             ref: true,
           },
         }),
-        // NOTE: vite-plugin-node-polyfills is intentionally NOT included
-        // here. storybook-builder-vite already injects its own buffer/process
-        // polyfills via `define`/`optimizeDeps.esbuildOptions.plugins`, and
-        // adding vite-plugin-node-polyfills on top causes
-        // `Uncaught SyntaxError: Identifier '__buffer_polyfill' has already
-        // been declared` at runtime, which prevents the story from rendering.
-        // The SectionBox bench story doesn't actually exercise buffer/stream
-        // at runtime, so this is safe for the bench.
+        // NOTE: vite.config.ts ALSO installs vite-plugin-node-polyfills.
+        // We filter that out above (in the `filterTree` pass) and re-add
+        // a single instance here so the polyfill banner is injected into
+        // module output exactly once. With two instances, the second's
+        // `var __buffer_polyfill` re-declaration breaks the iframe with
+        // `Identifier '__buffer_polyfill' has already been declared`.
+        nodePolyfills({
+          include: ['process', 'buffer', 'stream', 'path'],
+        }),
         viteStaticCopy({
           targets: [
             { src: 'node_modules/monaco-editor/min/vs/loader.js', dest: 'assets/vs/' },
