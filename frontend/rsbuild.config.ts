@@ -60,6 +60,11 @@ export default defineConfig({
       root: 'build',
     },
     overrideBrowserslist: ['>0.2%', 'not dead', 'not op_mini all'],
+    // Don't emit `*.LICENSE.txt` sidecars in dev mode; rspack's default
+    // (`'linked'`) writes them next to every chunk that contains a license
+    // banner, which is noise during local development. Production keeps
+    // the default to preserve attribution next to minified chunks.
+    legalComments: process.env.NODE_ENV === 'development' ? 'none' : undefined,
     copy: [
       // Headlamp only uses Monaco for YAML and JSON. Copy just the editor core,
       // the YAML and JSON tokenizers, and the JSON language service. Other
