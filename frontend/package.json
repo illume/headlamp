@@ -106,10 +106,12 @@
   },
   "scripts": {
     "prestart": "npm run make-version",
-    "start": "cross-env REACT_APP_HEADLAMP_BACKEND_TOKEN=headlamp vite",
+    "start": "cross-env REACT_APP_HEADLAMP_BACKEND_TOKEN=headlamp rsbuild dev",
+    "startvite": "cross-env REACT_APP_HEADLAMP_BACKEND_TOKEN=headlamp vite",
     "preview": "vite preview",
     "prebuild": "npm run make-version",
-    "build": "cross-env PUBLIC_URL=./ NODE_OPTIONS=--max-old-space-size=8096 vite build && npx shx rm -f build/frontend/index.baseUrl.html",
+    "build": "cross-env PUBLIC_URL=./ NODE_OPTIONS=--max-old-space-size=8096 rsbuild build",
+    "buildvite": "cross-env PUBLIC_URL=./ NODE_OPTIONS=--max-old-space-size=8096 vite build && npx shx rm -f build/frontend/index.baseUrl.html",
     "pretest": "npm run make-version",
     "test": "vitest",
     "start-without-multiplexer": "cross-env REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER=false npm run start",
@@ -123,8 +125,8 @@
     "i18n": "i18next 'src/**/*.{ts,tsx}' -c ./src/i18n/i18next-parser.config.js",
     "tsc": "tsc",
     "make-version": "node ./make-env.js",
-    "star": "cross-env REACT_APP_HEADLAMP_BACKEND_TOKEN=headlamp rsbuild dev",
-    "build:rsbuild": "rsbuild build"
+    "star": "npm run start",
+    "build:rsbuild": "npm run build"
   },
   "browserslist": {
     "production": [
