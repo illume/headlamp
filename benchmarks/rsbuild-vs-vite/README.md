@@ -33,6 +33,7 @@ Each cold-build measurement is the mean of two runs after wiping
 - **Warm reload** is ~2× faster under rsbuild dev (770 ms vs 1 775 ms).
 - **Dev server idle memory is identical** (~75 MB).
 - **Browser CPU peak during cold load is 1.6× higher under vite** (417 % vs 259 %), as expected when the browser parses ~1 900 separate ES modules instead of pre-bundled chunks.
+- **Storybook dev server**: same pattern as the main dev server — TBD — fill from results (server-ready time, FCP, warm reload, request count) once the harness is run with the new `sb-rsbuild` / `sb-vite` measurements.
 - **rsbuild stack costs ~120 MB of node_modules disk** (mainly the
   `@rspack/core` native binaries); the vite stack costs ~16 MB.
 
@@ -84,6 +85,47 @@ How to read this:
 - The browser has to fetch and parse **~1 900 separate ES modules** under vite (each MUI/monaco/lodash internal is its own request). Even on localhost this is the dominant cost on first navigation: 6.2 s FCP vs 2.1 s for rsbuild's pre-bundled output.
 - Under vite the **browser's RSS is lower** (1.25 GB vs 2.17 GB) — fewer pre-bundled chunks held in memory — but **CPU is much higher** (417 % vs 259 %) because v8 is parsing many more script tags/modules.
 - Warm reload tells the same story: rsbuild reuses ~25 chunked requests, vite re-resolves ~870 module requests (almost all 304s, hence small bytes).
+
+## Storybook dev server
+
+The frontend's primary `.storybook/` config is now rsbuild-only (Storybook 10
++ `storybook-react-rsbuild`). For this comparison we keep a parallel
+vite-builder Storybook config under
+`benchmarks/rsbuild-vs-vite/storybook-vite/` that points at the same stories
+(`frontend/src/**/*.stories.@(js|jsx|ts|tsx)`) and re-exports the same
+`preview.tsx` / `manager.js` so the only variable is the bundler.
+
+Both Storybook servers are launched with `storybook dev --no-open
+--no-version-updates`, headless Chromium navigates to
+`http://localhost:<port>/` and the same `cdp_bench.mjs` collects FCP / load /
+reload / request count / bytes / RSS / CPU as for the main dev server.
+
+| Metric | Storybook + rsbuild | Storybook + vite | Δ |
+|---|---:|---:|---|
+| Server ready (terminal "started") | TBD — fill from results | TBD — fill from results | TBD |
+| Cold page: HTTP requests | TBD — fill from results | TBD — fill from results | TBD |
+| Cold page: bytes received | TBD — fill from results | TBD — fill from results | TBD |
+| Cold page: First Contentful Paint | TBD — fill from results | TBD — fill from results | TBD |
+| Cold page: JS heap (after settle) | TBD — fill from results | TBD — fill from results | TBD |
+| Warm reload: load event | TBD — fill from results | TBD — fill from results | TBD |
+| Warm reload: HTTP requests | TBD — fill from results | TBD — fill from results | TBD |
+| Warm reload: bytes received | TBD — fill from results | TBD — fill from results | TBD |
+| Dev server idle RSS | TBD — fill from results | TBD — fill from results | TBD |
+| Dev server CPU mean during load | TBD — fill from results | TBD — fill from results | TBD |
+| Dev server CPU peak | TBD — fill from results | TBD — fill from results | TBD |
+| Browser RSS peak | TBD — fill from results | TBD — fill from results | TBD |
+| Browser RSS mean | TBD — fill from results | TBD — fill from results | TBD |
+| Browser CPU peak | TBD — fill from results | TBD — fill from results | TBD |
+| Browser CPU mean | TBD — fill from results | TBD — fill from results | TBD |
+
+Notes:
+
+- The vite Storybook config resolves its packages (vite, plugins, addons) via
+  a `node_modules` symlink to `frontend/node_modules` that `run.sh` creates
+  on the fly — there is no second `npm install`.
+- `cdp_bench.mjs` lands on `/` (the Storybook welcome screen) for both runs;
+  pass `?path=/story/<story-id>` only if you want a specific story to be the
+  cold-load target.
 
 ## Mobile network transfer time (production .br vs identity)
 
