@@ -35,27 +35,25 @@ func TestSpaHandlerServesPrecompressedSidecar(t *testing.T) {
 	originalJS := []byte("// big readable javascript here\n" +
 		"function hello() { console.log('hi'); }\n")
 	brBytes := []byte("BROTLI-PAYLOAD") // contents are arbitrary; handler must not decode them
-	gzBytes := []byte("GZIP-PAYLOAD")
 
 	writeFile(t, dir, "index.html", []byte("the-index"))
 	writeFile(t, dir, "app.js", originalJS)
 	writeFile(t, dir, "app.js.br", brBytes)
-	writeFile(t, dir, "app.js.gz", gzBytes)
 
 	handler := spa.NewHandler(dir, "index.html", "/headlamp")
 
 	tests := []struct {
-		name          string
+		name           string
 		acceptEncoding string
-		wantBody      []byte
-		wantEncoding  string
+		wantBody       []byte
+		wantEncoding   string
 	}{
-		{"prefers brotli when both offered", "br, gzip", brBytes, "br"},
-		{"falls back to gzip when only gzip offered", "gzip", gzBytes, "gzip"},
+		{"prefers brotli when offered", "br, gzip", brBytes, "br"},
+		{"identity when client only offers gzip", "gzip", originalJS, ""},
 		{"explicit brotli only", "br", brBytes, "br"},
 		{"identity when no encoding header", "", originalJS, ""},
-		{"identity when client disables both", "br;q=0, gzip;q=0", originalJS, ""},
-		{"prefers brotli over gzip via wildcard", "*", brBytes, "br"},
+		{"identity when brotli is disabled", "br;q=0", originalJS, ""},
+		{"brotli via wildcard", "*", brBytes, "br"},
 		{"unsupported encoding falls through to identity", "deflate", originalJS, ""},
 	}
 
@@ -96,7 +94,7 @@ func TestSpaHandlerNoSidecarUsesIdentity(t *testing.T) {
 	req, err := http.NewRequestWithContext(
 		context.Background(), "GET", "/headlamp/small.css", nil)
 	require.NoError(t, err)
-	req.Header.Set("Accept-Encoding", "br, gzip")
+	req.Header.Set("Accept-Encoding", "br")
 
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)
@@ -108,27 +106,26 @@ func TestSpaHandlerNoSidecarUsesIdentity(t *testing.T) {
 }
 
 // TestEmbeddedSpaHandlerServesPrecompressedSidecar verifies the embed.FS
-// handler does the same brotli/gzip negotiation for non-index assets.
+// handler does the same brotli negotiation for non-index assets.
 func TestEmbeddedSpaHandlerServesPrecompressedSidecar(t *testing.T) {
 	files := map[string]*fstest.MapFile{
 		"static/index.html": {Data: []byte(getTestHTML())},
 		"static/app.js":     {Data: []byte("function hi() {}")},
 		"static/app.js.br":  {Data: []byte("BROTLI-PAYLOAD")},
-		"static/app.js.gz":  {Data: []byte("GZIP-PAYLOAD")},
 	}
 
 	handler := spa.NewEmbeddedHandler(fs.FS(fstest.MapFS(files)), "index.html", "/headlamp")
 
 	tests := []struct {
-		name          string
+		name           string
 		acceptEncoding string
-		wantBody      string
-		wantEncoding  string
+		wantBody       string
+		wantEncoding   string
 	}{
 		{"brotli", "br, gzip", "BROTLI-PAYLOAD", "br"},
-		{"gzip", "gzip", "GZIP-PAYLOAD", "gzip"},
+		{"identity when only gzip offered", "gzip", "function hi() {}", ""},
 		{"identity", "", "function hi() {}", ""},
-		{"identity when both disabled", "br;q=0, gzip;q=0", "function hi() {}", ""},
+		{"identity when brotli disabled", "br;q=0", "function hi() {}", ""},
 	}
 
 	for _, tc := range tests {
@@ -194,7 +191,7 @@ func TestEmbeddedSpaHandlerMissingSidecarFallsThrough(t *testing.T) {
 	req, err := http.NewRequestWithContext(
 		context.Background(), "GET", "/headlamp/app.js", nil)
 	require.NoError(t, err)
-	req.Header.Set("Accept-Encoding", "br, gzip")
+	req.Header.Set("Accept-Encoding", "br")
 
 	rr := httptest.NewRecorder()
 	handler.ServeHTTP(rr, req)

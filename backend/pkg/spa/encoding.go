@@ -6,9 +6,11 @@ import (
 )
 
 // pickEncoding returns the best precompressed encoding to serve for a request
-// based on its Accept-Encoding header. It returns one of "br", "gzip", or "".
+// based on its Accept-Encoding header. It returns "br" or "".
 //
-// Brotli is preferred over gzip when both are accepted. Encodings whose
+// Only brotli is supported: every browser Headlamp targets ships with brotli,
+// the build pipeline only emits `.br` sidecars, and serving gzip would
+// require a parallel set of files for no real-world benefit. Encodings whose
 // quality value (`q=`) is explicitly 0 are never selected. The function does
 // not parse the full RFC 7231 grammar; it implements just enough to recognise
 // the common cases produced by browsers and well-behaved HTTP clients.
@@ -16,8 +18,6 @@ func pickEncoding(acceptEncoding string) string {
 	if acceptEncoding == "" {
 		return ""
 	}
-
-	var brOK, gzOK bool
 
 	for _, raw := range strings.Split(acceptEncoding, ",") {
 		token := strings.TrimSpace(raw)
@@ -39,24 +39,12 @@ func pickEncoding(acceptEncoding string) string {
 		}
 
 		switch strings.ToLower(name) {
-		case "br":
-			brOK = true
-		case "gzip", "x-gzip":
-			gzOK = true
-		case "*":
-			brOK = true
-			gzOK = true
+		case "br", "*":
+			return "br"
 		}
 	}
 
-	switch {
-	case brOK:
-		return "br"
-	case gzOK:
-		return "gzip"
-	default:
-		return ""
-	}
+	return ""
 }
 
 // hasZeroQ reports whether an Accept-Encoding parameter list contains q=0
@@ -99,17 +87,14 @@ func hasZeroQ(params string) bool {
 	return false
 }
 
-// encodingExt returns the filename suffix (".br" or ".gz") for a given
-// negotiated encoding, or "" if no precompressed sidecar should be served.
+// encodingExt returns the filename suffix (".br") for a given negotiated
+// encoding, or "" if no precompressed sidecar should be served.
 func encodingExt(encoding string) string {
-	switch encoding {
-	case "br":
+	if encoding == "br" {
 		return ".br"
-	case "gzip":
-		return ".gz"
-	default:
-		return ""
 	}
+
+	return ""
 }
 
 // setEncodingHeaders writes the response headers required when serving a
