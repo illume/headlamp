@@ -40,6 +40,14 @@ jobs:
         working-directory: benchmarks/rsbuild-vs-vite
         run: npm install
 
+      - name: Typecheck bench code
+        working-directory: benchmarks/rsbuild-vs-vite
+        run: npm run typecheck
+
+      - name: Test bench code
+        working-directory: benchmarks/rsbuild-vs-vite
+        run: npm test
+
       - name: Run benchmarks
         working-directory: benchmarks/rsbuild-vs-vite
         run: npm run bench

@@ -1,28 +1,63 @@
 // Cross-platform CDP-driven page bench, powered by Playwright's bundled
-// chromium. Captures the same metrics as the previous raw-CDP version:
+// chromium. Captures:
 //   - cold load timings (DCL, load, networkIdle, FCP, request count, bytes)
 //   - render-validation (waits for #storybook-root content + first paint)
 //   - reload timings + counts
 //   - jsHeap, dom node count, browser perf metrics
 //
-// Usage:  node cdp_bench.mjs <url>
+// Usage:  node cdp_bench.ts <url>
 // Env:    WARMUP_NAVIGATE_MS  optional warmup nav before the timed nav
 //         RENDER_TIMEOUT_MS   render-validation timeout (default 180000)
 //
 // Output: a JSON document on stdout. Diagnostics on stderr.
 //
-// No external Chromium install required — Playwright downloads its bundled
-// chromium during `npm install` (see package.json postinstall).
+// No external Chromium install required — Playwright downloads its
+// bundled chromium during `npm install` (see package.json postinstall).
+import { chromium, type Browser } from 'playwright';
 
-import { chromium } from 'playwright';
+interface ColdMetrics {
+  domContentLoaded_ms: number | null;
+  load_ms: number | null;
+  networkIdle_ms: number | null;
+  requests: number;
+  bytesReceived: number;
+  byMime: Record<string, number>;
+}
+
+interface ReloadMetrics {
+  load_ms: number | null;
+  requests: number;
+  bytesReceived: number;
+}
+
+interface HeapInfo {
+  used: number | null;
+  total: number | null;
+  domNodes: number;
+  fcp: number | null;
+  lcp: number | null;
+  domContentLoaded: number;
+  loadEvent: number;
+}
+
+interface BenchOutput {
+  url: string;
+  rendered: boolean;
+  reloadRendered: boolean;
+  cold: ColdMetrics;
+  reload: ReloadMetrics;
+  paint: { jsHeapUsed: number | null };
+  heap: HeapInfo | null;
+  performance: Record<string, number>;
+}
 
 const targetUrl = process.argv[2];
 if (!targetUrl) {
-  console.error('Usage: node cdp_bench.mjs <url>');
+  console.error('Usage: node cdp_bench.ts <url>');
   process.exit(2);
 }
 
-const browser = await chromium.launch({
+const browser: Browser = await chromium.launch({
   headless: true,
   args: [
     '--no-sandbox',
@@ -41,14 +76,14 @@ await cdp.send('Runtime.enable');
 await cdp.send('Network.enable');
 
 let tStart = Date.now();
-let tDcl = null;
-let tLoad = null;
-let lastIdleAt = null;
-let tNetIdle = null;
+let tDcl: number | null = null;
+let tLoad: number | null = null;
+let lastIdleAt: number | null = null;
+let tNetIdle: number | null = null;
 let netInflight = 0;
 let bytesRecv = 0;
 let requests = 0;
-let byMime = {};
+let byMime: Record<string, number> = {};
 
 cdp.on('Page.domContentEventFired', () => {
   tDcl = Date.now();
@@ -64,19 +99,23 @@ cdp.on('Network.responseReceived', ev => {
   const m = ev.response.mimeType || 'other';
   byMime[m] = (byMime[m] || 0) + 1;
 });
-const onLoadingDone = ev => {
+const onLoadingDone = (ev: { encodedDataLength?: number }): void => {
   netInflight = Math.max(0, netInflight - 1);
   bytesRecv += ev.encodedDataLength || 0;
   if (netInflight === 0) lastIdleAt = Date.now();
 };
 cdp.on('Network.loadingFinished', onLoadingDone);
-cdp.on('Network.loadingFailed', onLoadingDone);
+// Network.loadingFailed has no encodedDataLength field, so we just bump
+// the inflight counter without adding to bytesRecv.
+cdp.on('Network.loadingFailed', () => {
+  netInflight = Math.max(0, netInflight - 1);
+  if (netInflight === 0) lastIdleAt = Date.now();
+});
 
 // Optional warmup pass. Vite's storybook builder reports "Storybook ready"
 // while its `optimizeDeps` crawler is still running; the first navigation
 // then races with dep optimization, vite serves stale dep hashes, the
-// browser fails, and vite forces a full-page reload — repeatedly. The page
-// can take more than three minutes to converge from a true cold cache.
+// browser fails, and vite forces a full-page reload — repeatedly.
 //
 // To get a fair, reproducible comparison we do an OPTIONAL warmup nav
 // first (controlled by WARMUP_NAVIGATE_MS, default 0): navigate to the
@@ -108,6 +147,13 @@ const tNavStart = Date.now();
 // past our budget. Trigger the nav and poll for our own render signal.
 page.goto(targetUrl, { waitUntil: 'commit' }).catch(() => {});
 
+interface RenderDiagnostic {
+  ok: boolean;
+  sbRootContent: number;
+  bodyText: string;
+  fcp: number;
+}
+
 // Wait until the page actually renders the story (not just a network-idle
 // blank document, and not Storybook's "couldn't find story" error). A
 // rendered story has substantial content in #storybook-root; a render error
@@ -117,15 +163,17 @@ page.goto(targetUrl, { waitUntil: 'commit' }).catch(() => {});
 const RENDER_TIMEOUT_MS = Number(process.env.RENDER_TIMEOUT_MS || 180000);
 const renderDeadline = tNavStart + RENDER_TIMEOUT_MS;
 let rendered = false;
-let renderDiagnostic = null;
+let renderDiagnostic: RenderDiagnostic | null = null;
 while (Date.now() < renderDeadline) {
-  let s = {};
+  let s: RenderDiagnostic | null = null;
   try {
-    s = await page.evaluate(() => {
+    s = await page.evaluate((): RenderDiagnostic => {
       const root = document.getElementById('storybook-root');
       const sbRootContent = root && !root.hidden ? root.innerHTML.length : 0;
       const bodyText = document.body ? document.body.innerText : '';
-      const fcpEntry = performance.getEntriesByType('paint').find(e => e.name === 'first-contentful-paint');
+      const fcpEntry = performance
+        .getEntriesByType('paint')
+        .find(e => e.name === 'first-contentful-paint');
       const fcp = fcpEntry ? fcpEntry.startTime : 0;
       // For the iframe viewMode=story path, success = #storybook-root has
       // real content. For non-iframe pages (e.g. the manager / app shell)
@@ -136,8 +184,8 @@ while (Date.now() < renderDeadline) {
   } catch {
     // page may be navigating; retry
   }
-  renderDiagnostic = s;
-  if (s.ok) {
+  if (s) renderDiagnostic = s;
+  if (s?.ok) {
     rendered = true;
     break;
   }
@@ -161,24 +209,33 @@ while (Date.now() < idleDeadline) {
 }
 
 const perf = await cdp.send('Performance.getMetrics');
-const perfMap = Object.fromEntries(perf.metrics.map(m => [m.name, m.value]));
+const perfMap: Record<string, number> = Object.fromEntries(
+  perf.metrics.map(m => [m.name, m.value])
+);
 const heap = await page
-  .evaluate(() => ({
-    used: performance.memory && performance.memory.usedJSHeapSize,
-    total: performance.memory && performance.memory.totalJSHeapSize,
-    domNodes: document.getElementsByTagName('*').length,
-    fcp: (performance.getEntriesByType('paint').find(e => e.name === 'first-contentful-paint') || {}).startTime,
-    lcp: performance.getEntriesByType('largest-contentful-paint').slice(-1)[0]?.startTime,
-    domContentLoaded: performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart,
-    loadEvent: performance.timing.loadEventEnd - performance.timing.navigationStart,
-  }))
+  .evaluate((): HeapInfo => {
+    const memory = (performance as Performance & { memory?: { usedJSHeapSize: number; totalJSHeapSize: number } }).memory;
+    const fcpEntry = performance.getEntriesByType('paint').find(e => e.name === 'first-contentful-paint');
+    const lcpList = performance.getEntriesByType('largest-contentful-paint');
+    const lcpEntry = lcpList[lcpList.length - 1];
+    return {
+      used: memory ? memory.usedJSHeapSize : null,
+      total: memory ? memory.totalJSHeapSize : null,
+      domNodes: document.getElementsByTagName('*').length,
+      fcp: fcpEntry ? fcpEntry.startTime : null,
+      lcp: lcpEntry ? lcpEntry.startTime : null,
+      domContentLoaded:
+        performance.timing.domContentLoadedEventEnd - performance.timing.navigationStart,
+      loadEvent: performance.timing.loadEventEnd - performance.timing.navigationStart,
+    };
+  })
   .catch(() => null);
-const browserMemory = perfMap.JSHeapUsedSize;
+const browserMemory = perfMap.JSHeapUsedSize ?? null;
 
 // Now do a full reload to measure warm-cache reload.
 const tReload = Date.now();
-let tReloadLoad = null;
-const reloadHandler = () => {
+let tReloadLoad: number | null = null;
+const reloadHandler = (): void => {
   tReloadLoad = Date.now();
 };
 cdp.on('Page.loadEventFired', reloadHandler);
@@ -195,8 +252,9 @@ const reloadRenderDeadline = Date.now() + 30000;
 while (Date.now() < reloadRenderDeadline) {
   let ok = false;
   try {
-    ok = await page.evaluate(() => {
-      const root = document.getElementById('storybook-root') || document.getElementById('root');
+    ok = await page.evaluate((): boolean => {
+      const root =
+        document.getElementById('storybook-root') || document.getElementById('root');
       return root ? root.innerHTML.length > 0 : !!(document.body && document.body.innerText.length);
     });
   } catch {
@@ -209,7 +267,7 @@ while (Date.now() < reloadRenderDeadline) {
   await new Promise(r => setTimeout(r, 200));
 }
 
-const out = {
+const out: BenchOutput = {
   url: targetUrl,
   rendered,
   reloadRendered,

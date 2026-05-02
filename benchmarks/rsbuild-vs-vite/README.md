@@ -124,7 +124,7 @@ Both Storybook servers are launched with `storybook dev --no-open
 --no-version-updates`. Headless Chromium navigates directly to a story
 iframe (`/iframe.html?id=sectionbox--with-children&viewMode=story` —
 `SectionBox` is a small, dependency-light story). The bench harness
-(`cdp_bench.mjs`) runs a **two-phase navigation**, symmetric across
+(`cdp_bench.ts`) runs a **two-phase navigation**, symmetric across
 builders: a 60 s warmup nav (`WARMUP_NAVIGATE_MS=60000`) lets either
 builder fully prime its preview chunk graph, then we blank the page,
 reset Network counters, and do the timed nav from a clean state. The
@@ -247,19 +247,28 @@ because of the request-count overhead on the network thread.
 
 ## How to reproduce
 
-The benchmark harness is pure JavaScript and runs on macOS, Linux, and
-Windows (PowerShell or cmd). It uses Playwright's bundled chromium —
-no system chromium install required.
+The benchmark harness is **TypeScript** (run directly by Node's
+`--experimental-strip-types` — no separate compile step) and runs on
+macOS, Linux, and Windows (PowerShell or cmd). It uses Playwright's
+bundled chromium — no system chromium install required.
+
+Prerequisites: **Node.js ≥ 22.0.0** (the bench scripts use Node's
+native TypeScript type-stripping, which is built in to Node 22+).
 
 ```bash
 # from repo root: install frontend deps once
 cd frontend && npm ci && cd ..
 
 # install the bench's own deps (Playwright + chromium download,
-# pidusage, tree-kill). This is local to the bench dir; nothing
-# is installed globally.
+# pidusage, tree-kill, TypeScript). This is local to the bench dir;
+# nothing is installed globally.
 cd benchmarks/rsbuild-vs-vite
 npm install
+
+# (optional but recommended) typecheck + run the unit tests for
+# the harness itself before the long bench run
+npm run typecheck
+npm test
 
 # run the suite
 npm run bench
@@ -271,24 +280,72 @@ single piece manually:
 
 ```bash
 # from benchmarks/rsbuild-vs-vite/, with deps installed
-node measure.mjs vite "npx --no-install vite" 14002 "ready in|VITE"
-node cdp_bench.mjs http://localhost:14002/
-node dist_stats.mjs ../../frontend/build
+node --experimental-strip-types measure.ts vite "npx --no-install vite" 14002 "ready in|VITE"
+node --experimental-strip-types cdp_bench.ts http://localhost:14002/
+node --experimental-strip-types dist_stats.ts ../../frontend/build
 ```
 
 ### CI
 
-`.github/workflows/benchmarks.yml` runs the full suite on
+`.github/workflows/benchmarks.yml` runs the harness on
 `ubuntu-latest`, `macos-latest`, and `windows-latest` (manual trigger
-via `workflow_dispatch`, or scheduled). Each job uploads its
-`results/<timestamp>/` directory as a workflow artifact so the numbers
-can be inspected without reproducing the run locally.
+via `workflow_dispatch`, or scheduled). Each job runs, in order:
+
+1. `npm install` (frontend + bench)
+2. `npm run typecheck` (bench)
+3. `npm test` (bench)
+4. `npm run bench` (the actual suite)
+
+Steps 2 and 3 catch harness bugs before the 10–20 min bench step
+runs. Each job uploads its `results/<timestamp>/` directory as a
+workflow artifact so the numbers can be inspected without reproducing
+the run locally.
 
 The harness produces:
 
 - `build_<tool>_<run>.{log,time}` — per-bundler cold/warm production builds with wall-clock + peak-RSS summary.
-- `dev_<tool>.txt` — cold + warm dev navigation via headless Chromium driven by `cdp_bench.mjs`, plus a CSV of `RSS / %CPU` samples for the dev server and chromium during the navigation.
+- `dev_<tool>.txt` — cold + warm dev navigation via headless Chromium driven by `cdp_bench.ts`, plus a CSV of `RSS / %CPU` samples for the dev server and chromium during the navigation.
 - `<tool>_browser.json` (in the OS temp dir) — the structured per-run browser metric blob (cold load timings, request count, bytes, FCP/LCP, JS heap, DOM nodes, V8 compile time, etc.).
+
+### Code structure
+
+```text
+benchmarks/rsbuild-vs-vite/
+├── run.ts            # orchestrator: build + dev + dist-size + storybook
+├── measure.ts        # one bench: spawn dev server, sample RSS/CPU, drive cdp_bench
+├── cdp_bench.ts      # CDP-driven navigation + render validation + metrics
+├── dist_stats.ts     # dist/ folder file-count, raw + brotli sizes, top-N
+├── lib/
+│   ├── dist_stats_lib.ts   # pure helpers used by dist_stats.ts
+│   └── measure_lib.ts      # pure helpers used by measure.ts (ps parsing,
+│                           # process tree walk, CSV → summary, formatting)
+├── tests/
+│   ├── dist_stats.test.ts  # unit tests for lib/dist_stats_lib.ts
+│   └── measure_lib.test.ts # unit tests for lib/measure_lib.ts
+├── tsconfig.json     # `tsc --noEmit` strict typecheck
+└── package.json      # local deps (Playwright, pidusage, tree-kill, TypeScript)
+```
+
+The platform-touching code in `measure.ts` (process spawning,
+`ps` / `wmic` shelling, killing trees) is deliberately thin — its job
+is to feed strings to the pure helpers in `lib/measure_lib.ts`, which
+have no I/O and are exhaustively unit-tested. That keeps the
+cross-platform surface area testable on every OS in CI.
+
+### Hacking on the harness
+
+```bash
+# from benchmarks/rsbuild-vs-vite/
+npm run typecheck      # strict tsc --noEmit
+npm test               # node:test against lib/ helpers
+node --experimental-strip-types tests/measure_lib.test.ts  # one file
+```
+
+When you add a new platform-specific code path (e.g. another `wmic`
+query), keep the parsing/filtering as a pure function in `lib/` and
+add a unit test with a captured fixture string. The cross-platform
+CI matrix then exercises the spawning code on real OSes while the
+test suite locks down the parsing semantics.
 
 ### Methodology notes / caveats
 
