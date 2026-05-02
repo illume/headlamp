@@ -263,8 +263,14 @@ frontend-build:
 	cd frontend && npm run build
 
 .PHONY: frontend-build-rsbuild
-frontend-build-rsbuild:
-	cd frontend && npm run build:rsbuild
+# Back-compat alias: rsbuild is now the default for frontend-build.
+# Kept so existing callers of `make frontend-build-rsbuild` still work.
+frontend-build-rsbuild: frontend-build
+
+.PHONY: frontend-build-vite
+# Builds the frontend with the vite backup (kept so we can fall back to vite).
+frontend-build-vite:
+	cd frontend && npm run buildvite
 
 .PHONY: frontend-build-storybook
 frontend-build-storybook:

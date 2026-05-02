@@ -60,11 +60,52 @@ export default defineConfig({
       root: 'build',
     },
     overrideBrowserslist: ['>0.2%', 'not dead', 'not op_mini all'],
+    // Don't emit `*.LICENSE.txt` sidecars in dev mode; rspack's default
+    // (`'linked'`) writes them next to every chunk that contains a license
+    // banner, which is noise during local development. Production keeps
+    // the default to preserve attribution next to minified chunks.
+    legalComments: process.env.NODE_ENV === 'development' ? 'none' : undefined,
     copy: [
+      // Headlamp uses Monaco for YAML, JSON, and JavaScript. The Advanced
+      // Search editor in `src/components/advancedSearch/ResourceSearch.tsx`
+      // calls `monaco.languages.typescript.javascriptDefaults`, which is
+      // backed by the `vs/language/typescript` worker bundle, so it must
+      // ship with the build. Other basic-languages and the css/html
+      // language services are intentionally omitted to keep the served
+      // `assets/vs/` slim.
+      { from: 'node_modules/monaco-editor/min/vs/loader.js', to: 'assets/vs/loader.js' },
+      { from: 'node_modules/monaco-editor/min/vs/base', to: 'assets/vs/base' },
+      { from: 'node_modules/monaco-editor/min/vs/editor', to: 'assets/vs/editor' },
       {
-        from: 'node_modules/monaco-editor/min/vs',
-        to: 'assets/vs',
+        from: 'node_modules/monaco-editor/min/vs/basic-languages/yaml',
+        to: 'assets/vs/basic-languages/yaml',
       },
+      {
+        from: 'node_modules/monaco-editor/min/vs/basic-languages/javascript',
+        to: 'assets/vs/basic-languages/javascript',
+      },
+      {
+        from: 'node_modules/monaco-editor/min/vs/basic-languages/typescript',
+        to: 'assets/vs/basic-languages/typescript',
+      },
+      {
+        from: 'node_modules/monaco-editor/min/vs/language/json',
+        to: 'assets/vs/language/json',
+      },
+      {
+        from: 'node_modules/monaco-editor/min/vs/language/typescript',
+        to: 'assets/vs/language/typescript',
+      },
+      // NLS message files for the locales the loader may request.
+      { from: 'node_modules/monaco-editor/min/vs/nls.messages.de.js', to: 'assets/vs/nls.messages.de.js' },
+      { from: 'node_modules/monaco-editor/min/vs/nls.messages.es.js', to: 'assets/vs/nls.messages.es.js' },
+      { from: 'node_modules/monaco-editor/min/vs/nls.messages.fr.js', to: 'assets/vs/nls.messages.fr.js' },
+      { from: 'node_modules/monaco-editor/min/vs/nls.messages.it.js', to: 'assets/vs/nls.messages.it.js' },
+      { from: 'node_modules/monaco-editor/min/vs/nls.messages.ja.js', to: 'assets/vs/nls.messages.ja.js' },
+      { from: 'node_modules/monaco-editor/min/vs/nls.messages.ko.js', to: 'assets/vs/nls.messages.ko.js' },
+      { from: 'node_modules/monaco-editor/min/vs/nls.messages.ru.js', to: 'assets/vs/nls.messages.ru.js' },
+      { from: 'node_modules/monaco-editor/min/vs/nls.messages.zh-cn.js', to: 'assets/vs/nls.messages.zh-cn.js' },
+      { from: 'node_modules/monaco-editor/min/vs/nls.messages.zh-tw.js', to: 'assets/vs/nls.messages.zh-tw.js' },
     ],
   },
   tools: {

@@ -33,9 +33,24 @@ func (h embeddedSpaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Prepend "static" to the path as that's the root in our embed.FS
 	fullPath := filepath.Join("static", path)
 
-	content, err := h.serveFile(fullPath)
-	isServingIndex := false
+	// `Vary: Accept-Encoding` must be set on every response so caches keep
+	// per-encoding entries even when we end up serving identity bytes.
+	setEncodingHeaders(w, "")
 
+	// Detect whether this request would resolve to the index.html so we
+	// can decide up front whether the precompressed sidecar is safe to
+	// use. We must skip the sidecar for the index document because the
+	// `__baseUrl__` replacement below mutates the served bytes.
+	isServingIndex := path == h.indexPath || path == "/"+h.indexPath || path == "/"+h.indexPath+"/"
+
+	// Try to serve a precompressed sidecar (`.br`) when the client
+	// supports it and the file isn't the index.html (which we rewrite
+	// below).
+	if !isServingIndex && h.tryServePrecompressed(w, r, fullPath) {
+		return
+	}
+
+	content, err := h.serveFile(fullPath)
 	if err != nil {
 		// If there's any error, serve the index file
 		content, err = h.serveFile(filepath.Join("static", h.indexPath))
@@ -45,9 +60,6 @@ func (h embeddedSpaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		isServingIndex = true
-	} else {
-		// Check if we're directly serving the index file
-		isServingIndex = path == h.indexPath || path == "/"+h.indexPath || path == "/"+h.indexPath+"/"
 	}
 
 	// if we're serving the index.html file and have a baseURL, replace the headlampBaseUrl with the baseURL
@@ -76,6 +88,46 @@ func (h embeddedSpaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		logger.Log(logger.LevelError, nil, err, "writing content")
 	}
+}
+
+// tryServePrecompressed attempts to serve a precompressed sidecar (e.g.
+// `.br`) for fullPath when the client advertises support for it. It
+// returns true when the response has been written and the caller should
+// stop, or false when the caller should fall back to identity content.
+func (h embeddedSpaHandler) tryServePrecompressed(
+	w http.ResponseWriter, r *http.Request, fullPath string,
+) bool {
+	encoding := pickEncoding(r.Header.Get("Accept-Encoding"))
+	if encoding == "" {
+		return false
+	}
+
+	data, err := h.serveFile(fullPath + encodingExt(encoding))
+	if err != nil {
+		return false
+	}
+
+	ctype := mime.TypeByExtension(filepath.Ext(fullPath))
+	if ctype == "" {
+		// Fall back to sniffing the *original* (unencoded) file's
+		// bytes for content-type detection so we don't accidentally
+		// label everything `application/octet-stream`.
+		if orig, oerr := h.serveFile(fullPath); oerr == nil {
+			ctype = http.DetectContentType(orig)
+		}
+	}
+
+	if ctype != "" {
+		w.Header().Set("Content-Type", ctype)
+	}
+
+	setEncodingHeaders(w, encoding)
+
+	if _, werr := w.Write(data); werr != nil {
+		logger.Log(logger.LevelError, nil, werr, "writing content")
+	}
+
+	return true
 }
 
 func (h embeddedSpaHandler) serveFile(path string) ([]byte, error) {

@@ -10,6 +10,8 @@
 
 # production
 /build
+/build-vite
+/build-rsbuild
 /dist
 /electron/*
 

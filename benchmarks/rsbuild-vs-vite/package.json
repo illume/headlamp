@@ -1,0 +1,26 @@
+{
+  "name": "headlamp-rsbuild-vs-vite-bench",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Cross-platform benchmark harness comparing rsbuild and vite for the headlamp frontend.",
+  "type": "module",
+  "scripts": {
+    "bench": "node --experimental-strip-types run.ts",
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "postinstall": "node -e \"if(!process.env.SKIP_PW_INSTALL)require('child_process').execSync('npx --no-install playwright install chromium',{stdio:'inherit'})\""
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "pidusage": "3.0.2",
+    "playwright": "1.55.1",
+    "tree-kill": "1.2.2"
+  },
+  "devDependencies": {
+    "@types/node": "22.10.2",
+    "@types/pidusage": "2.0.5",
+    "typescript": "5.7.2"
+  }
+}

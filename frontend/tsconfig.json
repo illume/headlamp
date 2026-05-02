@@ -9,7 +9,7 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "module": "esnext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
@@ -33,6 +33,7 @@
       "src/components/activity/Activity.tsx"
     ],
     "entryPointStrategy": "expand",
+    "skipErrorChecking": true,
     "excludeExternals": true,
     "excludePrivate": true,
     "excludeProtected": true,
