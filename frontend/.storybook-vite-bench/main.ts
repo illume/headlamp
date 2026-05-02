@@ -23,8 +23,7 @@ import type { StorybookConfig } from '@storybook/react-vite';
 
 export default {
   framework: '@storybook/react-vite',
-  // Resolve relative to this file so the harness works from any cwd.
-  stories: ['../../../frontend/src/**/*.stories.@(js|jsx|ts|tsx)'],
+  stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
 
   addons: ['@storybook/addon-links', '@storybook/addon-docs'],
 
@@ -40,8 +39,9 @@ export default {
 
   viteFinal: async config => {
     // Mirror the bits of frontend/vite.config.ts that stories need:
-    // - SVGR (`?react` import suffix), node polyfills, the `vite-static-copy`
-    //   monaco assets, and the `?url` static-asset behaviour.
+    // SVGR (`?react` import suffix), node polyfills, and the monaco static
+    // copy. Kept in sync with frontend/.storybook/main.ts (rsbuild) so the
+    // comparison is apples-to-apples.
     const { mergeConfig } = await import('vite');
     const svgr = (await import('vite-plugin-svgr')).default;
     const { nodePolyfills } = await import('vite-plugin-node-polyfills');

@@ -4,6 +4,7 @@ NAME=$1
 CMD=$2
 PORT=$3
 READY=$4
+URLPATH=${5:-/}
 LOG=/tmp/${NAME}dev.log
 SAMPLES=/tmp/${NAME}_samples.csv
 
@@ -13,10 +14,14 @@ export WS_PATH=/home/runner/work/headlamp/headlamp/frontend/node_modules/ws
 ( $CMD --port $PORT > $LOG 2>&1 ) &
 SERVER_PID=$!
 echo "[$NAME] server pid=$SERVER_PID"
-for i in $(seq 1 120); do
+T0=$(date +%s%N)
+for i in $(seq 1 240); do
   grep -qE "$READY" $LOG 2>/dev/null && break
   sleep 0.5
 done
+T1=$(date +%s%N)
+READY_MS=$(( (T1 - T0) / 1000000 ))
+echo "[$NAME] server ready in ${READY_MS} ms"
 sleep 2
 echo "[$NAME] dev server idle:"
 ps -p $SERVER_PID -o pid,rss=,%cpu= 2>/dev/null
@@ -34,7 +39,7 @@ echo "ts_ms,role,pid,rss_kb,cpu_pct" > $SAMPLES
   done ) &
 SAMPLER_PID=$!
 
-node /tmp/cdp_bench.mjs http://localhost:$PORT/ /usr/bin/chromium > /tmp/${NAME}_browser.json 2>/tmp/${NAME}_browser.err
+node /tmp/cdp_bench.mjs http://localhost:$PORT$URLPATH /usr/bin/chromium > /tmp/${NAME}_browser.json 2>/tmp/${NAME}_browser.err
 
 wait $SAMPLER_PID 2>/dev/null
 

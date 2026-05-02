@@ -43,17 +43,31 @@ python3 "$HERE/dist_stats.py" build > "$OUT/dist_stats_last.json" || true
 
 # 4) Storybook dev server (rsbuild vs vite, same metrics as the headlamp dev
 #    server). The vite-builder Storybook config lives under
-#    benchmarks/rsbuild-vs-vite/storybook-vite/ and resolves packages via a
-#    symlink to frontend/node_modules so it doesn't need its own install.
-ln -sfn ../../../frontend/node_modules "$HERE/storybook-vite/node_modules"
+#    frontend/.storybook-vite-bench/ so it shares frontend's package.json and
+#    node_modules, which keeps vite happy without symlink gymnastics.
+# Land directly on a story iframe so we measure the preview-builder, not just
+# the manager shell. SectionBox.stories.tsx exists in headlamp's source and is
+# a small, dependency-light story — same id under both builders.
+SB_URL='/iframe.html?id=sectionbox--withchildren&viewMode=story'
 
+# Wipe builder + storybook caches before each run so neither bundler benefits
+# from a previously warmed dep cache.
+sb_clean_caches() {
+  rm -rf node_modules/.cache/storybook node_modules/.cache/rsbuild \
+         node_modules/.rspack-cache node_modules/.vite 2>/dev/null || true
+  sync
+}
+
+sb_clean_caches
 "$HERE/measure.sh" sb-rsbuild \
   "npx --no-install storybook dev --no-open --no-version-updates -c $ROOT/frontend/.storybook" \
-  14003 "Storybook .* started|Local:" \
+  14003 "Storybook ready|Local:" "$SB_URL" \
   > "$OUT/dev_sb_rsbuild.txt" 2>&1
+
+sb_clean_caches
 "$HERE/measure.sh" sb-vite \
-  "npx --no-install storybook dev --no-open --no-version-updates -c $HERE/storybook-vite" \
-  14004 "Storybook .* started|Local:" \
+  "npx --no-install storybook dev --no-open --no-version-updates -c $ROOT/frontend/.storybook-vite-bench" \
+  14004 "Storybook ready|Local:" "$SB_URL" \
   > "$OUT/dev_sb_vite.txt" 2>&1
 
 echo "Results in $OUT"

@@ -14,6 +14,6 @@
  * limitations under the License.
  */
 
-// Re-export the frontend storybook manager so the vite-builder benchmark
-// uses the exact same theme / config as the rsbuild build.
-export * from '../../../frontend/.storybook/manager';
+// Re-export the production storybook preview as-is so the vite benchmark
+// runs the exact same stories under the exact same setup.
+export * from '../.storybook/preview';

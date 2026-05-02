@@ -14,6 +14,9 @@
  * limitations under the License.
  */
 
-// Re-export the frontend's storybook preview as-is so the vite benchmark
-// runs the exact same stories under the exact same setup.
-export * from '../../../frontend/.storybook/preview';
+import { addons } from 'storybook/manager-api';
+import theme from '../.storybook/HeadlampTheme';
+
+addons.setConfig({
+  theme: theme,
+});
