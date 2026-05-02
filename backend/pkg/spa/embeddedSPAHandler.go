@@ -33,8 +33,50 @@ func (h embeddedSpaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Prepend "static" to the path as that's the root in our embed.FS
 	fullPath := filepath.Join("static", path)
 
+	// `Vary: Accept-Encoding` must be set on every response so caches keep
+	// per-encoding entries even when we end up serving identity bytes.
+	setEncodingHeaders(w, "")
+
+	// Detect whether this request would resolve to the index.html so we
+	// can decide up front whether the precompressed sidecar is safe to
+	// use. We must skip the sidecar for the index document because the
+	// `__baseUrl__` replacement below mutates the served bytes.
+	isServingIndex := path == h.indexPath || path == "/"+h.indexPath || path == "/"+h.indexPath+"/"
+
+	// Try to serve a precompressed sidecar (`.br` / `.gz`) when the
+	// client supports it and the file isn't the index.html (which we
+	// rewrite below).
+	if !isServingIndex {
+		if encoding := pickEncoding(r.Header.Get("Accept-Encoding")); encoding != "" {
+			sidecar := fullPath + encodingExt(encoding)
+			if data, err := h.serveFile(sidecar); err == nil {
+				ctype := mime.TypeByExtension(filepath.Ext(fullPath))
+				if ctype == "" {
+					// Fall back to sniffing the *original* (unencoded)
+					// file's bytes for content-type detection so we
+					// don't accidentally label everything
+					// `application/octet-stream`.
+					if orig, oerr := h.serveFile(fullPath); oerr == nil {
+						ctype = http.DetectContentType(orig)
+					}
+				}
+
+				if ctype != "" {
+					w.Header().Set("Content-Type", ctype)
+				}
+
+				setEncodingHeaders(w, encoding)
+
+				if _, werr := w.Write(data); werr != nil { //nolint:gosec
+					logger.Log(logger.LevelError, nil, werr, "writing content")
+				}
+
+				return
+			}
+		}
+	}
+
 	content, err := h.serveFile(fullPath)
-	isServingIndex := false
 
 	if err != nil {
 		// If there's any error, serve the index file
@@ -45,9 +87,6 @@ func (h embeddedSpaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		}
 
 		isServingIndex = true
-	} else {
-		// Check if we're directly serving the index file
-		isServingIndex = path == h.indexPath || path == "/"+h.indexPath || path == "/"+h.indexPath+"/"
 	}
 
 	// if we're serving the index.html file and have a baseURL, replace the headlampBaseUrl with the baseURL
