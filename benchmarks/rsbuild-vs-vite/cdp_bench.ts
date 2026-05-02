@@ -168,18 +168,32 @@ while (Date.now() < renderDeadline) {
   let s: RenderDiagnostic | null = null;
   try {
     s = await page.evaluate((): RenderDiagnostic => {
-      const root = document.getElementById('storybook-root');
-      const sbRootContent = root && !root.hidden ? root.innerHTML.length : 0;
+      const sbRoot = document.getElementById('storybook-root');
+      const appRoot = document.getElementById('root');
+      const sbRootContent = sbRoot && !sbRoot.hidden ? sbRoot.innerHTML.length : 0;
+      const appRootContent = appRoot && !appRoot.hidden ? appRoot.innerHTML.length : 0;
       const bodyText = document.body ? document.body.innerText : '';
       const fcpEntry = performance
         .getEntriesByType('paint')
         .find(e => e.name === 'first-contentful-paint');
       const fcp = fcpEntry ? fcpEntry.startTime : 0;
       // For the iframe viewMode=story path, success = #storybook-root has
-      // real content. For non-iframe pages (e.g. the manager / app shell)
-      // fall back to non-empty body.
-      const ok = fcp > 0 && (sbRootContent > 50 || (!root && bodyText.length > 100));
-      return { ok, sbRootContent, bodyText: bodyText.slice(0, 300), fcp };
+      // real content. For the headlamp app dev server, the page renders
+      // into #root — but index.html ships a ~110-char splash loader as
+      // initial #root content, so we require substantially more than that
+      // to consider React mounted. For pages with neither root, fall back
+      // to non-empty body text.
+      const ok =
+        fcp > 0 &&
+        (sbRootContent > 50 ||
+          appRootContent > 500 ||
+          (!sbRoot && !appRoot && bodyText.length > 100));
+      return {
+        ok,
+        sbRootContent: sbRootContent || appRootContent,
+        bodyText: bodyText.slice(0, 300),
+        fcp,
+      };
     });
   } catch {
     // page may be navigating; retry

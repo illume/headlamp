@@ -234,6 +234,7 @@ async function main(): Promise<void> {
   // is independent from this script.
   const cdpScript = path.join(__dirname, 'cdp_bench.ts');
   const targetUrl = `http://localhost:${port}${urlPath}`;
+  let cdpExitCode: number | null = null;
   await new Promise<void>((resolve, reject) => {
     const out = spawn(process.execPath, ['--experimental-strip-types', cdpScript, targetUrl], {
       cwd: __dirname,
@@ -243,16 +244,36 @@ async function main(): Promise<void> {
       out.stdout.on('data', (d: Buffer) => {
         void o.write(d);
       });
+      // Tee cdp_bench stderr to both the .err file (for post-mortem
+      // analysis) and our own stderr so its diagnostics are captured by
+      // the parent run.ts into the per-measurement dev_*.txt artifact —
+      // without this, a render-timeout failure looks like a bare
+      // "cdp_bench exited with 1" in CI logs with no actionable detail.
       out.stderr.on('data', (d: Buffer) => {
         void e.write(d);
+        process.stderr.write(d);
       });
       out.on('exit', code => {
+        cdpExitCode = code;
         void Promise.all([o.close(), e.close()]).then(() => {
           if (code === 0) resolve();
           else reject(new Error(`cdp_bench exited with ${code}`));
         });
       });
     });
+  }).catch(async (err: unknown) => {
+    // Final fallback: dump the captured cdp_bench stderr in case the
+    // tee above missed buffered output (or future code paths skip it).
+    try {
+      const errText = await fs.readFile(browserErrPath, 'utf8');
+      if (errText.trim()) {
+        console.error(`[${name}] cdp_bench stderr (exit ${cdpExitCode}):`);
+        console.error(errText);
+      }
+    } catch {
+      // ignore — best-effort logging
+    }
+    throw err;
   });
 
   samplerStop = true;
