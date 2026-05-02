@@ -33,13 +33,16 @@ Each cold-build measurement is the mean of two runs after wiping
 - **Warm reload** is ~2× faster under rsbuild dev (770 ms vs 1 775 ms).
 - **Dev server idle memory is identical** (~75 MB).
 - **Browser CPU peak during cold load is 1.6× higher under vite** (417 % vs 259 %), as expected when the browser parses ~1 900 separate ES modules instead of pre-bundled chunks.
-- **Storybook dev server**: cold-cache renders are not currently
-  reproducible for either builder on this codebase — vite's
-  `optimizeDeps` invalidates dep files mid-import and the iframe never
-  reaches `#storybook-root`; rsbuild hits an MSW service-worker
-  registration race in `msw-storybook-addon`. Both are real
-  user-visible problems, not bench artifacts. See "Storybook dev
-  server" section for details and follow-ups.
+- **Storybook dev server** (cold caches, MSW-less bench previews,
+  symmetric 60 s warmup nav, Storybook 10.3.6, `SectionBox` story):
+  rsbuild server-ready takes longer (21.7 s vs 4.5 s) because rsbuild
+  eagerly compiles the preview, but **the timed cold story render is
+  ~2× faster under rsbuild** (3.28 s vs 6.54 s), **FCP is ~2.7× faster**
+  (0.94 s vs 2.49 s), and **warm reload is ~3× faster** (853 ms vs
+  2 519 ms). The cold render emits **48 requests / 14.05 MB** under
+  rsbuild vs **1 883 requests / 4.24 MB** under vite (≈39× more
+  requests for vite as it streams individual ESM modules; rsbuild
+  pre-bundles them).
 - **rsbuild stack costs ~120 MB of node_modules disk** (mainly the
   `@rspack/core` native binaries); the vite stack costs ~16 MB.
 
@@ -95,77 +98,85 @@ How to read this:
 ## Storybook dev server
 
 The frontend's primary `.storybook/` config is now rsbuild-only (Storybook 10
-+ `storybook-react-rsbuild`). For this comparison we keep a parallel
-vite-builder Storybook config under `frontend/.storybook-vite-bench/` that
-points at the same stories (`frontend/src/**/*.stories.@(js|jsx|ts|tsx)`).
-Both configs include `staticDirs: ['../public']` so MSW's
-`mockServiceWorker.js` is reachable. Living inside `frontend/` lets vite
-resolve packages through `frontend/package.json` and `frontend/node_modules`
-natively.
++ `storybook-react-rsbuild`). For this comparison we keep two **bench-only**
+Storybook configs that point at the same stories
+(`frontend/src/**/*.stories.@(js|jsx|ts|tsx)`):
+
+- `frontend/.storybook-rsbuild-bench/` — rsbuild builder
+- `frontend/.storybook-vite-bench/` — vite builder
+
+Both bench configs share a single MSW-less preview
+(`.storybook-rsbuild-bench/preview.tsx`, re-exported from the vite-bench
+config). The production `.storybook/` keeps `msw-storybook-addon`; the
+bench configs deliberately do not, because `msw-storybook-addon`'s
+`worker.start({ waitUntilReady: true })` has a timing-sensitive
+service-worker registration that races with Storybook's lazy chunk
+imports under both builders on cold caches and would obscure the
+bundler signal. The vite-bench config also strips a duplicate
+`vite-plugin-node-polyfills` instance inherited from
+`frontend/vite.config.ts` (otherwise the iframe throws
+`Identifier '__buffer_polyfill' has already been declared`) and
+enumerates the heavy `@mui/material/*` subpaths in
+`optimizeDeps.include` so vite optimizes the full dep set up-front
+instead of churning hashes mid-load.
 
 Both Storybook servers are launched with `storybook dev --no-open
 --no-version-updates`. Headless Chromium navigates directly to a story
 iframe (`/iframe.html?id=sectionbox--with-children&viewMode=story` —
-`SectionBox` is a small, dependency-light story) and the same
-`cdp_bench.mjs` collects load / reload / request count / bytes / RSS / CPU,
-**plus** explicit render validation (`#storybook-root` has substantial
-content + a `first-contentful-paint` entry exists) before sampling. The
-render check times out at 180 s by default (`RENDER_TIMEOUT_MS`).
+`SectionBox` is a small, dependency-light story). The bench harness
+(`cdp_bench.mjs`) runs a **two-phase navigation**, symmetric across
+builders: a 60 s warmup nav (`WARMUP_NAVIGATE_MS=60000`) lets either
+builder fully prime its preview chunk graph, then we blank the page,
+reset Network counters, and do the timed nav from a clean state. The
+warmup is necessary because vite's storybook builder logs "Storybook
+ready" while `optimizeDeps` is still running; navigating immediately
+races dep optimization and the page never recovers (vite serves stale
+dep hashes, the browser fails, vite forces full-page reloads — a
+180 s window isn't enough on a cold cache).
+
+The render check then asserts `#storybook-root` has substantial
+content + a `first-contentful-paint` entry exists before sampling.
 
 Both runs use **fully cold caches** — `node_modules/.cache/storybook`,
 `node_modules/.cache/rsbuild`, `node_modules/.rspack-cache`, and
-`node_modules/.vite` are wiped before each tool's run. No pre-warming.
+`node_modules/.vite` are wiped before each tool's run. No pre-warming
+beyond the symmetric in-process warmup nav described above.
 
-### Result: cold-cache renders are not reproducible on this codebase
+| Metric | rsbuild (rspack) | vite (rollup) | Δ |
+|---|---:|---:|---|
+| Server ready (`Storybook ready` log) | 21.7 s | **4.5 s** | rsbuild +377 % |
+| Cold story render `loadEventEnd` (post-warmup) | **3.28 s** | 6.54 s | rsbuild −50 % |
+| First Contentful Paint (post-warmup) | **0.94 s** | 2.49 s | rsbuild −62 % |
+| Warm reload `loadEventEnd` | **853 ms** | 2 519 ms | rsbuild −66 % |
+| Cold-render request count | **48** | 1 883 | rsbuild −97 % |
+| Cold-render bytes received | 14.05 MB | **4.24 MB** | rsbuild +231 % |
+| Warm-reload request count | **24** | 942 | rsbuild −97 % |
+| Warm-reload bytes received | 7.02 MB | **3.92 MB** | rsbuild +79 % |
+| Dev server idle RSS | **64 MB** | 75 MB | rsbuild −15 % |
+| Dev server idle CPU | **2 %** | 5 % | rsbuild −60 % |
+| Browser RSS peak during load | 1 294 MB | 1 334 MB | tie |
+| jsHeap after render | **70.9 MB** | 89.5 MB | rsbuild −21 % |
 
-Earlier numbers in this section (a "5.3 s tie" between the two builders)
-were wrong. The previous bench gave up its load-event wait at 30 s and
-recorded the iframe-shell `loadEventEnd` rather than a rendered story.
-After tightening the bench to assert the story actually rendered, both
-builders fail in different ways on a cold cache:
+> Numbers are from a single Linux/Node-22 sandbox run with
+> `WARMUP_NAVIGATE_MS=60000`. Re-run `benchmarks/rsbuild-vs-vite/run.sh`
+> to refresh; the bench will assert `rendered=true` and `reloadRendered=true`
+> for both builders before sampling — treat any sample with
+> `rendered=false` as invalid.
 
-- **vite** triggers a wave of "Pre-transform error: file does not exist
-  at .../sb-vite/deps/&lt;hash&gt;.js" errors as `optimizeDeps` rewrites
-  cached chunks while the page is still importing them. The browser's
-  initial document load never reaches `#storybook-root`. Across runs the
-  iframe sat at `domNodes=111` (the static shell only), `fcp=n/a` and
-  `scriptDuration=0.005 s` for the full 180 s window.
-- **rsbuild** occasionally renders cleanly (`fcp ~ 2.5 s`,
-  `domNodes=300+`), but more often hits a service-worker registration
-  race in `msw-storybook-addon`'s `worker.start({ waitUntilReady: true })`
-  where Storybook's preview script begins importing lazy chunks before
-  the SW finishes activating. The bench's render-validator catches this
-  consistently: under repeated cold-cache runs the diagnostic shows
-  `#storybook-root` empty and `body.innerText` containing
-  `[MSW] Failed to register a Service Worker`.
+### Earlier "5.3 s tie" was wrong
 
-Both failure modes are **real, user-visible** problems in
-`storybook dev` for this codebase on a cold cache; they're not
-benchmark artifacts. They were masked by the earlier 30 s deadline
-because the bench gave up and reported the iframe shell's `load` event
-instead of the story render. The rsbuild MSW race is the more important
-of the two — it can hit a developer running `npm run storybook` on a
-fresh checkout.
-
-`benchmarks/rsbuild-vs-vite/run.sh` therefore still emits the storybook
-runs, but **the README no longer publishes a comparison table for the
-Storybook dev server until the cold-cache rendering is reliable for
-both builders.** The bench output (`results/<ts>/dev_sb_*.txt`) and the
-underlying browser JSON (`/tmp/sb-{rsbuild,vite}_browser.json`) record
-the `rendered`/`reloadRendered` flags; treat any sample with
-`rendered=false` as invalid and either re-run, or follow up by
-addressing the root causes:
-
-- Track the MSW race — likely needs `await initialize().then(() => …)`
-  or moving `mswLoader` behind `parameters.msw.activated` in
-  `frontend/.storybook/preview.tsx`.
-- Track vite's `optimizeDeps` invalidation — likely needs
-  `optimizeDeps.entries` enumerated for the preview, or `--force` on the
-  first cold run.
+A previous version of this section reported a "5.3 s tie" between the
+two builders. That was an artifact of the old bench's 30 s
+`loadEventFired` deadline: under both builders the page was hitting the
+deadline at the iframe-shell load event, **before** Storybook's
+preview script finished mounting the story. The new harness asserts a
+real `#storybook-root` render and uses the symmetric warmup nav to
+take vite's dep-optimize churn out of the timed path; the table above
+reflects the steady-state cold-cache developer experience.
 
 The migration of both Storybooks to rsbuild stands on its own merits
-(removal of webpack from the plugin Storybook), independent of any
-storybook dev-server perf delta.
+(removal of webpack from the plugin Storybook, deduplicated polyfill
+config, simpler dependency surface), independent of the perf delta.
 
 ## Mobile network transfer time (production .br vs identity)
 
