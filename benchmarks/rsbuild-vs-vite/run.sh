@@ -59,12 +59,14 @@ sb_clean_caches() {
 }
 
 sb_clean_caches
+WARMUP_NAVIGATE_MS=60000 \
 "$HERE/measure.sh" sb-rsbuild \
-  "npx --no-install storybook dev --no-open --no-version-updates -c $ROOT/frontend/.storybook" \
+  "npx --no-install storybook dev --no-open --no-version-updates -c $ROOT/frontend/.storybook-rsbuild-bench" \
   14003 "Storybook ready|Local:" "$SB_URL" \
   > "$OUT/dev_sb_rsbuild.txt" 2>&1
 
 sb_clean_caches
+WARMUP_NAVIGATE_MS=60000 \
 "$HERE/measure.sh" sb-vite \
   "npx --no-install storybook dev --no-open --no-version-updates -c $ROOT/frontend/.storybook-vite-bench" \
   14004 "Storybook ready|Local:" "$SB_URL" \

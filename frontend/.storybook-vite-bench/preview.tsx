@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
-// Re-export the production storybook preview as-is so the vite benchmark
-// runs the exact same stories under the exact same setup.
-export * from '../.storybook/preview';
+// Re-export the bench-only preview shared with .storybook-rsbuild-bench/
+// to keep the comparison apples-to-apples. Both benches deliberately skip
+// msw-storybook-addon — see the comment in
+// .storybook-rsbuild-bench/preview.tsx for rationale.
+export * from '../.storybook-rsbuild-bench/preview';

@@ -64,7 +64,7 @@ await send('Performance.enable');
 await send('Runtime.enable');
 await send('Network.enable');
 
-const tStart = Date.now();
+let tStart = Date.now();
 let tDcl = null, tLoad = null, lastIdleAt = null, tNetIdle = null;
 let netInflight = 0;
 let bytesRecv = 0, requests = 0, byMime = {};
@@ -85,6 +85,46 @@ evHandlers.push(ev => {
   }
 });
 
+// Optional warmup pass. Vite's storybook builder reports "Storybook ready"
+// while its `optimizeDeps` crawler is still running; the first navigation
+// then races with dep optimization, vite serves stale dep hashes, the
+// browser fails, and vite forces a full-page reload — repeatedly. The page
+// can take more than three minutes to converge from a true cold cache.
+//
+// To get a fair, reproducible comparison we do an OPTIONAL warmup nav
+// first (controlled by WARMUP_NAVIGATE_MS, default 60000 ms when set):
+// navigate to the target URL, give vite/rsbuild time to fully prime their
+// preview chunk graph, then RESET our timing baseline and Network counters
+// and do the real timed navigation. Both bundlers go through the same
+// warmup, so the final cold-load number is "first nav after the dev
+// server is fully primed" — the steady-state user experience.
+const WARMUP_NAVIGATE_MS = Number(process.env.WARMUP_NAVIGATE_MS || 0);
+if (WARMUP_NAVIGATE_MS > 0) {
+  await send('Page.navigate', { url: targetUrl });
+  // Wait fixed warmup time. Cheaper than parsing dev-server logs and is
+  // symmetric across bundlers.
+  await new Promise(r => setTimeout(r, WARMUP_NAVIGATE_MS));
+  // Blank the page so the next navigation is from a clean state, then
+  // clear browser cache (vite serves dep modules with no-cache anyway,
+  // but rsbuild caches; clearing keeps the comparison cold for both).
+  await send('Page.navigate', { url: 'about:blank' });
+  await new Promise(r => setTimeout(r, 500));
+  await send('Network.clearBrowserCache');
+  // Reset our counters so the timed navigation reports clean numbers.
+  netInflight = 0;
+  bytesRecv = 0;
+  requests = 0;
+  byMime = {};
+  fcp = null;
+  lcp = null;
+  tDcl = null;
+  tLoad = null;
+  lastIdleAt = null;
+  tNetIdle = null;
+  tStart = Date.now();
+}
+
+const tNavStart = Date.now();
 await send('Page.navigate', { url: targetUrl });
 
 // Wait until the page actually renders the story (not just a network-idle
@@ -96,7 +136,7 @@ await send('Page.navigate', { url: targetUrl });
 // Generous timeout — vite's first-run dep-optimize on a cold cache can take
 // well over a minute on this codebase.
 const RENDER_TIMEOUT_MS = Number(process.env.RENDER_TIMEOUT_MS || 180000);
-const renderDeadline = Date.now() + RENDER_TIMEOUT_MS;
+const renderDeadline = tNavStart + RENDER_TIMEOUT_MS;
 let rendered = false;
 let renderDiagnostic = null;
 while (Date.now() < renderDeadline) {
