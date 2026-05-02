@@ -85,13 +85,28 @@ export default defineConfig({
     }),
     // Make sure we copy the minified monaco-editor source into the static folder
     // since it's loaded dynamically and not bundled via ESM. We do it this way
-    // to support setting the localization language
+    // to support setting the localization language.
+    //
+    // Headlamp only uses Monaco for YAML and JSON. Copy just the editor core,
+    // the YAML tokenizer, and the JSON language service. Other basic-languages
+    // and language services (css, html, typescript) are intentionally not
+    // copied to keep the served `assets/vs/` slim.
     viteStaticCopy({
       targets: [
+        { src: 'node_modules/monaco-editor/min/vs/loader.js', dest: 'assets/vs/' },
+        { src: 'node_modules/monaco-editor/min/vs/base', dest: 'assets/vs/' },
+        { src: 'node_modules/monaco-editor/min/vs/editor', dest: 'assets/vs/' },
         {
-          src: 'node_modules/monaco-editor/min/vs/',
-          dest: 'assets/', // copies to assets/vs
-          rename: { stripBase: 3 },
+          src: 'node_modules/monaco-editor/min/vs/basic-languages/yaml',
+          dest: 'assets/vs/basic-languages/',
+        },
+        {
+          src: 'node_modules/monaco-editor/min/vs/language/json',
+          dest: 'assets/vs/language/',
+        },
+        {
+          src: 'node_modules/monaco-editor/min/vs/nls.messages.*.js',
+          dest: 'assets/vs/',
         },
       ],
     }),
