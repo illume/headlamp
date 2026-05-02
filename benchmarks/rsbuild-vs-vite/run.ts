@@ -60,8 +60,8 @@ async function rmrf(p: string): Promise<void> {
   await fs.rm(p, { recursive: true, force: true }).catch(() => {});
 }
 
-function run0(cmd: string, args: string[]): Promise<void> {
-  return run(cmd, args, { stdio: 'ignore' });
+function run0(cmd: string, args: string[], opts: RunOptions = {}): Promise<void> {
+  return run(cmd, args, { ...opts, stdio: 'ignore' });
 }
 
 async function wipeBuildCaches(): Promise<void> {
@@ -142,7 +142,12 @@ for (const tool of ['rsbuild', 'vite'] as const) {
   for (const runIdx of [1, 2]) {
     await wipeBuildCaches();
     // `npm run make-version` writes a version file the build expects.
-    await run0('npm', ['run', 'make-version']).catch(() => {});
+    // On Windows, `npm` is `npm.cmd`, so spawn-with-shell:false (the
+    // default) fails with ENOENT — match the npx call below by enabling
+    // shell on win32.
+    await run0('npm', ['run', 'make-version'], {
+      shell: process.platform === 'win32',
+    }).catch(() => {});
     const cmd = tool === 'vite' ? 'vite build' : 'rsbuild build';
     const { wall_ms, maxRSS_kb, cpu_pct_mean, log, code } = await timeChild(
       'npx',
