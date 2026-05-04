@@ -1,0 +1,155 @@
+#!/usr/bin/env bash
+# Brings up a Minikube cluster + Dex + Headlamp + OAuth2-Proxy that
+# reproduces the tutorial in ../index.md.
+#
+# Idempotent: re-running this script will skip steps that are already done.
+#
+# Layout when this script finishes:
+#   - Minikube profile        : "dex"
+#   - Dex                     : on the host, listening on :5556
+#                               PID file at /tmp/headlamp-dex.pid
+#                               log file at /tmp/headlamp-dex.log
+#   - Headlamp Helm release   : "headlamp"   in namespace "headlamp"
+#   - OAuth2-Proxy Helm release: "oauth2-proxy" in namespace "headlamp"
+#   - Port-forward            : http://localhost:8080  ->  oauth2-proxy
+#                               PID file at /tmp/headlamp-oauth2-proxy-pf.pid
+#
+# Browser test:
+#   open http://localhost:8080  ->  redirected to Dex
+#   sign in as: admin@example.com / password
+#   you are redirected back into Headlamp.
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$SCRIPT_DIR"
+
+PROFILE="dex"
+NAMESPACE="headlamp"
+DEX_PORT=5556
+PF_PORT=8080
+DEX_PID_FILE="/tmp/headlamp-dex.pid"
+DEX_LOG_FILE="/tmp/headlamp-dex.log"
+PF_PID_FILE="/tmp/headlamp-oauth2-proxy-pf.pid"
+DEX_ISSUER="http://host.minikube.internal:${DEX_PORT}"
+
+log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
+warn() { printf '\033[1;33m!! \033[0m %s\n' "$*" >&2; }
+fail() { printf '\033[1;31mxx \033[0m %s\n' "$*" >&2; exit 1; }
+
+require() {
+  command -v "$1" >/dev/null 2>&1 || fail "missing required command: $1"
+}
+
+require minikube
+require kubectl
+require helm
+require dex
+require openssl
+require curl
+
+# ---------------------------------------------------------------- 1. Dex
+start_dex() {
+  if [[ -f "$DEX_PID_FILE" ]] && kill -0 "$(cat "$DEX_PID_FILE")" 2>/dev/null; then
+    log "Dex already running (PID $(cat "$DEX_PID_FILE"))"
+    return
+  fi
+  log "Starting Dex on :${DEX_PORT} (logs: ${DEX_LOG_FILE})"
+  rm -f /tmp/dex.db
+  nohup dex serve "$SCRIPT_DIR/dex-config.yaml" >"$DEX_LOG_FILE" 2>&1 &
+  echo $! > "$DEX_PID_FILE"
+
+  # Wait for Dex to be ready.
+  for _ in $(seq 1 30); do
+    if curl -fsS "http://localhost:${DEX_PORT}/.well-known/openid-configuration" >/dev/null 2>&1; then
+      log "Dex is ready."
+      return
+    fi
+    sleep 1
+  done
+  fail "Dex did not become ready in 30s. See ${DEX_LOG_FILE}"
+}
+
+# ---------------------------------------------------------------- 2. Minikube
+start_minikube() {
+  if minikube status -p "$PROFILE" --format '{{.Host}}' 2>/dev/null | grep -q Running; then
+    log "Minikube profile '$PROFILE' already running."
+    return
+  fi
+  log "Starting Minikube profile '$PROFILE' with OIDC apiserver flags."
+  minikube start -p "$PROFILE" \
+    --extra-config=apiserver.authorization-mode=Node,RBAC \
+    --extra-config="apiserver.oidc-issuer-url=${DEX_ISSUER}" \
+    --extra-config=apiserver.oidc-username-claim=email \
+    --extra-config=apiserver.oidc-client-id=headlamp
+}
+
+# ----------------------------------------------------- 3. RBAC + Helm releases
+apply_rbac() {
+  log "Applying ClusterRoleBinding for the Dex test user."
+  kubectl --context "$PROFILE" apply -f clusterrolebinding.yaml
+}
+
+helm_install_or_upgrade() {
+  local release="$1" chart="$2" values="$3"
+  if helm --kube-context "$PROFILE" -n "$NAMESPACE" status "$release" >/dev/null 2>&1; then
+    helm --kube-context "$PROFILE" -n "$NAMESPACE" upgrade "$release" "$chart" -f "$values" --wait
+  else
+    helm --kube-context "$PROFILE" -n "$NAMESPACE" install "$release" "$chart" -f "$values" --create-namespace --wait
+  fi
+}
+
+deploy_helm_releases() {
+  log "Adding Helm repositories."
+  helm repo add headlamp https://kubernetes-sigs.github.io/headlamp/ >/dev/null
+  helm repo add oauth2-proxy https://oauth2-proxy.github.io/manifests >/dev/null
+  helm repo update >/dev/null
+
+  log "Installing/upgrading Headlamp."
+  helm_install_or_upgrade headlamp headlamp/headlamp headlamp-values.yaml
+
+  log "Rendering oauth2-proxy values from template."
+  local cookie_secret
+  cookie_secret="$(openssl rand -base64 32 | tr -- '+/' '-_' | tr -d '=')"
+  sed \
+    -e "s|__COOKIE_SECRET__|${cookie_secret}|" \
+    -e "s|__DEX_ISSUER__|${DEX_ISSUER}|" \
+    oauth2-proxy-values.yaml.tpl > oauth2-proxy-values.yaml
+
+  log "Installing/upgrading OAuth2-Proxy."
+  helm_install_or_upgrade oauth2-proxy oauth2-proxy/oauth2-proxy oauth2-proxy-values.yaml
+}
+
+# ---------------------------------------------------------- 4. Port-forward
+start_port_forward() {
+  if [[ -f "$PF_PID_FILE" ]] && kill -0 "$(cat "$PF_PID_FILE")" 2>/dev/null; then
+    log "Port-forward already running (PID $(cat "$PF_PID_FILE"))"
+    return
+  fi
+  log "Port-forwarding oauth2-proxy on http://localhost:${PF_PORT}"
+  nohup kubectl --context "$PROFILE" -n "$NAMESPACE" \
+    port-forward svc/oauth2-proxy "${PF_PORT}:80" \
+    >/tmp/headlamp-oauth2-proxy-pf.log 2>&1 &
+  echo $! > "$PF_PID_FILE"
+  sleep 2
+}
+
+# -------------------------------------------------------------------- main
+start_dex
+start_minikube
+apply_rbac
+deploy_helm_releases
+start_port_forward
+
+cat <<EOF
+
+✓ All set.
+
+  Open Headlamp at:   http://localhost:${PF_PORT}
+  Sign in to Dex as:  admin@example.com / password
+
+  Dex log:            ${DEX_LOG_FILE}
+  Port-forward log:   /tmp/headlamp-oauth2-proxy-pf.log
+
+  Run ./test.sh   to smoke-test the deployment.
+  Run ./cleanup.sh to tear everything down.
+EOF
