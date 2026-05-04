@@ -233,12 +233,26 @@ would bypass authentication):
 kubectl port-forward svc/oauth2-proxy 8080:80 -n headlamp
 ```
 
-Open <http://localhost:8080>. OAuth2-Proxy will redirect you to Dex; sign in
-as `admin@example.com` / `password`. After login you are returned to
-`http://localhost:8080/oauth2/callback`, OAuth2-Proxy issues its session
-cookie, and the request is proxied through to Headlamp with the Dex
-`id_token` attached. Headlamp uses that token to talk to the API server,
-which authorizes the request via the `ClusterRoleBinding` from step 3.
+Open <http://localhost:8080>. OAuth2-Proxy presents its **Sign in** page:
+
+![OAuth2-Proxy sign-in screen](./images/01-oauth2-proxy-signin.png)
+
+Click **Sign in with OpenID Connect** and you are redirected to Dex. Sign
+in as `admin@example.com` / `password`:
+
+![Dex login page](./images/02-dex-login.png)
+
+After login you are returned to `http://localhost:8080/oauth2/callback`,
+OAuth2-Proxy issues its session cookie, and the request is proxied through
+to Headlamp with the Dex `id_token` attached as an `Authorization: Bearer`
+header. Headlamp uses that token to talk to the API server, which
+authorizes the request via the `ClusterRoleBinding` from step 3:
+
+![Headlamp UI after authenticating through OAuth2-Proxy](./images/03-headlamp-after-login.png)
+
+> The screenshots above were captured against a local Dex + OAuth2-Proxy +
+> Headlamp stack running through the [`test-scripts/`](./test-scripts/)
+> in this folder.
 
 ## Going to production
 
