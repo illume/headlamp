@@ -33,6 +33,77 @@ Make sure the following are installed and on your `PATH`:
 Tested with Headlamp 0.36, OAuth2-Proxy 7.x, Dex 2.43 and Minikube 1.34
 on Linux. macOS should work the same way; on Windows you'll need WSL.
 
+### Installing the prerequisites
+
+Pick the section for your OS. `kubectl`, `minikube` and `helm` are not
+shipped in the default Ubuntu/Debian repositories, so we use their
+upstream package sources / install scripts. `dex` is not packaged for
+either platform, so it's installed by downloading an upstream release.
+
+#### Ubuntu LTS (22.04 / 24.04) and Debian-based WSL
+
+```bash
+# Common build tools, curl, openssl
+sudo apt-get update
+sudo apt-get install -y curl ca-certificates apt-transport-https gnupg openssl tar
+
+# kubectl — Kubernetes apt repo
+sudo mkdir -p -m 755 /etc/apt/keyrings
+curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.31/deb/Release.key \
+  | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.31/deb/ /' \
+  | sudo tee /etc/apt/sources.list.d/kubernetes.list
+sudo apt-get update
+sudo apt-get install -y kubectl
+
+# helm — official apt repo
+curl -fsSL https://baltocdn.com/helm/signing.asc \
+  | sudo gpg --dearmor -o /etc/apt/keyrings/helm.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/helm.gpg] https://baltocdn.com/helm/stable/debian/ all main" \
+  | sudo tee /etc/apt/sources.list.d/helm-stable-debian.list
+sudo apt-get update
+sudo apt-get install -y helm
+
+# minikube — upstream .deb
+curl -fsSL -o /tmp/minikube.deb \
+  https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
+sudo dpkg -i /tmp/minikube.deb && rm /tmp/minikube.deb
+
+# dex — extract a release tarball into /usr/local/bin
+DEX_VERSION=v2.43.1
+curl -fsSL -o /tmp/dex.tgz \
+  "https://github.com/dexidp/dex/releases/download/${DEX_VERSION}/dex_${DEX_VERSION#v}_linux_amd64.tar.gz"
+sudo tar -xzf /tmp/dex.tgz -C /usr/local/bin --strip-components=1 dex/dex
+rm /tmp/dex.tgz
+
+# Sanity check
+kubectl version --client
+minikube version
+helm version
+dex version
+```
+
+You'll also need a Minikube driver. On a fresh Ubuntu host, `docker.io`
+from apt is the simplest choice (`sudo apt-get install -y docker.io &&
+sudo usermod -aG docker "$USER"`, then re-login).
+
+#### macOS with Homebrew
+
+```bash
+# All five binaries are in homebrew-core
+brew install kubectl minikube helm dex
+# curl and openssl ship with macOS — no install needed.
+
+# Sanity check
+kubectl version --client
+minikube version
+helm version
+dex version
+```
+
+Minikube on macOS needs a driver too; the easiest is Docker Desktop
+(`brew install --cask docker`) or the QEMU driver (`brew install qemu`).
+
 ## Files
 
 | File                          | What it is                                                          |
