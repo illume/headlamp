@@ -75,7 +75,11 @@ issuer: http://<YOUR-DEX-HOST>:5556
 storage:
   type: sqlite3
   config:
-    file: /var/dex/dex.db
+    # `/tmp/dex.db` works when you run `dex serve` directly as your user.
+    # If you run Dex in a container or systemd unit, point this at a
+    # writable persistent path you actually mount/own (for example
+    # `/var/lib/dex/dex.db` with the directory created and chowned).
+    file: /tmp/dex.db
 
 web:
   http: 0.0.0.0:5556

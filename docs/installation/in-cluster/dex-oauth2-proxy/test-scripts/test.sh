@@ -44,11 +44,19 @@ echo "$discovery" | grep -q "\"issuer\":\"${EXPECTED_ISSUER}\"" \
   || { printf 'expected issuer %s in discovery document, got:\n%s\n' "$EXPECTED_ISSUER" "$discovery" >&2; exit 1; }
 pass "Dex advertises issuer ${EXPECTED_ISSUER}"
 
-log "4. Headlamp pod is Running"
-ready=$(kubectl --context dex -n headlamp get pods -l app.kubernetes.io/name=headlamp \
-  -o 'jsonpath={.items[*].status.containerStatuses[*].ready}')
-[[ "$ready" == *"true"* ]] || fail "headlamp pod is not ready (got '$ready')"
-pass "Headlamp pod is ready"
+log "4. Headlamp pod is Ready"
+# `kubectl wait` fails if no pods match the selector, and only succeeds
+# once *every* matched pod reports Ready=True — which is what we want,
+# instead of a substring match on a list of booleans that would pass as
+# long as one container in one pod was ready.
+if ! kubectl --context dex -n headlamp wait \
+    --for=condition=Ready pod \
+    -l app.kubernetes.io/name=headlamp \
+    --timeout=60s >/dev/null 2>&1; then
+  kubectl --context dex -n headlamp get pods -l app.kubernetes.io/name=headlamp >&2 || true
+  fail "headlamp pod did not become Ready within 60s"
+fi
+pass "Headlamp pod is Ready"
 
 echo
 echo "All smoke tests passed."

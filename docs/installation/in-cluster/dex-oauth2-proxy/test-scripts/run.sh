@@ -36,6 +36,22 @@ log()  { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m!! \033[0m %s\n' "$*" >&2; }
 fail() { printf '\033[1;31mxx \033[0m %s\n' "$*" >&2; exit 1; }
 
+# pid_matches PID PATTERN
+#
+# Returns success only when PID is alive AND its command line matches
+# PATTERN (a fixed substring). Guards against a stale pidfile whose PID
+# has since been reused by an unrelated process — without this we could
+# (a) skip starting Dex / port-forward because we think they're already
+# running, or (b) later signal the wrong process from cleanup.sh.
+pid_matches() {
+  local pid="$1" pattern="$2"
+  [[ -n "$pid" ]] || return 1
+  kill -0 "$pid" 2>/dev/null || return 1
+  local cmd
+  cmd="$(ps -p "$pid" -o args= 2>/dev/null || true)"
+  [[ "$cmd" == *"$pattern"* ]]
+}
+
 require() {
   command -v "$1" >/dev/null 2>&1 || fail "missing required command: $1"
 }
@@ -49,10 +65,13 @@ require curl
 
 # ---------------------------------------------------------------- 1. Dex
 start_dex() {
-  if [[ -f "$DEX_PID_FILE" ]] && kill -0 "$(cat "$DEX_PID_FILE")" 2>/dev/null; then
+  if [[ -f "$DEX_PID_FILE" ]] && pid_matches "$(cat "$DEX_PID_FILE")" "dex serve"; then
     log "Dex already running (PID $(cat "$DEX_PID_FILE"))"
     return
   fi
+  # Either no pidfile, or the recorded PID is dead/belongs to something
+  # else now — drop the stale file and start fresh.
+  rm -f "$DEX_PID_FILE"
   log "Starting Dex on :${DEX_PORT} (logs: ${DEX_LOG_FILE})"
   rm -f /tmp/dex.db
   nohup dex serve "$SCRIPT_DIR/dex-config.yaml" >"$DEX_LOG_FILE" 2>&1 &
@@ -124,10 +143,12 @@ deploy_helm_releases() {
 
 # ---------------------------------------------------------- 4. Port-forward
 start_port_forward() {
-  if [[ -f "$PF_PID_FILE" ]] && kill -0 "$(cat "$PF_PID_FILE")" 2>/dev/null; then
+  if [[ -f "$PF_PID_FILE" ]] && pid_matches "$(cat "$PF_PID_FILE")" "port-forward"; then
     log "Port-forward already running (PID $(cat "$PF_PID_FILE"))"
     return
   fi
+  # Stale pidfile (or PID reused by something else) — discard it.
+  rm -f "$PF_PID_FILE"
   # Refuse if the local port is already taken — kubectl port-forward would
   # exit immediately and we'd cache a stale PID. The port is hard-coded
   # to 8080 because the OAuth2-Proxy `redirect_url` and Dex

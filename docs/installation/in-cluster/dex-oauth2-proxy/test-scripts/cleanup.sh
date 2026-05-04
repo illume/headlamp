@@ -8,25 +8,37 @@ DEX_PID_FILE="/tmp/headlamp-dex.pid"
 PF_PID_FILE="/tmp/headlamp-oauth2-proxy-pf.pid"
 
 log() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
+warn() { printf '\033[1;33m!! \033[0m %s\n' "$*" >&2; }
 
+# kill_pidfile FILE NAME PATTERN
+#
+# Reads a PID from FILE and kills it only if it is still alive AND its
+# command line contains PATTERN. PATTERN guards against PID reuse: if
+# the recorded PID has since been recycled by an unrelated process, we
+# would otherwise SIGTERM/SIGKILL the wrong thing. Always removes FILE.
 kill_pidfile() {
-  local file="$1" name="$2"
+  local file="$1" name="$2" pattern="$3"
   if [[ -f "$file" ]]; then
-    local pid
+    local pid cmd
     pid="$(cat "$file")"
-    if kill -0 "$pid" 2>/dev/null; then
-      log "Stopping $name (PID $pid)"
-      kill "$pid" 2>/dev/null || true
-      # Give it a moment, then force.
-      sleep 1
-      if kill -0 "$pid" 2>/dev/null; then kill -9 "$pid" 2>/dev/null || true; fi
+    if [[ -n "$pid" ]] && kill -0 "$pid" 2>/dev/null; then
+      cmd="$(ps -p "$pid" -o args= 2>/dev/null || true)"
+      if [[ "$cmd" == *"$pattern"* ]]; then
+        log "Stopping $name (PID $pid)"
+        kill "$pid" 2>/dev/null || true
+        # Give it a moment, then force.
+        sleep 1
+        if kill -0 "$pid" 2>/dev/null; then kill -9 "$pid" 2>/dev/null || true; fi
+      else
+        warn "PID $pid in $file is not $name (got: ${cmd:-<gone>}); leaving it alone"
+      fi
     fi
     rm -f "$file"
   fi
 }
 
-kill_pidfile "$PF_PID_FILE"  "oauth2-proxy port-forward"
-kill_pidfile "$DEX_PID_FILE" "dex"
+kill_pidfile "$PF_PID_FILE"  "oauth2-proxy port-forward" "port-forward"
+kill_pidfile "$DEX_PID_FILE" "dex"                       "dex serve"
 
 if helm --kube-context "$PROFILE" -n "$NAMESPACE" status oauth2-proxy >/dev/null 2>&1; then
   log "Uninstalling oauth2-proxy Helm release"
