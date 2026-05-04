@@ -27,6 +27,7 @@ PROFILE="dex"
 NAMESPACE="headlamp"
 DEX_PORT=5556
 PF_PORT=8080
+PF_PATTERN="port-forward svc/oauth2-proxy ${PF_PORT}:80"
 DEX_PID_FILE="/tmp/headlamp-dex.pid"
 DEX_LOG_FILE="/tmp/headlamp-dex.log"
 PF_PID_FILE="/tmp/headlamp-oauth2-proxy-pf.pid"
@@ -143,7 +144,7 @@ deploy_helm_releases() {
 
 # ---------------------------------------------------------- 4. Port-forward
 start_port_forward() {
-  if [[ -f "$PF_PID_FILE" ]] && pid_matches "$(cat "$PF_PID_FILE")" "port-forward"; then
+  if [[ -f "$PF_PID_FILE" ]] && pid_matches "$(cat "$PF_PID_FILE")" "$PF_PATTERN"; then
     log "Port-forward already running (PID $(cat "$PF_PID_FILE"))"
     return
   fi

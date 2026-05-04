@@ -36,9 +36,11 @@ on Linux. macOS should work the same way; on Windows you'll need WSL.
 ### Installing the prerequisites
 
 Pick the section for your OS. `kubectl`, `minikube` and `helm` are not
-shipped in the default Ubuntu/Debian repositories, so we use their
-upstream package sources / install scripts. `dex` is not packaged for
-either platform, so it's installed by downloading an upstream release.
+shipped in the default Ubuntu/Debian repositories, so on those platforms
+we use their upstream package sources / install scripts. `dex` is not
+available in apt either, so on Ubuntu/Debian we install it from an
+upstream release tarball; on macOS, all four tools (including `dex`)
+are available from Homebrew.
 
 #### Ubuntu LTS (22.04 / 24.04) and Debian-based WSL
 

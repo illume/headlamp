@@ -23,14 +23,17 @@ pass() { printf '\033[1;32m ok\033[0m %s\n' "$*"; }
 fail() { printf '\033[1;31mfail\033[0m %s\n' "$*" >&2; exit 1; }
 
 log "1. OAuth2-Proxy redirects unauthenticated requests to /oauth2/sign_in"
-status=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:${PF_PORT}/")
+status=$(curl -s -o /dev/null -w '%{http_code}' "http://localhost:${PF_PORT}/") \
+  || fail "could not reach oauth2-proxy on http://localhost:${PF_PORT}/ (is run.sh's port-forward up?)"
 [[ "$status" =~ ^30[0-9]$ ]] || fail "expected 30x from oauth2-proxy /, got $status"
-location=$(curl -sI "http://localhost:${PF_PORT}/" | tr -d '\r' | awk '/^[Ll]ocation:/ {print $2}')
+location=$(curl -sI "http://localhost:${PF_PORT}/" | tr -d '\r' | awk '/^[Ll]ocation:/ {print $2}') \
+  || fail "could not fetch headers from http://localhost:${PF_PORT}/"
 [[ "$location" == */oauth2/sign_in* ]] || fail "expected redirect to /oauth2/sign_in, got '$location'"
 pass "got 30x -> $location"
 
 log "2. /oauth2/start redirects to Dex with our client_id"
-auth_location=$(curl -sI "http://localhost:${PF_PORT}/oauth2/start" | tr -d '\r' | awk '/^[Ll]ocation:/ {print $2}')
+auth_location=$(curl -sI "http://localhost:${PF_PORT}/oauth2/start" | tr -d '\r' | awk '/^[Ll]ocation:/ {print $2}') \
+  || fail "could not fetch headers from http://localhost:${PF_PORT}/oauth2/start"
 [[ -n "$auth_location" ]] || fail "/oauth2/start did not return a Location header"
 [[ "$auth_location" == *"client_id=headlamp"* ]] \
   || fail "expected client_id=headlamp in '$auth_location'"

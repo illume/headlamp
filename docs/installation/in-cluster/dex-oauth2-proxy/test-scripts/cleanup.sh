@@ -4,8 +4,12 @@ set -euo pipefail
 
 PROFILE="dex"
 NAMESPACE="headlamp"
+PF_PORT=8080
 DEX_PID_FILE="/tmp/headlamp-dex.pid"
 PF_PID_FILE="/tmp/headlamp-oauth2-proxy-pf.pid"
+# Specific enough to avoid SIGTERMing an unrelated `kubectl port-forward`
+# whose PID happens to match what we have in the pidfile.
+PF_PATTERN="port-forward svc/oauth2-proxy ${PF_PORT}:80"
 
 log() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 warn() { printf '\033[1;33m!! \033[0m %s\n' "$*" >&2; }
@@ -37,7 +41,7 @@ kill_pidfile() {
   fi
 }
 
-kill_pidfile "$PF_PID_FILE"  "oauth2-proxy port-forward" "port-forward"
+kill_pidfile "$PF_PID_FILE"  "oauth2-proxy port-forward" "$PF_PATTERN"
 kill_pidfile "$DEX_PID_FILE" "dex"                       "dex serve"
 
 if helm --kube-context "$PROFILE" -n "$NAMESPACE" status oauth2-proxy >/dev/null 2>&1; then
