@@ -29,10 +29,16 @@ config:
     # `Authorization: Bearer <id_token>`. With provider = "oidc",
     # `pass_authorization_header` forwards the id_token (not the access
     # token) to the upstream — which is what Headlamp expects by default.
-    # Headlamp can be switched to access-token mode via
-    # `-oidc-use-access-token` (HEADLAMP_CONFIG_OIDC_USE_ACCESS_TOKEN);
-    # if you do that, swap this for `pass_access_token = true` and have
-    # Headlamp read X-Forwarded-Access-Token instead.
+    #
+    # If you have switched Headlamp to access-token mode via
+    # `-oidc-use-access-token` (HEADLAMP_CONFIG_OIDC_USE_ACCESS_TOKEN),
+    # Headlamp still reads the token from the `Authorization` header, so
+    # you need OAuth2-Proxy to put the *access* token there instead. The
+    # simplest way is a small reverse proxy / sidecar that copies the
+    # access token (which OAuth2-Proxy exposes via `pass_access_token =
+    # true` as `X-Forwarded-Access-Token`) into `Authorization: Bearer`
+    # before the request reaches Headlamp; `pass_access_token` on its
+    # own does *not* set the `Authorization` header.
     pass_authorization_header = true
 
     # Where authenticated requests are forwarded.

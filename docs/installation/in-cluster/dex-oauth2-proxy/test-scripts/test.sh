@@ -42,7 +42,8 @@ auth_location=$(curl -sI "http://localhost:${PF_PORT}/oauth2/start" | tr -d '\r'
 pass "redirected to Dex /auth with the right parameters"
 
 log "3. Dex discovery document is served and advertises the expected issuer"
-discovery=$(curl -fsS "http://localhost:${DEX_PORT}/.well-known/openid-configuration")
+discovery=$(curl -fsS "http://localhost:${DEX_PORT}/.well-known/openid-configuration") \
+  || fail "could not reach Dex discovery document at http://localhost:${DEX_PORT}/.well-known/openid-configuration (is Dex up? check $DEX_LOG_FILE)"
 echo "$discovery" | grep -q "\"issuer\":\"${EXPECTED_ISSUER}\"" \
   || { printf 'expected issuer %s in discovery document, got:\n%s\n' "$EXPECTED_ISSUER" "$discovery" >&2; exit 1; }
 pass "Dex advertises issuer ${EXPECTED_ISSUER}"

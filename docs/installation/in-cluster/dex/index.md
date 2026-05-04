@@ -6,7 +6,7 @@ sidebar_label: "Tutorial: OIDC with Dex"
 > **Looking for the recommended setup?** These days we suggest running
 > Headlamp behind [OAuth2-Proxy](https://oauth2-proxy.github.io/oauth2-proxy/),
 > which authenticates with Dex and forwards the user's OIDC `id_token`
-> to Headlamp as an `Authorization: ****** header. See the dedicated tutorial:
+> to Headlamp as an `Authorization: Bearer <id_token>` header. See the dedicated tutorial:
 > [**Tutorial: OIDC with Dex (via OAuth2-Proxy)**](../dex-oauth2-proxy/index.md).
 >
 > The page below documents the older "Headlamp talks OIDC to Dex directly"

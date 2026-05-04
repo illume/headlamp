@@ -188,6 +188,15 @@ OAuth2-Proxy will:
   forwards to Headlamp.
 - Proxy the (now authenticated) request to the in-cluster Headlamp service.
 
+The snippet below is a minimal, production-shaped values file. The
+runnable
+[`test-scripts/oauth2-proxy-values.yaml.tpl`](https://github.com/headlamp-k8s/headlamp/blob/main/docs/installation/in-cluster/dex-oauth2-proxy/test-scripts/oauth2-proxy-values.yaml.tpl)
+adds a few extra knobs that are only safe for the local-only
+`kubectl port-forward` demo (`cookie_secure = false`,
+`insecure_oidc_allow_unverified_email = true`,
+`ssl_insecure_skip_verify = true`); do **not** carry those into a
+real deployment.
+
 ```yaml title="oauth2-proxy-values.yaml"
 config:
   clientID: "headlamp"

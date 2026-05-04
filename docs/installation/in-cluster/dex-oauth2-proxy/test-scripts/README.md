@@ -92,7 +92,7 @@ sudo usermod -aG docker "$USER"`, then re-login).
 #### macOS with Homebrew
 
 ```bash
-# All five binaries are in homebrew-core
+# All four binaries are in homebrew-core
 brew install kubectl minikube helm dex
 # curl and openssl ship with macOS — no install needed.
 
