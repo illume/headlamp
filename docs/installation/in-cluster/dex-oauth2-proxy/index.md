@@ -188,7 +188,7 @@ OAuth2-Proxy will:
 config:
   clientID: "headlamp"
   clientSecret: "headlamp-oauth2-proxy-secret"
-  # Generate with: openssl rand -base64 32 | tr '+/' '-_'
+  # Generate with: openssl rand -base64 32 | tr '+/' '-_' | tr -d '='
   cookieSecret: "<RANDOM-32-BYTE-BASE64URL-VALUE>"
   configFile: |-
     email_domains = ["*"]
@@ -200,12 +200,12 @@ config:
     # Ask Dex for the claims we need.
     scope = "openid profile email groups"
 
-    # Forward the user's id_token to Headlamp as a Bearer token,
-    # so Headlamp can call the Kubernetes API as the logged-in user.
+    # Forward the user's OIDC id_token to Headlamp as
+    # `Authorization: Bearer <id_token>`, so Headlamp can call the
+    # Kubernetes API server on the user's behalf. With provider = "oidc",
+    # `pass_authorization_header` forwards the id_token (not the access
+    # token) — which is what Headlamp expects by default.
     pass_authorization_header = true
-    pass_access_token = true
-    set_authorization_header = true
-    set_xauthrequest = true
 
     # Where to send the (authenticated) request.
     upstreams = ["http://headlamp.headlamp.svc.cluster.local:80"]
@@ -215,12 +215,17 @@ config:
     reverse_proxy = true
 ```
 
-> **Why `pass_authorization_header` + `set_authorization_header`?**
-> These flags make OAuth2-Proxy place the Dex `id_token` into the
-> `Authorization: Bearer …` header on the request it forwards to Headlamp.
-> Headlamp picks that header up and uses the token when talking to the
-> Kubernetes API. The API server, configured in step 2, validates the token
-> against Dex and applies RBAC.
+> **Why `pass_authorization_header`?**
+> With `provider = "oidc"`, this flag makes OAuth2-Proxy place the Dex
+> `id_token` (not the access token) into the `Authorization: Bearer …`
+> header on the request it forwards to Headlamp. Headlamp picks that
+> header up and uses the token when talking to the Kubernetes API. The
+> API server, configured in step 2, validates the token against Dex and
+> applies RBAC.
+>
+> Headlamp uses the `id_token` for OIDC auth by default; if you have set
+> `-oidc-use-access-token` (`HEADLAMP_CONFIG_OIDC_USE_ACCESS_TOKEN`) on
+> Headlamp, configure OAuth2-Proxy to forward the access token instead.
 
 Install OAuth2-Proxy:
 

@@ -25,12 +25,15 @@ config:
 
     scope = "openid profile email groups"
 
-    # Forward the user's id_token to Headlamp as a Bearer token, so
-    # Headlamp can call the Kubernetes API server on the user's behalf.
+    # Forward the user's OIDC id_token to Headlamp as
+    # `Authorization: Bearer <id_token>`. With provider = "oidc",
+    # `pass_authorization_header` forwards the id_token (not the access
+    # token) to the upstream — which is what Headlamp expects by default.
+    # Headlamp can be switched to access-token mode via
+    # `-oidc-use-access-token` (HEADLAMP_CONFIG_OIDC_USE_ACCESS_TOKEN);
+    # if you do that, swap this for `pass_access_token = true` and have
+    # Headlamp read X-Forwarded-Access-Token instead.
     pass_authorization_header = true
-    pass_access_token = true
-    set_authorization_header = true
-    set_xauthrequest = true
 
     # Where authenticated requests are forwarded.
     upstreams = ["http://headlamp.headlamp.svc.cluster.local:80"]

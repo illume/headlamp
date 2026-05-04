@@ -125,12 +125,36 @@ start_port_forward() {
     log "Port-forward already running (PID $(cat "$PF_PID_FILE"))"
     return
   fi
+  # Refuse if the local port is already taken — kubectl port-forward would
+  # exit immediately and we'd cache a stale PID.
+  if (exec 3<>/dev/tcp/127.0.0.1/"${PF_PORT}") 2>/dev/null; then
+    exec 3<&- 3>&-
+    fail "local port ${PF_PORT} is already in use; free it or set a different PF_PORT"
+  fi
+
   log "Port-forwarding oauth2-proxy on http://localhost:${PF_PORT}"
   nohup kubectl --context "$PROFILE" -n "$NAMESPACE" \
     port-forward svc/oauth2-proxy "${PF_PORT}:80" \
     >/tmp/headlamp-oauth2-proxy-pf.log 2>&1 &
-  echo $! > "$PF_PID_FILE"
-  sleep 2
+  local pf_pid=$!
+
+  # Wait for the port-forward to actually accept connections (kubectl
+  # exits early if the Service has no ready endpoints), and verify the
+  # process is still alive before we cache its PID.
+  for _ in $(seq 1 30); do
+    if ! kill -0 "$pf_pid" 2>/dev/null; then
+      fail "kubectl port-forward exited; see /tmp/headlamp-oauth2-proxy-pf.log"
+    fi
+    if (exec 3<>/dev/tcp/127.0.0.1/"${PF_PORT}") 2>/dev/null; then
+      exec 3<&- 3>&-
+      echo "$pf_pid" > "$PF_PID_FILE"
+      log "Port-forward is ready (PID ${pf_pid})."
+      return
+    fi
+    sleep 1
+  done
+  kill "$pf_pid" 2>/dev/null || true
+  fail "port-forward did not start listening on :${PF_PORT} within 30s; see /tmp/headlamp-oauth2-proxy-pf.log"
 }
 
 # -------------------------------------------------------------------- main
