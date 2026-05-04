@@ -109,7 +109,7 @@ deploy_helm_releases() {
 
   log "Rendering oauth2-proxy values from template."
   local cookie_secret
-  cookie_secret="$(openssl rand -base64 32 | tr -- '+/' '-_' | tr -d '=')"
+  cookie_secret="$(openssl rand -base64 32 | tr '+/' '-_' | tr -d '=')"
   sed \
     -e "s|__COOKIE_SECRET__|${cookie_secret}|" \
     -e "s|__DEX_ISSUER__|${DEX_ISSUER}|" \

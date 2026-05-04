@@ -3,9 +3,11 @@
 # run.sh. We don't try to drive a browser; instead we follow the redirect
 # chain that an unauthenticated client would see, and check that:
 #
-#   1. Hitting OAuth2-Proxy on /  returns a redirect to /oauth2/sign_in.
-#   2. /oauth2/sign_in redirects to Dex's /auth endpoint with the right
-#      client_id and redirect_uri.
+#   1. Hitting OAuth2-Proxy on /  returns a redirect to /oauth2/sign_in
+#      (the OAuth2-Proxy "Sign in with OpenID Connect" splash page).
+#   2. /oauth2/start (the link the splash page's button points at)
+#      redirects to Dex's /auth endpoint with the right client_id and
+#      redirect_uri.
 #   3. Dex's discovery document is reachable and advertises the issuer
 #      we expect.
 #

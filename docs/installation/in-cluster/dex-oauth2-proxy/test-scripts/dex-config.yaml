@@ -5,11 +5,18 @@
 #   - the Minikube apiserver (to fetch the OIDC discovery document)
 #   - the oauth2-proxy pod inside the cluster
 #
-# `host.minikube.internal` is resolved by Minikube to the host machine and
-# therefore works from inside the cluster. It does NOT resolve from your
-# browser, so we rewrite the issuer to `localhost` for the browser
-# redirect via the redirectURIs below. The trade-off is that we run Dex
-# bound to 0.0.0.0 on the host, which is fine for a local demo.
+# `host.minikube.internal` resolves inside the cluster (Minikube injects
+# it into the node's /etc/hosts) and from the OAuth2-Proxy pod. The
+# browser will also be redirected to this hostname during the OIDC
+# `/auth` step, so it must resolve there too. On Linux/macOS hosts that
+# is typically already true (Docker/Minikube networking puts it in the
+# host resolver). If your browser cannot resolve `host.minikube.internal`,
+# add an entry to your `/etc/hosts`:
+#
+#     127.0.0.1   host.minikube.internal
+#
+# Dex itself listens on 0.0.0.0:5556 below so the same address works
+# from all three places (host browser, Minikube node, in-cluster pod).
 issuer: http://host.minikube.internal:5556
 
 storage:

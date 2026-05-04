@@ -19,7 +19,15 @@ You can find the same approach documented upstream:
 
 ## Architecture
 
-```
+The diagram below illustrates the flow described in the next paragraph
+(text equivalent provided for screen readers): the user's browser hits
+OAuth2-Proxy (0), which performs an OIDC login with Dex (1), then
+forwards the request to Headlamp with the `id_token` attached as an
+`Authorization: Bearer …` header (2); Headlamp calls the Kubernetes API
+server with that same token (3), and the API server validates it against
+Dex's discovery document.
+
+```text
                                    ┌──── Dex (OIDC provider) ────┐
                                    │ - validates user / password │
                                    │ - issues id_token           │
@@ -129,7 +137,7 @@ and mount the CA file on the Minikube node.
 We tell Kubernetes that the email `admin@example.com` (the email claim Dex
 will issue) maps to `cluster-admin`:
 
-```yaml title="clusterRoleBinding.yaml"
+```yaml title="clusterrolebinding.yaml"
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRoleBinding
 metadata:
@@ -145,7 +153,7 @@ roleRef:
 ```
 
 ```shell
-kubectl apply -f clusterRoleBinding.yaml
+kubectl apply -f clusterrolebinding.yaml
 ```
 
 ## Step 4 — Install Headlamp
@@ -180,7 +188,7 @@ OAuth2-Proxy will:
 config:
   clientID: "headlamp"
   clientSecret: "headlamp-oauth2-proxy-secret"
-  # Generate with: openssl rand -base64 32 | tr -- '+/' '-_'
+  # Generate with: openssl rand -base64 32 | tr '+/' '-_'
   cookieSecret: "<RANDOM-32-BYTE-BASE64URL-VALUE>"
   configFile: |-
     email_domains = ["*"]
@@ -235,12 +243,12 @@ kubectl port-forward svc/oauth2-proxy 8080:80 -n headlamp
 
 Open <http://localhost:8080>. OAuth2-Proxy presents its **Sign in** page:
 
-![OAuth2-Proxy sign-in screen](./images/01-oauth2-proxy-signin.png)
+![OAuth2-Proxy sign-in page showing a single "Sign in with OpenID Connect" button](./images/01-oauth2-proxy-signin.png)
 
 Click **Sign in with OpenID Connect** and you are redirected to Dex. Sign
 in as `admin@example.com` / `password`:
 
-![Dex login page](./images/02-dex-login.png)
+![Dex local-account login form with email and password fields and a Login button](./images/02-dex-login.png)
 
 After login you are returned to `http://localhost:8080/oauth2/callback`,
 OAuth2-Proxy issues its session cookie, and the request is proxied through
@@ -248,7 +256,7 @@ to Headlamp with the Dex `id_token` attached as an `Authorization: Bearer`
 header. Headlamp uses that token to talk to the API server, which
 authorizes the request via the `ClusterRoleBinding` from step 3:
 
-![Headlamp UI after authenticating through OAuth2-Proxy](./images/03-headlamp-after-login.png)
+![Headlamp Cluster Overview page rendered after a successful OAuth2-Proxy login, showing the navigation sidebar, populated CPU/Memory/Pods/Nodes summary tiles, and a list of recent Kubernetes events](./images/03-headlamp-after-login.png)
 
 > The screenshots above were captured against a local Dex + OAuth2-Proxy +
 > Headlamp stack running through the [`test-scripts/`](./test-scripts/)
