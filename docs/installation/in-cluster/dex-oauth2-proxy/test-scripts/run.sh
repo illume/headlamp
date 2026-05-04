@@ -100,8 +100,11 @@ helm_install_or_upgrade() {
 
 deploy_helm_releases() {
   log "Adding Helm repositories."
-  helm repo add headlamp https://kubernetes-sigs.github.io/headlamp/ >/dev/null
-  helm repo add oauth2-proxy https://oauth2-proxy.github.io/manifests >/dev/null
+  # `--force-update` makes `helm repo add` succeed even when the repo
+  # name is already present locally (otherwise it would exit non-zero
+  # under `set -e` and break the script's idempotency claim).
+  helm repo add --force-update headlamp https://kubernetes-sigs.github.io/headlamp/ >/dev/null
+  helm repo add --force-update oauth2-proxy https://oauth2-proxy.github.io/manifests >/dev/null
   helm repo update >/dev/null
 
   log "Installing/upgrading Headlamp."
@@ -126,10 +129,14 @@ start_port_forward() {
     return
   fi
   # Refuse if the local port is already taken — kubectl port-forward would
-  # exit immediately and we'd cache a stale PID.
+  # exit immediately and we'd cache a stale PID. The port is hard-coded
+  # to 8080 because the OAuth2-Proxy `redirect_url` and Dex
+  # `redirectURIs` are pinned to `http://localhost:8080/...`; changing
+  # it here would also require editing dex-config.yaml and
+  # oauth2-proxy-values.yaml.tpl.
   if (exec 3<>/dev/tcp/127.0.0.1/"${PF_PORT}") 2>/dev/null; then
     exec 3<&- 3>&-
-    fail "local port ${PF_PORT} is already in use; free it or set a different PF_PORT"
+    fail "local port ${PF_PORT} is already in use; stop the process holding it (e.g. lsof -i :${PF_PORT}) before re-running"
   fi
 
   log "Port-forwarding oauth2-proxy on http://localhost:${PF_PORT}"

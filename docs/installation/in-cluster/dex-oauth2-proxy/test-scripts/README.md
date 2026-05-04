@@ -42,7 +42,7 @@ on Linux. macOS should work the same way; on Windows you'll need WSL.
 | `headlamp-values.yaml`        | Helm values for Headlamp (no OIDC — that's done by OAuth2-Proxy).   |
 | `oauth2-proxy-values.yaml.tpl`| Template Helm values for OAuth2-Proxy (cookie secret is injected).  |
 | `run.sh`                      | Brings up Minikube, Dex, Headlamp, OAuth2-Proxy and port-forwards.  |
-| `test.sh`                     | Smoke-tests that the OAuth2-Proxy login redirect to Dex works.      |
+| `test.sh`                     | Smoke-tests that the OAuth2-Proxy login redirects to Dex.           |
 | `cleanup.sh`                  | Stops Dex, deletes the Helm releases and the Minikube profile.      |
 
 ## Usage
@@ -69,7 +69,7 @@ left off.
 ## How it differs from the older Dex tutorial
 
 The [other Dex tutorial](../../dex/index.md) points Headlamp directly at Dex
-and let Headlamp drive the OIDC flow. The new pattern, which matches
+and lets Headlamp drive the OIDC flow. The new pattern, which matches
 [OAuth2-Proxy's official Headlamp integration guide](https://oauth2-proxy.github.io/oauth2-proxy/configuration/integrations/headlamp),
 puts OAuth2-Proxy in front of Headlamp. OAuth2-Proxy talks OIDC to Dex,
 issues a session cookie to the browser, and forwards the user's
