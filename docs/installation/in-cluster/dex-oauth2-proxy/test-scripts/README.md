@@ -1,6 +1,6 @@
 # Headlamp + OAuth2-Proxy + Dex test scripts
 
-This folder reproduces the [Dex tutorial](../index.md) end-to-end so you can
+This folder reproduces the [Headlamp + OAuth2-Proxy + Dex tutorial](../index.md) end-to-end so you can
 try it yourself with a single command.
 
 It brings up:
@@ -66,9 +66,9 @@ on Linux. macOS should work the same way; on Windows you'll need WSL.
 `run.sh` is idempotent — re-running it will pick up where a previous run
 left off.
 
-## How it differs from the previous tutorial
+## How it differs from the older Dex tutorial
 
-The previous version of this tutorial pointed Headlamp directly at Dex
+The [other Dex tutorial](../../dex/index.md) points Headlamp directly at Dex
 and let Headlamp drive the OIDC flow. The new pattern, which matches
 [OAuth2-Proxy's official Headlamp integration guide](https://oauth2-proxy.github.io/oauth2-proxy/configuration/integrations/headlamp),
 puts OAuth2-Proxy in front of Headlamp. OAuth2-Proxy talks OIDC to Dex,
