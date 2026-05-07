@@ -143,3 +143,5 @@ export type {
   DefaultSidebars,
   HeadlampEvent,
 };
+
+export { useClustersConf } from './lib/k8s';

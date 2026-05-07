@@ -102,6 +102,7 @@ window.pluginLib = {
   useTranslation,
   ...registryToExport,
   Activity,
+  useClustersConf: K8s.useClustersConf,
 };
 
 // backwards compat.
