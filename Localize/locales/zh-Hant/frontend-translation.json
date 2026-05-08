@@ -729,7 +729,7 @@
   "Use A Token": "使用權杖",
   "Use custom color": "使用自訂色彩",
   "Use custom icon": "使用自訂圖示",
-  "Use evict for pod deletion": "使用 Evict 刪除 Pod",
+  "Use evict for pod deletion": "使用收回來刪除 Pod",
   "Use Existing Namespace": "使用現有命名空間",
   "Use minimal editor": "使用精簡編輯器",
   "Use regular expression": "使用規則運算式",
