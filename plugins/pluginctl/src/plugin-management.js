@@ -305,14 +305,20 @@ function validatePluginName(pluginName) {
  * @returns true if the archiveURL looks good.
  */
 function validateArchiveURL(archiveURL) {
-  // In test mode, allow any URL from the mock server (restricted to loopback)
+  // In test mode, allow URLs from the mock server (restricted to loopback origins only)
   const testBaseURL = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
   if (testBaseURL) {
     try {
-      const testOrigin = new URL(testBaseURL).origin;
-      const archiveOrigin = new URL(archiveURL).origin;
-      if (testOrigin === archiveOrigin) {
-        return true;
+      const testParsed = new URL(testBaseURL);
+      const isLoopback =
+        testParsed.hostname === 'localhost' ||
+        testParsed.hostname === '127.0.0.1' ||
+        testParsed.hostname === '::1';
+      if (isLoopback) {
+        const archiveOrigin = new URL(archiveURL).origin;
+        if (testParsed.origin === archiveOrigin) {
+          return true;
+        }
       }
     } catch {
       // Invalid URL, fall through to normal validation

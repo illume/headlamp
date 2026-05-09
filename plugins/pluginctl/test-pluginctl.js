@@ -39,6 +39,7 @@ async function testPluginctl() {
   // Start mock server for ArtifactHub API
   const { startMockServer } = require("./src/test-mock-server.js");
   const { server, baseURL } = await startMockServer();
+  const savedEnvVar = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
   process.env.HEADLAMP_TEST_ARTIFACTHUB_URL = baseURL;
 
   const PACKAGE_URL = `${baseURL}/packages/headlamp/test-123/${PACKAGE_NAME}`;
@@ -70,7 +71,11 @@ async function testPluginctl() {
     ]);
     checkFileExists(pluginsDir + "/" + PACKAGE_NAME + "/package.json", false);
   } finally {
-    delete process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
+    if (savedEnvVar === undefined) {
+      delete process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
+    } else {
+      process.env.HEADLAMP_TEST_ARTIFACTHUB_URL = savedEnvVar;
+    }
     await new Promise((resolve) => server.close(resolve));
   }
 }

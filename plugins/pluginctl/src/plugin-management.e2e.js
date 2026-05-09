@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-const { exec } = require('child_process');
+const { execFile } = require('child_process');
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
@@ -25,12 +25,13 @@ const { startMockServer } = require('./test-mock-server.js');
 
 /**
  * Runs a CLI command asynchronously and returns the output.
- * Uses exec (non-blocking) so the mock HTTP server can handle requests.
+ * Uses execFile (non-blocking, no shell) so the mock HTTP server can handle requests.
  */
-function runCommand(command, env = {}) {
+function runCommand(args, env = {}) {
   return new Promise((resolve, reject) => {
-    exec(
-      command,
+    execFile(
+      'node',
+      args,
       {
         encoding: 'utf8',
         env: { ...process.env, ...env },
@@ -38,7 +39,7 @@ function runCommand(command, env = {}) {
       },
       (error, stdout, stderr) => {
         if (error) {
-          console.error(`Error running command "${command}":`, stderr || error.message);
+          console.error(`Error running command "node ${args.join(' ')}":`, stderr || error.message);
           reject(error);
           return;
         }
@@ -77,7 +78,7 @@ async function main() {
     }
 
     // List plugins initially
-    let output = await runCommand('node ../bin/pluginctl.js list --json', testEnv);
+    let output = await runCommand(['../bin/pluginctl.js', 'list', '--json'], testEnv);
     console.log('Initial list output:', output);
     let plugins = JSON.parse(output);
     console.log('Initial plugins:', plugins);
@@ -88,22 +89,22 @@ async function main() {
 
     // Install the plugin using the ArtifactHub package name (different from installed name)
     const pluginURL = `${baseURL}/packages/headlamp/test-123/${packageName}`;
-    output = await runCommand(`node ../bin/pluginctl.js install ${pluginURL}`, testEnv);
+    output = await runCommand(['../bin/pluginctl.js', 'install', pluginURL], testEnv);
     console.log('Install output:', output);
 
     // List plugins to verify installation
-    output = await runCommand('node ../bin/pluginctl.js list --json', testEnv);
+    output = await runCommand(['../bin/pluginctl.js', 'list', '--json'], testEnv);
     plugins = JSON.parse(output);
     console.log('Plugins after install:', plugins);
     pluginExists = plugins.some(plugin => plugin.pluginName === installedPluginName);
     assert.strictEqual(pluginExists, true, 'Plugin should be installed');
 
     // Update the plugin (should report no updates since version matches)
-    output = await runCommand(`node ../bin/pluginctl.js update ${installedPluginName}`, testEnv);
+    output = await runCommand(['../bin/pluginctl.js', 'update', installedPluginName], testEnv);
     console.log('Update output:', output);
 
     // List plugins to verify update
-    output = await runCommand('node ../bin/pluginctl.js list --json', testEnv);
+    output = await runCommand(['../bin/pluginctl.js', 'list', '--json'], testEnv);
     plugins = JSON.parse(output);
     console.log('Plugins after update:', plugins);
     pluginExists = plugins.some(plugin => plugin.pluginName === installedPluginName);
@@ -111,13 +112,13 @@ async function main() {
 
     // Uninstall the plugin
     output = await runCommand(
-      `node ../bin/pluginctl.js uninstall ${installedPluginName}`,
+      ['../bin/pluginctl.js', 'uninstall', installedPluginName],
       testEnv
     );
     console.log('Uninstall output:', output);
 
     // List plugins to verify uninstallation
-    output = await runCommand('node ../bin/pluginctl.js list --json', testEnv);
+    output = await runCommand(['../bin/pluginctl.js', 'list', '--json'], testEnv);
     console.log('Final list output:', output);
     plugins = JSON.parse(output);
     console.log('Plugins after uninstall:', plugins);
