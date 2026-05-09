@@ -305,6 +305,12 @@ function validatePluginName(pluginName) {
  * @returns true if the archiveURL looks good.
  */
 function validateArchiveURL(archiveURL) {
+  // In test mode, allow any URL from the mock server
+  const testBaseURL = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
+  if (testBaseURL && archiveURL.startsWith(testBaseURL)) {
+    return true;
+  }
+
   const githubRegex = /^https:\/\/github\.com\/[^/]+\/[^/]+\/(releases|archive)\/.*$/;
   const bitbucketRegex = /^https:\/\/bitbucket\.org\/[^/]+\/[^/]+\/(downloads|get)\/.*$/;
   const gitlabRegex = /^https:\/\/gitlab\.com\/[^/]+\/[^/]+\/(-\/archive|releases)\/.*$/;
@@ -465,10 +471,11 @@ async function downloadExtractPlugin(
   }
   // add artifacthub metadata to the plugin
   const packageJSON = JSON.parse(fs.readFileSync(`${tempFolder}/package.json`, 'utf8'));
+  const artifacthubBaseURL = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL || 'https://artifacthub.io';
   packageJSON.artifacthub = {
     name: pluginName,
     title: pluginInfo.display_name,
-    url: `https://artifacthub.io/packages/headlamp/${pluginInfo.repository.name}/${pluginName}`,
+    url: `${artifacthubBaseURL}/packages/headlamp/${pluginInfo.repository.name}/${pluginName}`,
     version: pluginInfo.version,
     repoName: pluginInfo.repository.name,
     author: pluginInfo.repository.user_alias,
@@ -488,14 +495,19 @@ async function downloadExtractPlugin(
  */
 async function fetchPluginInfo(URL, progressCallback, signal, pluginVersion) {
   try {
-    if (!URL.startsWith('https://artifacthub.io/packages/headlamp/')) {
+    const testBaseURL = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
+    const baseURL_packages = testBaseURL
+      ? `${testBaseURL}/packages/headlamp/`
+      : 'https://artifacthub.io/packages/headlamp/';
+    const baseURL_api = testBaseURL
+      ? `${testBaseURL}/api/v1/packages/headlamp/`
+      : 'https://artifacthub.io/api/v1/packages/headlamp/';
+
+    if (!URL.startsWith(baseURL_packages)) {
       throw new Error('Invalid URL. Please provide a valid URL from ArtifactHub.');
     }
 
-    const apiURL = URL.replace(
-      'https://artifacthub.io/packages/headlamp/',
-      'https://artifacthub.io/api/v1/packages/headlamp/'
-    );
+    const apiURL = URL.replace(baseURL_packages, baseURL_api);
 
     if (progressCallback) {
       progressCallback({ type: 'info', message: 'Fetching Plugin Metadata' });

@@ -19,28 +19,45 @@ const fs = require('fs');
 const fsp = require('fs').promises;
 const os = require('os');
 const MultiPluginManager = require('./multi-plugin-management');
+const { startMockServer } = require('./test-mock-server.js');
 
 describe('MultiPluginManagement', () => {
   let tempDir;
   let configPath;
   let installer;
-  const PLUGIN_DATA = [
-    {
-      name: 'appcatalog_headlamp_plugin',
-      source: 'https://artifacthub.io/packages/headlamp/test-123/appcatalog_headlamp_plugin',
-      version: '0.0.3',
-    },
-    {
-      name: 'ai_plugin',
-      source: 'https://artifacthub.io/packages/headlamp/test-123/ai_plugin',
-      version: '0.0.2',
-    },
-    {
-      name: 'prometheus_headlamp_plugin',
-      source: 'https://artifacthub.io/packages/headlamp/test-123/prometheus_headlamp_plugin',
-      version: '0.0.3',
-    },
-  ];
+  let mockServer;
+  let PLUGIN_DATA;
+
+  beforeAll(async () => {
+    const { server, baseURL } = await startMockServer();
+    mockServer = server;
+    process.env.HEADLAMP_TEST_ARTIFACTHUB_URL = baseURL;
+
+    PLUGIN_DATA = [
+      {
+        name: 'appcatalog_headlamp_plugin',
+        source: `${baseURL}/packages/headlamp/test-123/appcatalog_headlamp_plugin`,
+        version: '0.0.3',
+      },
+      {
+        name: 'ai_plugin',
+        source: `${baseURL}/packages/headlamp/test-123/ai_plugin`,
+        version: '0.0.2',
+      },
+      {
+        name: 'prometheus_headlamp_plugin',
+        source: `${baseURL}/packages/headlamp/test-123/prometheus_headlamp_plugin`,
+        version: '0.0.3',
+      },
+    ];
+  });
+
+  afterAll(() => {
+    if (mockServer) {
+      mockServer.close();
+    }
+    delete process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
+  });
   beforeEach(async () => {
     // Create temporary directory for tests
     tempDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'headlamp-test-'));
@@ -140,10 +157,11 @@ plugins:
     });
 
     it('should skip plugins with failed dependencies', async () => {
+      const baseURL = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
       const config = `
 plugins:
   - name: invalid-plugin
-    source: https://artifacthub.io/packages/headlamp/test-123/invalid-plugin
+    source: ${baseURL}/packages/headlamp/test-123/invalid-plugin
   - name: ${PLUGIN_DATA[0].name}
     source: ${PLUGIN_DATA[0].source}
     dependencies:

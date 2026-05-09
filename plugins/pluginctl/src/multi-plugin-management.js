@@ -22,49 +22,55 @@ const yaml = require('js-yaml');
 const path = require('path');
 
 // Plugin configuration schema
-const pluginConfigSchema = {
-  type: 'object',
-  required: ['plugins'],
-  properties: {
-    plugins: {
-      type: 'array',
-      items: {
-        type: 'object',
-        required: ['name', 'source'],
-        properties: {
-          name: {
-            type: 'string',
-            pattern: '^[a-z0-9][a-z0-9-_]*[a-z0-9-]$', // Only allow lowercase, numbers, hyphens, and underscores (not at start/end)
-            minLength: 1,
-          },
-          source: {
-            type: 'string',
-            pattern: '^https://artifacthub\\.io/packages/[^\\s]+$',
-          },
-          version: {
-            type: 'string',
-            pattern: '^\\d+\\.\\d+\\.\\d+', // Semver format
-          },
-          dependencies: {
-            type: 'array',
-            items: { type: 'string', pattern: '^[a-z0-9][a-z0-9-_]*[a-z0-9-]$' },
-            uniqueItems: true,
+function getPluginConfigSchema() {
+  return {
+    type: 'object',
+    required: ['plugins'],
+    properties: {
+      plugins: {
+        type: 'array',
+        items: {
+          type: 'object',
+          required: ['name', 'source'],
+          properties: {
+            name: {
+              type: 'string',
+              pattern: '^[a-z0-9][a-z0-9-_]*[a-z0-9-]$', // Only allow lowercase, numbers, hyphens, and underscores (not at start/end)
+              minLength: 1,
+            },
+            source: {
+              type: 'string',
+              pattern: process.env.HEADLAMP_TEST_ARTIFACTHUB_URL
+                ? '^https?://[^\\s]+/packages/[^\\s]+$'
+                : '^https://artifacthub\\.io/packages/[^\\s]+$',
+            },
+            version: {
+              type: 'string',
+              pattern: '^\\d+\\.\\d+\\.\\d+', // Semver format
+            },
+            dependencies: {
+              type: 'array',
+              items: { type: 'string', pattern: '^[a-z0-9][a-z0-9-_]*[a-z0-9-]$' },
+              uniqueItems: true,
+            },
           },
         },
       },
-    },
-    installOptions: {
-      type: 'object',
-      properties: {
-        parallel: { type: 'boolean' },
-        maxConcurrent: { type: 'integer', minimum: 1 },
+      installOptions: {
+        type: 'object',
+        properties: {
+          parallel: { type: 'boolean' },
+          maxConcurrent: { type: 'integer', minimum: 1 },
+        },
       },
     },
-  },
-};
+  };
+}
 
-const ajv = new Ajv({ allErrors: true });
-const validate = ajv.compile(pluginConfigSchema);
+function getValidator() {
+  const ajv = new Ajv({ allErrors: true });
+  return ajv.compile(getPluginConfigSchema());
+}
 
 /**
  * Manages multiple plugins from a configuration file.
@@ -319,6 +325,7 @@ class MultiPluginManager {
       }
       const configContent = fs.readFileSync(configPath, 'utf8');
       const config = yaml.load(configContent);
+      const validate = getValidator();
       const valid = validate(config);
       if (!valid) {
         const errors = validate.errors.map(err => `${err.instancePath} ${err.message}`).join('\n');

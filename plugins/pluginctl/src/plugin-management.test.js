@@ -15,6 +15,7 @@
  */
 
 const pluginManagement = require('./plugin-management.js');
+const { startMockServer } = require('./test-mock-server.js');
 const tmp = require('tmp');
 const fs = require('fs');
 const semver = require('semver');
@@ -31,15 +32,25 @@ const mockProgressCallback = jest.fn(args => {
 
 describe('PluginManager Test Cases', () => {
   let tempDir;
+  let mockServer;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     // Create a temporary directory before all tests
     tempDir = tmp.dirSync({ unsafeCleanup: true }).name;
+    // Start mock server
+    const { server, baseURL } = await startMockServer();
+    mockServer = server;
+    process.env.HEADLAMP_TEST_ARTIFACTHUB_URL = baseURL;
   });
 
   afterAll(() => {
     // Remove the temporary directory after all tests
     fs.rmdirSync(tempDir, { recursive: true });
+    // Stop mock server
+    if (mockServer) {
+      mockServer.close();
+    }
+    delete process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
   });
 
   beforeEach(() => {
@@ -48,8 +59,9 @@ describe('PluginManager Test Cases', () => {
   });
 
   test('Install Plugin', async () => {
+    const baseURL = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
     await PluginManager.install(
-      'https://artifacthub.io/packages/headlamp/test-123/appcatalog_headlamp_plugin',
+      `${baseURL}/packages/headlamp/test-123/appcatalog_headlamp_plugin`,
       tempDir,
       '',
       mockProgressCallback
@@ -72,6 +84,7 @@ describe('PluginManager Test Cases', () => {
 
   test('No Update available for Plugin', async () => {
     // No updates available for "app-catalog" plugin
+    const baseURL = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
     await PluginManager.update('app-catalog', tempDir, '', mockProgressCallback);
     expect(mockProgressCallback).toHaveBeenCalledWith({
       type: 'error',
@@ -100,9 +113,10 @@ describe('PluginManager Test Cases', () => {
 
   test('Uninstall Plugin', async () => {
     const tempDir = tmp.dirSync({ unsafeCleanup: true }).name;
+    const baseURL = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
 
     await PluginManager.install(
-      'https://artifacthub.io/packages/headlamp/test-123/appcatalog_headlamp_plugin',
+      `${baseURL}/packages/headlamp/test-123/appcatalog_headlamp_plugin`,
       tempDir,
       '',
       mockProgressCallback
