@@ -27,8 +27,11 @@ describe('MultiPluginManagement', () => {
   let installer;
   let mockServer;
   let PLUGIN_DATA;
+  let savedEnvVar;
 
   beforeAll(async () => {
+    // Save existing env var value
+    savedEnvVar = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
     const { server, baseURL } = await startMockServer();
     mockServer = server;
     process.env.HEADLAMP_TEST_ARTIFACTHUB_URL = baseURL;
@@ -52,11 +55,16 @@ describe('MultiPluginManagement', () => {
     ];
   });
 
-  afterAll(() => {
+  afterAll(async () => {
     if (mockServer) {
-      mockServer.close();
+      await new Promise(resolve => mockServer.close(resolve));
     }
-    delete process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
+    // Restore env var
+    if (savedEnvVar === undefined) {
+      delete process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
+    } else {
+      process.env.HEADLAMP_TEST_ARTIFACTHUB_URL = savedEnvVar;
+    }
   });
   beforeEach(async () => {
     // Create temporary directory for tests

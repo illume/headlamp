@@ -24,11 +24,9 @@ This tests unpublished @headlamp-k8s/pluginctl package in repo.
 Assumes being run within the plugins/pluginctl folder
 `;
 const PACKAGE_NAME = "appcatalog_headlamp_plugin";
-const PACKAGE_URL =
-  "https://artifacthub.io/packages/headlamp/test-123/appcatalog_headlamp_plugin";
 const PACKAGE_NAME_TO_UNINSTALL = "app-catalog";
 
-function testPluginctl() {
+async function testPluginctl() {
   // remove some temporary files.
   cleanup();
 
@@ -37,31 +35,44 @@ function testPluginctl() {
 
   // Use "link" to test the repo version of the pluginctl tool.
   run("npm", ["link"]);
-  curDir = process.cwd();
-  pluginsDir = curDir + "/.plugins";
-  // test install command
-  run("node", [
-    "bin/pluginctl.js",
-    "install",
-    PACKAGE_URL,
-    "--folderName",
-    pluginsDir,
-  ]);
-  checkFileExists(pluginsDir + "/" + PACKAGE_NAME + "/package.json");
-  checkFileExists(pluginsDir + "/" + PACKAGE_NAME + "/main.js");
 
-  // test list command
-  run("node", ["bin/pluginctl.js", "list"]);
+  // Start mock server for ArtifactHub API
+  const { startMockServer } = require("./src/test-mock-server.js");
+  const { server, baseURL } = await startMockServer();
+  process.env.HEADLAMP_TEST_ARTIFACTHUB_URL = baseURL;
 
-  // test uninstall command
-  run("node", [
-    "bin/pluginctl.js",
-    "uninstall",
-    PACKAGE_NAME_TO_UNINSTALL,
-    "--folderName",
-    pluginsDir,
-  ]);
-  checkFileExists(pluginsDir + "/" + PACKAGE_NAME + "/package.json", false);
+  const PACKAGE_URL = `${baseURL}/packages/headlamp/test-123/${PACKAGE_NAME}`;
+
+  try {
+    curDir = process.cwd();
+    pluginsDir = curDir + "/.plugins";
+    // test install command
+    await runAsync("node", [
+      "bin/pluginctl.js",
+      "install",
+      PACKAGE_URL,
+      "--folderName",
+      pluginsDir,
+    ]);
+    checkFileExists(pluginsDir + "/" + PACKAGE_NAME + "/package.json");
+    checkFileExists(pluginsDir + "/" + PACKAGE_NAME + "/main.js");
+
+    // test list command
+    run("node", ["bin/pluginctl.js", "list"]);
+
+    // test uninstall command
+    run("node", [
+      "bin/pluginctl.js",
+      "uninstall",
+      PACKAGE_NAME_TO_UNINSTALL,
+      "--folderName",
+      pluginsDir,
+    ]);
+    checkFileExists(pluginsDir + "/" + PACKAGE_NAME + "/package.json", false);
+  } finally {
+    delete process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
+    await new Promise((resolve) => server.close(resolve));
+  }
 }
 
 const fs = require("fs");
@@ -115,12 +126,43 @@ function run(cmd, args) {
   }
 }
 
-(function () {
+/**
+ * Runs a command asynchronously using exec so the event loop is not blocked.
+ * This allows the mock HTTP server to handle requests during the command.
+ */
+function runAsync(cmd, args) {
+  const fullCmd = `${cmd} ${args.join(" ")}`;
+  console.log("");
+  console.log(
+    `Running async cmd: ${fullCmd} inside of cwd:${curDir} abs: "${resolve(curDir)}"`
+  );
+  console.log("");
+  return new Promise((resolvePromise, reject) => {
+    child_process.exec(fullCmd, {
+      cwd: curDir,
+      encoding: "utf8",
+      timeout: 30000,
+    }, (error, stdout, stderr) => {
+      if (stdout) process.stdout.write(stdout);
+      if (stderr) process.stderr.write(stderr);
+      if (error) {
+        exit(
+          `Error: Problem running "${fullCmd}" inside of "${curDir}" abs: "${resolve(curDir)}"`
+        );
+        reject(error);
+      } else {
+        resolvePromise();
+      }
+    });
+  });
+}
+
+(async function () {
   if (process.argv[1].includes("test-pluginctl")) {
     console.log(USAGE);
     curDir = ".";
 
     process.on("beforeExit", cleanup);
-    testPluginctl();
+    await testPluginctl();
   }
 })();

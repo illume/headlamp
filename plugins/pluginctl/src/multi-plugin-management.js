@@ -41,7 +41,7 @@ function getPluginConfigSchema() {
             source: {
               type: 'string',
               pattern: process.env.HEADLAMP_TEST_ARTIFACTHUB_URL
-                ? '^https?://[^\\s]+/packages/[^\\s]+$'
+                ? '^https?://(?:localhost|127\\.0\\.0\\.1)(?::\\d+)?/packages/[^\\s]+$'
                 : '^https://artifacthub\\.io/packages/[^\\s]+$',
             },
             version: {

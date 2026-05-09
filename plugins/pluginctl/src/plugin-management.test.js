@@ -33,24 +33,32 @@ const mockProgressCallback = jest.fn(args => {
 describe('PluginManager Test Cases', () => {
   let tempDir;
   let mockServer;
+  let savedEnvVar;
 
   beforeAll(async () => {
     // Create a temporary directory before all tests
     tempDir = tmp.dirSync({ unsafeCleanup: true }).name;
+    // Save existing env var value
+    savedEnvVar = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
     // Start mock server
     const { server, baseURL } = await startMockServer();
     mockServer = server;
     process.env.HEADLAMP_TEST_ARTIFACTHUB_URL = baseURL;
   });
 
-  afterAll(() => {
+  afterAll(async () => {
     // Remove the temporary directory after all tests
     fs.rmdirSync(tempDir, { recursive: true });
-    // Stop mock server
+    // Stop mock server and wait for close
     if (mockServer) {
-      mockServer.close();
+      await new Promise(resolve => mockServer.close(resolve));
     }
-    delete process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
+    // Restore env var
+    if (savedEnvVar === undefined) {
+      delete process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
+    } else {
+      process.env.HEADLAMP_TEST_ARTIFACTHUB_URL = savedEnvVar;
+    }
   });
 
   beforeEach(() => {
@@ -84,7 +92,6 @@ describe('PluginManager Test Cases', () => {
 
   test('No Update available for Plugin', async () => {
     // No updates available for "app-catalog" plugin
-    const baseURL = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
     await PluginManager.update('app-catalog', tempDir, '', mockProgressCallback);
     expect(mockProgressCallback).toHaveBeenCalledWith({
       type: 'error',
@@ -113,10 +120,10 @@ describe('PluginManager Test Cases', () => {
 
   test('Uninstall Plugin', async () => {
     const tempDir = tmp.dirSync({ unsafeCleanup: true }).name;
-    const baseURL = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
+    const uninstallBaseURL = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
 
     await PluginManager.install(
-      `${baseURL}/packages/headlamp/test-123/appcatalog_headlamp_plugin`,
+      `${uninstallBaseURL}/packages/headlamp/test-123/appcatalog_headlamp_plugin`,
       tempDir,
       '',
       mockProgressCallback
