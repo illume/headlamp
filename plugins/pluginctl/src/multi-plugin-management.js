@@ -44,8 +44,8 @@ function getPluginConfigSchema() {
                 const override = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
                 if (override) {
                   try {
-                    const h = new URL(override).hostname;
-                    if (h === 'localhost' || h === '127.0.0.1' || h === '::1') {
+                    const hostname = new URL(override).hostname;
+                    if (hostname === 'localhost' || hostname === '127.0.0.1') {
                       return '^https?://(?:localhost|127\\.0\\.0\\.1)(?::\\d+)?/packages/[^\\s]+$';
                     }
                   } catch {
