@@ -23,10 +23,12 @@ This tests unpublished @headlamp-k8s/pluginctl package in repo.
 
 Assumes being run within the plugins/pluginctl folder
 `;
-const PACKAGE_NAME = "appcatalog_headlamp_plugin";
+const PACKAGE_NAME = "app-catalog";
+const PACKAGE_URL =
+  "https://artifacthub.io/packages/headlamp/headlamp-plugins/app-catalog";
 const PACKAGE_NAME_TO_UNINSTALL = "app-catalog";
 
-async function testPluginctl() {
+function testPluginctl() {
   // remove some temporary files.
   cleanup();
 
@@ -35,49 +37,31 @@ async function testPluginctl() {
 
   // Use "link" to test the repo version of the pluginctl tool.
   run("npm", ["link"]);
+  curDir = process.cwd();
+  pluginsDir = curDir + "/.plugins";
+  // test install command
+  run("node", [
+    "bin/pluginctl.js",
+    "install",
+    PACKAGE_URL,
+    "--folderName",
+    pluginsDir,
+  ]);
+  checkFileExists(pluginsDir + "/" + PACKAGE_NAME + "/package.json");
+  checkFileExists(pluginsDir + "/" + PACKAGE_NAME + "/main.js");
 
-  // Start mock server for ArtifactHub API
-  const { startMockServer } = require("./src/test-mock-server.js");
-  const { server, baseURL } = await startMockServer();
-  const savedEnvVar = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
-  process.env.HEADLAMP_TEST_ARTIFACTHUB_URL = baseURL;
+  // test list command
+  run("node", ["bin/pluginctl.js", "list"]);
 
-  const PACKAGE_URL = `${baseURL}/packages/headlamp/test-123/${PACKAGE_NAME}`;
-
-  try {
-    curDir = process.cwd();
-    pluginsDir = curDir + "/.plugins";
-    // test install command
-    await runAsync("node", [
-      "bin/pluginctl.js",
-      "install",
-      PACKAGE_URL,
-      "--folderName",
-      pluginsDir,
-    ]);
-    checkFileExists(pluginsDir + "/" + PACKAGE_NAME + "/package.json");
-    checkFileExists(pluginsDir + "/" + PACKAGE_NAME + "/main.js");
-
-    // test list command
-    run("node", ["bin/pluginctl.js", "list"]);
-
-    // test uninstall command
-    run("node", [
-      "bin/pluginctl.js",
-      "uninstall",
-      PACKAGE_NAME_TO_UNINSTALL,
-      "--folderName",
-      pluginsDir,
-    ]);
-    checkFileExists(pluginsDir + "/" + PACKAGE_NAME + "/package.json", false);
-  } finally {
-    if (savedEnvVar === undefined) {
-      delete process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
-    } else {
-      process.env.HEADLAMP_TEST_ARTIFACTHUB_URL = savedEnvVar;
-    }
-    await new Promise((resolve) => server.close(resolve));
-  }
+  // test uninstall command
+  run("node", [
+    "bin/pluginctl.js",
+    "uninstall",
+    PACKAGE_NAME_TO_UNINSTALL,
+    "--folderName",
+    pluginsDir,
+  ]);
+  checkFileExists(pluginsDir + "/" + PACKAGE_NAME + "/package.json", false);
 }
 
 const fs = require("fs");
@@ -131,47 +115,12 @@ function run(cmd, args) {
   }
 }
 
-/**
- * Runs a command asynchronously using execFile so the event loop is not blocked.
- * This allows the mock HTTP server to handle requests during the command.
- * Uses execFile (no shell) to avoid command-injection risks.
- */
-function runAsync(cmd, args) {
-  console.log("");
-  console.log(
-    `Running async cmd:${cmd} with args:${args.join(
-      " "
-    )} inside of cwd:${curDir} abs: "${resolve(curDir)}"`
-  );
-  console.log("");
-  return new Promise((resolve, reject) => {
-    child_process.execFile(cmd, args, {
-      cwd: curDir,
-      encoding: "utf8",
-      timeout: 30000,
-    }, (error, stdout, stderr) => {
-      if (stdout) process.stdout.write(stdout);
-      if (stderr) process.stderr.write(stderr);
-      if (error) {
-        exit(
-          `Error: Problem running "${cmd} ${args.join(
-            " "
-          )}" inside of "${curDir}" abs: "${path.resolve(curDir)}"`
-        );
-        reject(error);
-      } else {
-        resolve();
-      }
-    });
-  });
-}
-
-(async function () {
+(function () {
   if (process.argv[1].includes("test-pluginctl")) {
     console.log(USAGE);
     curDir = ".";
 
     process.on("beforeExit", cleanup);
-    await testPluginctl();
+    testPluginctl();
   }
 })();

@@ -15,7 +15,6 @@
  */
 
 const pluginManagement = require('./plugin-management.js');
-const { startMockServer } = require('./test-mock-server.js');
 const tmp = require('tmp');
 const fs = require('fs');
 const semver = require('semver');
@@ -32,33 +31,15 @@ const mockProgressCallback = jest.fn(args => {
 
 describe('PluginManager Test Cases', () => {
   let tempDir;
-  let mockServer;
-  let savedEnvVar;
 
-  beforeAll(async () => {
+  beforeAll(() => {
     // Create a temporary directory before all tests
     tempDir = tmp.dirSync({ unsafeCleanup: true }).name;
-    // Save existing env var value
-    savedEnvVar = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
-    // Start mock server
-    const { server, baseURL } = await startMockServer();
-    mockServer = server;
-    process.env.HEADLAMP_TEST_ARTIFACTHUB_URL = baseURL;
   });
 
-  afterAll(async () => {
+  afterAll(() => {
     // Remove the temporary directory after all tests
     fs.rmdirSync(tempDir, { recursive: true });
-    // Stop mock server and wait for close
-    if (mockServer) {
-      await new Promise(resolve => mockServer.close(resolve));
-    }
-    // Restore env var
-    if (savedEnvVar === undefined) {
-      delete process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
-    } else {
-      process.env.HEADLAMP_TEST_ARTIFACTHUB_URL = savedEnvVar;
-    }
   });
 
   beforeEach(() => {
@@ -67,9 +48,8 @@ describe('PluginManager Test Cases', () => {
   });
 
   test('Install Plugin', async () => {
-    const baseURL = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
     await PluginManager.install(
-      `${baseURL}/packages/headlamp/test-123/appcatalog_headlamp_plugin`,
+      'https://artifacthub.io/packages/headlamp/headlamp-plugins/app-catalog',
       tempDir,
       '',
       mockProgressCallback
@@ -101,7 +81,7 @@ describe('PluginManager Test Cases', () => {
 
   test('Update Plugin', async () => {
     // update the "app-catalog" plugin package.json with lower state
-    const packageJSONPath = `${tempDir}/appcatalog_headlamp_plugin/package.json`;
+    const packageJSONPath = `${tempDir}/app-catalog/package.json`;
     const packageJSON = JSON.parse(fs.readFileSync(packageJSONPath));
     packageJSON.artifacthub.version = `${semver.major(
       packageJSON.artifacthub.version
@@ -120,10 +100,9 @@ describe('PluginManager Test Cases', () => {
 
   test('Uninstall Plugin', async () => {
     const tempDir = tmp.dirSync({ unsafeCleanup: true }).name;
-    const uninstallBaseURL = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
 
     await PluginManager.install(
-      `${uninstallBaseURL}/packages/headlamp/test-123/appcatalog_headlamp_plugin`,
+      'https://artifacthub.io/packages/headlamp/headlamp-plugins/app-catalog',
       tempDir,
       '',
       mockProgressCallback

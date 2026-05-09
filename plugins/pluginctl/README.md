@@ -42,10 +42,10 @@ plugins.yaml:
 ```yaml
 plugins:
   - name: my-plugin
-    source: https://artifacthub.io/packages/headlamp/test-123/my-plugin
+    source: https://artifacthub.io/packages/headlamp/headlamp-plugins/my-plugin
     version: 1.0.0
   - name: another-plugin
-    source: https://artifacthub.io/packages/headlamp/test-123/another-plugin
+    source: https://artifacthub.io/packages/headlamp/headlamp-plugins/another-plugin
     dependencies:
       - my-plugin
 installOptions:

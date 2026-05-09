@@ -19,53 +19,28 @@ const fs = require('fs');
 const fsp = require('fs').promises;
 const os = require('os');
 const MultiPluginManager = require('./multi-plugin-management');
-const { startMockServer } = require('./test-mock-server.js');
 
 describe('MultiPluginManagement', () => {
   let tempDir;
   let configPath;
   let installer;
-  let mockServer;
-  let PLUGIN_DATA;
-  let savedEnvVar;
-
-  beforeAll(async () => {
-    // Save existing env var value
-    savedEnvVar = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
-    const { server, baseURL } = await startMockServer();
-    mockServer = server;
-    process.env.HEADLAMP_TEST_ARTIFACTHUB_URL = baseURL;
-
-    PLUGIN_DATA = [
-      {
-        name: 'appcatalog_headlamp_plugin',
-        source: `${baseURL}/packages/headlamp/test-123/appcatalog_headlamp_plugin`,
-        version: '0.0.3',
-      },
-      {
-        name: 'ai_plugin',
-        source: `${baseURL}/packages/headlamp/test-123/ai_plugin`,
-        version: '0.0.2',
-      },
-      {
-        name: 'prometheus_headlamp_plugin',
-        source: `${baseURL}/packages/headlamp/test-123/prometheus_headlamp_plugin`,
-        version: '0.0.3',
-      },
-    ];
-  });
-
-  afterAll(async () => {
-    if (mockServer) {
-      await new Promise(resolve => mockServer.close(resolve));
-    }
-    // Restore env var
-    if (savedEnvVar === undefined) {
-      delete process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
-    } else {
-      process.env.HEADLAMP_TEST_ARTIFACTHUB_URL = savedEnvVar;
-    }
-  });
+  const PLUGIN_DATA = [
+    {
+      name: 'app-catalog',
+      source: 'https://artifacthub.io/packages/headlamp/headlamp-plugins/app-catalog',
+      version: '0.0.3',
+    },
+    {
+      name: 'backstage',
+      source: 'https://artifacthub.io/packages/headlamp/headlamp-plugins/backstage',
+      version: '0.0.2',
+    },
+    {
+      name: 'prometheus',
+      source: 'https://artifacthub.io/packages/headlamp/headlamp-plugins/prometheus',
+      version: '0.0.3',
+    },
+  ];
   beforeEach(async () => {
     // Create temporary directory for tests
     tempDir = await fsp.mkdtemp(path.join(os.tmpdir(), 'headlamp-test-'));
@@ -165,11 +140,10 @@ plugins:
     });
 
     it('should skip plugins with failed dependencies', async () => {
-      const baseURL = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
       const config = `
 plugins:
   - name: invalid-plugin
-    source: ${baseURL}/packages/headlamp/test-123/invalid-plugin
+    source: https://artifacthub.io/packages/headlamp/headlamp-plugins/invalid-plugin
   - name: ${PLUGIN_DATA[0].name}
     source: ${PLUGIN_DATA[0].source}
     dependencies:
