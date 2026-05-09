@@ -131,14 +131,15 @@ function run(cmd, args) {
  * This allows the mock HTTP server to handle requests during the command.
  */
 function runAsync(cmd, args) {
-  const fullCmd = `${cmd} ${args.join(" ")}`;
   console.log("");
   console.log(
-    `Running async cmd: ${fullCmd} inside of cwd:${curDir} abs: "${resolve(curDir)}"`
+    `Running async cmd:${cmd} with args:${args.join(
+      " "
+    )} inside of cwd:${curDir} abs: "${resolve(curDir)}"`
   );
   console.log("");
-  return new Promise((resolvePromise, reject) => {
-    child_process.exec(fullCmd, {
+  return new Promise((resolve, reject) => {
+    child_process.execFile(cmd, args, {
       cwd: curDir,
       encoding: "utf8",
       timeout: 30000,
@@ -147,11 +148,13 @@ function runAsync(cmd, args) {
       if (stderr) process.stderr.write(stderr);
       if (error) {
         exit(
-          `Error: Problem running "${fullCmd}" inside of "${curDir}" abs: "${resolve(curDir)}"`
+          `Error: Problem running "${cmd} ${args.join(
+            " "
+          )}" inside of "${curDir}" abs: "${path.resolve(curDir)}"`
         );
         reject(error);
       } else {
-        resolvePromise();
+        resolve();
       }
     });
   });
