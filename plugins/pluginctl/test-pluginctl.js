@@ -132,8 +132,9 @@ function run(cmd, args) {
 }
 
 /**
- * Runs a command asynchronously using exec so the event loop is not blocked.
+ * Runs a command asynchronously using execFile so the event loop is not blocked.
  * This allows the mock HTTP server to handle requests during the command.
+ * Uses execFile (no shell) to avoid command-injection risks.
  */
 function runAsync(cmd, args) {
   console.log("");

@@ -42,6 +42,33 @@ const envPaths = require('env-paths');
 //   // });
 // }
 
+const ARTIFACTHUB_BASE = 'https://artifacthub.io';
+
+/**
+ * Returns the ArtifactHub base URL. Normally returns 'https://artifacthub.io'.
+ * When HEADLAMP_TEST_ARTIFACTHUB_URL is set to a loopback address, returns that
+ * instead so tests can use a local mock server.
+ * @returns {string}
+ */
+function getArtifactHubBaseURL() {
+  const override = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
+  if (override) {
+    try {
+      const parsed = new URL(override);
+      const isLoopback =
+        parsed.hostname === 'localhost' ||
+        parsed.hostname === '127.0.0.1' ||
+        parsed.hostname === '::1';
+      if (isLoopback) {
+        return override.replace(/\/+$/, '');
+      }
+    } catch {
+      // Invalid URL — fall through
+    }
+  }
+  return ARTIFACTHUB_BASE;
+}
+
 /**
  * Move directories from currentPath to newPath by copying.
  * @param currentPath from this path
@@ -305,23 +332,15 @@ function validatePluginName(pluginName) {
  * @returns true if the archiveURL looks good.
  */
 function validateArchiveURL(archiveURL) {
-  // In test mode, allow URLs from the mock server (restricted to loopback origins only)
-  const testBaseURL = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
-  if (testBaseURL) {
+  const base = getArtifactHubBaseURL();
+  if (base !== ARTIFACTHUB_BASE) {
+    // Test mode: allow archive URLs from the same loopback origin
     try {
-      const testParsed = new URL(testBaseURL);
-      const isLoopback =
-        testParsed.hostname === 'localhost' ||
-        testParsed.hostname === '127.0.0.1' ||
-        testParsed.hostname === '::1';
-      if (isLoopback) {
-        const archiveOrigin = new URL(archiveURL).origin;
-        if (testParsed.origin === archiveOrigin) {
-          return true;
-        }
+      if (new URL(archiveURL).origin === new URL(base).origin) {
+        return true;
       }
     } catch {
-      // Invalid URL, fall through to normal validation
+      // Invalid URL, fall through
     }
   }
 
@@ -485,10 +504,7 @@ async function downloadExtractPlugin(
   }
   // add artifacthub metadata to the plugin
   const packageJSON = JSON.parse(fs.readFileSync(`${tempFolder}/package.json`, 'utf8'));
-  const normalizedTestBase = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL
-    ? process.env.HEADLAMP_TEST_ARTIFACTHUB_URL.replace(/\/+$/, '')
-    : null;
-  const artifacthubBaseURL = normalizedTestBase || 'https://artifacthub.io';
+  const artifacthubBaseURL = getArtifactHubBaseURL();
   packageJSON.artifacthub = {
     name: pluginName,
     title: pluginInfo.display_name,
@@ -512,15 +528,9 @@ async function downloadExtractPlugin(
  */
 async function fetchPluginInfo(URL, progressCallback, signal, pluginVersion) {
   try {
-    const testBaseURL = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
-    // Normalize: strip trailing slash from test base URL
-    const normalizedTestBase = testBaseURL ? testBaseURL.replace(/\/+$/, '') : null;
-    const baseURL_packages = normalizedTestBase
-      ? `${normalizedTestBase}/packages/headlamp/`
-      : 'https://artifacthub.io/packages/headlamp/';
-    const baseURL_api = normalizedTestBase
-      ? `${normalizedTestBase}/api/v1/packages/headlamp/`
-      : 'https://artifacthub.io/api/v1/packages/headlamp/';
+    const base = getArtifactHubBaseURL();
+    const baseURL_packages = `${base}/packages/headlamp/`;
+    const baseURL_api = `${base}/api/v1/packages/headlamp/`;
 
     if (!URL.startsWith(baseURL_packages)) {
       throw new Error('Invalid URL. Please provide a valid URL from ArtifactHub.');

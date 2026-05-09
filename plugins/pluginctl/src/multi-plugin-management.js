@@ -40,9 +40,20 @@ function getPluginConfigSchema() {
             },
             source: {
               type: 'string',
-              pattern: process.env.HEADLAMP_TEST_ARTIFACTHUB_URL
-                ? '^https?://(?:localhost|127\\.0\\.0\\.1)(?::\\d+)?/packages/[^\\s]+$'
-                : '^https://artifacthub\\.io/packages/[^\\s]+$',
+              pattern: (() => {
+                const override = process.env.HEADLAMP_TEST_ARTIFACTHUB_URL;
+                if (override) {
+                  try {
+                    const h = new URL(override).hostname;
+                    if (h === 'localhost' || h === '127.0.0.1' || h === '::1') {
+                      return '^https?://(?:localhost|127\\.0\\.0\\.1)(?::\\d+)?/packages/[^\\s]+$';
+                    }
+                  } catch {
+                    // fall through
+                  }
+                }
+                return '^https://artifacthub\\.io/packages/[^\\s]+$';
+              })(),
             },
             version: {
               type: 'string',
