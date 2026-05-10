@@ -26,18 +26,18 @@ describe('MultiPluginManagement', () => {
   let installer;
   const PLUGIN_DATA = [
     {
-      name: 'headlamp_app_catalog',
-      source: 'https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_app_catalog',
+      name: 'headlamp_opencost',
+      source: 'https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_opencost',
       version: '0.0.3',
     },
     {
-      name: 'headlamp_backstage',
-      source: 'https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_backstage',
+      name: 'headlamp_flux',
+      source: 'https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_flux',
       version: '0.0.2',
     },
     {
-      name: 'headlamp_prometheus',
-      source: 'https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_prometheus',
+      name: 'headlamp_keda',
+      source: 'https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_keda',
       version: '0.0.3',
     },
   ];
