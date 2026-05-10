@@ -49,7 +49,7 @@ describe('PluginManager Test Cases', () => {
 
   test('Install Plugin', async () => {
     await PluginManager.install(
-      'https://artifacthub.io/packages/headlamp/headlamp-plugins/app-catalog',
+      'https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_app_catalog',
       tempDir,
       '',
       mockProgressCallback
@@ -81,7 +81,7 @@ describe('PluginManager Test Cases', () => {
 
   test('Update Plugin', async () => {
     // update the "app-catalog" plugin package.json with lower state
-    const packageJSONPath = `${tempDir}/app-catalog/package.json`;
+    const packageJSONPath = `${tempDir}/headlamp_app_catalog/package.json`;
     const packageJSON = JSON.parse(fs.readFileSync(packageJSONPath));
     packageJSON.artifacthub.version = `${semver.major(
       packageJSON.artifacthub.version
@@ -102,7 +102,7 @@ describe('PluginManager Test Cases', () => {
     const tempDir = tmp.dirSync({ unsafeCleanup: true }).name;
 
     await PluginManager.install(
-      'https://artifacthub.io/packages/headlamp/headlamp-plugins/app-catalog',
+      'https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_app_catalog',
       tempDir,
       '',
       mockProgressCallback

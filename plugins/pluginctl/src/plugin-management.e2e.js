@@ -57,7 +57,7 @@ let pluginExists = plugins.some(plugin => plugin.pluginName === pluginName);
 assert.strictEqual(pluginExists, false, 'Plugin should not be initially installed');
 
 // Install the plugin
-const pluginURL = 'https://artifacthub.io/packages/headlamp/headlamp-plugins/prometheus';
+const pluginURL = 'https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_prometheus';
 output = runCommand(`node ../bin/pluginctl.js install ${pluginURL}`);
 console.log('Install output:', output);
 
