@@ -28,17 +28,17 @@ describe('MultiPluginManagement', () => {
     {
       name: 'headlamp_opencost',
       source: 'https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_opencost',
-      version: '0.0.3',
+      version: '0.1.3',
     },
     {
       name: 'headlamp_flux',
       source: 'https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_flux',
-      version: '0.0.2',
+      version: '0.6.0',
     },
     {
       name: 'headlamp_keda',
       source: 'https://artifacthub.io/packages/headlamp/headlamp-plugins/headlamp_keda',
-      version: '0.0.3',
+      version: '0.1.1-beta',
     },
   ];
   beforeEach(async () => {
