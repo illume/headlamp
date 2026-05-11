@@ -340,12 +340,19 @@ async function runMeasure({
 }
 
 // 3) Browser/dev-server measurements (rsbuild + vite app dev servers).
+//    The headlamp app shell at `/` needs a backend to render meaningfully;
+//    in CI's headless chromium with no backend we still want the dev-server
+//    timings (ready, first paint, reload) but not a hard fail on the
+//    "rendered=true" probe — that's only meaningful for the storybook
+//    story URLs below. STRICT_RENDER=0 keeps the metric in the JSON output
+//    while letting cdp_bench exit 0.
 await runMeasure({
   name: 'rsbuild',
   command: 'npx --no-install rsbuild dev',
   port: 14001,
   ready: 'ready|built in',
   outFile: 'dev_rsbuild.txt',
+  env: { STRICT_RENDER: '0' },
 });
 await runMeasure({
   name: 'vite',
@@ -353,6 +360,7 @@ await runMeasure({
   port: 14002,
   ready: 'ready in|VITE',
   outFile: 'dev_vite.txt',
+  env: { STRICT_RENDER: '0' },
 });
 
 // 4) Storybook dev server (rsbuild vs vite). Matching SectionBox iframe

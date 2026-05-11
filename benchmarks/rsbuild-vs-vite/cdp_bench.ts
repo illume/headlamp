@@ -296,9 +296,24 @@ await browser.close();
 // run.ts can log it, but the non-zero exit code makes the parent treat
 // this measurement as failed instead of publishing bogus timings as if
 // the page had loaded successfully.
-if (!rendered || !reloadRendered) {
+//
+// The strict-render exit is opt-out via STRICT_RENDER=0: the plain app
+// dev measurements navigate to `/`, where the headlamp app shell needs a
+// backend to render meaningfully — in CI's headless chromium with no
+// backend behind the dev server, those measurements legitimately have
+// `rendered=false` even though the dev-server timings we actually care
+// about (server-ready, first-paint, hot-reload) are valid. The storybook
+// measurements (which navigate to a specific story iframe URL) keep the
+// default strict behaviour so a broken story still fails the bench.
+const STRICT_RENDER = process.env.STRICT_RENDER !== '0';
+if (STRICT_RENDER && (!rendered || !reloadRendered)) {
   console.error(
     `[cdp_bench] exit 1: rendered=${rendered} reloadRendered=${reloadRendered}`
   );
   process.exit(1);
+}
+if (!STRICT_RENDER && (!rendered || !reloadRendered)) {
+  console.error(
+    `[cdp_bench] non-strict: rendered=${rendered} reloadRendered=${reloadRendered} (continuing)`
+  );
 }
