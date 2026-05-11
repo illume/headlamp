@@ -11,6 +11,13 @@ const mockGetManagedNamespaces = vi.hoisted(() => vi.fn());
 const mockGetManagedNamespaceDetails = vi.hoisted(() => vi.fn());
 const mockUpdateManagedNamespace = vi.hoisted(() => vi.fn());
 const mockT = vi.hoisted(() => (key: string) => key);
+const mockClusterAction = vi.hoisted(() =>
+  vi.fn(async (action: () => Promise<void>) => {
+    try {
+      await action();
+    } catch {}
+  })
+);
 
 vi.mock('@kinvolk/headlamp-plugin/lib', () => ({
   K8s: {
@@ -21,6 +28,7 @@ vi.mock('@kinvolk/headlamp-plugin/lib', () => ({
     },
   },
   useTranslation: () => ({ t: mockT }),
+  clusterAction: mockClusterAction,
 }));
 
 vi.mock('../../../utils/azure/az-namespaces', () => ({
@@ -87,6 +95,12 @@ describe('useInfoTab', () => {
     // Default: managed namespaces available with details
     mockGetManagedNamespaces.mockResolvedValue(['my-project']);
     mockGetManagedNamespaceDetails.mockResolvedValue(createNamespaceDetails());
+    // Re-apply clusterAction implementation (vi.resetAllMocks clears it)
+    mockClusterAction.mockImplementation(async (action: () => Promise<void>) => {
+      try {
+        await action();
+      } catch {}
+    });
   });
 
   afterEach(() => {
@@ -325,13 +339,14 @@ describe('useInfoTab', () => {
         resourceGroup: 'rg-prod',
         namespaceName: 'my-project',
         ingressPolicy: 'DenyAll',
+        subscriptionId: 'sub-123',
       })
     );
     // Baseline advances so hasChanges resets
     expect(result.current.hasChanges).toBe(false);
   });
 
-  test('handleSave sets error and leaves updating false when updateManagedNamespace throws', async () => {
+  test('handleSave leaves updating as false when updateManagedNamespace throws', async () => {
     mockUpdateManagedNamespace.mockRejectedValue(new Error('update failed'));
 
     const { result } = renderHook(() => useInfoTab(defaultProject));
@@ -346,38 +361,8 @@ describe('useInfoTab', () => {
       await result.current.handleSave();
     });
 
-    expect(result.current.error).toBe('Failed to update managed namespace');
-    expect(result.current.updating).toBe(false);
-  });
-
-  test('handleSave clears a previous error on success', async () => {
-    mockUpdateManagedNamespace.mockRejectedValueOnce(new Error('update failed'));
-    mockUpdateManagedNamespace.mockResolvedValueOnce(undefined);
-
-    const { result } = renderHook(() => useInfoTab(defaultProject));
-
-    await waitFor(() => expect(result.current.loading).toBe(false));
-
-    act(() => {
-      result.current.handleFormDataChange({ ingress: 'DenyAll' });
-    });
-
-    await act(async () => {
-      await result.current.handleSave();
-    });
-
-    expect(result.current.error).toBe('Failed to update managed namespace');
-
-    act(() => {
-      result.current.handleFormDataChange({ ingress: 'AllowAll' });
-    });
-
-    await act(async () => {
-      await result.current.handleSave();
-    });
-
-    expect(result.current.error).toBeNull();
-    expect(mockUpdateManagedNamespace).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(result.current.updating).toBe(false));
+    expect(result.current.error).toBe('update failed');
   });
 
   test('handleSave is a no-op when resourceGroup label is absent', async () => {

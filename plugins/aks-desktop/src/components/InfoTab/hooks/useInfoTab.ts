@@ -1,7 +1,7 @@
 // Copyright (c) Microsoft Corporation.
 // Licensed under the Apache 2.0.
 
-import { K8s, useTranslation } from '@kinvolk/headlamp-plugin/lib';
+import { clusterAction, K8s, useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   getManagedNamespaceDetails,
@@ -81,7 +81,7 @@ export interface UseInfoTabResult {
   /** Updates form fields and re-validates. */
   handleFormDataChange: (updates: Partial<FormData>) => void;
   /** Persists the current form data to the managed namespace. */
-  handleSave: () => Promise<void>;
+  handleSave: () => void;
 }
 
 /**
@@ -253,32 +253,43 @@ export const useInfoTab = (project: {
     return keys.some(k => formData[k] !== baselineFormData[k]);
   }, [baselineFormData, formData]);
 
-  const handleSave = useCallback(async () => {
+  const handleSave = useCallback(() => {
     if (!resourceGroup || !clusterName || !projectId) return;
 
-    try {
-      setUpdating(true);
-      await updateManagedNamespace({
-        clusterName,
-        resourceGroup,
-        namespaceName: projectId,
-        ingressPolicy: formData.ingress,
-        egressPolicy: formData.egress,
-        cpuRequest: formData.cpuRequest,
-        cpuLimit: formData.cpuLimit,
-        memoryRequest: formData.memoryRequest,
-        memoryLimit: formData.memoryLimit,
-        noWait: false,
-      });
-      setBaselineFormData(formData);
-      setError(null);
-    } catch (e) {
-      console.error('Failed to update managed namespace', e);
-      setError(t('Failed to update managed namespace'));
-    } finally {
-      setUpdating(false);
-    }
-  }, [resourceGroup, clusterName, projectId, formData]);
+    setUpdating(true);
+    clusterAction(
+      async () => {
+        try {
+          await updateManagedNamespace({
+            clusterName,
+            resourceGroup,
+            namespaceName: projectId,
+            ingressPolicy: formData.ingress,
+            egressPolicy: formData.egress,
+            cpuRequest: formData.cpuRequest,
+            cpuLimit: formData.cpuLimit,
+            memoryRequest: formData.memoryRequest,
+            memoryLimit: formData.memoryLimit,
+            subscriptionId: subscription,
+          });
+          setBaselineFormData(formData);
+          setError(null);
+        } catch (err) {
+          setError(err instanceof Error ? err.message : String(err));
+          throw err;
+        } finally {
+          setUpdating(false);
+        }
+      },
+      {
+        startMessage: t('Updating namespace {{ name }}…', { name: projectId }),
+        cancelledMessage: t('Cancelled update of namespace {{ name }}.', { name: projectId }),
+        successMessage: t('Updated namespace {{ name }}.', { name: projectId }),
+        errorMessage: t('Failed to update namespace {{ name }}.', { name: projectId }),
+        startOptions: { autoHideDuration: null },
+      }
+    );
+  }, [resourceGroup, clusterName, projectId, subscription, formData, t]);
 
   return {
     loading,
