@@ -14,21 +14,18 @@
  * limitations under the License.
  */
 
+// Rsbuild-builder Storybook config used ONLY by the rsbuild-vs-vite bench.
+// Mirrors the production frontend/.storybook/main.ts but uses an
+// MSW-less preview (preview.tsx in this dir) so the bench measures
+// bundler perf, not msw-storybook-addon's service-worker registration
+// timing. The production Storybook (.storybook/) keeps MSW enabled.
 import type { StorybookConfig } from 'storybook-react-rsbuild';
-
-// Please also update: plugins/headlamp-plugin/config/.storybook/main.js
 
 export default {
   framework: 'storybook-react-rsbuild',
   stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
 
   addons: ['@storybook/addon-links', '@storybook/addon-docs'],
-
-  // Serve frontend/public/* as Storybook static assets so e.g. MSW's
-  // `mockServiceWorker.js` is reachable. Storybook with the rsbuild
-  // framework does not pick up rsbuild's `source.root`/public dir
-  // automatically the way the vite framework picks up vite's `publicDir`.
-  staticDirs: ['../public'],
 
   core: {
     disableTelemetry: true,
@@ -43,7 +40,8 @@ export default {
   rsbuildFinal: async config => {
     // Mirror the bits of frontend/rsbuild.config.ts that stories rely on:
     // SVGR (`?react` import suffix), node polyfills, and the `?url`
-    // asset/resource rule used by e.g. the elkjs worker.
+    // asset/resource rule used by e.g. the elkjs worker. Kept in sync
+    // with frontend/.storybook/main.ts.
     const { mergeRsbuildConfig } = await import('@rsbuild/core');
     const { pluginNodePolyfill } = await import('@rsbuild/plugin-node-polyfill');
     const { pluginSvgr } = await import('@rsbuild/plugin-svgr');

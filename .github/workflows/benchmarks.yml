@@ -1,0 +1,74 @@
+name: Benchmarks (rsbuild vs vite)
+
+# Cross-platform run of benchmarks/rsbuild-vs-vite. Triggers:
+#   - workflow_dispatch: manual trigger from the Actions tab.
+#   - schedule: monthly run on the 1st at 04:00 UTC.
+#   - pull_request: only when files that can affect bench results change
+#     (bench harness itself, frontend build configs, or this workflow).
+# The full suite takes ~10-20 minutes per OS across 3 OSes, so we gate
+# pull_request runs by paths to avoid spending CI on unrelated changes.
+
+on:
+  workflow_dispatch:
+  schedule:
+    # First day of every month, 04:00 UTC.
+    - cron: '0 4 1 * *'
+  pull_request:
+    paths:
+      - 'benchmarks/rsbuild-vs-vite/**'
+      - 'frontend/vite.config.ts'
+      - 'frontend/rsbuild.config.ts'
+      - 'frontend/package.json'
+      - 'frontend/package-lock.json'
+      - '.github/workflows/benchmarks.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  bench:
+    name: bench (${{ matrix.os }})
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Use Node.js 22.x
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        with:
+          node-version: 22.x
+
+      - name: Install frontend deps
+        working-directory: frontend
+        run: npm ci
+
+      - name: Install bench deps (and Playwright chromium)
+        working-directory: benchmarks/rsbuild-vs-vite
+        run: npm ci
+
+      - name: Typecheck bench code
+        working-directory: benchmarks/rsbuild-vs-vite
+        run: npm run typecheck
+
+      - name: Test bench code
+        working-directory: benchmarks/rsbuild-vs-vite
+        run: npm test
+
+      - name: Run benchmarks
+        working-directory: benchmarks/rsbuild-vs-vite
+        run: npm run bench
+
+      - name: Upload results
+        if: always()
+        uses: actions/upload-artifact@65462800fd760344b1a7b4382951275a0abb4808 # v4.3.3
+        with:
+          name: bench-results-${{ matrix.os }}
+          path: benchmarks/rsbuild-vs-vite/results
+          if-no-files-found: warn
