@@ -116,8 +116,9 @@ if [ ! -z "$TARBALL" ]; then
   # Step 4: Verify headlamp-server is cleaned up when app closes
   echo "=== Verifying Server Cleanup After App Close ==="
 
-  # Record existing headlamp-server PIDs to exclude them
+  # Record existing headlamp-server and headlamp PIDs to exclude them
   EXISTING_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
+  EXISTING_HEADLAMP_PIDS=$(pgrep -x headlamp 2>/dev/null || true)
 
   # Start the app in the background (needs a virtual display on headless CI)
   if command -v xvfb-run &>/dev/null; then
@@ -127,8 +128,8 @@ if [ ! -z "$TARBALL" ]; then
     echo "xvfb-run not available, launching app directly..."
     "$HEADLAMP_EXEC" > /dev/null 2>&1 &
   fi
-  ELECTRON_PID=$!
-  echo "Electron app started with PID: $ELECTRON_PID"
+  WRAPPER_PID=$!
+  echo "Launcher started with PID: $WRAPPER_PID"
 
   # Wait for headlamp-server to appear (up to 30 seconds)
   echo "Waiting for headlamp-server to start..."
@@ -150,13 +151,43 @@ if [ ! -z "$TARBALL" ]; then
 
   if [ -z "$SERVER_PID" ]; then
     echo "⚠ headlamp-server did not start within 30 seconds, skipping cleanup test"
-    kill "$ELECTRON_PID" 2>/dev/null || true
-    wait "$ELECTRON_PID" 2>/dev/null || true
+    kill -TERM "$WRAPPER_PID" 2>/dev/null || true
+    wait "$WRAPPER_PID" 2>/dev/null || true
   else
-    # Gracefully close the Electron app (SIGTERM triggers the quit handler)
+    # Find the actual headlamp (Electron) PID — when launched via xvfb-run,
+    # $WRAPPER_PID is the wrapper, not the Electron process. We need to SIGTERM
+    # the Electron process directly so its quit handler fires.
+    ELECTRON_PID=""
+    ALL_HEADLAMP_PIDS=$(pgrep -x headlamp 2>/dev/null || true)
+    for pid in $ALL_HEADLAMP_PIDS; do
+      if [ -z "$EXISTING_HEADLAMP_PIDS" ] || ! echo "$EXISTING_HEADLAMP_PIDS" | grep -qw "$pid"; then
+        ELECTRON_PID="$pid"
+        break
+      fi
+    done
+
+    if [ -z "$ELECTRON_PID" ]; then
+      echo "⚠ Could not find Electron PID, falling back to wrapper PID"
+      ELECTRON_PID="$WRAPPER_PID"
+    fi
     echo "Sending SIGTERM to Electron app (PID: $ELECTRON_PID)..."
     kill -TERM "$ELECTRON_PID" 2>/dev/null || true
-    wait "$ELECTRON_PID" 2>/dev/null || true
+
+    # Bounded wait for the Electron app to exit (up to 15 seconds)
+    for i in $(seq 1 15); do
+      if kill -0 "$ELECTRON_PID" 2>/dev/null; then
+        sleep 1
+      else
+        break
+      fi
+    done
+    if kill -0 "$ELECTRON_PID" 2>/dev/null; then
+      echo "⚠ Electron app did not exit gracefully, force killing..."
+      kill -9 "$ELECTRON_PID" 2>/dev/null || true
+    fi
+    # Also clean up the wrapper process if it's still around
+    kill -TERM "$WRAPPER_PID" 2>/dev/null || true
+    wait "$WRAPPER_PID" 2>/dev/null || true
 
     # Wait for the server process to exit (up to 10 seconds)
     echo "Waiting for headlamp-server to exit..."

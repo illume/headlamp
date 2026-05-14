@@ -223,15 +223,31 @@ test_server_cleanup() {
 
   if [ -z "$SERVER_PID" ]; then
     echo "⚠ headlamp-server did not start within 30 seconds, skipping cleanup test"
-    kill "$ELECTRON_PID" 2>/dev/null || true
-    wait "$ELECTRON_PID" 2>/dev/null || true
+    kill -TERM "$ELECTRON_PID" 2>/dev/null || true
+    # Bounded wait for process to exit (up to 10 seconds)
+    for i in $(seq 1 10); do
+      if kill -0 "$ELECTRON_PID" 2>/dev/null; then sleep 1; else break; fi
+    done
+    kill -9 "$ELECTRON_PID" 2>/dev/null || true
     return 0
   fi
 
   # Gracefully close the Electron app (SIGTERM triggers the quit handler)
   echo "Sending SIGTERM to Electron app (PID: $ELECTRON_PID)..."
   kill -TERM "$ELECTRON_PID" 2>/dev/null || true
-  wait "$ELECTRON_PID" 2>/dev/null || true
+
+  # Bounded wait for the Electron app to exit (up to 15 seconds)
+  for i in $(seq 1 15); do
+    if kill -0 "$ELECTRON_PID" 2>/dev/null; then
+      sleep 1
+    else
+      break
+    fi
+  done
+  if kill -0 "$ELECTRON_PID" 2>/dev/null; then
+    echo "⚠ Electron app did not exit gracefully, force killing..."
+    kill -9 "$ELECTRON_PID" 2>/dev/null || true
+  fi
 
   # Wait for the server process to exit (up to 10 seconds)
   echo "Waiting for headlamp-server to exit..."
