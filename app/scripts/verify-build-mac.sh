@@ -292,8 +292,8 @@ else
         fi
       fi
       hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
-      rm -rf "$MOUNT_POINT" || true
     fi
+    rm -rf "$MOUNT_POINT" || true
   fi
 fi
 

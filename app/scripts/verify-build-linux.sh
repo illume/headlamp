@@ -152,7 +152,10 @@ if [ ! -z "$TARBALL" ]; then
   if [ -z "$SERVER_PID" ]; then
     echo "⚠ headlamp-server did not start within 30 seconds, skipping cleanup test"
     kill -TERM "$WRAPPER_PID" 2>/dev/null || true
-    wait "$WRAPPER_PID" 2>/dev/null || true
+    for i in $(seq 1 10); do
+      if kill -0 "$WRAPPER_PID" 2>/dev/null; then sleep 1; else break; fi
+    done
+    kill -9 "$WRAPPER_PID" 2>/dev/null || true
   else
     # Find the actual headlamp (Electron) PID — when launched via xvfb-run,
     # $WRAPPER_PID is the wrapper, not the Electron process. We need to SIGTERM
@@ -187,7 +190,10 @@ if [ ! -z "$TARBALL" ]; then
     fi
     # Also clean up the wrapper process if it's still around
     kill -TERM "$WRAPPER_PID" 2>/dev/null || true
-    wait "$WRAPPER_PID" 2>/dev/null || true
+    for i in $(seq 1 10); do
+      if kill -0 "$WRAPPER_PID" 2>/dev/null; then sleep 1; else break; fi
+    done
+    kill -9 "$WRAPPER_PID" 2>/dev/null || true
 
     # Wait for the server process to exit (up to 10 seconds)
     echo "Waiting for headlamp-server to exit..."
