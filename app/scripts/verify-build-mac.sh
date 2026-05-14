@@ -181,4 +181,105 @@ else
 fi
 
 echo ""
+echo "=== Verifying Server Cleanup After App Close ==="
+
+# Function to test server cleanup
+test_server_cleanup() {
+  local HEADLAMP_EXEC="$1"
+
+  if [ ! -f "$HEADLAMP_EXEC" ]; then
+    echo "✗ Cannot test server cleanup: executable not found at $HEADLAMP_EXEC"
+    return 1
+  fi
+
+  chmod +x "$HEADLAMP_EXEC"
+
+  # Record existing headlamp-server PIDs to exclude them
+  EXISTING_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
+
+  # Start the app in the background
+  echo "Launching app for server cleanup test..."
+  "$HEADLAMP_EXEC" > /dev/null 2>&1 &
+  ELECTRON_PID=$!
+  echo "Electron app started with PID: $ELECTRON_PID"
+
+  # Wait for headlamp-server to appear (up to 30 seconds)
+  echo "Waiting for headlamp-server to start..."
+  SERVER_PID=""
+  for i in $(seq 1 30); do
+    ALL_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
+    for pid in $ALL_SERVER_PIDS; do
+      if [ -z "$EXISTING_SERVER_PIDS" ] || ! echo "$EXISTING_SERVER_PIDS" | grep -qw "$pid"; then
+        SERVER_PID="$pid"
+        break
+      fi
+    done
+    if [ -n "$SERVER_PID" ]; then
+      echo "headlamp-server started with PID: $SERVER_PID"
+      break
+    fi
+    sleep 1
+  done
+
+  if [ -z "$SERVER_PID" ]; then
+    echo "⚠ headlamp-server did not start within 30 seconds, skipping cleanup test"
+    kill "$ELECTRON_PID" 2>/dev/null || true
+    wait "$ELECTRON_PID" 2>/dev/null || true
+    return 0
+  fi
+
+  # Gracefully close the Electron app (SIGTERM triggers the quit handler)
+  echo "Sending SIGTERM to Electron app (PID: $ELECTRON_PID)..."
+  kill "$ELECTRON_PID" 2>/dev/null || true
+  wait "$ELECTRON_PID" 2>/dev/null || true
+
+  # Wait for the server process to exit (up to 10 seconds)
+  echo "Waiting for headlamp-server to exit..."
+  for i in $(seq 1 10); do
+    if kill -0 "$SERVER_PID" 2>/dev/null; then
+      sleep 1
+    else
+      break
+    fi
+  done
+
+  if kill -0 "$SERVER_PID" 2>/dev/null; then
+    echo "✗ headlamp-server (PID: $SERVER_PID) is still running after app close!"
+    kill -9 "$SERVER_PID" 2>/dev/null || true
+    return 1
+  else
+    echo "✓ headlamp-server properly terminated after app close"
+    return 0
+  fi
+}
+
+# Test server cleanup using the same app bundle/executable found earlier
+if [ -d "$DIST_DIR/mac" ]; then
+  APP_BUNDLE=$(find "$DIST_DIR/mac" -name "*.app" -type d | head -n 1)
+  if [ -n "$APP_BUNDLE" ]; then
+    HEADLAMP_EXEC="$APP_BUNDLE/Contents/MacOS/Headlamp"
+    test_server_cleanup "$HEADLAMP_EXEC" || exit 1
+  fi
+else
+  # DMG was already unmounted; re-mount to test server cleanup
+  DMG_FILE=$(ls "$DIST_DIR"/*.dmg | head -n 1)
+  if [ ! -z "$DMG_FILE" ]; then
+    MOUNT_POINT=$(mktemp -d -t headlamp-dmg-cleanup)
+    if hdiutil attach "$DMG_FILE" -mountpoint "$MOUNT_POINT" > /dev/null 2>&1; then
+      APP_BUNDLE=$(find "$MOUNT_POINT" -name "*.app" -type d | head -n 1)
+      if [ -n "$APP_BUNDLE" ]; then
+        HEADLAMP_EXEC="$APP_BUNDLE/Contents/MacOS/Headlamp"
+        if ! test_server_cleanup "$HEADLAMP_EXEC"; then
+          hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+          rm -rf "$MOUNT_POINT" || true
+          exit 1
+        fi
+      fi
+      hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+      rm -rf "$MOUNT_POINT" || true
+    fi
+  fi
+fi
+
+echo ""
 echo "✓ All Mac verification checks passed"

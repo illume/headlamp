@@ -205,5 +205,73 @@ if ($appPath -and (Test-Path $appPath)) {
 }
 
 Write-Host ""
+Write-Host "=== Verifying Server Cleanup After App Close ===" -ForegroundColor Cyan
+
+if ($appPath -and (Test-Path $appPath)) {
+  # Record existing headlamp-server PIDs to exclude them
+  $existingServerPIDs = @(Get-Process -Name "headlamp-server" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Id)
+
+  # Start the app in background
+  Write-Host "Launching app for server cleanup test..."
+  $appProcess = Start-Process -FilePath $appPath -PassThru -ErrorAction Stop
+  Write-Host "Electron app started with PID: $($appProcess.Id)"
+
+  # Wait for headlamp-server to appear (up to 30 seconds)
+  Write-Host "Waiting for headlamp-server to start..."
+  $serverPID = $null
+  for ($i = 1; $i -le 30; $i++) {
+    $allServerProcs = @(Get-Process -Name "headlamp-server" -ErrorAction SilentlyContinue)
+    foreach ($proc in $allServerProcs) {
+      if ($existingServerPIDs -notcontains $proc.Id) {
+        $serverPID = $proc.Id
+        break
+      }
+    }
+    if ($null -ne $serverPID) {
+      Write-Host "headlamp-server started with PID: $serverPID"
+      break
+    }
+    Start-Sleep -Seconds 1
+  }
+
+  if ($null -eq $serverPID) {
+    Write-Host "WARNING: headlamp-server did not start within 30 seconds, skipping cleanup test" -ForegroundColor Yellow
+    Stop-Process -Id $appProcess.Id -Force -ErrorAction SilentlyContinue
+  } else {
+    # Gracefully close the Electron app
+    Write-Host "Closing Electron app (PID: $($appProcess.Id))..."
+    Stop-Process -Id $appProcess.Id -Force -ErrorAction SilentlyContinue
+    # Wait for the app to exit
+    try {
+      $appProcess.WaitForExit(10000) | Out-Null
+    } catch {
+      # Ignore if already exited
+    }
+
+    # Wait for the server process to exit (up to 10 seconds)
+    Write-Host "Waiting for headlamp-server to exit..."
+    $serverExited = $false
+    for ($i = 1; $i -le 10; $i++) {
+      $serverProc = Get-Process -Id $serverPID -ErrorAction SilentlyContinue
+      if ($null -eq $serverProc -or $serverProc.HasExited) {
+        $serverExited = $true
+        break
+      }
+      Start-Sleep -Seconds 1
+    }
+
+    if (-not $serverExited) {
+      Write-Host "[FAIL] headlamp-server (PID: $serverPID) is still running after app close!" -ForegroundColor Red
+      Stop-Process -Id $serverPID -Force -ErrorAction SilentlyContinue
+      exit 1
+    } else {
+      Write-Host "[PASS] headlamp-server properly terminated after app close" -ForegroundColor Green
+    }
+  }
+} else {
+  Write-Host "WARNING: Could not find Headlamp.exe for server cleanup test, skipping" -ForegroundColor Yellow
+}
+
+Write-Host ""
 Write-Host "[PASS] All Windows verification checks passed" -ForegroundColor Green
 
