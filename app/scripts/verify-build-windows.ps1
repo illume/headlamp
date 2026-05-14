@@ -258,11 +258,9 @@ if ($null -eq $serverPID) {
 
   # Wait for all new server processes to exit (up to 10 seconds)
   Write-Host "Waiting for headlamp-server to exit..."
-  $serverExited = $false
   for ($i = 1; $i -le 10; $i++) {
     $remainingServers = @(Get-Process -Name "headlamp-server" -ErrorAction SilentlyContinue | Where-Object { $existingServerPIDs -notcontains $_.Id })
     if ($remainingServers.Count -eq 0) {
-      $serverExited = $true
       break
     }
     Start-Sleep -Seconds 1

@@ -195,19 +195,19 @@ test_server_cleanup() {
   chmod +x "$HEADLAMP_EXEC"
 
   # Record existing headlamp-server PIDs to exclude them
-  EXISTING_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
+  local EXISTING_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
 
   # Start the app in the background
   echo "Launching app for server cleanup test..."
   "$HEADLAMP_EXEC" > /dev/null 2>&1 &
-  ELECTRON_PID=$!
+  local ELECTRON_PID=$!
   echo "Electron app started with PID: $ELECTRON_PID"
 
   # Wait for headlamp-server to appear (up to 30 seconds)
   echo "Waiting for headlamp-server to start..."
-  SERVER_PID=""
+  local SERVER_PID=""
   for i in $(seq 1 30); do
-    ALL_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
+    local ALL_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
     for pid in $ALL_SERVER_PIDS; do
       if [ -z "$EXISTING_SERVER_PIDS" ] || ! echo "$EXISTING_SERVER_PIDS" | grep -qw "$pid"; then
         SERVER_PID="$pid"
@@ -251,9 +251,10 @@ test_server_cleanup() {
 
   # Wait for all new server processes to exit (up to 10 seconds)
   echo "Waiting for headlamp-server to exit..."
+  local REMAINING_SERVER_PIDS
   for i in $(seq 1 10); do
     REMAINING_SERVER_PIDS=""
-    ALL_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
+    local ALL_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
     for pid in $ALL_SERVER_PIDS; do
       if [ -z "$EXISTING_SERVER_PIDS" ] || ! echo "$EXISTING_SERVER_PIDS" | grep -qw "$pid"; then
         REMAINING_SERVER_PIDS="$REMAINING_SERVER_PIDS $pid"
@@ -267,7 +268,7 @@ test_server_cleanup() {
 
   # Final check: are any new headlamp-server processes still running?
   REMAINING_SERVER_PIDS=""
-  ALL_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
+  local ALL_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
   for pid in $ALL_SERVER_PIDS; do
     if [ -z "$EXISTING_SERVER_PIDS" ] || ! echo "$EXISTING_SERVER_PIDS" | grep -qw "$pid"; then
       REMAINING_SERVER_PIDS="$REMAINING_SERVER_PIDS $pid"
@@ -307,6 +308,8 @@ else
           rm -rf "$MOUNT_POINT" || true
           exit 1
         fi
+      else
+        echo "⚠ App bundle not found in re-mounted DMG, skipping server cleanup test"
       fi
       hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
     else
