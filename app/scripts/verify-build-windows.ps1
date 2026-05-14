@@ -238,14 +238,23 @@ if ($appPath -and (Test-Path $appPath)) {
     Write-Host "WARNING: headlamp-server did not start within 30 seconds, skipping cleanup test" -ForegroundColor Yellow
     Stop-Process -Id $appProcess.Id -Force -ErrorAction SilentlyContinue
   } else {
-    # Gracefully close the Electron app
+    # Gracefully close the Electron app (CloseMainWindow sends WM_CLOSE)
     Write-Host "Closing Electron app (PID: $($appProcess.Id))..."
-    Stop-Process -Id $appProcess.Id -Force -ErrorAction SilentlyContinue
-    # Wait for the app to exit
     try {
-      $appProcess.WaitForExit(10000) | Out-Null
+      $appProcess.CloseMainWindow() | Out-Null
+    } catch {
+      # Ignore if window is not available
+    }
+    # Wait for the app to exit gracefully (up to 10 seconds)
+    $appExited = $false
+    try {
+      $appExited = $appProcess.WaitForExit(10000)
     } catch {
       # Ignore if already exited
+    }
+    if (-not $appExited) {
+      Write-Host "App did not exit gracefully, forcing termination..."
+      Stop-Process -Id $appProcess.Id -Force -ErrorAction SilentlyContinue
     }
 
     # Wait for the server process to exit (up to 10 seconds)

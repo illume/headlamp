@@ -230,7 +230,7 @@ test_server_cleanup() {
 
   # Gracefully close the Electron app (SIGTERM triggers the quit handler)
   echo "Sending SIGTERM to Electron app (PID: $ELECTRON_PID)..."
-  kill "$ELECTRON_PID" 2>/dev/null || true
+  kill -TERM "$ELECTRON_PID" 2>/dev/null || true
   wait "$ELECTRON_PID" 2>/dev/null || true
 
   # Wait for the server process to exit (up to 10 seconds)
