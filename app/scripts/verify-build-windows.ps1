@@ -256,21 +256,26 @@ if ($null -eq $serverPID) {
     Stop-Process -Id $appProcess.Id -Force -ErrorAction SilentlyContinue
   }
 
-  # Wait for the server process to exit (up to 10 seconds)
+  # Wait for all new server processes to exit (up to 10 seconds)
   Write-Host "Waiting for headlamp-server to exit..."
   $serverExited = $false
   for ($i = 1; $i -le 10; $i++) {
-    $serverProc = Get-Process -Id $serverPID -ErrorAction SilentlyContinue
-    if ($null -eq $serverProc -or $serverProc.HasExited) {
+    $remainingServers = @(Get-Process -Name "headlamp-server" -ErrorAction SilentlyContinue | Where-Object { $existingServerPIDs -notcontains $_.Id })
+    if ($remainingServers.Count -eq 0) {
       $serverExited = $true
       break
     }
     Start-Sleep -Seconds 1
   }
 
-  if (-not $serverExited) {
-    Write-Host "[FAIL] headlamp-server (PID: $serverPID) is still running after app close!" -ForegroundColor Red
-    Stop-Process -Id $serverPID -Force -ErrorAction SilentlyContinue
+  # Final check: are any new headlamp-server processes still running?
+  $remainingServers = @(Get-Process -Name "headlamp-server" -ErrorAction SilentlyContinue | Where-Object { $existingServerPIDs -notcontains $_.Id })
+  if ($remainingServers.Count -gt 0) {
+    $remainingPIDs = ($remainingServers | Select-Object -ExpandProperty Id) -join ", "
+    Write-Host "[FAIL] headlamp-server process(es) still running after app close: $remainingPIDs" -ForegroundColor Red
+    foreach ($proc in $remainingServers) {
+      Stop-Process -Id $proc.Id -Force -ErrorAction SilentlyContinue
+    }
     exit 1
   } else {
     Write-Host "[PASS] headlamp-server properly terminated after app close" -ForegroundColor Green

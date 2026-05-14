@@ -249,19 +249,36 @@ test_server_cleanup() {
     kill -9 "$ELECTRON_PID" 2>/dev/null || true
   fi
 
-  # Wait for the server process to exit (up to 10 seconds)
+  # Wait for all new server processes to exit (up to 10 seconds)
   echo "Waiting for headlamp-server to exit..."
   for i in $(seq 1 10); do
-    if kill -0 "$SERVER_PID" 2>/dev/null; then
-      sleep 1
-    else
+    REMAINING_SERVER_PIDS=""
+    ALL_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
+    for pid in $ALL_SERVER_PIDS; do
+      if [ -z "$EXISTING_SERVER_PIDS" ] || ! echo "$EXISTING_SERVER_PIDS" | grep -qw "$pid"; then
+        REMAINING_SERVER_PIDS="$REMAINING_SERVER_PIDS $pid"
+      fi
+    done
+    if [ -z "$REMAINING_SERVER_PIDS" ]; then
       break
+    fi
+    sleep 1
+  done
+
+  # Final check: are any new headlamp-server processes still running?
+  REMAINING_SERVER_PIDS=""
+  ALL_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
+  for pid in $ALL_SERVER_PIDS; do
+    if [ -z "$EXISTING_SERVER_PIDS" ] || ! echo "$EXISTING_SERVER_PIDS" | grep -qw "$pid"; then
+      REMAINING_SERVER_PIDS="$REMAINING_SERVER_PIDS $pid"
     fi
   done
 
-  if kill -0 "$SERVER_PID" 2>/dev/null; then
-    echo "✗ headlamp-server (PID: $SERVER_PID) is still running after app close!"
-    kill -9 "$SERVER_PID" 2>/dev/null || true
+  if [ -n "$REMAINING_SERVER_PIDS" ]; then
+    echo "✗ headlamp-server process(es) still running after app close: $REMAINING_SERVER_PIDS"
+    for pid in $REMAINING_SERVER_PIDS; do
+      kill -9 "$pid" 2>/dev/null || true
+    done
     return 1
   else
     echo "✓ headlamp-server properly terminated after app close"
@@ -292,6 +309,8 @@ else
         fi
       fi
       hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
+    else
+      echo "⚠ Failed to re-mount DMG for server cleanup test, skipping"
     fi
     rm -rf "$MOUNT_POINT" || true
   fi

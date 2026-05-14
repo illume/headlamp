@@ -151,11 +151,23 @@ if [ ! -z "$TARBALL" ]; then
 
   if [ -z "$SERVER_PID" ]; then
     echo "⚠ headlamp-server did not start within 30 seconds, skipping cleanup test"
+    # Kill the wrapper and any headlamp (Electron) processes we spawned
     kill -TERM "$WRAPPER_PID" 2>/dev/null || true
+    ALL_HEADLAMP_PIDS=$(pgrep -x headlamp 2>/dev/null || true)
+    for pid in $ALL_HEADLAMP_PIDS; do
+      if [ -z "$EXISTING_HEADLAMP_PIDS" ] || ! echo "$EXISTING_HEADLAMP_PIDS" | grep -qw "$pid"; then
+        kill -TERM "$pid" 2>/dev/null || true
+      fi
+    done
     for i in $(seq 1 10); do
       if kill -0 "$WRAPPER_PID" 2>/dev/null; then sleep 1; else break; fi
     done
     kill -9 "$WRAPPER_PID" 2>/dev/null || true
+    for pid in $ALL_HEADLAMP_PIDS; do
+      if [ -z "$EXISTING_HEADLAMP_PIDS" ] || ! echo "$EXISTING_HEADLAMP_PIDS" | grep -qw "$pid"; then
+        kill -9 "$pid" 2>/dev/null || true
+      fi
+    done
   else
     # Find the actual headlamp (Electron) PID — when launched via xvfb-run,
     # $WRAPPER_PID is the wrapper, not the Electron process. We need to SIGTERM
@@ -198,16 +210,33 @@ if [ ! -z "$TARBALL" ]; then
     # Wait for the server process to exit (up to 10 seconds)
     echo "Waiting for headlamp-server to exit..."
     for i in $(seq 1 10); do
-      if kill -0 "$SERVER_PID" 2>/dev/null; then
-        sleep 1
-      else
+      REMAINING_SERVER_PIDS=""
+      ALL_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
+      for pid in $ALL_SERVER_PIDS; do
+        if [ -z "$EXISTING_SERVER_PIDS" ] || ! echo "$EXISTING_SERVER_PIDS" | grep -qw "$pid"; then
+          REMAINING_SERVER_PIDS="$REMAINING_SERVER_PIDS $pid"
+        fi
+      done
+      if [ -z "$REMAINING_SERVER_PIDS" ]; then
         break
+      fi
+      sleep 1
+    done
+
+    # Final check: are any new headlamp-server processes still running?
+    REMAINING_SERVER_PIDS=""
+    ALL_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
+    for pid in $ALL_SERVER_PIDS; do
+      if [ -z "$EXISTING_SERVER_PIDS" ] || ! echo "$EXISTING_SERVER_PIDS" | grep -qw "$pid"; then
+        REMAINING_SERVER_PIDS="$REMAINING_SERVER_PIDS $pid"
       fi
     done
 
-    if kill -0 "$SERVER_PID" 2>/dev/null; then
-      echo "✗ headlamp-server (PID: $SERVER_PID) is still running after app close!"
-      kill -9 "$SERVER_PID" 2>/dev/null || true
+    if [ -n "$REMAINING_SERVER_PIDS" ]; then
+      echo "✗ headlamp-server process(es) still running after app close: $REMAINING_SERVER_PIDS"
+      for pid in $REMAINING_SERVER_PIDS; do
+        kill -9 "$pid" 2>/dev/null || true
+      done
       rm -rf "$EXTRACT_DIR"
       rm -f "$OUTPUT_FILE"
       exit 1
