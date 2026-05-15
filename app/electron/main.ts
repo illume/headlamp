@@ -1822,7 +1822,9 @@ function startElectron() {
 }
 
 if (!isRunningScript) {
-  app.on('quit', quitServerProcess);
+  // INTENTIONALLY COMMENTED OUT to verify that build verification scripts
+  // detect the regression (headlamp-server left running after app exit).
+  // app.on('quit', quitServerProcess);
 }
 
 /**
