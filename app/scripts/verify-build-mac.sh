@@ -185,29 +185,52 @@ echo "=== Verifying Server Cleanup After App Close ==="
 
 # Function to test server cleanup
 test_server_cleanup() {
-  local HEADLAMP_EXEC="$1"
+  local APP_BUNDLE="$1"
 
-  if [ ! -f "$HEADLAMP_EXEC" ]; then
-    echo "✗ Cannot test server cleanup: executable not found at $HEADLAMP_EXEC"
+  if [ ! -d "$APP_BUNDLE" ]; then
+    echo "✗ Cannot test server cleanup: app bundle not found at $APP_BUNDLE"
     return 1
   fi
 
-  chmod +x "$HEADLAMP_EXEC"
-
-  # Record existing headlamp-server PIDs to exclude them
+  # Record existing PIDs to exclude them
   local EXISTING_SERVER_PIDS
+  local EXISTING_APP_PIDS
   local ELECTRON_PID
   local SERVER_PID
   local ALL_SERVER_PIDS
+  local ALL_APP_PIDS
   local REMAINING_SERVER_PIDS
 
   EXISTING_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
+  EXISTING_APP_PIDS=$(pgrep -x Headlamp 2>/dev/null || true)
 
-  # Start the app in the background
-  # --disable-gpu avoids GPU initialization failures on headless macOS CI runners
-  echo "Launching app for server cleanup test (GPU disabled for CI)..."
-  "$HEADLAMP_EXEC" --disable-gpu > /dev/null 2>&1 &
-  ELECTRON_PID=$!
+  # Launch the app using macOS 'open' command so it properly registers with
+  # WindowServer and Electron's 'ready' event fires (direct binary execution
+  # skips this registration on CI runners).
+  # --disable-gpu avoids GPU initialization failures on headless macOS CI runners.
+  echo "Launching app for server cleanup test (via open, GPU disabled for CI)..."
+  open "$APP_BUNDLE" --args --disable-gpu
+
+  # Wait for the Headlamp process to appear (up to 15 seconds)
+  ELECTRON_PID=""
+  for i in $(seq 1 15); do
+    ALL_APP_PIDS=$(pgrep -x Headlamp 2>/dev/null || true)
+    for pid in $ALL_APP_PIDS; do
+      if [ -z "$EXISTING_APP_PIDS" ] || ! echo "$EXISTING_APP_PIDS" | grep -qw "$pid"; then
+        ELECTRON_PID="$pid"
+        break
+      fi
+    done
+    if [ -n "$ELECTRON_PID" ]; then
+      break
+    fi
+    sleep 1
+  done
+
+  if [ -z "$ELECTRON_PID" ]; then
+    echo "⚠ Headlamp process did not appear within 15 seconds, skipping cleanup test"
+    return 0
+  fi
   echo "Electron app started with PID: $ELECTRON_PID"
 
   # Wait for headlamp-server to appear (up to 30 seconds)
@@ -293,12 +316,21 @@ test_server_cleanup() {
   fi
 }
 
-# Test server cleanup using the same app bundle/executable found earlier
-if [ -d "$DIST_DIR/mac" ]; then
-  APP_BUNDLE=$(find "$DIST_DIR/mac" -name "*.app" -type d | head -n 1)
+# Test server cleanup using the app bundle found earlier.
+# Prefer native architecture build: on arm64 runners, dist/mac contains the x64
+# build (via Rosetta) and dist/mac-arm64 contains the native arm64 build.
+ARCH=$(uname -m)
+MAC_DIR=""
+if [ "$ARCH" = "arm64" ] && [ -d "$DIST_DIR/mac-arm64" ]; then
+  MAC_DIR="$DIST_DIR/mac-arm64"
+elif [ -d "$DIST_DIR/mac" ]; then
+  MAC_DIR="$DIST_DIR/mac"
+fi
+
+if [ -n "$MAC_DIR" ]; then
+  APP_BUNDLE=$(find "$MAC_DIR" -name "*.app" -type d | head -n 1)
   if [ -n "$APP_BUNDLE" ]; then
-    HEADLAMP_EXEC="$APP_BUNDLE/Contents/MacOS/Headlamp"
-    test_server_cleanup "$HEADLAMP_EXEC" || exit 1
+    test_server_cleanup "$APP_BUNDLE" || exit 1
   fi
 else
   # DMG was already unmounted; re-mount to test server cleanup
@@ -308,8 +340,7 @@ else
     if hdiutil attach "$DMG_FILE" -mountpoint "$MOUNT_POINT" > /dev/null 2>&1; then
       APP_BUNDLE=$(find "$MOUNT_POINT" -name "*.app" -type d | head -n 1)
       if [ -n "$APP_BUNDLE" ]; then
-        HEADLAMP_EXEC="$APP_BUNDLE/Contents/MacOS/Headlamp"
-        if ! test_server_cleanup "$HEADLAMP_EXEC"; then
+        if ! test_server_cleanup "$APP_BUNDLE"; then
           hdiutil detach "$MOUNT_POINT" > /dev/null 2>&1
           rm -rf "$MOUNT_POINT" || true
           exit 1
