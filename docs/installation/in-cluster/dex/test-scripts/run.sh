@@ -95,12 +95,22 @@ start_minikube() {
     log "Minikube profile '$PROFILE' already running."
     return
   fi
-  log "Starting Minikube profile '$PROFILE' with OIDC apiserver flags."
+  # NOTE: we intentionally do NOT pass --extra-config=apiserver.oidc-* here.
+  #
+  # In this OAuth2-Proxy + Dex pattern Headlamp does not impersonate the
+  # user against the Kubernetes API — it talks to the API server using
+  # its in-cluster ServiceAccount (see headlamp-values.yaml). The OIDC
+  # flow is between the browser, OAuth2-Proxy and Dex; the API server
+  # never sees the id_token. Configuring apiserver-level OIDC would
+  # additionally require Dex to serve HTTPS (kube-apiserver rejects
+  # --oidc-issuer-url with an http:// scheme), which is out of scope
+  # for this local-development smoke test.
+  #
+  # For production / per-user RBAC against the API server, see the
+  # "Production" section of ../index.md.
+  log "Starting Minikube profile '$PROFILE'."
   minikube start -p "$PROFILE" \
-    --extra-config=apiserver.authorization-mode=Node,RBAC \
-    --extra-config="apiserver.oidc-issuer-url=${DEX_ISSUER}" \
-    --extra-config=apiserver.oidc-username-claim=email \
-    --extra-config=apiserver.oidc-client-id=headlamp
+    --extra-config=apiserver.authorization-mode=Node,RBAC
 }
 
 # ----------------------------------------------------- 3. RBAC + Helm releases

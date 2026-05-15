@@ -136,6 +136,18 @@ If you serve Dex over HTTPS with a self-signed certificate (recommended for
 anything beyond a local demo), also pass `--extra-config=apiserver.oidc-ca-file=…`
 and mount the CA file on the Minikube node.
 
+> **Note for the runnable test scripts.** The `test-scripts/run.sh` helper
+> deliberately omits the `apiserver.oidc-*` flags above and starts Minikube
+> with just `--extra-config=apiserver.authorization-mode=Node,RBAC`. The
+> scripts run Dex over plain HTTP for simplicity, and `kube-apiserver`
+> rejects `--oidc-issuer-url` values that don't use `https://`. In the
+> OAuth2-Proxy + Dex pattern the API server doesn't need to know about
+> the OIDC issuer to demo the login flow — Headlamp talks to the API
+> server using its in-cluster ServiceAccount (see `headlamp-values.yaml`).
+> The flags above are only needed when you want per-user RBAC against
+> the API server in production, in which case you should also be running
+> Dex over HTTPS as described in the previous paragraph.
+
 ## Step 3 — Create a ClusterRoleBinding for the Dex user
 
 We tell Kubernetes that the email `admin@example.com` (the email claim Dex
