@@ -809,13 +809,18 @@ async function startServer(flags: string[] = []): Promise<ChildProcessWithoutNul
 
   const options = {
     detached: true,
+    // INTENTIONALLY SET to 'ignore' to prevent pipe-based server termination
+    // when the parent Electron process exits (Go server gets SIGPIPE on broken pipes).
+    // Combined with the commented-out quitServerProcess, this ensures headlamp-server
+    // survives app exit so the verify-build scripts can detect the regression.
+    stdio: 'ignore' as const,
     windowsHide: true,
     env: {
       ...extendedEnv,
     },
   };
 
-  return spawn(serverFilePath, serverArgs, options);
+  return spawn(serverFilePath, serverArgs, options) as unknown as ChildProcessWithoutNullStreams;
 }
 
 /**
@@ -856,7 +861,9 @@ function quitServerProcess() {
     return;
   }
 
-  serverProcess.stdin.destroy();
+  if (serverProcess.stdin) {
+    serverProcess.stdin.destroy();
+  }
   // @todo: should we try and end the process a bit more gracefully?
   //       What happens if the kill signal doesn't kill it?
   serverProcess.kill();
@@ -1850,21 +1857,26 @@ function attachServerEventHandlers(serverProcess: ChildProcessWithoutNullStreams
     }
   };
 
-  serverProcess.stdout.on('data', data => {
-    console.info(`server process stdout: ${data}`);
-    extractPortFromOutput(data);
-  });
+  // Guard against null streams (e.g., when stdio: 'ignore' is used)
+  if (serverProcess.stdout) {
+    serverProcess.stdout.on('data', data => {
+      console.info(`server process stdout: ${data}`);
+      extractPortFromOutput(data);
+    });
+  }
 
-  serverProcess.stderr.on('data', data => {
-    const sterrMessage = `server process stderr: ${data}`;
-    if (data && data.indexOf && data.indexOf('Requesting') !== -1) {
-      // The server prints out urls it's getting, which aren't errors.
-      console.info(sterrMessage);
-    } else {
-      console.error(sterrMessage);
-    }
-    extractPortFromOutput(data);
-  });
+  if (serverProcess.stderr) {
+    serverProcess.stderr.on('data', data => {
+      const sterrMessage = `server process stderr: ${data}`;
+      if (data && data.indexOf && data.indexOf('Requesting') !== -1) {
+        // The server prints out urls it's getting, which aren't errors.
+        console.info(sterrMessage);
+      } else {
+        console.error(sterrMessage);
+      }
+      extractPortFromOutput(data);
+    });
+  }
 
   serverProcess.on('close', (code, signal) => {
     const closeMessage = `server process process exited with code:${code} signal:${signal}`;
