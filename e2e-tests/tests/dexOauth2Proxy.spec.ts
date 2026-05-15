@@ -147,6 +147,18 @@ test.describe('Headlamp + OAuth2-Proxy + Dex (opt-in)', () => {
     await page.locator('input[name="password"], input[type="password"]').first().fill(DEX_PASSWORD);
     await page.locator('button[type="submit"], input[type="submit"]').first().click();
 
+    // 3a. Dex may show a "Grant Access" consent page even with
+    //     `oauth2.skipApprovalScreen: true` (e.g. on first login for a
+    //     given client). Click through it if present; otherwise fall
+    //     through to the OAuth2-Proxy callback.
+    const grantAccess = page.getByRole('button', { name: /grant access/i });
+    try {
+      await grantAccess.waitFor({ state: 'visible', timeout: 10 * 1000 });
+      await grantAccess.click();
+    } catch {
+      // No consent screen — Dex skipped it. Proceed.
+    }
+
     // 4. After the OIDC callback, OAuth2-Proxy forwards us to Headlamp.
     //    Headlamp's Overview shows the "Cluster" sidebar section.
     await page.waitForURL(new RegExp(`^${BASE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`), {
