@@ -3,7 +3,7 @@ name: Dex + OAuth2-Proxy e2e
 # Drives the opt-in Playwright spec
 # `e2e-tests/tests/dexOauth2Proxy.spec.ts` end-to-end against the
 # runnable test scripts at
-# `docs/installation/in-cluster/dex-oauth2-proxy/test-scripts/`
+# `docs/installation/in-cluster/dex/test-scripts/`
 # (Minikube + Dex + Headlamp + OAuth2-Proxy).
 #
 # This is a separate workflow from the main e2e (`build-container.yml`)
@@ -13,7 +13,7 @@ name: Dex + OAuth2-Proxy e2e
 on:
   pull_request:
     paths:
-      - 'docs/installation/in-cluster/dex-oauth2-proxy/**'
+      - 'docs/installation/in-cluster/dex/**'
       - 'e2e-tests/tests/dexOauth2Proxy.spec.ts'
       - 'e2e-tests/package.json'
       - 'e2e-tests/package-lock.json'
@@ -43,7 +43,7 @@ jobs:
       - name: Install dex
         run: |
           set -euo pipefail
-          # Pinned to match docs/installation/in-cluster/dex-oauth2-proxy/test-scripts/README.md
+          # Pinned to match docs/installation/in-cluster/dex/test-scripts/README.md
           DEX_VERSION=v2.43.1
           curl -fsSL -o /tmp/dex.tgz \
             "https://github.com/dexidp/dex/releases/download/${DEX_VERSION}/dex_${DEX_VERSION#v}_linux_amd64.tar.gz"

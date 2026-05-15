@@ -29,7 +29,7 @@
  *
  *  1. **Bring-up + tear-down by this test (recommended):**
  *     set `HEADLAMP_TEST_DEX_OAUTH2_PROXY_MANAGE=1`. The test will
- *     invoke `docs/installation/in-cluster/dex-oauth2-proxy/test-scripts/run.sh`
+ *     invoke `docs/installation/in-cluster/dex/test-scripts/run.sh`
  *     in `beforeAll` and `cleanup.sh` in `afterAll`. This is the
  *     mode the user asked for: "use these scripts to setup Dex and
  *     oauth2-proxy, and then run some e2e tests with playwright."
@@ -68,7 +68,7 @@ const SCRIPTS_DIR = path.resolve(
   'docs',
   'installation',
   'in-cluster',
-  'dex-oauth2-proxy',
+  'dex',
   'test-scripts'
 );
 
