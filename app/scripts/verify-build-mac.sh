@@ -204,8 +204,9 @@ test_server_cleanup() {
   EXISTING_SERVER_PIDS=$(pgrep -f headlamp-server 2>/dev/null || true)
 
   # Start the app in the background
-  echo "Launching app for server cleanup test..."
-  "$HEADLAMP_EXEC" > /dev/null 2>&1 &
+  # --disable-gpu avoids GPU initialization failures on headless macOS CI runners
+  echo "Launching app for server cleanup test (GPU disabled for CI)..."
+  "$HEADLAMP_EXEC" --disable-gpu > /dev/null 2>&1 &
   ELECTRON_PID=$!
   echo "Electron app started with PID: $ELECTRON_PID"
 
