@@ -61,7 +61,7 @@ claims provided by Dex.
 > up the whole stack and `./test-scripts/cleanup.sh` to tear it down again.
 
 This tutorial was written and tested against Headlamp 0.36, OAuth2-Proxy 7.x,
-Dex 2.43, and Minikube 1.34.
+Dex 2.45, and Minikube 1.34.
 
 ## Step 1 — Configure and start Dex
 

@@ -43,12 +43,16 @@ jobs:
       - name: Install dex
         run: |
           set -euo pipefail
+          # Dex does not publish prebuilt binaries on its GitHub Releases
+          # page (only source tarballs and container images), so we build
+          # `dex` from source. Go is preinstalled on ubuntu-22.04 runners.
           # Pinned to match docs/installation/in-cluster/dex/test-scripts/README.md
-          DEX_VERSION=v2.43.1
-          curl -fsSL -o /tmp/dex.tgz \
-            "https://github.com/dexidp/dex/releases/download/${DEX_VERSION}/dex_${DEX_VERSION#v}_linux_amd64.tar.gz"
-          sudo tar -xzf /tmp/dex.tgz -C /usr/local/bin --strip-components=1 dex/dex
-          rm /tmp/dex.tgz
+          DEX_VERSION=v2.45.1
+          git clone --depth=1 --branch "${DEX_VERSION}" \
+            https://github.com/dexidp/dex.git /tmp/dex-src
+          (cd /tmp/dex-src && go build -o /tmp/dex ./cmd/dex)
+          sudo install -m 0755 /tmp/dex /usr/local/bin/dex
+          rm -rf /tmp/dex-src /tmp/dex
           dex version
 
       - name: Verify prerequisites

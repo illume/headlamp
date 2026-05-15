@@ -30,24 +30,24 @@ Make sure the following are installed and on your `PATH`:
 - `curl` (for the smoke test)
 - `openssl` (for the random cookie secret)
 
-Tested with Headlamp 0.36, OAuth2-Proxy 7.x, Dex 2.43 and Minikube 1.34
+Tested with Headlamp 0.36, OAuth2-Proxy 7.x, Dex 2.45 and Minikube 1.34
 on Linux. macOS should work the same way; on Windows you'll need WSL.
 
 ### Installing the prerequisites
 
 Pick the section for your OS. `kubectl`, `minikube` and `helm` are not
 shipped in the default Ubuntu/Debian repositories, so on those platforms
-we use their upstream package sources / install scripts. `dex` is not
-available in apt either, so on Ubuntu/Debian we install it from an
-upstream release tarball; on macOS, all four tools (including `dex`)
-are available from Homebrew.
+we use their upstream package sources / install scripts. Dex does not
+publish prebuilt `dex` binaries (only source tarballs and container
+images), so on Ubuntu/Debian we build `dex` from source with `go build`;
+on macOS, all four tools (including `dex`) are available from Homebrew.
 
 #### Ubuntu LTS (22.04 / 24.04) and Debian-based WSL
 
 ```bash
-# Common build tools, curl, openssl
+# Common build tools, curl, openssl, git, golang
 sudo apt-get update
-sudo apt-get install -y curl ca-certificates apt-transport-https gnupg openssl tar
+sudo apt-get install -y curl ca-certificates apt-transport-https gnupg openssl tar git golang-go
 
 # kubectl — Kubernetes apt repo
 sudo mkdir -p -m 755 /etc/apt/keyrings
@@ -71,12 +71,13 @@ curl -fsSL -o /tmp/minikube.deb \
   https://storage.googleapis.com/minikube/releases/latest/minikube_latest_amd64.deb
 sudo dpkg -i /tmp/minikube.deb && rm /tmp/minikube.deb
 
-# dex — extract a release tarball into /usr/local/bin
-DEX_VERSION=v2.43.1
-curl -fsSL -o /tmp/dex.tgz \
-  "https://github.com/dexidp/dex/releases/download/${DEX_VERSION}/dex_${DEX_VERSION#v}_linux_amd64.tar.gz"
-sudo tar -xzf /tmp/dex.tgz -C /usr/local/bin --strip-components=1 dex/dex
-rm /tmp/dex.tgz
+# dex — Dex does not publish prebuilt binaries, so build from source.
+DEX_VERSION=v2.45.1
+git clone --depth=1 --branch "${DEX_VERSION}" \
+  https://github.com/dexidp/dex.git /tmp/dex-src
+(cd /tmp/dex-src && go build -o /tmp/dex ./cmd/dex)
+sudo install -m 0755 /tmp/dex /usr/local/bin/dex
+rm -rf /tmp/dex-src /tmp/dex
 
 # Sanity check
 kubectl version --client
