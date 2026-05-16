@@ -327,7 +327,7 @@ lint: backend-lint frontend-lint
 .PHONY: lint-fix
 lint-fix: backend-lint-fix frontend-lint-fix
 
-plugins-test:
+plugins-test: ai-build
 	cd plugins/headlamp-plugin && npm install && ./test-headlamp-plugin.js
 	cd plugins/headlamp-plugin && ./test-plugins-examples.sh
 	cd plugins/pluginctl/src && npm install && node ./plugin-management.e2e.js
