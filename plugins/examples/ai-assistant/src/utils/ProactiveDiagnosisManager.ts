@@ -8,8 +8,8 @@
  * - Runs diagnoses sequentially (server aborts concurrent SSE streams).
  */
 
-import { EventEmitter } from 'events';
 import { basePrompt } from '@headlamp-k8s/ai/ai';
+import { EventEmitter } from 'events';
 
 export interface EventDigest {
   /** The event UID (metadata.uid) – primary cache key */

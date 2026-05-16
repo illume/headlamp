@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
 import { toolApprovalManager, ToolApprovalRequest } from '@headlamp-k8s/ai/utils';
+import { useCallback, useEffect, useState } from 'react';
 
 export interface UseToolApprovalResult {
   showApprovalDialog: boolean;

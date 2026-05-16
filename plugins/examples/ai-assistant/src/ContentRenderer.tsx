@@ -1,3 +1,4 @@
+import { getHeadlampLink } from '@headlamp-k8s/ai/ai';
 import { Link } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import { Alert, Box, Button, Link as MuiLink, Typography } from '@mui/material';
 import React, { useMemo, useState } from 'react';
@@ -7,7 +8,6 @@ import remarkGfm from 'remark-gfm';
 import YAML from 'yaml';
 import { LogsButton, YamlDisplay } from './components';
 import MCPFormattedMessage from './components/chat/MCPFormattedMessage';
-import { getHeadlampLink } from '@headlamp-k8s/ai/ai';
 import { parseKubernetesYAML } from './utils/SampleYamlLibrary';
 
 // Helper types for error handling

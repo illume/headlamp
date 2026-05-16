@@ -1,3 +1,5 @@
+import { SavedConfigurations, StoredProviderConfig } from '@headlamp-k8s/ai/config';
+import { getAllAvailableToolsIncludingMCP, initializeToolsState } from '@headlamp-k8s/ai/utils';
 import { ConfigStore } from '@kinvolk/headlamp-plugin/lib';
 import type {
   EventListEvent,
@@ -7,8 +9,6 @@ import type {
 import React from 'react';
 import { useBetween } from 'use-between';
 import type { MCPConfig } from './components/settings/MCPSettings';
-import { SavedConfigurations, StoredProviderConfig } from '@headlamp-k8s/ai/config';
-import { getAllAvailableToolsIncludingMCP, initializeToolsState } from '@headlamp-k8s/ai/utils';
 
 export const PLUGIN_NAME = '@headlamp-k8s/ai-assistant';
 export const getSettingsURL = () => `/settings/plugins/${encodeURIComponent(PLUGIN_NAME)}`;

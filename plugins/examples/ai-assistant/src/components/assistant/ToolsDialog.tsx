@@ -1,3 +1,5 @@
+import { ElectronMCPClient } from '@headlamp-k8s/ai/ai';
+import { AVAILABLE_TOOLS } from '@headlamp-k8s/ai/langchain';
 import { Icon } from '@iconify/react';
 import { Dialog } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import {
@@ -22,8 +24,6 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { ElectronMCPClient } from '@headlamp-k8s/ai/ai';
-import { AVAILABLE_TOOLS } from '@headlamp-k8s/ai/langchain';
 
 interface MCPTool {
   name: string;

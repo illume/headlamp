@@ -1,3 +1,7 @@
+import { getHolmesProxyBaseUrl, HolmesAgent } from '@headlamp-k8s/ai/agent';
+import { AIManager, Prompt } from '@headlamp-k8s/ai/ai';
+import { LangChainManager } from '@headlamp-k8s/ai/langchain';
+import { inlineToolApprovalManager } from '@headlamp-k8s/ai/utils';
 import { Icon } from '@iconify/react';
 import { useClustersConf, useSelectedClusters } from '@kinvolk/headlamp-plugin/lib/k8s';
 import { getCluster, getClusterGroup } from '@kinvolk/headlamp-plugin/lib/Utils';
@@ -5,8 +9,6 @@ import { Box, Button, Grid, Typography } from '@mui/material';
 import { isEqual } from 'lodash';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
-import { getHolmesProxyBaseUrl, HolmesAgent } from '@headlamp-k8s/ai/agent';
-import { AIManager, Prompt } from '@headlamp-k8s/ai/ai';
 import {
   AIAssistantHeader,
   AIChatContent,
@@ -18,13 +20,11 @@ import { getProviderById } from './config/modelConfig';
 import EditorDialog from './editordialog';
 import { isTestModeCheck } from './helper';
 import { useKubernetesToolUI } from './hooks/useKubernetesToolUI';
-import { LangChainManager } from '@headlamp-k8s/ai/langchain';
 import { getSettingsURL, useGlobalState } from './utils';
 import { generateContextDescription } from './utils/contextGenerator';
 import {
   /* [PROACTIVE_DIAGNOSIS_DISABLED] fetchWarningEventsForClusters, */ fetchClusterWarnings,
 } from './utils/EventFetcher';
-import { inlineToolApprovalManager } from '@headlamp-k8s/ai/utils';
 import { getProviderModels, parseSuggestionsFromResponse } from './utils/modalUtils';
 // [PROACTIVE_DIAGNOSIS_DISABLED]
 // import {
@@ -41,13 +41,13 @@ const OPERATION_TYPES = {
   DELETION: 'deletion',
   GENERIC: 'operation',
 } as const;
-import { usePromptWidth } from './contexts/PromptWidthContext';
 import {
   getActiveConfig,
   getSavedConfigurations,
   StoredProviderConfig,
 } from '@headlamp-k8s/ai/config';
 import { getEnabledToolIds } from '@headlamp-k8s/ai/utils';
+import { usePromptWidth } from './contexts/PromptWidthContext';
 
 export default function AIPrompt(props: {
   openPopup: boolean;

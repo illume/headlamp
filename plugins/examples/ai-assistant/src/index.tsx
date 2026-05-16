@@ -1,3 +1,9 @@
+import { checkHolmesAgentHealth } from '@headlamp-k8s/ai/agent';
+import {
+  getActiveConfig,
+  getSavedConfigurations,
+  SavedConfigurations,
+} from '@headlamp-k8s/ai/config';
 import { Icon } from '@iconify/react';
 import {
   registerAppBarAction,
@@ -24,7 +30,6 @@ import {
 } from '@mui/material';
 import React from 'react';
 import { useHistory } from 'react-router-dom';
-import { checkHolmesAgentHealth } from '@headlamp-k8s/ai/agent';
 import { ModelSelector } from './components';
 import { MCPSettings } from './components/settings';
 import { getDefaultConfig } from './config/modelConfig';
@@ -42,11 +47,6 @@ import {
   useGlobalState,
   usePluginConfig,
 } from './utils';
-import {
-  getActiveConfig,
-  getSavedConfigurations,
-  SavedConfigurations,
-} from '@headlamp-k8s/ai/config';
 
 // Memoized UI Panel component to prevent unnecessary re-renders
 const AIPanelComponent = React.memo(() => {

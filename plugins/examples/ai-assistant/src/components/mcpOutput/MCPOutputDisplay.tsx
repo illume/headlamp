@@ -1,3 +1,4 @@
+import { FormattedMCPOutput } from '@headlamp-k8s/ai/langchain';
 import { Icon } from '@iconify/react';
 import {
   Alert,
@@ -27,7 +28,6 @@ import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkGfm from 'remark-gfm';
-import { FormattedMCPOutput } from '@headlamp-k8s/ai/langchain';
 
 interface MCPOutputDisplayProps {
   output: FormattedMCPOutput;

@@ -1,3 +1,4 @@
+import { parseMCPToolName } from '@headlamp-k8s/ai/utils';
 import { Icon } from '@iconify/react';
 import { Headlamp } from '@kinvolk/headlamp-plugin/lib';
 import { SectionBox } from '@kinvolk/headlamp-plugin/lib/components/common';
@@ -19,7 +20,6 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
-import { parseMCPToolName } from '@headlamp-k8s/ai/utils';
 
 interface MCPToolState {
   enabled: boolean;

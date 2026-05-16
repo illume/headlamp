@@ -1,3 +1,11 @@
+import {
+  deleteProviderConfig,
+  getActiveConfig,
+  SavedConfigurations,
+  saveProviderConfig,
+  saveTermsAcceptance,
+  StoredProviderConfig,
+} from '@headlamp-k8s/ai/config';
 import { Icon } from '@iconify/react';
 import { ConfirmDialog } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import {
@@ -28,14 +36,6 @@ import {
   getProviderFields,
   modelProviders,
 } from '../../config/modelConfig';
-import {
-  deleteProviderConfig,
-  getActiveConfig,
-  SavedConfigurations,
-  saveProviderConfig,
-  saveTermsAcceptance,
-  StoredProviderConfig,
-} from '@headlamp-k8s/ai/config';
 import TermsDialog from './TermsDialog';
 
 interface ProviderSelectionDialogProps {

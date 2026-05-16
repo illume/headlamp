@@ -1,3 +1,4 @@
+import { StoredProviderConfig } from '@headlamp-k8s/ai/config';
 import { Icon } from '@iconify/react';
 import { ActionButton } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import {
@@ -14,7 +15,6 @@ import {
 import React from 'react';
 import { getProviderById } from '../../config/modelConfig';
 import { getModelDisplayName, getProviderModelsForChat } from '../../utils/modalUtils';
-import { StoredProviderConfig } from '@headlamp-k8s/ai/config';
 import TestModeInput from './TestModeInput';
 import { ToolsDialog } from './ToolsDialog';
 
