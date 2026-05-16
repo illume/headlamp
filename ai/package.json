@@ -1,0 +1,7 @@
+{
+  "name": "@headlamp-k8s/ai",
+  "version": "0.1.0-alpha",
+  "description": "DEPRECATED: Code moved to plugins/examples/ai-assistant/packages/. See ai-common, ai-ui, ai-cli, ai-app.",
+  "private": true,
+  "license": "Apache-2.0"
+}

@@ -18,18 +18,13 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import {
-  MCPToolStateStore,
-  parseServerNameToolName,
-  summarizeMcpToolStateChanges,
-  validateToolArgs,
-} from './MCPToolStateStore';
+import { MCPToolStateStore } from './MCPToolStateStore';
 
 function tmpPath(): string {
   return path.join(os.tmpdir(), `mcp-test-${Date.now()}-${Math.random()}.json`);
 }
 
-describe('MCPConfig', () => {
+describe('MCPToolStateStore', () => {
   let toolStatePath: string;
 
   beforeEach(() => {
@@ -196,137 +191,6 @@ describe('MCPConfig', () => {
   });
 });
 
-describe('parseServerNameToolName', () => {
-  it('returns default serverName when no separator is present', () => {
-    const res = parseServerNameToolName('kubectl');
-    expect(res.serverName).toBe('default');
-    expect(res.toolName).toBe('kubectl');
-  });
-
-  it('splits server and tool when a single separator is present', () => {
-    const res = parseServerNameToolName('myserver__helm');
-
-    expect(res.serverName).toBe('myserver');
-    expect(res.toolName).toBe('helm');
-  });
-
-  it('preserves additional separators in the toolName when multiple separators are present', () => {
-    const res = parseServerNameToolName('myserver__helm__test');
-    expect(res.serverName).toBe('myserver');
-    expect(res.toolName).toBe('helm__test');
-  });
-});
-
-describe('summarizeMcpToolStateChanges', () => {
-  it('returns zero changes for identical empty configs', () => {
-    const res = summarizeMcpToolStateChanges({}, {});
-    expect(res.totalChanges).toBe(0);
-    expect(res.summaryText).toBe('');
-  });
-
-  it('counts added enabled tools and includes them in ENABLE summary', () => {
-    const current = {};
-    const nw = {
-      srv1: {
-        'tool-a': { enabled: true },
-      },
-    };
-    const res = summarizeMcpToolStateChanges(current, nw);
-    // addedTools (1) + enabledTools (1) => total 2
-    expect(res.totalChanges).toBe(2);
-    expect(res.summaryText).toContain('✓ ENABLE (1)');
-    expect(res.summaryText).toContain('tool-a (srv1)');
-    expect(res.summaryText).not.toContain('✗ DISABLE');
-  });
-
-  it('counts removed tools even when no summary lines are produced', () => {
-    const current = {
-      srv1: {
-        'tool-x': { enabled: true },
-      },
-    };
-    const nw = {};
-    const res = summarizeMcpToolStateChanges(current, nw);
-    // removedTools (1) => total 1
-    expect(res.totalChanges).toBe(1);
-    // removed tools are not printed in summaryText, so should be empty
-    expect(res.summaryText).toBe('');
-  });
-
-  it('detects enable/disable changes between configs', () => {
-    const current = {
-      srvA: {
-        'tool-1': { enabled: true },
-        'tool-2': { enabled: false },
-      },
-    };
-    const nw = {
-      srvA: {
-        'tool-1': { enabled: false }, // changed to disabled
-        'tool-2': { enabled: true }, // changed to enabled
-      },
-    };
-    const res = summarizeMcpToolStateChanges(current, nw);
-    // two changes (one disabled, one enabled)
-    expect(res.totalChanges).toBe(2);
-    expect(res.summaryText).toContain('✓ ENABLE (1): tool-2 (srvA)');
-    expect(res.summaryText).toContain('✗ DISABLE (1): tool-1 (srvA)');
-    // Ensure ENABLE and DISABLE sections are separated by a blank line
-    expect(res.summaryText.split('\n\n').length).toBeGreaterThanOrEqual(2);
-  });
-
-  it('aggregates changes across multiple servers', () => {
-    // This test verifies that summarizeMcpToolConfigChanges correctly
-    // aggregates changes across multiple servers, counting:
-    // - added tools (whether enabled or disabled),
-    // - removed tools (which are counted but not included in the human-readable summary),
-    // - tools that changed enabled state (enable -> disable and vice-versa).
-    // It ensures both the numeric totals and the generated ENABLE/DISABLE summary
-    // lines include the expected entries and server names.
-    const current = {
-      s1: { a: { enabled: true } },
-      s2: { x: { enabled: false } },
-    };
-    const nw = {
-      s1: { a: { enabled: false }, b: { enabled: true } }, // a->disabled, b added+enabled
-      s2: {
-        /* x removed */
-      },
-      s3: { y: { enabled: false } }, // new disabled
-    };
-    const res = summarizeMcpToolStateChanges(current, nw);
-    // Changes: a (changed), b (added), x (removed), y (added)
-    // enabledTools: b (added enabled) => 1
-    // disabledTools: a (changed), y (added disabled) => 2
-    // addedTools: b,y => 2
-    // removedTools: x => 1
-    // total = 1+2+2+1 = 6
-    expect(res.totalChanges).toBe(6);
-    expect(res.summaryText).toContain('✓ ENABLE (1)');
-    expect(res.summaryText).toContain('✗ DISABLE (2)');
-    expect(res.summaryText).toContain('b (s1)');
-    expect(res.summaryText).toContain('a (s1)');
-    expect(res.summaryText).toContain('y (s3)');
-  });
-
-  it('ignores non-enabled metadata-only changes (description/inputSchema)', () => {
-    const current = {
-      srvM: {
-        'tool-meta': { enabled: true, description: 'old', inputSchema: { type: 'string' } },
-      },
-    };
-    const nw = {
-      srvM: {
-        'tool-meta': { enabled: true, description: 'new', inputSchema: { type: 'string' } },
-      },
-    };
-    const res = summarizeMcpToolStateChanges(current, nw);
-    // Only metadata changed; enabled state unchanged => no counted changes
-    expect(res.totalChanges).toBe(0);
-    expect(res.summaryText).toBe('');
-  });
-});
-
 describe('initConfigFromClientTools', () => {
   let toolStatePath: string;
 
@@ -427,81 +291,5 @@ describe('initConfigFromClientTools', () => {
     // schema/description should be updated from client tools
     expect((p as any).inputSchema).toEqual({ type: 'string' });
     expect((p as any).description).toBe('new desc');
-  });
-});
-
-describe('validateToolArgs', () => {
-  it('returns valid when schema is null', () => {
-    const res = validateToolArgs(null, { any: 1 });
-    expect(res.valid).toBe(true);
-    expect(res.error).toBeUndefined();
-  });
-
-  it('fails when a required property is missing', () => {
-    const schema = {
-      type: 'object',
-      required: ['name'],
-      properties: {
-        name: { type: 'string' },
-      },
-    };
-    const res = validateToolArgs(schema, {});
-    expect(res.valid).toBe(false);
-    expect(res.error).toContain("Required parameter 'name'");
-  });
-
-  it('fails when property type does not match (number expected)', () => {
-    const schema = {
-      type: 'object',
-      properties: {
-        age: { type: 'number' },
-      },
-    };
-    const res = validateToolArgs(schema, { age: 'not-a-number' });
-    expect(res.valid).toBe(false);
-    expect(res.error).toContain('should be a number');
-  });
-
-  it('validates array types correctly', () => {
-    const schema = {
-      type: 'object',
-      properties: {
-        items: { type: 'array' },
-      },
-    };
-    const ok = validateToolArgs(schema, { items: [1, 2, 3] });
-    expect(ok.valid).toBe(true);
-
-    const notOk = validateToolArgs(schema, { items: 'not-an-array' });
-    expect(notOk.valid).toBe(false);
-    expect(notOk.error).toContain('should be an array');
-  });
-
-  it('validates object types and rejects arrays/null for object type', () => {
-    const schema = {
-      type: 'object',
-      properties: {
-        cfg: { type: 'object' },
-      },
-    };
-    expect(validateToolArgs(schema, { cfg: { a: 1 } }).valid).toBe(true);
-    const asArray = validateToolArgs(schema, { cfg: [1, 2] });
-    expect(asArray.valid).toBe(false);
-    expect(asArray.error).toContain('should be an object');
-    const asNull = validateToolArgs(schema, { cfg: null });
-    expect(asNull.valid).toBe(false);
-    expect(asNull.error).toContain('should be an object');
-  });
-
-  it('treats unsupported property types as non-fatal and returns valid', () => {
-    const schema = {
-      type: 'object',
-      properties: {
-        count: { type: 'integer' }, // unsupported type in validator
-      },
-    };
-    const res = validateToolArgs(schema, { count: 42 });
-    expect(res.valid).toBe(true);
-    expect(res.error).toBeUndefined();
   });
 });

@@ -1,0 +1,50 @@
+[
+  {
+    "prompt": "What is a <<resource>>?",
+    "response": "A **<<resource>>** is a Kubernetes resource. In Kubernetes, a <<resource>> is an object managed by the API server that you can create, read, update, and delete.\n\nTo learn more about <<resource>> resources, you can run:\n```bash\nkubectl explain <<resource>>\nkubectl get <<resource>> --all-namespaces\n```\n\nYou can also view <<resource>> resources in the Headlamp sidebar under the appropriate section."
+  },
+  {
+    "prompt": "What are <<resource>>s?",
+    "response": "**<<resource>>s** are Kubernetes resources managed by the API server. You can list them with:\n```bash\nkubectl get <<resource>>s --all-namespaces\n```\n\nIn Headlamp, navigate to the sidebar to browse <<resource>>s in your cluster."
+  },
+  {
+    "prompt": "How do I create a <<resource>> named <<name>>?",
+    "response": "To create a <<resource>> named **<<name>>**, you can use a YAML manifest:\n\n```yaml\napiVersion: v1\nkind: <<resource>>\nmetadata:\n  name: <<name>>\n```\n\nApply it with:\n```bash\nkubectl apply -f <<name>>-<<resource>>.yaml\n```\n\nOr create it directly:\n```bash\nkubectl create <<resource>> <<name>>\n```"
+  },
+  {
+    "prompt": "How do I delete <<resource>> <<name>>?",
+    "response": "To delete the <<resource>> **<<name>>**:\n```bash\nkubectl delete <<resource>> <<name>>\n```\n\nTo force-delete:\n```bash\nkubectl delete <<resource>> <<name>> --grace-period=0 --force\n```\n\nYou can also delete it from the Headlamp UI by navigating to the <<resource>> details page and clicking the delete button."
+  },
+  {
+    "prompt": "How do I scale <<name>> to <<count>> replicas?",
+    "response": "To scale **<<name>>** to **<<count>>** replicas:\n\n```bash\nkubectl scale deployment/<<name>> --replicas=<<count>>\n```\n\nOr patch it:\n```bash\nkubectl patch deployment <<name>> -p '{\"spec\":{\"replicas\":<<count>>}}'\n```\n\nIn Headlamp, navigate to the Deployment details page for <<name>> and adjust the replica count."
+  },
+  {
+    "prompt": "Describe <<resource>> <<name>> in namespace <<namespace>>",
+    "response": "To describe **<<resource>> <<name>>** in namespace **<<namespace>>**:\n```bash\nkubectl describe <<resource>> <<name>> -n <<namespace>>\n```\n\nThis shows events, conditions, and detailed status for the <<resource>>.\n\nIn Headlamp, navigate to the <<resource>> details page under the <<namespace>> namespace to see this information."
+  },
+  {
+    "prompt": "Show me the logs for pod <<name>>",
+    "response": "To view logs for pod **<<name>>**:\n```bash\nkubectl logs <<name>>\n```\n\nFor previous container logs:\n```bash\nkubectl logs <<name>> --previous\n```\n\nTo follow logs in real time:\n```bash\nkubectl logs <<name>> -f\n```\n\nIn Headlamp, open the Pod details page for <<name>> and click the **Logs** tab."
+  },
+  {
+    "prompt": "Why is pod <<name>> in <<status>> state?",
+    "response": "Pod **<<name>>** is in **<<status>>** state. Common causes:\n\n1. **Check events**: `kubectl describe pod <<name>>`\n2. **Check logs**: `kubectl logs <<name>>`\n3. **Check container status**: Look for crash loops, image pull errors, or resource limits\n\nCommon reasons for <<status>>:\n- **Pending**: Insufficient resources, unschedulable, or image pull issues\n- **CrashLoopBackOff**: Application crashes on start\n- **ImagePullBackOff**: Container image not found or registry auth failed\n- **Error**: Container exited with a non-zero code\n\nIn Headlamp, check the Pod details page and Events tab for <<name>>."
+  },
+  {
+    "prompt": "Hello",
+    "response": "Hello! I'm the Headlamp AI assistant. I can help you with Kubernetes-related questions and tasks. Here are some things I can help with:\n\n- **Explain Kubernetes concepts** (Pods, Deployments, Services, etc.)\n- **Troubleshoot issues** with your cluster resources\n- **Generate YAML manifests** for common resources\n- **Describe cluster status** and resource information\n\nWhat would you like to know?"
+  },
+  {
+    "prompt": "Hi",
+    "response": "Hi! I'm the Headlamp AI assistant. How can I help you with Kubernetes today?"
+  },
+  {
+    "prompt": "List all <<resource>>s in namespace <<namespace>>",
+    "response": "To list all **<<resource>>s** in namespace **<<namespace>>**:\n```bash\nkubectl get <<resource>>s -n <<namespace>>\n```\n\nFor more details:\n```bash\nkubectl get <<resource>>s -n <<namespace>> -o wide\n```\n\nIn Headlamp, select the **<<namespace>>** namespace from the namespace filter and navigate to the <<resource>>s section in the sidebar."
+  },
+  {
+    "prompt": "What nodes are in the cluster?",
+    "response": "To see the nodes in your cluster:\n```bash\nkubectl get nodes\n```\n\nFor detailed status:\n```bash\nkubectl get nodes -o wide\nkubectl describe nodes\n```\n\nIn Headlamp, click **Cluster** > **Nodes** in the sidebar to view all nodes with their status, roles, and resource usage."
+  }
+]

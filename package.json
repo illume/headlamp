@@ -13,7 +13,7 @@
     "node": ">=22.0.0"
   },
   "scripts": {
-    "install:all": "npm run frontend:install && npm run backend:build && npm run app:install && npm run tools:install",
+    "install:all": "npm run ai:install && npm run ai:build && npm run frontend:install && npm run backend:build && npm run app:install && npm run tools:install",
     "install:frontend": "npm run frontend:install",
     "install:backend": "npm run backend:build",
     "install:app": "npm run app:install",
@@ -81,6 +81,13 @@
     "app:verify-build-mac": "cd app && npm run verify-build-mac",
     "app:verify-build-windows": "cd app && npm run verify-build-windows",
     "tools:install": "cd tools && cd i18n && npm install && cd .. && cd releaser && npm install",
+    "ai:install": "cd plugins/examples/ai-assistant/packages/ai-common && npm install",
+    "ai:build": "echo 'ai packages ship .ts directly; no build needed'",
+    "ai:test": "cd plugins/examples/ai-assistant/packages/ai-common && npx vitest run --passWithNoTests",
+    "ai:lint": "echo 'ai lint is covered by plugin lint'",
+    "ai:lint:fix": "echo 'ai lint:fix is covered by plugin lint'",
+    "ai:format": "echo 'ai format is covered by plugin format'",
+    "ai:tsc": "echo 'ai tsc is covered by plugin tsc'",
     "plugins:test": "cd plugins/headlamp-plugin && npm install && ./test-headlamp-plugin.js && ./test-plugins-examples.sh && cd ../pluginctl/src && npm install && node ./plugin-management.e2e.js && cd .. && npx jest src/multi-plugin-management.test.js && npx jest src/plugin-management.test.js && npm run test",
     "image:build": "sh -c 'docker buildx build --pull --platform=local -t ghcr.io/headlamp-k8s/headlamp:$(git describe --tags --always --dirty) -f Dockerfile .'",
     "image:verify-image-digests": "node tools/verify-image-digests.js"

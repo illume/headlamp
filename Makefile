@@ -79,7 +79,7 @@ frontend/build:
 	make frontend
 
 .PHONY: app
-app-build: frontend/build
+app-build: frontend/build ai-build
 	cd app && npm install && node ./scripts/setup-plugins.js && npm run build
 app: app-build
 	cd app && npm run package -- --win --linux --mac
@@ -91,10 +91,12 @@ app-linux: app-build
 	cd app && npm run package -- --linux
 app-mac: app-build
 	cd app && npm run package -- --mac
-app-test:
+ai-build:
+	cd plugins/examples/ai-assistant/packages/ai-common && npm install
+app-test: ai-build
 	cd app && npm install
 	cd app && npm run test
-app-tsc:
+app-tsc: ai-build
 	cd app && npm install
 	cd app && npm run tsc
 
@@ -349,7 +351,7 @@ lint: backend-lint frontend-lint
 .PHONY: lint-fix
 lint-fix: backend-lint-fix frontend-lint-fix
 
-plugins-test:
+plugins-test: ai-build
 	cd plugins/headlamp-plugin && npm install && ./test-headlamp-plugin.js
 	cd plugins/headlamp-plugin && ./test-plugins-examples.sh
 	cd plugins/pluginctl/src && npm install && node ./plugin-management.e2e.js
