@@ -414,6 +414,9 @@ export default function Terminal(props: TerminalProps) {
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
+        ...(isMobile && {
+          padding: 0,
+        }),
         '& .xterm ': {
           height: '100vh', // So the terminal doesn't stay shrunk when shrinking vertically and maximizing again.
           '& .xterm-viewport': {
@@ -424,12 +427,12 @@ export default function Terminal(props: TerminalProps) {
           overflow: 'hidden',
           width: '100%',
           '& .terminal.xterm': {
-            padding: theme.spacing(1),
+            padding: isMobile ? 0 : theme.spacing(1),
           },
         },
       })}
     >
-      <Box>
+      <Box sx={isMobile ? { px: 1, pt: 1 } : undefined}>
         <FormControl sx={{ minWidth: '11rem' }}>
           <InputLabel shrink id="container-name-chooser-label">
             {t('glossary|Container')}
