@@ -1,7 +1,7 @@
 import { Icon } from '@iconify/react';
 import { Alert, Box, Paper, Typography } from '@mui/material';
 import React, { useCallback } from 'react';
-import { FormattedMCPOutput } from '../../langchain/formatters/MCPOutputFormatter';
+import { FormattedMCPOutput } from '@headlamp-k8s/ai/langchain';
 import MCPOutputDisplay from '../mcpOutput/MCPOutputDisplay';
 
 interface MCPFormattedMessageProps {

@@ -9,7 +9,7 @@
  */
 
 import { EventEmitter } from 'events';
-import { basePrompt } from '../ai/prompts';
+import { basePrompt } from '@headlamp-k8s/ai/ai';
 
 export interface EventDigest {
   /** The event UID (metadata.uid) – primary cache key */

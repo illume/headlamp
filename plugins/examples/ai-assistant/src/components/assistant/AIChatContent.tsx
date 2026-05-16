@@ -1,7 +1,7 @@
 import { Link } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import { Alert, Box, Button } from '@mui/material';
 import React from 'react';
-import { Prompt } from '../../ai/manager';
+import { Prompt } from '@headlamp-k8s/ai/ai';
 // [PROACTIVE_DIAGNOSIS_DISABLED] import { useProactiveDiagnosis } from '../../hooks/useProactiveDiagnosis';
 import TextStreamContainer from '../../textstream';
 // [PROACTIVE_DIAGNOSIS_DISABLED] import ProactiveDiagnosisSection from './ProactiveDiagnosisSection';

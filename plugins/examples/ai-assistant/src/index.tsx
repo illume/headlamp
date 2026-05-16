@@ -24,7 +24,7 @@ import {
 } from '@mui/material';
 import React from 'react';
 import { useHistory } from 'react-router-dom';
-import { checkHolmesAgentHealth } from './agent/holmesClient';
+import { checkHolmesAgentHealth } from '@headlamp-k8s/ai/agent';
 import { ModelSelector } from './components';
 import { MCPSettings } from './components/settings';
 import { getDefaultConfig } from './config/modelConfig';
@@ -46,7 +46,7 @@ import {
   getActiveConfig,
   getSavedConfigurations,
   SavedConfigurations,
-} from './utils/ProviderConfigManager';
+} from '@headlamp-k8s/ai/config';
 
 // Memoized UI Panel component to prevent unnecessary re-renders
 const AIPanelComponent = React.memo(() => {

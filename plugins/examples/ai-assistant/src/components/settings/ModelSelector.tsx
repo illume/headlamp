@@ -35,7 +35,7 @@ import {
   saveProviderConfig,
   saveTermsAcceptance,
   StoredProviderConfig,
-} from '../../utils/ProviderConfigManager';
+} from '@headlamp-k8s/ai/config';
 import TermsDialog from './TermsDialog';
 
 interface ProviderSelectionDialogProps {

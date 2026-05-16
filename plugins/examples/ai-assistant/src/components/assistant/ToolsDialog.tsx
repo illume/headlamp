@@ -22,8 +22,8 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { ElectronMCPClient } from '../../ai/mcp/electron-client';
-import { AVAILABLE_TOOLS } from '../../langchain/tools/registry';
+import { ElectronMCPClient } from '@headlamp-k8s/ai/ai';
+import { AVAILABLE_TOOLS } from '@headlamp-k8s/ai/langchain';
 
 interface MCPTool {
   name: string;

@@ -5,8 +5,8 @@ import { Box, Button, Grid, Typography } from '@mui/material';
 import { isEqual } from 'lodash';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
-import { getHolmesProxyBaseUrl, HolmesAgent } from './agent/holmesClient';
-import AIManager, { Prompt } from './ai/manager';
+import { getHolmesProxyBaseUrl, HolmesAgent } from '@headlamp-k8s/ai/agent';
+import { AIManager, Prompt } from '@headlamp-k8s/ai/ai';
 import {
   AIAssistantHeader,
   AIChatContent,
@@ -18,13 +18,13 @@ import { getProviderById } from './config/modelConfig';
 import EditorDialog from './editordialog';
 import { isTestModeCheck } from './helper';
 import { useKubernetesToolUI } from './hooks/useKubernetesToolUI';
-import LangChainManager from './langchain/LangChainManager';
+import { LangChainManager } from '@headlamp-k8s/ai/langchain';
 import { getSettingsURL, useGlobalState } from './utils';
 import { generateContextDescription } from './utils/contextGenerator';
 import {
   /* [PROACTIVE_DIAGNOSIS_DISABLED] fetchWarningEventsForClusters, */ fetchClusterWarnings,
 } from './utils/EventFetcher';
-import { inlineToolApprovalManager } from './utils/InlineToolApprovalManager';
+import { inlineToolApprovalManager } from '@headlamp-k8s/ai/utils';
 import { getProviderModels, parseSuggestionsFromResponse } from './utils/modalUtils';
 // [PROACTIVE_DIAGNOSIS_DISABLED]
 // import {
@@ -46,8 +46,8 @@ import {
   getActiveConfig,
   getSavedConfigurations,
   StoredProviderConfig,
-} from './utils/ProviderConfigManager';
-import { getEnabledToolIds } from './utils/ToolConfigManager';
+} from '@headlamp-k8s/ai/config';
+import { getEnabledToolIds } from '@headlamp-k8s/ai/utils';
 
 export default function AIPrompt(props: {
   openPopup: boolean;

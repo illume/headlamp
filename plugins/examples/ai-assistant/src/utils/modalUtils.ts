@@ -1,5 +1,5 @@
 import { getProviderById } from '../config/modelConfig';
-import { StoredProviderConfig } from './ProviderConfigManager';
+import { StoredProviderConfig } from '@headlamp-k8s/ai/config';
 
 export function markdownToPlainText(markdown: string): string {
   return (

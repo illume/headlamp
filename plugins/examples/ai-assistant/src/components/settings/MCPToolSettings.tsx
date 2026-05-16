@@ -19,7 +19,7 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
-import { parseMCPToolName } from '../../utils/ToolConfigManager';
+import { parseMCPToolName } from '@headlamp-k8s/ai/utils';
 
 interface MCPToolState {
   enabled: boolean;

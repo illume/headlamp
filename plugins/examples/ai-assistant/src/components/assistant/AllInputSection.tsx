@@ -14,7 +14,7 @@ import {
 import React from 'react';
 import { getProviderById } from '../../config/modelConfig';
 import { getModelDisplayName, getProviderModelsForChat } from '../../utils/modalUtils';
-import { StoredProviderConfig } from '../../utils/ProviderConfigManager';
+import { StoredProviderConfig } from '@headlamp-k8s/ai/config';
 import TestModeInput from './TestModeInput';
 import { ToolsDialog } from './ToolsDialog';
 

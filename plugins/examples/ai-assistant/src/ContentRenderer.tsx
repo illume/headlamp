@@ -7,7 +7,7 @@ import remarkGfm from 'remark-gfm';
 import YAML from 'yaml';
 import { LogsButton, YamlDisplay } from './components';
 import MCPFormattedMessage from './components/chat/MCPFormattedMessage';
-import { getHeadlampLink } from './utils/promptLinkHelper';
+import { getHeadlampLink } from '@headlamp-k8s/ai/ai';
 import { parseKubernetesYAML } from './utils/SampleYamlLibrary';
 
 // Helper types for error handling
