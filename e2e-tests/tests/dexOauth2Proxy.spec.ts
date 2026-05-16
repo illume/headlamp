@@ -177,8 +177,11 @@ test.describe('Headlamp + OAuth2-Proxy + Dex (opt-in)', () => {
     // under the proxy must redirect to `/oauth2/sign_in` when the
     // session cookie is missing.
     await page.goto(`${BASE_URL}/c/main/pods`);
+    // OAuth2-Proxy renders the sign-in splash in-place (HTTP 403 + HTML body)
+    // rather than issuing a redirect, so the URL bar may still read
+    // `/c/main/pods`. The presence of the "Sign in" button is the gate proof
+    // (Headlamp's authenticated UI does not render that button).
     await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
-    expect(page.url()).toMatch(/\/oauth2\/sign_in/);
   });
 
   test('OAuth2-Proxy /ping is reachable without authentication', async ({ request }) => {
@@ -265,9 +268,9 @@ test.describe('Headlamp + OAuth2-Proxy + Dex (opt-in)', () => {
     await page.goto(`${BASE_URL}/oauth2/sign_out`);
 
     // After sign-out, going back to `/` must hit the OAuth2-Proxy
-    // splash again, *not* fall through to Headlamp.
+    // splash again, *not* fall through to Headlamp. OAuth2-Proxy serves
+    // the splash in-place (no redirect), so we assert on the button.
     await page.goto(`${BASE_URL}/`);
     await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
-    expect(page.url()).toMatch(/\/oauth2\/sign_in/);
   });
 });
