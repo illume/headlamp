@@ -71,7 +71,10 @@ The spec `tests/dexOauth2Proxy.spec.ts` exercises the
 [Headlamp + OAuth2-Proxy + Dex tutorial](../docs/installation/in-cluster/dex/index.md)
 end-to-end against the runnable
 [`test-scripts/`](../docs/installation/in-cluster/dex/test-scripts/)
-stack (Minikube + Dex + Headlamp + OAuth2-Proxy). It is **opt-in** —
+stack (Minikube + Dex + Headlamp + OAuth2-Proxy). It covers the
+unauthenticated splash, deep-link gating, `/ping` liveness, invalid
+credentials, full sign-in, the `/oauth2/userinfo` endpoint, session
+persistence across reload, and `/oauth2/sign_out`. It is **opt-in** —
 the whole `describe` block is skipped unless
 `HEADLAMP_TEST_DEX_OAUTH2_PROXY=1` is set — because the stack takes
 several minutes to bring up.

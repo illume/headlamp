@@ -48,7 +48,7 @@
 
 import { spawnSync } from 'child_process';
 import * as path from 'path';
-import { expect, test } from '@playwright/test';
+import { expect, Page, test } from '@playwright/test';
 
 const ENABLED = ['1', 'true', 'yes'].includes(
   (process.env.HEADLAMP_TEST_DEX_OAUTH2_PROXY || '').toLowerCase()
@@ -88,6 +88,44 @@ function runScript(script: string, timeoutMs: number) {
         (result.signal ? ` (signal ${result.signal})` : '')
     );
   }
+}
+
+/**
+ * Drive the full OAuth2-Proxy → Dex → Headlamp sign-in flow:
+ * click the OAuth2-Proxy sign-in splash, fill the Dex local-user form,
+ * click through Dex's "Grant Access" consent page if shown, and wait
+ * for the redirect back to OAuth2-Proxy / Headlamp. Used by every
+ * test that needs an authenticated session.
+ */
+async function signIn(page: Page) {
+  // 1. Hit the OAuth2-Proxy front door.
+  await page.goto(`${BASE_URL}/`);
+
+  // 2. Click "Sign in with OpenID Connect" → redirected to Dex.
+  await page.getByRole('button', { name: /sign in/i }).click();
+
+  // 3. Dex local-login form.
+  await page.waitForURL(/\/auth(\?|\/)/, { timeout: 30 * 1000 });
+  await page.locator('input[name="login"], input[type="email"]').first().fill(DEX_USER);
+  await page.locator('input[name="password"], input[type="password"]').first().fill(DEX_PASSWORD);
+  await page.locator('button[type="submit"], input[type="submit"]').first().click();
+
+  // 3a. Dex may show a "Grant Access" consent page even with
+  //     `oauth2.skipApprovalScreen: true` (e.g. on first login for a
+  //     given client). Click through it if present; otherwise fall
+  //     through to the OAuth2-Proxy callback.
+  const grantAccess = page.getByRole('button', { name: /grant access/i });
+  try {
+    await grantAccess.waitFor({ state: 'visible', timeout: 10 * 1000 });
+    await grantAccess.click();
+  } catch {
+    // No consent screen — Dex skipped it. Proceed.
+  }
+
+  // 4. After the OIDC callback, OAuth2-Proxy forwards us back to Headlamp.
+  await page.waitForURL(new RegExp(`^${BASE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`), {
+    timeout: 60 * 1000,
+  });
 }
 
 test.describe('Headlamp + OAuth2-Proxy + Dex (opt-in)', () => {
@@ -130,40 +168,106 @@ test.describe('Headlamp + OAuth2-Proxy + Dex (opt-in)', () => {
     await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
   });
 
+  test('unauthenticated deep-link to a Headlamp resource is gated by OAuth2-Proxy', async ({
+    page,
+  }) => {
+    // Verifies the auth gate also covers sub-routes, not just `/`.
+    // OAuth2-Proxy is configured with `pass_authorization_header = true`,
+    // and `headlamp-values.yaml` mounts no static auth, so any route
+    // under the proxy must redirect to `/oauth2/sign_in` when the
+    // session cookie is missing.
+    await page.goto(`${BASE_URL}/c/main/pods`);
+    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
+    expect(page.url()).toMatch(/\/oauth2\/sign_in/);
+  });
+
+  test('OAuth2-Proxy /ping is reachable without authentication', async ({ request }) => {
+    // /ping is OAuth2-Proxy's built-in liveness endpoint and must not
+    // require auth. Catches regressions where the auth gate is
+    // accidentally widened to cover health endpoints.
+    const response = await request.get(`${BASE_URL}/ping`, {
+      maxRedirects: 0,
+      failOnStatusCode: false,
+    });
+    expect(response.status()).toBe(200);
+  });
+
+  test('invalid Dex credentials are rejected and keep us on Dex', async ({ page }) => {
+    test.setTimeout(60 * 1000);
+    await page.goto(`${BASE_URL}/`);
+    await page.getByRole('button', { name: /sign in/i }).click();
+
+    await page.waitForURL(/\/auth(\?|\/)/, { timeout: 30 * 1000 });
+    await page.locator('input[name="login"], input[type="email"]').first().fill(DEX_USER);
+    await page
+      .locator('input[name="password"], input[type="password"]')
+      .first()
+      .fill('definitely-not-the-password');
+    await page.locator('button[type="submit"], input[type="submit"]').first().click();
+
+    // Dex re-renders the local-login page with an inline error and
+    // does *not* redirect back to OAuth2-Proxy / Headlamp. Assert both:
+    // we're still on a Dex URL, and an "invalid …" error message is shown.
+    // (Dex's exact wording is "Invalid Email Address and password".)
+    await expect(page.getByText(/invalid.*password/i).first()).toBeVisible({
+      timeout: 15 * 1000,
+    });
+    expect(page.url()).toMatch(/\/(auth|login)(\?|\/)/);
+  });
+
   test('full sign-in flow lands on Headlamp Overview', async ({ page }) => {
     // Logging in via Dex (XHR redirects + cluster fetch on Headlamp) can
     // be slow under CI; give this test a generous timeout.
     test.setTimeout(2 * 60 * 1000);
 
-    // 1. Hit the OAuth2-Proxy front door.
-    await page.goto(`${BASE_URL}/`);
+    await signIn(page);
 
-    // 2. Click "Sign in with OpenID Connect" → redirected to Dex.
-    await page.getByRole('button', { name: /sign in/i }).click();
-
-    // 3. Dex local-login form.
-    await page.waitForURL(/\/auth(\?|\/)/, { timeout: 30 * 1000 });
-    await page.locator('input[name="login"], input[type="email"]').first().fill(DEX_USER);
-    await page.locator('input[name="password"], input[type="password"]').first().fill(DEX_PASSWORD);
-    await page.locator('button[type="submit"], input[type="submit"]').first().click();
-
-    // 3a. Dex may show a "Grant Access" consent page even with
-    //     `oauth2.skipApprovalScreen: true` (e.g. on first login for a
-    //     given client). Click through it if present; otherwise fall
-    //     through to the OAuth2-Proxy callback.
-    const grantAccess = page.getByRole('button', { name: /grant access/i });
-    try {
-      await grantAccess.waitFor({ state: 'visible', timeout: 10 * 1000 });
-      await grantAccess.click();
-    } catch {
-      // No consent screen — Dex skipped it. Proceed.
-    }
-
-    // 4. After the OIDC callback, OAuth2-Proxy forwards us to Headlamp.
+    // After the OIDC callback, OAuth2-Proxy forwards us to Headlamp.
     //    Headlamp's Overview shows the "Cluster" sidebar section.
-    await page.waitForURL(new RegExp(`^${BASE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/`), {
-      timeout: 60 * 1000,
-    });
     await expect(page.getByText(/cluster/i).first()).toBeVisible({ timeout: 60 * 1000 });
+  });
+
+  test('OAuth2-Proxy /oauth2/userinfo exposes the signed-in user after login', async ({
+    page,
+  }) => {
+    test.setTimeout(2 * 60 * 1000);
+    await signIn(page);
+
+    // Reuse the browser context's cookies (set by sign-in) to call
+    // OAuth2-Proxy's userinfo endpoint. Confirms the OIDC session is
+    // really established (not just that some HTML rendered).
+    const response = await page.request.get(`${BASE_URL}/oauth2/userinfo`);
+    expect(response.status()).toBe(200);
+    const body = await response.json();
+    // OAuth2-Proxy's userinfo includes at least `email` for the signed-in user.
+    expect(body.email).toBe(DEX_USER);
+  });
+
+  test('session cookie persists across reload — no second Dex round-trip', async ({ page }) => {
+    test.setTimeout(2 * 60 * 1000);
+    await signIn(page);
+
+    // Reload: the OAuth2-Proxy session cookie should be sufficient,
+    // so we should *not* be bounced back to Dex's `/auth?...` page.
+    await page.reload({ waitUntil: 'domcontentloaded' });
+    expect(page.url()).not.toMatch(/\/auth(\?|\/)/);
+    expect(page.url()).not.toMatch(/\/oauth2\/sign_in/);
+    // And we should still see authenticated Headlamp UI.
+    await expect(page.getByText(/cluster/i).first()).toBeVisible({ timeout: 60 * 1000 });
+  });
+
+  test('signing out invalidates the session and re-gates the app', async ({ page }) => {
+    test.setTimeout(2 * 60 * 1000);
+    await signIn(page);
+
+    // Visit OAuth2-Proxy's sign-out endpoint. It clears the session
+    // cookie and redirects to `/oauth2/sign_in`.
+    await page.goto(`${BASE_URL}/oauth2/sign_out`);
+
+    // After sign-out, going back to `/` must hit the OAuth2-Proxy
+    // splash again, *not* fall through to Headlamp.
+    await page.goto(`${BASE_URL}/`);
+    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
+    expect(page.url()).toMatch(/\/oauth2\/sign_in/);
   });
 });
