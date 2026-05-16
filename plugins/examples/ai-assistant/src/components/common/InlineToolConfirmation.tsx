@@ -1,3 +1,8 @@
+import {
+  MCPArgumentProcessor,
+  type ProcessedArguments,
+  type UserContext,
+} from '@headlamp-k8s/ai/components';
 import { Icon } from '@iconify/react';
 import {
   Alert,
@@ -24,11 +29,6 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import {
-  MCPArgumentProcessor,
-  type ProcessedArguments,
-  type UserContext,
-} from '../mcpOutput/MCPArgumentProcessor';
 
 interface ToolCall {
   id: string;
