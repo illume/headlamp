@@ -74,7 +74,10 @@ end-to-end against the runnable
 stack (Minikube + Dex + Headlamp + OAuth2-Proxy). It covers the
 unauthenticated splash, deep-link gating, `/ping` liveness, invalid
 credentials, full sign-in, the `/oauth2/userinfo` endpoint, session
-persistence across reload, and `/oauth2/sign_out`. It is **opt-in** —
+persistence across reload, `/oauth2/sign_out`, post-sign-in deep-link
+redirect preservation, OAuth2-Proxy session-cookie `HttpOnly` /
+`SameSite=Lax` flags, cross-browser-context session isolation, and
+forged-`Authorization`-header bypass attempts. It is **opt-in** —
 the whole `describe` block is skipped unless
 `HEADLAMP_TEST_DEX_OAUTH2_PROXY=1` is set — because the stack takes
 several minutes to bring up.

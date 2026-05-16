@@ -273,4 +273,88 @@ test.describe('Headlamp + OAuth2-Proxy + Dex (opt-in)', () => {
     await page.goto(`${BASE_URL}/`);
     await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
   });
+
+  test('post-sign-in redirect preserves the originally-requested deep link', async ({ page }) => {
+    // Hit a deep link unauthenticated, then sign in, and assert OAuth2-Proxy
+    // sends us back to the originally-requested path (not `/`).
+    // Catches regressions in OAuth2-Proxy's `rd`/state round-trip.
+    test.setTimeout(2 * 60 * 1000);
+    const deepLink = `${BASE_URL}/c/main/pods`;
+
+    await page.goto(deepLink);
+    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
+    await page.getByRole('button', { name: /sign in/i }).click();
+
+    // Dex local-login.
+    await page.waitForURL(/\/auth(\?|\/)/, { timeout: 30 * 1000 });
+    await page.locator('input[name="login"], input[type="email"]').first().fill(DEX_USER);
+    await page.locator('input[name="password"], input[type="password"]').first().fill(DEX_PASSWORD);
+    await page.locator('button[type="submit"], input[type="submit"]').first().click();
+
+    // Optional "Grant Access" consent screen.
+    const grantAccess = page.getByRole('button', { name: /grant access/i });
+    try {
+      await grantAccess.waitFor({ state: 'visible', timeout: 10 * 1000 });
+      await grantAccess.click();
+    } catch {
+      // Dex skipped consent.
+    }
+
+    // After OIDC callback, OAuth2-Proxy redirects us back to /c/main/pods,
+    // not `/`. Wait specifically for that path.
+    await page.waitForURL(/\/c\/main\/pods/, { timeout: 60 * 1000 });
+    expect(page.url()).toMatch(/\/c\/main\/pods/);
+  });
+
+  test('OAuth2-Proxy session cookie is HttpOnly and SameSite=Lax', async ({ page, context }) => {
+    // Regression guard against accidentally loosening session-cookie flags.
+    // OAuth2-Proxy's default cookie name is `_oauth2_proxy`; with default
+    // settings it is HttpOnly and SameSite=Lax. (cookie_secure is false
+    // for this HTTP-only local stack; the prose tutorial calls that out.)
+    test.setTimeout(2 * 60 * 1000);
+    await signIn(page);
+
+    const cookies = await context.cookies(BASE_URL);
+    const session = cookies.find(c => c.name.startsWith('_oauth2_proxy'));
+    expect(session, 'expected an _oauth2_proxy session cookie after sign-in').toBeDefined();
+    expect(session!.httpOnly).toBe(true);
+    // Playwright normalizes SameSite to 'Strict' | 'Lax' | 'None'.
+    expect(session!.sameSite).toBe('Lax');
+  });
+
+  test('a fresh browser context with no session is gated', async ({ browser, page }) => {
+    // Sign in in the default context, then open a *separate* context and
+    // confirm it is still gated by OAuth2-Proxy. Verifies the session is
+    // not leaking across browser contexts (first-party cookie scoping).
+    test.setTimeout(2 * 60 * 1000);
+    await signIn(page);
+
+    const freshContext = await browser.newContext();
+    try {
+      const freshPage = await freshContext.newPage();
+      await freshPage.goto(`${BASE_URL}/`);
+      await expect(freshPage.getByRole('button', { name: /sign in/i })).toBeVisible();
+    } finally {
+      await freshContext.close();
+    }
+  });
+
+  test('a forged Authorization header without a session cookie does not bypass the gate', async ({
+    request,
+  }) => {
+    // OAuth2-Proxy must not accept an attacker-supplied `Authorization:
+    // Bearer …` in place of a valid session cookie — that would defeat
+    // the gate entirely. The request should land on /oauth2/sign_in
+    // (302) or be rejected (401/403); in no case should it reach the
+    // Headlamp upstream with a 200.
+    const response = await request.get(`${BASE_URL}/c/main/pods`, {
+      headers: { Authorization: 'Bearer not-a-real-token' },
+      maxRedirects: 0,
+      failOnStatusCode: false,
+    });
+    // OAuth2-Proxy returns 302 to /oauth2/sign_in or 401/403 for gated
+    // resources; the upstream Headlamp UI (which would return 200) must
+    // not be reached.
+    expect([302, 401, 403]).toContain(response.status());
+  });
 });
