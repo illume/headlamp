@@ -1,4 +1,4 @@
-import { KubernetesToolUICallbacks, KubernetesToolUIState } from '@headlamp-k8s/ai/langchain';
+import { KubernetesToolUICallbacks, KubernetesToolUIState } from '@headlamp-k8s/ai-common/langchain';
 import { useMemo, useState } from 'react';
 import { handleActualApiRequest } from '../helper/apihelper';
 

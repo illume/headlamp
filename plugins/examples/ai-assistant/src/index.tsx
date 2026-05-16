@@ -1,9 +1,9 @@
-import { checkHolmesAgentHealth } from '@headlamp-k8s/ai/agent';
+import { checkHolmesAgentHealth } from '@headlamp-k8s/ai-common/agent';
 import {
   getActiveConfig,
   getSavedConfigurations,
   SavedConfigurations,
-} from '@headlamp-k8s/ai/config';
+} from '@headlamp-k8s/ai-common/config';
 import { Icon } from '@iconify/react';
 import {
   registerAppBarAction,

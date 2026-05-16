@@ -1,4 +1,4 @@
-import { StoredProviderConfig } from '@headlamp-k8s/ai/config';
+import { StoredProviderConfig } from '@headlamp-k8s/ai-common/config';
 import { Icon } from '@iconify/react';
 import { ActionButton } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import {

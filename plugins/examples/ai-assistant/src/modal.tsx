@@ -1,7 +1,7 @@
-import { getHolmesProxyBaseUrl, HolmesAgent } from '@headlamp-k8s/ai/agent';
-import { AIManager, Prompt } from '@headlamp-k8s/ai/ai';
-import { LangChainManager } from '@headlamp-k8s/ai/langchain';
-import { inlineToolApprovalManager } from '@headlamp-k8s/ai/utils';
+import { getHolmesProxyBaseUrl, HolmesAgent } from '@headlamp-k8s/ai-common/agent';
+import { LangChainManager } from '@headlamp-k8s/ai-common/langchain';
+import { inlineToolApprovalManager } from '@headlamp-k8s/ai-common/utils';
+import { AIManager, Prompt } from '@headlamp-k8s/ai-ui/ai';
 import { Icon } from '@iconify/react';
 import { useClustersConf, useSelectedClusters } from '@kinvolk/headlamp-plugin/lib/k8s';
 import { getCluster, getClusterGroup } from '@kinvolk/headlamp-plugin/lib/Utils';
@@ -45,8 +45,8 @@ import {
   getActiveConfig,
   getSavedConfigurations,
   StoredProviderConfig,
-} from '@headlamp-k8s/ai/config';
-import { getEnabledToolIds } from '@headlamp-k8s/ai/utils';
+} from '@headlamp-k8s/ai-common/config';
+import { getEnabledToolIds } from '@headlamp-k8s/ai-common/utils';
 import { usePromptWidth } from './contexts/PromptWidthContext';
 
 export default function AIPrompt(props: {

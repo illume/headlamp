@@ -1,4 +1,4 @@
-import { Prompt } from '@headlamp-k8s/ai/ai';
+import { Prompt } from '@headlamp-k8s/ai-ui/ai';
 import { Link } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import { Alert, Box, Button } from '@mui/material';
 import React from 'react';

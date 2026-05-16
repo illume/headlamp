@@ -80,7 +80,7 @@ app-linux: app-build
 app-mac: app-build
 	cd app && npm run package -- --mac
 ai-build:
-	cd ai && npm install && npm run build
+	cd plugins/examples/ai-assistant/packages/ai-common && npm install
 app-test: ai-build
 	cd app && npm install
 	cd app && npm run test

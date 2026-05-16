@@ -14,8 +14,4 @@
  * limitations under the License.
  */
 
-export type { ToolCall, AgentThinkingStep, Prompt } from './manager';
-export { default as AIManager } from './manager';
-export { basePrompt } from './prompts';
-export { ElectronMCPClient } from './mcp/electron-client';
-export { getHeadlampLink } from './headlampLink';
+export * from './ai/index';

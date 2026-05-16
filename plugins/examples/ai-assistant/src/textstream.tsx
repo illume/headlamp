@@ -1,4 +1,4 @@
-import { Prompt } from '@headlamp-k8s/ai/ai';
+import { Prompt } from '@headlamp-k8s/ai-ui/ai';
 import { Icon } from '@iconify/react';
 import { Alert, Box, CircularProgress, Fab, Typography } from '@mui/material';
 import { useTheme } from '@mui/material';

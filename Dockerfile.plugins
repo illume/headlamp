@@ -4,10 +4,6 @@ FROM node:22@sha256:f90672bf4c76dfc077d17be4c115b1ae7731d2e8558b457d86bca42aeb19
 # Set the working directory
 WORKDIR /headlamp-plugins
 
-# Copy and build the ai library (needed by ai-assistant plugin's file: reference)
-COPY ./ai /ai
-RUN cd /ai && npm ci && npm run build
-
 # Copy the example plugins source code to the working directory
 COPY ./plugins/examples /headlamp-plugins/
 

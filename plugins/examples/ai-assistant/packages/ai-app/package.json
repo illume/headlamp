@@ -1,0 +1,27 @@
+{
+  "name": "@headlamp-k8s/ai-app",
+  "version": "0.1.0-alpha",
+  "description": "Electron-specific AI code for Headlamp",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./mcp/electron-client": {
+      "types": "./dist/mcp/electron-client.d.ts",
+      "import": "./dist/mcp/electron-client.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc",
+    "clean": "rm -rf dist"
+  },
+  "license": "Apache-2.0",
+  "dependencies": {
+    "@headlamp-k8s/ai-common": "file:../ai-common"
+  },
+  "devDependencies": {
+    "typescript": "~5.6.2"
+  }
+}

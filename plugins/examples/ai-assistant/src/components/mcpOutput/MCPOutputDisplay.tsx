@@ -1,4 +1,4 @@
-import { FormattedMCPOutput } from '@headlamp-k8s/ai/langchain';
+import { FormattedMCPOutput } from '@headlamp-k8s/ai-common/langchain';
 import { Icon } from '@iconify/react';
 import {
   Alert,
