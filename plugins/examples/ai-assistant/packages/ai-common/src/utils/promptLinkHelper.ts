@@ -18,7 +18,7 @@
  * Prompt link instructions for AI prompts.
  *
  * This module is Node.js-safe — it contains only string constants.
- * The browser-only `getHeadlampLink` function is in `@headlamp-k8s/ai/ai`
+ * The browser-only `getHeadlampLink` function is in `@headlamp-k8s/ai-common/ai`
  * (ai/src/ai/headlampLink.ts) since it depends on `@kinvolk/headlamp-plugin`
  * and `window`.
  */

@@ -14,17 +14,17 @@
  * limitations under the License.
  */
 
-import type { MCPToolsConfig } from '@headlamp-k8s/ai';
-import { summarizeMcpToolStateChanges } from '@headlamp-k8s/ai';
+import type { MCPToolsConfig } from '@headlamp-k8s/ai-common';
+import { summarizeMcpToolStateChanges } from '@headlamp-k8s/ai-common';
 import { type BrowserWindow, dialog } from 'electron';
 
-export type { MCPToolState, MCPServerToolState, MCPToolsConfig } from '@headlamp-k8s/ai';
+export type { MCPToolState, MCPServerToolState, MCPToolsConfig } from '@headlamp-k8s/ai-common';
 export {
   MCPToolStateStore,
   parseServerNameToolName,
   validateToolArgs,
   summarizeMcpToolStateChanges,
-} from '@headlamp-k8s/ai';
+} from '@headlamp-k8s/ai-common';
 
 /**
  * Show detailed confirmation dialog for tools configuration changes.

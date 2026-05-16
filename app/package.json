@@ -174,7 +174,7 @@
     "js-yaml": "^4.1.1"
   },
   "dependencies": {
-    "@headlamp-k8s/ai": "file:../ai",
+    "@headlamp-k8s/ai-common": "file:../plugins/examples/ai-assistant/packages/ai-common",
     "@langchain/mcp-adapters": "^1.0.0",
     "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",

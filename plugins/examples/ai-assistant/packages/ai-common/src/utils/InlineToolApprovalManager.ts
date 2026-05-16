@@ -56,7 +56,7 @@ export class InlineToolApprovalManager extends EventEmitter {
    * Pass `null` to revert to the default event-based flow.
    *
    * Example (CLI auto-approve):
-   *   import { autoApproveAll } from '@headlamp-k8s/ai/utils';
+   *   import { autoApproveAll } from '@headlamp-k8s/ai-common/utils';
    *   inlineToolApprovalManager.setApprovalHandler(autoApproveAll());
    *
    * Example (terminal prompt):

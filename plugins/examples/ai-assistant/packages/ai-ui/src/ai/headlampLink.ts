@@ -19,7 +19,7 @@
  *
  * This depends on `@kinvolk/headlamp-plugin` and `window`, so it MUST NOT
  * be imported from Node.js-safe sub-paths (root, /utils, /config, etc.).
- * It is exported from `@headlamp-k8s/ai/ai` which is already browser-only.
+ * It is exported from `@headlamp-k8s/ai-common/ai` which is already browser-only.
  */
 
 import { ResourceClasses } from '@kinvolk/headlamp-plugin/lib/lib/k8s';

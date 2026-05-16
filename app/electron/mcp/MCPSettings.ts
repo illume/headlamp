@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-import type { MCPSettings } from '@headlamp-k8s/ai';
+import type { MCPSettings } from '@headlamp-k8s/ai-common';
 import {
   hasClusterDependentServers as hasClusterDependentServersFromSettings,
   makeMcpServers,
   settingsChanges,
-} from '@headlamp-k8s/ai';
+} from '@headlamp-k8s/ai-common';
 import type { ClientConfig } from '@langchain/mcp-adapters';
 import { type BrowserWindow, dialog } from 'electron';
 import { loadSettings, saveSettings } from '../settings';
 
-export type { MCPSettings } from '@headlamp-k8s/ai';
-export { expandEnvAndResolvePaths, settingsChanges } from '@headlamp-k8s/ai';
+export type { MCPSettings } from '@headlamp-k8s/ai-common';
+export { expandEnvAndResolvePaths, settingsChanges } from '@headlamp-k8s/ai-common';
 
 /**
  * Load MCP server configuration from settings
