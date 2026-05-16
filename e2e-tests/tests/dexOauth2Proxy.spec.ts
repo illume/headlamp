@@ -266,15 +266,30 @@ test.describe('Headlamp + OAuth2-Proxy + Dex (opt-in)', () => {
     test.setTimeout(2 * 60 * 1000);
     await signIn(page);
 
-    // Visit OAuth2-Proxy's sign-out endpoint. It clears the session
-    // cookie and redirects to `/oauth2/sign_in`.
+    // Visit OAuth2-Proxy's sign-out endpoint. In older versions a GET
+    // to `/oauth2/sign_out` immediately clears the session cookie and
+    // redirects to `/oauth2/sign_in`. In OAuth2-Proxy v7.6+ a GET shows
+    // a confirmation form with a "Sign out" submit button — the cookie
+    // is only cleared once that button is clicked. Handle both shapes.
     await page.goto(`${BASE_URL}/oauth2/sign_out`);
+    const signOutConfirm = page
+      .locator('form[action*="sign_out"], form[action="/oauth2/sign_out"]')
+      .locator('button[type="submit"], input[type="submit"]')
+      .first();
+    try {
+      await signOutConfirm.waitFor({ state: 'visible', timeout: 5 * 1000 });
+      await signOutConfirm.click();
+    } catch {
+      // Older OAuth2-Proxy: GET cleared the cookie directly.
+    }
 
     // After sign-out, going back to `/` must hit the OAuth2-Proxy
     // splash again, *not* fall through to Headlamp. OAuth2-Proxy serves
     // the splash in-place (no redirect), so we assert on the button.
     await page.goto(`${BASE_URL}/`);
-    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /sign in/i })).toBeVisible({
+      timeout: 15 * 1000,
+    });
   });
 
   test('post-sign-in redirect preserves the originally-requested deep link', async ({ page }) => {
