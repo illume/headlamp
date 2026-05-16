@@ -76,8 +76,11 @@ unauthenticated splash, deep-link gating, `/ping` liveness, invalid
 credentials, full sign-in, the `/oauth2/userinfo` endpoint, session
 persistence across reload, `/oauth2/sign_out`, post-sign-in deep-link
 redirect preservation, OAuth2-Proxy session-cookie `HttpOnly` /
-`SameSite=Lax` flags, cross-browser-context session isolation, and
-forged-`Authorization`-header bypass attempts. It is **opt-in** —
+`SameSite=Lax` flags, cross-browser-context session isolation,
+forged-`Authorization`-header bypass attempts, a multi-user check
+(a second static Dex user signs in and `/oauth2/userinfo` reflects
+that identity), and a CSRF-state-tampering check (a direct hit on
+`/oauth2/callback` with a forged `state` is rejected). It is **opt-in** —
 the whole `describe` block is skipped unless
 `HEADLAMP_TEST_DEX_OAUTH2_PROXY=1` is set — because the stack takes
 several minutes to bring up.

@@ -44,6 +44,15 @@ staticPasswords:
     hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
     username: "admin"
     userID: "08a8684b-db88-4b73-90a9-3cd1661f5466"
+  # A second static user used by the e2e suite to confirm that the
+  # OIDC plumbing does not hard-code a single user (the post-sign-in
+  # /oauth2/userinfo email must match whoever actually authenticated).
+  # The bcrypt hash is the same value because both users share the
+  # password "password" — bcrypt is per-credential, not per-identity.
+  - email: "alice@example.com"
+    hash: "$2a$10$2b2cU8CPhOTaGrs1HRQuAueS7JTT5ZHsHSzYiFPm1leZck7Mc8T4W"
+    username: "alice"
+    userID: "5b1b8e1e-2c0e-4f2d-9b8e-1a7c4e9d2b3a"
 
 oauth2:
   skipApprovalScreen: true

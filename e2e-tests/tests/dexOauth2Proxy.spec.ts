@@ -96,8 +96,11 @@ function runScript(script: string, timeoutMs: number) {
  * click through Dex's "Grant Access" consent page if shown, and wait
  * for the redirect back to OAuth2-Proxy / Headlamp. Used by every
  * test that needs an authenticated session.
+ *
+ * `user` / `password` default to the standard Dex test creds; tests
+ * that exercise multi-user behavior pass an alternate user.
  */
-async function signIn(page: Page) {
+async function signIn(page: Page, user: string = DEX_USER, password: string = DEX_PASSWORD) {
   // 1. Hit the OAuth2-Proxy front door.
   await page.goto(`${BASE_URL}/`);
 
@@ -106,8 +109,8 @@ async function signIn(page: Page) {
 
   // 3. Dex local-login form.
   await page.waitForURL(/\/auth(\?|\/)/, { timeout: 30 * 1000 });
-  await page.locator('input[name="login"], input[type="email"]').first().fill(DEX_USER);
-  await page.locator('input[name="password"], input[type="password"]').first().fill(DEX_PASSWORD);
+  await page.locator('input[name="login"], input[type="email"]').first().fill(user);
+  await page.locator('input[name="password"], input[type="password"]').first().fill(password);
   await page.locator('button[type="submit"], input[type="submit"]').first().click();
 
   // 3a. Dex may show a "Grant Access" consent page even with
@@ -356,5 +359,65 @@ test.describe('Headlamp + OAuth2-Proxy + Dex (opt-in)', () => {
     // resources; the upstream Headlamp UI (which would return 200) must
     // not be reached.
     expect([302, 401, 403]).toContain(response.status());
+  });
+
+  test('a different Dex static user signs in and is identified by /oauth2/userinfo', async ({
+    browser,
+  }) => {
+    // Verifies the OIDC plumbing does not hard-code a single user:
+    // sign in as alice@example.com (the second static user in
+    // dex-config.yaml) and confirm /oauth2/userinfo reports that
+    // identity, not the suite-wide DEX_USER. Catches regressions where
+    // a hard-coded subject/email is forwarded regardless of who
+    // actually authenticated. Uses its own browser context so it does
+    // not collide with the suite's signed-in cookies.
+    test.setTimeout(2 * 60 * 1000);
+    const otherUser = 'alice@example.com';
+    const otherPassword = 'password';
+
+    const ctx = await browser.newContext();
+    try {
+      const page = await ctx.newPage();
+      await signIn(page, otherUser, otherPassword);
+
+      const response = await page.request.get(`${BASE_URL}/oauth2/userinfo`);
+      expect(response.status()).toBe(200);
+      const body = await response.json();
+      expect(body.email).toBe(otherUser);
+    } finally {
+      await ctx.close();
+    }
+  });
+
+  test('OAuth2-Proxy /oauth2/callback rejects a forged state parameter', async ({ request }) => {
+    // OAuth2-Proxy stores the CSRF state in a short-lived cookie when
+    // it initiates the OIDC flow (`/oauth2/start`). A direct hit on
+    // `/oauth2/callback` with no matching state cookie must be refused
+    // — accepting it would let an attacker initiate a flow on a victim
+    // (CSRF) or skip the state-mismatch check entirely.
+    //
+    // We do *not* pass any cookies (Playwright's `request` fixture is
+    // a fresh client) and we supply a bogus `code` + arbitrary `state`.
+    // OAuth2-Proxy should return a 4xx (Forbidden / Unauthorized /
+    // Internal Server Error variants) and must not set an
+    // `_oauth2_proxy` session cookie.
+    const response = await request.get(
+      `${BASE_URL}/oauth2/callback?code=not-a-real-code&state=forged-by-attacker`,
+      {
+        maxRedirects: 0,
+        failOnStatusCode: false,
+      }
+    );
+
+    // OAuth2-Proxy returns 403 ("Permission Denied") for missing /
+    // invalid CSRF state. Accept any 4xx (or 500-level handler error)
+    // so the test isn't pinned to a specific status code, but a 200
+    // or 302 (redirect to the upstream) would indicate a real bypass.
+    expect(response.status(), 'callback with forged state must not succeed').not.toBe(200);
+    expect(response.status()).toBeGreaterThanOrEqual(400);
+
+    // Crucially: no session cookie must have been set.
+    const setCookie = response.headers()['set-cookie'] || '';
+    expect(setCookie).not.toMatch(/_oauth2_proxy=[^;]/);
   });
 });
