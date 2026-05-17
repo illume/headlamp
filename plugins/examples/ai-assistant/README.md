@@ -157,11 +157,7 @@ ai-assistant/
                         #   ToolApprovalDialog, TermsDialog, PromptSuggestions,
                         #   TestModeInput), hooks (useToolApproval,
                         #   useProactiveDiagnosis), contexts (PromptWidthContext),
-                        #   utils, config, icons. Ships .ts directly.
-
-    ai-app/             # @headlamp-k8s/ai-app — Electron application code
-      package.json      #   MCP settings, tool state store.
-      src/              #   Requires TypeScript build (Electron needs JS).
+                        #   utils, config, icons, mcp, types. Ships .ts directly.
 ```
 
 The plugin `src/` contains only components that directly depend on
@@ -169,7 +165,7 @@ The plugin `src/` contains only components that directly depend on
 `ConfigStore`). All portable React components, hooks, utilities, and contexts
 live in `packages/ai-ui/` and are imported via `@headlamp-k8s/ai-ui`.
 
-The plugin depends on `ai-common`, `ai-ui`, and `ai-app` via `file:` references
+The plugin depends on `ai-common` and `ai-ui` via `file:` references
 in `package.json`. The `.npmrc` file sets `install-links=true` so `npm ci`
 copies rather than symlinks the packages.
 
@@ -203,16 +199,8 @@ npm install
 npm test              # run 95 unit tests (vitest)
 ```
 
-#### ai-app (Electron code)
 
-```bash
-cd packages/ai-app
-npm install
-npm run build         # compile TypeScript → dist/ (required for Electron)
-npm run clean         # remove dist/
-```
-
-#### ai-cli and ai-ui
+#### ai-cli, ai-ui
 
 These packages ship `.ts` directly and have no build or test scripts.
 They are consumed by bundlers (plugin, Electron) or Node loaders (tsx).
@@ -291,7 +279,6 @@ From the repository root, these Make targets involve the ai-assistant:
    - `packages/ai-common/package.json`
    - `packages/ai-cli/package.json`
    - `packages/ai-ui/package.json`
-   - `packages/ai-app/package.json`
 
 2. **Build the plugin** — `npm run build` in the `ai-assistant/` directory.
 

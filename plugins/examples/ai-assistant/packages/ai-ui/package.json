@@ -23,7 +23,9 @@
     "./formatting/stringFormatting": "./src/formatting/stringFormatting.ts",
     "./testing/testMode": "./src/testing/testMode.ts",
     "./parsing/urlParsing": "./src/parsing/urlParsing.ts",
-    "./parsing/yamlParser": "./src/parsing/yamlParser.ts"
+    "./parsing/yamlParser": "./src/parsing/yamlParser.ts",
+    "./mcp/electron-client": "./src/mcp/electron-client.ts",
+    "./types/electron": "./src/types/electron.d.ts"
   },
   "license": "Apache-2.0",
   "dependencies": {

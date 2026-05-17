@@ -29,6 +29,5 @@ dist
 
 # Package subdirectory artifacts
 packages/*/node_modules
-packages/ai-app/dist
 
 storybook-static/
