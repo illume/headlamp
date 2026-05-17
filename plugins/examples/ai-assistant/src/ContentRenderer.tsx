@@ -1,4 +1,4 @@
-import { getHeadlampLink } from '@headlamp-k8s/ai-ui/utils/headlampLink';
+import { getHeadlampLink } from './headlampLink';
 import { Link } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import { Alert, Box, Button, Link as MuiLink, Typography } from '@mui/material';
 import React, { useMemo, useState } from 'react';

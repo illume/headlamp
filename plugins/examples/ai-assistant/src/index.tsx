@@ -1,4 +1,4 @@
-import { checkHolmesAgentHealth } from '@headlamp-k8s/ai-common/agent/holmesClient';
+import { checkHolmesAgentHealth } from './holmesClient';
 import {
   getActiveConfig,
   getSavedConfigurations,

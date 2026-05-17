@@ -18,7 +18,6 @@
     "./hooks/useProactiveDiagnosis": "./src/hooks/useProactiveDiagnosis.ts",
     "./hooks/useToolApproval": "./src/hooks/useToolApproval.ts",
     "./utils/ProactiveDiagnosisManager": "./src/utils/ProactiveDiagnosisManager.ts",
-    "./utils/headlampLink": "./src/utils/headlampLink.ts",
     "./utils/icons": "./src/utils/icons.ts",
     "./utils/modelProviderUtils": "./src/utils/modelProviderUtils.ts",
     "./utils/stringFormatting": "./src/utils/stringFormatting.ts",
@@ -31,7 +30,6 @@
     "@headlamp-k8s/ai-common": "file:../ai-common"
   },
   "peerDependencies": {
-    "@kinvolk/headlamp-plugin": "^0.13.0-alpha.14",
     "react": "^18.0.0",
     "@mui/material": "^5.0.0",
     "@iconify/react": "^4.0.0",
@@ -42,9 +40,6 @@
     "yaml": "^2.0.0"
   },
   "peerDependenciesMeta": {
-    "@kinvolk/headlamp-plugin": {
-      "optional": true
-    },
     "react": {
       "optional": true
     },
