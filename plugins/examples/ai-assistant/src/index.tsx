@@ -291,7 +291,7 @@ function HeadlampAIPrompt() {
               mb: 1,
             }}
           >
-            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
+            <Typography component="h2" variant="subtitle1" sx={{ fontWeight: 'bold' }}>
               Configure AI Assistant
             </Typography>
             <IconButton size="small" onClick={handleClosePopover} sx={{ ml: 1, mt: -0.5 }}>
