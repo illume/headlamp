@@ -136,7 +136,7 @@ Once servers are configured, the assistant automatically discovers the tools the
 ```
 ai-assistant/
   package.json          # Plugin package — consumes the shared packages
-  src/                  # Plugin source code (React components, hooks)
+  src/                  # Plugin source (only headlamp-plugin-dependent code)
   tsconfig.json         # Extends @kinvolk/headlamp-plugin config
   .npmrc                # install-links=true for file: deps
 
@@ -150,14 +150,24 @@ ai-assistant/
       package.json      #   `headlamp-ai` binary.
       src/              #   Ships .ts directly (uses tsx/node loaders).
 
-    ai-ui/              # @headlamp-k8s/ai-ui — React UI utilities
-      package.json      #   Browser-only components and hooks.
-      src/              #   Ships .ts directly (consumer bundlers compile).
+    ai-ui/              # @headlamp-k8s/ai-ui — React components & hooks
+      package.json      #   All headlamp-plugin-independent UI code:
+      src/              #   components (AgentThinkingBlock, InlineToolConfirmation,
+                        #   MCPOutputDisplay, MCPFormattedMessage, YamlDisplay,
+                        #   ToolApprovalDialog, TermsDialog, PromptSuggestions,
+                        #   TestModeInput), hooks (useToolApproval,
+                        #   useProactiveDiagnosis), contexts (PromptWidthContext),
+                        #   utils, config, icons. Ships .ts directly.
 
     ai-app/             # @headlamp-k8s/ai-app — Electron application code
       package.json      #   MCP settings, tool state store.
       src/              #   Requires TypeScript build (Electron needs JS).
 ```
+
+The plugin `src/` contains only components that directly depend on
+`@kinvolk/headlamp-plugin` APIs (e.g. `K8s`, `clusterAction`, `Dialog`,
+`ConfigStore`). All portable React components, hooks, utilities, and contexts
+live in `packages/ai-ui/` and are imported via `@headlamp-k8s/ai-ui`.
 
 The plugin depends on `ai-common`, `ai-ui`, and `ai-app` via `file:` references
 in `package.json`. The `.npmrc` file sets `install-links=true` so `npm ci`
