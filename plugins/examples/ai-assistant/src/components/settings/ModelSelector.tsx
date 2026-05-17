@@ -35,8 +35,8 @@ import {
   getProviderById,
   getProviderFields,
   modelProviders,
-} from '../../config/modelConfig';
-import TermsDialog from './TermsDialog';
+  TermsDialog,
+} from '@headlamp-k8s/ai-ui';
 
 interface ProviderSelectionDialogProps {
   open: boolean;

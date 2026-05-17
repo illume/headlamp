@@ -32,9 +32,7 @@ import React from 'react';
 import { useHistory } from 'react-router-dom';
 import { ModelSelector } from './components';
 import { MCPSettings } from './components/settings';
-import { getDefaultConfig } from './config/modelConfig';
-import { PromptWidthProvider } from './contexts/PromptWidthContext';
-import { isTestModeCheck } from './helper';
+import { getDefaultConfig, isTestModeCheck, PromptWidthProvider } from '@headlamp-k8s/ai-ui';
 import { ClusterChangeNotifier } from './hooks/useClusterChangeNotifier';
 import AIPrompt from './modal';
 import {
@@ -545,7 +543,7 @@ function Settings() {
 // import {
 //   proactiveDiagnosisManager,
 //   ProactiveDiagnosisManager,
-// } from './utils/ProactiveDiagnosisManager';
+// } from '@headlamp-k8s/ai-ui';
 
 registerPluginSettings(PLUGIN_NAME, Settings);
 

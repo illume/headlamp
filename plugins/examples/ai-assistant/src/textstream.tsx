@@ -4,8 +4,7 @@ import { Alert, Box, CircularProgress, Fab, Typography } from '@mui/material';
 import { useTheme } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { InlineToolConfirmation } from './components';
-import AgentThinkingBlock from './components/assistant/AgentThinkingBlock';
+import { AgentThinkingBlock, InlineToolConfirmation } from '@headlamp-k8s/ai-ui';
 import ContentRenderer from './ContentRenderer';
 import EditorDialog from './editordialog';
 

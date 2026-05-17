@@ -13,9 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import React from 'react';
-import { getProviderById } from '../../config/modelConfig';
-import { getModelDisplayName, getProviderModelsForChat } from '../../utils/modalUtils';
-import TestModeInput from './TestModeInput';
+import { getModelDisplayName, getProviderById, getProviderModelsForChat, TestModeInput } from '@headlamp-k8s/ai-ui';
 import { ToolsDialog } from './ToolsDialog';
 
 interface AIInputSectionProps {

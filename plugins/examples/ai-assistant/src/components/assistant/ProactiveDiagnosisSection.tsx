@@ -26,7 +26,7 @@ import {
 import { alpha, useTheme } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
 import ContentRenderer from '../../ContentRenderer';
-import { DiagnosisResult, DiagnosisThinkingStep } from '../../utils/ProactiveDiagnosisManager';
+import type { DiagnosisResult, DiagnosisThinkingStep } from '@headlamp-k8s/ai-ui';
 
 interface ProactiveDiagnosisSectionProps {
   diagnoses: DiagnosisResult[];

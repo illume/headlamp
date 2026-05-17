@@ -16,22 +16,21 @@ import {
   ApiConfirmationDialog,
   PromptSuggestions,
 } from './components';
-import { getProviderById } from './config/modelConfig';
+import { getProviderById, isTestModeCheck } from '@headlamp-k8s/ai-ui';
 import EditorDialog from './editordialog';
-import { isTestModeCheck } from './helper';
 import { useKubernetesToolUI } from './hooks/useKubernetesToolUI';
 import { getSettingsURL, useGlobalState } from './utils';
 import { generateContextDescription } from './utils/contextGenerator';
 import {
   /* [PROACTIVE_DIAGNOSIS_DISABLED] fetchWarningEventsForClusters, */ fetchClusterWarnings,
 } from './utils/EventFetcher';
-import { getProviderModels, parseSuggestionsFromResponse } from './utils/modalUtils';
+import { getProviderModels, parseSuggestionsFromResponse } from '@headlamp-k8s/ai-ui';
 // [PROACTIVE_DIAGNOSIS_DISABLED]
 // import {
 //   DiagnosisStepCallback,
 //   proactiveDiagnosisManager,
 //   ProactiveDiagnosisManager,
-// } from './utils/ProactiveDiagnosisManager';
+// } from '@headlamp-k8s/ai-ui';
 import { useDynamicPrompts } from './utils/promptGenerator';
 
 // Operation type constants for translation
@@ -47,7 +46,7 @@ import {
   StoredProviderConfig,
 } from '@headlamp-k8s/ai-common/config';
 import { getEnabledToolIds } from '@headlamp-k8s/ai-common/utils';
-import { usePromptWidth } from './contexts/PromptWidthContext';
+import { usePromptWidth } from '@headlamp-k8s/ai-ui';
 
 export default function AIPrompt(props: {
   openPopup: boolean;

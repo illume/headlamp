@@ -6,9 +6,8 @@ import ReactMarkdown from 'react-markdown';
 import { Link as RouterLink, useHistory } from 'react-router-dom';
 import remarkGfm from 'remark-gfm';
 import YAML from 'yaml';
-import { LogsButton, YamlDisplay } from './components';
-import MCPFormattedMessage from './components/chat/MCPFormattedMessage';
-import { parseKubernetesYAML } from './utils/SampleYamlLibrary';
+import { MCPFormattedMessage, parseKubernetesYAML, YamlDisplay } from '@headlamp-k8s/ai-ui';
+import { LogsButton } from './components';
 
 // Helper types for error handling
 interface ParseResult<T> {

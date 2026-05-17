@@ -12,10 +12,42 @@
     "@headlamp-k8s/ai-common": "file:../ai-common"
   },
   "peerDependencies": {
-    "@kinvolk/headlamp-plugin": ">=0.13.0-alpha.14"
+    "@kinvolk/headlamp-plugin": ">=0.13.0-alpha.14",
+    "react": ">=18",
+    "@mui/material": ">=5",
+    "@iconify/react": ">=4",
+    "@monaco-editor/react": ">=4",
+    "react-markdown": ">=8",
+    "react-syntax-highlighter": ">=15",
+    "remark-gfm": ">=4",
+    "yaml": ">=2"
   },
   "peerDependenciesMeta": {
     "@kinvolk/headlamp-plugin": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "@mui/material": {
+      "optional": true
+    },
+    "@iconify/react": {
+      "optional": true
+    },
+    "@monaco-editor/react": {
+      "optional": true
+    },
+    "react-markdown": {
+      "optional": true
+    },
+    "react-syntax-highlighter": {
+      "optional": true
+    },
+    "remark-gfm": {
+      "optional": true
+    },
+    "yaml": {
       "optional": true
     }
   }
