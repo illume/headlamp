@@ -20,6 +20,7 @@
     "./langchain/tools/kubernetes/KubernetesTool": "./src/langchain/tools/kubernetes/KubernetesTool.ts",
     "./langchain/tools/kubernetes/types": "./src/langchain/tools/kubernetes/types.ts",
     "./langchain/tools/registry": "./src/langchain/tools/registry.ts",
+    "./mcp/MCPClientCore": "./src/mcp/MCPClientCore.ts",
     "./mcp/MCPToolStateStore": "./src/mcp/MCPToolStateStore.ts",
     "./mcp/types": "./src/mcp/types.ts",
     "./mcp/mcpServerConfig": "./src/mcp/mcpServerConfig.ts",
