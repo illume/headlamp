@@ -1,9 +1,3 @@
-export const formatString = function (a: string, ...args: any) {
-  return a.replace(/{(\d+)}/g, function (match, number) {
-    return typeof args[number] !== 'undefined' ? args[number] : match;
-  });
-};
-
 // Helper function to check if a URL is requesting logs
 export const isLogRequest = (url: string): boolean => {
   return url.includes('/log?') || url.endsWith('/log') || url.includes('/log&');
@@ -26,8 +20,3 @@ export const isSpecificResourceRequestHelper = (url: string): boolean => {
 
   return isSpecific;
 };
-
-export function isTestModeCheck() {
-  // @ts-ignore
-  return import.meta.env.VITE_HEADLAMP_AI_TEST === 'true';
-}

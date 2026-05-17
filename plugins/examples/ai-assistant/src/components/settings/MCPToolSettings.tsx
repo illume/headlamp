@@ -1,4 +1,4 @@
-import { parseMCPToolName } from '@headlamp-k8s/ai-common/utils';
+import { parseMCPToolName } from '@headlamp-k8s/ai-common/utils/ToolConfigManager';
 import { Icon } from '@iconify/react';
 import { Headlamp } from '@kinvolk/headlamp-plugin/lib';
 import { SectionBox } from '@kinvolk/headlamp-plugin/lib/components/common';

@@ -1,4 +1,4 @@
-import { FormattedMCPOutput } from '@headlamp-k8s/ai-common/langchain';
+import { FormattedMCPOutput } from '@headlamp-k8s/ai-common/langchain/formatters/MCPOutputFormatter';
 import { Icon } from '@iconify/react';
 import { Alert, Box, Paper, Typography } from '@mui/material';
 import React, { useCallback } from 'react';

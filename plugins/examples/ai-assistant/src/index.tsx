@@ -1,9 +1,9 @@
-import { checkHolmesAgentHealth } from '@headlamp-k8s/ai-common/agent';
+import { checkHolmesAgentHealth } from '@headlamp-k8s/ai-common/agent/holmesClient';
 import {
   getActiveConfig,
   getSavedConfigurations,
   SavedConfigurations,
-} from '@headlamp-k8s/ai-common/config';
+} from '@headlamp-k8s/ai-common/utils/ProviderConfigManager';
 import { Icon } from '@iconify/react';
 import {
   registerAppBarAction,
@@ -32,7 +32,9 @@ import React from 'react';
 import { useHistory } from 'react-router-dom';
 import { ModelSelector } from './components';
 import { MCPSettings } from './components/settings';
-import { getDefaultConfig, isTestModeCheck, PromptWidthProvider } from '@headlamp-k8s/ai-ui';
+import { getDefaultConfig } from '@headlamp-k8s/ai-ui/config/modelConfig';
+import { PromptWidthProvider } from '@headlamp-k8s/ai-ui/contexts/PromptWidthContext';
+import { isTestModeCheck } from '@headlamp-k8s/ai-ui/utils/testMode';
 import { ClusterChangeNotifier } from './hooks/useClusterChangeNotifier';
 import AIPrompt from './modal';
 import {

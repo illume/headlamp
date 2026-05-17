@@ -1,5 +1,5 @@
-import { SavedConfigurations, StoredProviderConfig } from '@headlamp-k8s/ai-common/config';
-import { getAllAvailableToolsIncludingMCP, initializeToolsState } from '@headlamp-k8s/ai-common/utils';
+import { SavedConfigurations, StoredProviderConfig } from '@headlamp-k8s/ai-common/utils/ProviderConfigManager';
+import { getAllAvailableToolsIncludingMCP, initializeToolsState } from '@headlamp-k8s/ai-common/utils/ToolConfigManager';
 import { ConfigStore } from '@kinvolk/headlamp-plugin/lib';
 import type {
   EventListEvent,
@@ -257,4 +257,4 @@ export {
   parseMCPToolName,
   isBuiltInTool,
   initializeToolsState,
-} from '@headlamp-k8s/ai-common/utils';
+} from '@headlamp-k8s/ai-common/utils/ToolConfigManager';

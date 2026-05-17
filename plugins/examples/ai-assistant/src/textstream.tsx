@@ -1,10 +1,11 @@
-import { Prompt } from '@headlamp-k8s/ai-ui/ai';
+import { Prompt } from '@headlamp-k8s/ai-common/ai/manager';
 import { Icon } from '@iconify/react';
 import { Alert, Box, CircularProgress, Fab, Typography } from '@mui/material';
 import { useTheme } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import { AgentThinkingBlock, InlineToolConfirmation } from '@headlamp-k8s/ai-ui';
+import AgentThinkingBlock from '@headlamp-k8s/ai-ui/components/assistant/AgentThinkingBlock';
+import InlineToolConfirmation from '@headlamp-k8s/ai-ui/components/common/InlineToolConfirmation';
 import ContentRenderer from './ContentRenderer';
 import EditorDialog from './editordialog';
 

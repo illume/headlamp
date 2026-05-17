@@ -8,7 +8,7 @@
  * - Runs diagnoses sequentially (server aborts concurrent SSE streams).
  */
 
-import { basePrompt } from '@headlamp-k8s/ai-ui/ai';
+import { basePrompt } from '@headlamp-k8s/ai-common/ai/prompts';
 import { EventEmitter } from 'events';
 
 export interface EventDigest {

@@ -5,7 +5,7 @@ import {
   saveProviderConfig,
   saveTermsAcceptance,
   StoredProviderConfig,
-} from '@headlamp-k8s/ai-common/config';
+} from '@headlamp-k8s/ai-common/utils/ProviderConfigManager';
 import { Icon } from '@iconify/react';
 import { ConfirmDialog } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import {
@@ -35,8 +35,8 @@ import {
   getProviderById,
   getProviderFields,
   modelProviders,
-  TermsDialog,
-} from '@headlamp-k8s/ai-ui';
+} from '@headlamp-k8s/ai-ui/config/modelConfig';
+import TermsDialog from '@headlamp-k8s/ai-ui/components/settings/TermsDialog';
 
 interface ProviderSelectionDialogProps {
   open: boolean;

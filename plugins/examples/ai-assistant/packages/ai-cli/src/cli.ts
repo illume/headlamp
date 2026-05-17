@@ -73,7 +73,7 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as readline from 'readline';
-import { createMockTestingModel } from '@headlamp-k8s/ai-common/mock-testing-model';
+import { createMockTestingModel } from '@headlamp-k8s/ai-common/mock-testing-model/MockTestingModel';
 
 /**
  * CLI configuration format — compatible with the ai-assistant plugin's

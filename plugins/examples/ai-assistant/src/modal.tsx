@@ -1,7 +1,7 @@
-import { getHolmesProxyBaseUrl, HolmesAgent } from '@headlamp-k8s/ai-common/agent';
-import { LangChainManager } from '@headlamp-k8s/ai-common/langchain';
-import { inlineToolApprovalManager } from '@headlamp-k8s/ai-common/utils';
-import { AIManager, Prompt } from '@headlamp-k8s/ai-ui/ai';
+import { getHolmesProxyBaseUrl, HolmesAgent } from '@headlamp-k8s/ai-common/agent/holmesClient';
+import { AIManager, Prompt } from '@headlamp-k8s/ai-common/ai/manager';
+import { LangChainManager } from '@headlamp-k8s/ai-common/langchain/LangChainManager';
+import { inlineToolApprovalManager } from '@headlamp-k8s/ai-common/utils/InlineToolApprovalManager';
 import { Icon } from '@iconify/react';
 import { useClustersConf, useSelectedClusters } from '@kinvolk/headlamp-plugin/lib/k8s';
 import { getCluster, getClusterGroup } from '@kinvolk/headlamp-plugin/lib/Utils';
@@ -16,7 +16,8 @@ import {
   ApiConfirmationDialog,
   PromptSuggestions,
 } from './components';
-import { getProviderById, isTestModeCheck } from '@headlamp-k8s/ai-ui';
+import { getProviderById } from '@headlamp-k8s/ai-ui/config/modelConfig';
+import { isTestModeCheck } from '@headlamp-k8s/ai-ui/utils/testMode';
 import EditorDialog from './editordialog';
 import { useKubernetesToolUI } from './hooks/useKubernetesToolUI';
 import { getSettingsURL, useGlobalState } from './utils';
@@ -24,7 +25,7 @@ import { generateContextDescription } from './utils/contextGenerator';
 import {
   /* [PROACTIVE_DIAGNOSIS_DISABLED] fetchWarningEventsForClusters, */ fetchClusterWarnings,
 } from './utils/EventFetcher';
-import { getProviderModels, parseSuggestionsFromResponse } from '@headlamp-k8s/ai-ui';
+import { getProviderModels, parseSuggestionsFromResponse } from '@headlamp-k8s/ai-ui/utils/modelProviderUtils';
 // [PROACTIVE_DIAGNOSIS_DISABLED]
 // import {
 //   DiagnosisStepCallback,
@@ -44,9 +45,9 @@ import {
   getActiveConfig,
   getSavedConfigurations,
   StoredProviderConfig,
-} from '@headlamp-k8s/ai-common/config';
-import { getEnabledToolIds } from '@headlamp-k8s/ai-common/utils';
-import { usePromptWidth } from '@headlamp-k8s/ai-ui';
+} from '@headlamp-k8s/ai-common/utils/ProviderConfigManager';
+import { getEnabledToolIds } from '@headlamp-k8s/ai-common/utils/ToolConfigManager';
+import { usePromptWidth } from '@headlamp-k8s/ai-ui/contexts/PromptWidthContext';
 
 export default function AIPrompt(props: {
   openPopup: boolean;

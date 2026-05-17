@@ -2,7 +2,7 @@ import {
   MCPArgumentProcessor,
   type ProcessedArguments,
   type UserContext,
-} from '@headlamp-k8s/ai-common/components';
+} from '@headlamp-k8s/ai-common/components/mcpOutput/MCPArgumentProcessor';
 import { Icon } from '@iconify/react';
 import {
   Alert,

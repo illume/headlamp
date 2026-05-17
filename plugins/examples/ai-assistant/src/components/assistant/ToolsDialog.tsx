@@ -1,5 +1,5 @@
-import { AVAILABLE_TOOLS } from '@headlamp-k8s/ai-common/langchain';
-import { ElectronMCPClient } from '@headlamp-k8s/ai-ui/ai';
+import { AVAILABLE_TOOLS } from '@headlamp-k8s/ai-common/langchain/tools/registry';
+import { ElectronMCPClient } from '@headlamp-k8s/ai-common/ai/mcp/electron-client';
 import { Icon } from '@iconify/react';
 import { Dialog } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import {

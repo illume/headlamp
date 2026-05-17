@@ -1,4 +1,4 @@
-import { getHeadlampLink } from '@headlamp-k8s/ai-ui/ai';
+import { getHeadlampLink } from '@headlamp-k8s/ai-ui/utils/headlampLink';
 import { Link } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import { Alert, Box, Button, Link as MuiLink, Typography } from '@mui/material';
 import React, { useMemo, useState } from 'react';
@@ -6,7 +6,9 @@ import ReactMarkdown from 'react-markdown';
 import { Link as RouterLink, useHistory } from 'react-router-dom';
 import remarkGfm from 'remark-gfm';
 import YAML from 'yaml';
-import { MCPFormattedMessage, parseKubernetesYAML, YamlDisplay } from '@headlamp-k8s/ai-ui';
+import MCPFormattedMessage from '@headlamp-k8s/ai-ui/components/chat/MCPFormattedMessage';
+import YamlDisplay from '@headlamp-k8s/ai-ui/components/common/YamlDisplay';
+import { parseKubernetesYAML } from '@headlamp-k8s/ai-ui/utils/yamlParser';
 import { LogsButton } from './components';
 
 // Helper types for error handling

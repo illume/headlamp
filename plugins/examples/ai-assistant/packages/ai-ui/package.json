@@ -4,8 +4,7 @@
   "description": "Browser-only AI UI code for Headlamp",
   "type": "module",
   "exports": {
-    ".": "./src/index.ts",
-    "./ai": "./src/ai/index.ts"
+    "./*": "./src/*"
   },
   "license": "Apache-2.0",
   "dependencies": {
