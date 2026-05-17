@@ -40,7 +40,8 @@ import { inlineToolApprovalManager } from '../utils/InlineToolApprovalManager';
 import { ToolCall } from '../utils/ToolApprovalManager';
 import { isBuiltInTool } from '../utils/ToolConfigManager';
 import { apiErrorPromptTemplate, toolFailurePromptTemplate } from './PromptTemplates';
-import { KubernetesToolContext, ToolManager } from './tools';
+import { KubernetesToolContext } from './tools/kubernetes/types';
+import { ToolManager } from './tools/ToolManager';
 import { RecommendedTool, ToolOrchestrator } from './tools/ToolOrchestrator';
 
 export default class LangChainManager extends AIManager {

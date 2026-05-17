@@ -4,7 +4,27 @@
   "description": "Browser-only AI UI code for Headlamp",
   "type": "module",
   "exports": {
-    "./*": "./src/*"
+    "./components/assistant/AgentThinkingBlock": "./src/components/assistant/AgentThinkingBlock.tsx",
+    "./components/assistant/PromptSuggestions": "./src/components/assistant/PromptSuggestions.tsx",
+    "./components/assistant/TestModeInput": "./src/components/assistant/TestModeInput.tsx",
+    "./components/chat/MCPFormattedMessage": "./src/components/chat/MCPFormattedMessage.tsx",
+    "./components/common/InlineToolConfirmation": "./src/components/common/InlineToolConfirmation.tsx",
+    "./components/common/ToolApprovalDialog": "./src/components/common/ToolApprovalDialog.tsx",
+    "./components/common/YamlDisplay": "./src/components/common/YamlDisplay.tsx",
+    "./components/mcpOutput/MCPOutputDisplay": "./src/components/mcpOutput/MCPOutputDisplay.tsx",
+    "./components/settings/TermsDialog": "./src/components/settings/TermsDialog.tsx",
+    "./config/modelConfig": "./src/config/modelConfig.ts",
+    "./contexts/PromptWidthContext": "./src/contexts/PromptWidthContext.tsx",
+    "./hooks/useProactiveDiagnosis": "./src/hooks/useProactiveDiagnosis.ts",
+    "./hooks/useToolApproval": "./src/hooks/useToolApproval.ts",
+    "./utils/ProactiveDiagnosisManager": "./src/utils/ProactiveDiagnosisManager.ts",
+    "./utils/headlampLink": "./src/utils/headlampLink.ts",
+    "./utils/icons": "./src/utils/icons.ts",
+    "./utils/modelProviderUtils": "./src/utils/modelProviderUtils.ts",
+    "./utils/stringFormatting": "./src/utils/stringFormatting.ts",
+    "./utils/testMode": "./src/utils/testMode.ts",
+    "./utils/urlParsing": "./src/utils/urlParsing.ts",
+    "./utils/yamlParser": "./src/utils/yamlParser.ts"
   },
   "license": "Apache-2.0",
   "dependencies": {

@@ -20,7 +20,8 @@ import { z } from 'zod';
 import { Prompt } from '../../ai/manager';
 import { ElectronMCPClient } from '../../ai/mcp/electron-client';
 import { MCPOutputFormatter } from '../formatters/MCPOutputFormatter';
-import { KubernetesTool, KubernetesToolContext } from './kubernetes';
+import { KubernetesTool } from './kubernetes/KubernetesTool';
+import { KubernetesToolContext } from './kubernetes/types';
 import { AVAILABLE_TOOLS, getToolByName } from './registry';
 import { ToolBase, ToolResponse } from './ToolBase';
 

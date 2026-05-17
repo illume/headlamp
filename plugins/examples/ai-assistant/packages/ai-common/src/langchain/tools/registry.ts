@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { KubernetesTool } from './kubernetes';
+import { KubernetesTool } from './kubernetes/KubernetesTool';
 import { ToolBase } from './ToolBase';
 
 // To add a new tool, simply import it and add it to this array
