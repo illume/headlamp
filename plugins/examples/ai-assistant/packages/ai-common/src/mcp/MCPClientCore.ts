@@ -46,7 +46,7 @@ export interface MCPConfirmationHandler {
   confirmOperation(title: string, message: string, operation: string): Promise<boolean>;
 }
 
-const DEBUG = true;
+const DEBUG = process.env.NODE_ENV !== 'production';
 
 /**
  * MCPClientCore — platform-agnostic MCP client logic.
@@ -81,6 +81,22 @@ export class MCPClientCore {
     private readonly settingsProvider: MCPSettingsProvider,
     private readonly confirmationHandler?: MCPConfirmationHandler
   ) {}
+
+  /**
+   * Close the current client and reset initialization state.
+   */
+  private async closeAndReset(): Promise<void> {
+    if (this.client) {
+      try {
+        await this.client.close();
+      } catch (error) {
+        console.error('Error closing MCP client:', error);
+      }
+    }
+    this.client = null;
+    this.isClientInitialized = false;
+    this.initializationPromise = null;
+  }
 
   /**
    * Initialize the MCP client.
@@ -182,17 +198,8 @@ export class MCPClientCore {
     }
     this.initialized = false;
 
-    if (this.client) {
-      try {
-        await this.client.close();
-      } catch (error) {
-        console.error('Error cleaning up MCP client:', error);
-      }
-    }
-    this.client = null;
+    await this.closeAndReset();
     this.clientTools = [];
-    this.isClientInitialized = false;
-    this.initializationPromise = null;
 
     if (DEBUG) {
       console.info('MCPClientCore: cleaned up');
@@ -225,14 +232,7 @@ export class MCPClientCore {
     }
 
     try {
-      if (this.client) {
-        if (typeof (this.client as any).close === 'function') {
-          await (this.client as any).close();
-        }
-      }
-      this.client = null;
-      this.isClientInitialized = false;
-      this.initializationPromise = null;
+      await this.closeAndReset();
       this.clusters = newClusters || [];
       await this.initializeClient();
       console.log('MCP client restarted for new cluster:', newClusters);
@@ -336,12 +336,7 @@ export class MCPClientCore {
 
       this.settingsProvider.saveMCPSettings(mcpSettings);
 
-      if (this.client && typeof this.client.close === 'function') {
-        await this.client.close();
-      }
-      this.client = null;
-      this.isClientInitialized = false;
-      this.initializationPromise = null;
+      await this.closeAndReset();
       await this.initializeClient();
 
       console.log('MCP configuration updated successfully');
@@ -371,14 +366,7 @@ export class MCPClientCore {
         }
       }
 
-      if (this.client) {
-        if (typeof (this.client as any).close === 'function') {
-          await (this.client as any).close();
-        }
-      }
-      this.client = null;
-      this.isClientInitialized = false;
-      this.initializationPromise = null;
+      await this.closeAndReset();
       await this.initializeClient();
 
       return { success: true };
