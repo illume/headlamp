@@ -16,7 +16,7 @@
 
 import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
-import ToolApprovalDialog from '../../packages/ai-ui/src/components/common/ToolApprovalDialog';
+import ToolApprovalDialog from './ToolApprovalDialog';
 
 export default {
   title: 'AI UI/ToolApprovalDialog',

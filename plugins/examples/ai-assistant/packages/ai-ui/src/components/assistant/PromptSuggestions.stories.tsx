@@ -16,7 +16,7 @@
 
 import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
-import { PromptSuggestions } from '../../packages/ai-ui/src/components/assistant/PromptSuggestions';
+import { PromptSuggestions } from './PromptSuggestions';
 
 export default {
   title: 'AI UI/PromptSuggestions',

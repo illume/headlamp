@@ -20,7 +20,7 @@ import React from 'react';
 import {
   PromptWidthProvider,
   usePromptWidth,
-} from '../../packages/ai-ui/src/contexts/PromptWidthContext';
+} from './PromptWidthContext';
 
 function PromptWidthDemo() {
   const { promptWidth, setPromptWidth } = usePromptWidth();

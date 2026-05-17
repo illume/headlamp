@@ -16,7 +16,7 @@
 
 import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
-import YamlDisplay from '../../packages/ai-ui/src/components/common/YamlDisplay';
+import YamlDisplay from './YamlDisplay';
 
 export default {
   title: 'AI UI/YamlDisplay',

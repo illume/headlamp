@@ -16,27 +16,26 @@
 
 import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
-import TermsDialog from '../../packages/ai-ui/src/components/settings/TermsDialog';
+import TestModeInput from './TestModeInput';
 
 export default {
-  title: 'AI UI/TermsDialog',
-  component: TermsDialog,
+  title: 'AI UI/TestModeInput',
+  component: TestModeInput,
 } as Meta;
 
-const Template: StoryFn<React.ComponentProps<typeof TermsDialog>> = args => (
-  <TermsDialog {...args} />
+const Template: StoryFn<React.ComponentProps<typeof TestModeInput>> = args => (
+  <TestModeInput {...args} />
 );
 
-export const Open = Template.bind({});
-Open.args = {
-  open: true,
-  onClose: () => console.log('Closed'),
-  onAccept: () => console.log('Accepted'),
+export const Active = Template.bind({});
+Active.args = {
+  isTestMode: true,
+  onAddTestResponse: (content: string | object, type: string, hasError?: boolean) =>
+    console.log('Test response:', { content, type, hasError }),
 };
 
-export const Closed = Template.bind({});
-Closed.args = {
-  open: false,
-  onClose: () => {},
-  onAccept: () => {},
+export const Inactive = Template.bind({});
+Inactive.args = {
+  isTestMode: false,
+  onAddTestResponse: () => {},
 };

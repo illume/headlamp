@@ -18,7 +18,7 @@ import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
 import AgentThinkingBlock, {
   ThinkingStep,
-} from '../../packages/ai-ui/src/components/assistant/AgentThinkingBlock';
+} from './AgentThinkingBlock';
 
 export default {
   title: 'AI UI/AgentThinkingBlock',
