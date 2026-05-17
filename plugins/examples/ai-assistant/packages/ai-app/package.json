@@ -4,9 +4,9 @@
   "description": "Electron-specific AI code for Headlamp",
   "type": "module",
   "exports": {
-    "./*": {
-      "types": "./dist/*",
-      "import": "./dist/*"
+    "./mcp/electron-client": {
+      "types": "./dist/mcp/electron-client.d.ts",
+      "import": "./dist/mcp/electron-client.js"
     }
   },
   "scripts": {
