@@ -273,6 +273,8 @@ function HeadlampAIPrompt() {
         }}
       >
         <Paper
+          role="dialog"
+          aria-label="Configure AI Assistant"
           elevation={8}
           sx={{
             p: 2,
@@ -289,7 +291,7 @@ function HeadlampAIPrompt() {
               mb: 1,
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 'bold' }}>
               Configure AI Assistant
             </Typography>
             <IconButton size="small" onClick={handleClosePopover} sx={{ ml: 1, mt: -0.5 }}>
