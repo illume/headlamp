@@ -18,6 +18,7 @@ export * from './ai/index';
 
 // Components - assistant
 export { default as AgentThinkingBlock } from './components/assistant/AgentThinkingBlock';
+export type { ThinkingStep } from './components/assistant/AgentThinkingBlock';
 export { PromptSuggestions } from './components/assistant/PromptSuggestions';
 export { default as TestModeInput } from './components/assistant/TestModeInput';
 
