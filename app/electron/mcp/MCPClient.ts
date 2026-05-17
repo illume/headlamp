@@ -14,24 +14,108 @@
  * limitations under the License.
  */
 
+import type { MCPSettings, MCPToolsConfig } from '@headlamp-k8s/ai-common/mcp/types';
+import { MCPToolStateStore } from '@headlamp-k8s/ai-common/mcp/MCPToolStateStore';
+import {
+  hasClusterDependentServers as hasClusterDependentServersFromSettings,
+  makeMcpServers,
+  parseServerNameToolName,
+  settingsChanges,
+  summarizeMcpToolStateChanges,
+  validateToolArgs,
+} from '@headlamp-k8s/ai-common/mcp/utils';
 import type { DynamicStructuredTool } from '@langchain/core/dist/tools/index';
+import type { ClientConfig } from '@langchain/mcp-adapters';
 import { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import { type BrowserWindow, dialog, ipcMain } from 'electron';
-import {
-  hasClusterDependentServers,
-  loadMCPSettings,
-  makeMcpServersFromSettings,
-  MCPSettings,
-  saveMCPSettings,
-  showSettingsChangeDialog,
-} from './MCPSettings';
-import {
-  MCPToolsConfig,
-  MCPToolStateStore,
-  parseServerNameToolName,
-  showToolsConfigConfirmationDialog,
-  validateToolArgs,
-} from './MCPToolStateStore';
+import { loadSettings, saveSettings } from '../settings';
+
+/**
+ * Load MCP server configuration from settings.
+ */
+function loadMCPSettings(settingsPath: string): MCPSettings | null {
+  const settings = loadSettings(settingsPath);
+  if (!settings || typeof settings !== 'object') {
+    return null;
+  }
+  const mcp = (settings as any).mcp;
+  return mcp ? (mcp as MCPSettings) : null;
+}
+
+/**
+ * Save MCP server configuration to settings.
+ */
+function saveMCPSettings(settingsPath: string, mcpSettings: MCPSettings): void {
+  const settings = loadSettings(settingsPath);
+  settings.mcp = mcpSettings;
+  saveSettings(settingsPath, settings);
+}
+
+/**
+ * Make mcpServers from settings for the mcpServers arg of MultiServerMCPClient.
+ */
+function makeMcpServersFromSettings(
+  settingsPath: string,
+  clusters: string[]
+): ClientConfig['mcpServers'] {
+  const mcpSettings = loadMCPSettings(settingsPath);
+  return makeMcpServers(mcpSettings, clusters);
+}
+
+/**
+ * Shows a dialog asking user for confirmation if MCP settings changes are ok.
+ */
+async function showSettingsChangeDialog(
+  mainWindow: BrowserWindow,
+  currentSettings: MCPSettings | null,
+  nextSettings: MCPSettings
+): Promise<boolean> {
+  const changes = settingsChanges(currentSettings, nextSettings);
+  const result = await dialog.showMessageBox(mainWindow, {
+    type: 'question',
+    buttons: ['Apply Changes', 'Cancel'],
+    defaultId: 1,
+    title: 'MCP Settings Changes',
+    message: 'The application wants to update the MCP settings.',
+    detail:
+      changes.length > 0
+        ? `The following changes will be applied:\n\n${changes.join(
+            '\n'
+          )}\n\nDo you want to apply these changes?`
+        : 'No changes detected in the MCP settings.\n\nDo you want to proceed anyway?',
+  });
+  return result.response === 0;
+}
+
+/**
+ * Check if any server in the settings uses HEADLAMP_CURRENT_CLUSTER placeholder.
+ */
+function hasClusterDependentServers(settingsPath: string): boolean {
+  return hasClusterDependentServersFromSettings(loadMCPSettings(settingsPath));
+}
+
+/**
+ * Show detailed confirmation dialog for tools configuration changes.
+ */
+async function showToolsConfigConfirmationDialog(
+  mainWindow: BrowserWindow,
+  currentConfig: MCPToolsConfig,
+  nextConfig: MCPToolsConfig
+): Promise<boolean> {
+  const summary = summarizeMcpToolStateChanges(currentConfig, nextConfig);
+  if (summary.totalChanges === 0) {
+    return true;
+  }
+  const result = await dialog.showMessageBox(mainWindow, {
+    type: 'question',
+    buttons: ['Apply Changes', 'Cancel'],
+    defaultId: 1,
+    title: 'MCP Tools Configuration Changes',
+    message: `${summary.totalChanges} tool configuration change(s) will be applied:`,
+    detail: summary.summaryText + '\n\nDo you want to apply these changes?',
+  });
+  return result.response === 0;
+}
 
 const DEBUG = true;
 

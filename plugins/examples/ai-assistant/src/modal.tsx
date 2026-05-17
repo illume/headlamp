@@ -9,13 +9,11 @@ import { Box, Button, Grid, Typography } from '@mui/material';
 import { isEqual } from 'lodash';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
-import {
-  AIAssistantHeader,
-  AIChatContent,
-  AIInputSection,
-  ApiConfirmationDialog,
-  PromptSuggestions,
-} from './components';
+import AIAssistantHeader from './components/assistant/AIAssistantHeader';
+import AIChatContent from './components/assistant/AIChatContent';
+import { AIInputSection } from './components/assistant/AllInputSection';
+import ApiConfirmationDialog from './components/common/ApiConfirmationDialog';
+import { PromptSuggestions } from '@headlamp-k8s/ai-ui/components/assistant/PromptSuggestions';
 import { getProviderById } from '@headlamp-k8s/ai-ui/config/modelConfig';
 import { isTestModeCheck } from '@headlamp-k8s/ai-ui/testing/testMode';
 import EditorDialog from './editordialog';

@@ -30,8 +30,8 @@ import {
 } from '@mui/material';
 import React from 'react';
 import { useHistory } from 'react-router-dom';
-import { ModelSelector } from './components';
-import { MCPSettings } from './components/settings';
+import ModelSelector from './components/settings/ModelSelector';
+import { MCPSettings } from './components/settings/MCPSettings';
 import { getDefaultConfig } from '@headlamp-k8s/ai-ui/config/modelConfig';
 import { PromptWidthProvider } from '@headlamp-k8s/ai-ui/contexts/PromptWidthContext';
 import { isTestModeCheck } from '@headlamp-k8s/ai-ui/testing/testMode';
