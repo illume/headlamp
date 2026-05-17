@@ -3,7 +3,7 @@ import {
   getActiveConfig,
   getSavedConfigurations,
   SavedConfigurations,
-} from '@headlamp-k8s/ai-common/utils/ProviderConfigManager';
+} from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
 import { Icon } from '@iconify/react';
 import {
   registerAppBarAction,
@@ -34,7 +34,7 @@ import { ModelSelector } from './components';
 import { MCPSettings } from './components/settings';
 import { getDefaultConfig } from '@headlamp-k8s/ai-ui/config/modelConfig';
 import { PromptWidthProvider } from '@headlamp-k8s/ai-ui/contexts/PromptWidthContext';
-import { isTestModeCheck } from '@headlamp-k8s/ai-ui/utils/testMode';
+import { isTestModeCheck } from '@headlamp-k8s/ai-ui/testing/testMode';
 import { ClusterChangeNotifier } from './hooks/useClusterChangeNotifier';
 import AIPrompt from './modal';
 import {
@@ -46,7 +46,7 @@ import {
   toggleTool,
   useGlobalState,
   usePluginConfig,
-} from './utils';
+} from './pluginState';
 
 // Memoized UI Panel component to prevent unnecessary re-renders
 const AIPanelComponent = React.memo(() => {

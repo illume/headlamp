@@ -1,4 +1,4 @@
-import { toolApprovalManager, ToolApprovalRequest } from '@headlamp-k8s/ai-common/utils/ToolApprovalManager';
+import { toolApprovalManager, ToolApprovalRequest } from '@headlamp-k8s/ai-common/approval/ToolApprovalManager';
 import { useCallback, useEffect, useState } from 'react';
 
 export interface UseToolApprovalResult {

@@ -1,4 +1,4 @@
-import { StoredProviderConfig } from '@headlamp-k8s/ai-common/utils/ProviderConfigManager';
+import { StoredProviderConfig } from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
 import { Icon } from '@iconify/react';
 import { ActionButton } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import {
@@ -13,7 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import React from 'react';
-import { getModelDisplayName, getProviderModelsForChat } from '@headlamp-k8s/ai-ui/utils/modelProviderUtils';
+import { getModelDisplayName, getProviderModelsForChat } from '@headlamp-k8s/ai-ui/providers/modelProviders';
 import { getProviderById } from '@headlamp-k8s/ai-ui/config/modelConfig';
 import TestModeInput from '@headlamp-k8s/ai-ui/components/assistant/TestModeInput';
 import { ToolsDialog } from './ToolsDialog';

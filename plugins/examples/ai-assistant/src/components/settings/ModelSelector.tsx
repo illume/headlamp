@@ -5,7 +5,7 @@ import {
   saveProviderConfig,
   saveTermsAcceptance,
   StoredProviderConfig,
-} from '@headlamp-k8s/ai-common/utils/ProviderConfigManager';
+} from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
 import { Icon } from '@iconify/react';
 import { ConfirmDialog } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import {

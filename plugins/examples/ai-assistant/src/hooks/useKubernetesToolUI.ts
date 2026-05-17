@@ -1,6 +1,6 @@
 import { KubernetesToolUICallbacks, KubernetesToolUIState } from '@headlamp-k8s/ai-common/langchain/tools/kubernetes/types';
 import { useMemo, useState } from 'react';
-import { handleActualApiRequest } from '../helper/apihelper';
+import { handleActualApiRequest } from '../api/clusterActions';
 
 export function useKubernetesToolUI(updateHistory?: () => void): {
   state: KubernetesToolUIState;

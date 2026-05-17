@@ -15,7 +15,7 @@
  */
 
 import { describe, expect, it } from 'vitest';
-import { promptLinksInstructions } from './promptLinkHelper';
+import { promptLinksInstructions } from './promptLinks';
 
 describe('promptLinkHelper', () => {
   describe('promptLinksInstructions', () => {

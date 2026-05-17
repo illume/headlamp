@@ -22,14 +22,14 @@
     "./langchain/tools/registry": "./src/langchain/tools/registry.ts",
     "./mcp/MCPToolStateStore": "./src/mcp/MCPToolStateStore.ts",
     "./mcp/types": "./src/mcp/types.ts",
-    "./mcp/utils": "./src/mcp/utils.ts",
+    "./mcp/mcpServerConfig": "./src/mcp/mcpServerConfig.ts",
     "./mock-testing-model/MockTestingModel": "./src/mock-testing-model/MockTestingModel.ts",
     "./mock-testing-model/builtinFixtures": "./src/mock-testing-model/builtinFixtures.ts",
-    "./utils/InlineToolApprovalManager": "./src/utils/InlineToolApprovalManager.ts",
-    "./utils/ProviderConfigManager": "./src/utils/ProviderConfigManager.ts",
-    "./utils/ToolApprovalManager": "./src/utils/ToolApprovalManager.ts",
-    "./utils/ToolConfigManager": "./src/utils/ToolConfigManager.ts",
-    "./utils/promptLinkHelper": "./src/utils/promptLinkHelper.ts"
+    "./approval/InlineToolApprovalManager": "./src/approval/InlineToolApprovalManager.ts",
+    "./approval/ToolApprovalManager": "./src/approval/ToolApprovalManager.ts",
+    "./managers/ProviderConfigManager": "./src/managers/ProviderConfigManager.ts",
+    "./managers/ToolConfigManager": "./src/managers/ToolConfigManager.ts",
+    "./prompts/promptLinks": "./src/prompts/promptLinks.ts"
   },
   "scripts": {
     "test": "vitest run --passWithNoTests"

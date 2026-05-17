@@ -8,7 +8,7 @@ import remarkGfm from 'remark-gfm';
 import YAML from 'yaml';
 import MCPFormattedMessage from '@headlamp-k8s/ai-ui/components/chat/MCPFormattedMessage';
 import YamlDisplay from '@headlamp-k8s/ai-ui/components/common/YamlDisplay';
-import { parseKubernetesYAML } from '@headlamp-k8s/ai-ui/utils/yamlParser';
+import { parseKubernetesYAML } from '@headlamp-k8s/ai-ui/parsing/yamlParser';
 import { LogsButton } from './components';
 
 // Helper types for error handling

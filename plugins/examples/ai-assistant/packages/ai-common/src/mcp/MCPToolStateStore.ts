@@ -16,7 +16,7 @@
 
 import * as fs from 'fs';
 import type { MCPToolsConfig } from './types';
-import { parseServerNameToolName } from './utils';
+import { parseServerNameToolName } from './mcpServerConfig';
 
 /**
  * MCPToolStateStore manages configuration for MCP (Multi-Cluster Platform)

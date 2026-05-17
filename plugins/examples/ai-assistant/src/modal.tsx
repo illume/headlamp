@@ -1,7 +1,7 @@
 import { getHolmesProxyBaseUrl, HolmesAgent } from './holmesClient';
 import AIManager, { Prompt } from '@headlamp-k8s/ai-common/ai/manager';
 import LangChainManager from '@headlamp-k8s/ai-common/langchain/LangChainManager';
-import { inlineToolApprovalManager } from '@headlamp-k8s/ai-common/utils/InlineToolApprovalManager';
+import { inlineToolApprovalManager } from '@headlamp-k8s/ai-common/approval/InlineToolApprovalManager';
 import { Icon } from '@iconify/react';
 import { useClustersConf, useSelectedClusters } from '@kinvolk/headlamp-plugin/lib/k8s';
 import { getCluster, getClusterGroup } from '@kinvolk/headlamp-plugin/lib/Utils';
@@ -17,22 +17,22 @@ import {
   PromptSuggestions,
 } from './components';
 import { getProviderById } from '@headlamp-k8s/ai-ui/config/modelConfig';
-import { isTestModeCheck } from '@headlamp-k8s/ai-ui/utils/testMode';
+import { isTestModeCheck } from '@headlamp-k8s/ai-ui/testing/testMode';
 import EditorDialog from './editordialog';
 import { useKubernetesToolUI } from './hooks/useKubernetesToolUI';
-import { getSettingsURL, useGlobalState } from './utils';
-import { generateContextDescription } from './utils/contextGenerator';
+import { getSettingsURL, useGlobalState } from './pluginState';
+import { generateContextDescription } from './context/contextGenerator';
 import {
   /* [PROACTIVE_DIAGNOSIS_DISABLED] fetchWarningEventsForClusters, */ fetchClusterWarnings,
-} from './utils/EventFetcher';
-import { getProviderModels, parseSuggestionsFromResponse } from '@headlamp-k8s/ai-ui/utils/modelProviderUtils';
+} from './kubernetes/EventFetcher';
+import { getProviderModels, parseSuggestionsFromResponse } from '@headlamp-k8s/ai-ui/providers/modelProviders';
 // [PROACTIVE_DIAGNOSIS_DISABLED]
 // import {
 //   DiagnosisStepCallback,
 //   proactiveDiagnosisManager,
 //   ProactiveDiagnosisManager,
 // } from '@headlamp-k8s/ai-ui';
-import { useDynamicPrompts } from './utils/promptGenerator';
+import { useDynamicPrompts } from './prompts/promptGenerator';
 
 // Operation type constants for translation
 const OPERATION_TYPES = {
@@ -45,8 +45,8 @@ import {
   getActiveConfig,
   getSavedConfigurations,
   StoredProviderConfig,
-} from '@headlamp-k8s/ai-common/utils/ProviderConfigManager';
-import { getEnabledToolIds } from '@headlamp-k8s/ai-common/utils/ToolConfigManager';
+} from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
+import { getEnabledToolIds } from '@headlamp-k8s/ai-common/managers/ToolConfigManager';
 import { usePromptWidth } from '@headlamp-k8s/ai-ui/contexts/PromptWidthContext';
 
 export default function AIPrompt(props: {

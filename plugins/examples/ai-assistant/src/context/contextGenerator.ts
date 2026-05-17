@@ -1,5 +1,5 @@
 import Event from '@kinvolk/headlamp-plugin/lib/K8s/event';
-import type { HeadlampEventPayload } from '../utils';
+import type { HeadlampEventPayload } from '../pluginState';
 /**
  * Context Generator - Creates human-readable context descriptions for the AI
  * This replaces the complex JSON context system with simple, natural language descriptions

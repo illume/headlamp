@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { promptLinksInstructions } from '../utils/promptLinkHelper';
+import { promptLinksInstructions } from '../prompts/promptLinks';
 
 export const basePrompt = `You are an AI assistant for Headlamp with Kubernetes management capabilities and extended functionality via MCP (Model Context Protocol) tools.
 

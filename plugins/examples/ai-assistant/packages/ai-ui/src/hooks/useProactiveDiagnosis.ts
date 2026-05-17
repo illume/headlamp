@@ -7,7 +7,7 @@
  */
 
 import { useCallback, useEffect, useState } from 'react';
-import { DiagnosisResult, proactiveDiagnosisManager } from '../utils/ProactiveDiagnosisManager';
+import { DiagnosisResult, proactiveDiagnosisManager } from '../diagnosis/ProactiveDiagnosisManager';
 
 export function useProactiveDiagnosis() {
   const [diagnoses, setDiagnoses] = useState<DiagnosisResult[]>(

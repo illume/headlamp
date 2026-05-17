@@ -1,6 +1,6 @@
 import React from 'react';
 import { useLocation } from 'react-router-dom';
-import { useGlobalState } from '../utils';
+import { useGlobalState } from '../pluginState';
 
 /**
  * Generates dynamic prompts based on the current context and event.

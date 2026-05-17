@@ -23,7 +23,7 @@ import {
   settingsChanges,
   summarizeMcpToolStateChanges,
   validateToolArgs,
-} from './utils';
+} from './mcpServerConfig';
 
 describe('expandEnvAndResolvePaths', () => {
   beforeEach(() => {
