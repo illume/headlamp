@@ -6,7 +6,7 @@ import Box from '@mui/material/Box';
 import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { parseKubernetesYAML } from '../../utils/yamlParser';
+import { parseKubernetesYAML } from '../../parsing/yamlParser';
 
 interface YamlDisplayProps {
   yaml: string;
