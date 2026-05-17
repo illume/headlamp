@@ -128,3 +128,178 @@ Once servers are configured, the assistant automatically discovers the tools the
 - View tool descriptions and input schemas.
 - Track tool usage statistics.
 - Use bulk operations to enable or disable all tools at once.
+
+## Development
+
+### Project Structure
+
+```
+ai-assistant/
+  package.json          # Plugin package — consumes the shared packages
+  src/                  # Plugin source code (React components, hooks)
+  tsconfig.json         # Extends @kinvolk/headlamp-plugin config
+  .npmrc                # install-links=true for file: deps
+
+  packages/
+    ai-common/          # @headlamp-k8s/ai-common — shared logic
+      package.json      #   Config, prompts, tool approval, mock-testing-model,
+      src/              #   LangChain orchestration, MCP utilities.
+                        #   Ships .ts directly (no build step). 95 unit tests.
+
+    ai-cli/             # @headlamp-k8s/ai-cli — Node CLI entrypoint
+      package.json      #   `headlamp-ai` binary.
+      src/              #   Ships .ts directly (uses tsx/node loaders).
+
+    ai-ui/              # @headlamp-k8s/ai-ui — React UI utilities
+      package.json      #   Browser-only components and hooks.
+      src/              #   Ships .ts directly (consumer bundlers compile).
+
+    ai-app/             # @headlamp-k8s/ai-app — Electron application code
+      package.json      #   MCP settings, tool state store.
+      src/              #   Requires TypeScript build (Electron needs JS).
+```
+
+The plugin depends on `ai-common`, `ai-ui`, and `ai-app` via `file:` references
+in `package.json`. The `.npmrc` file sets `install-links=true` so `npm ci`
+copies rather than symlinks the packages.
+
+### Prerequisites
+
+- Node.js ≥ 20.11.1
+- npm ≥ 10.0.0
+- Go (for the backend, if running the full app)
+
+### Quick Start — Plugin Development
+
+```bash
+cd plugins/examples/ai-assistant
+npm install    # installs plugin + all file: package deps
+npm start      # starts headlamp-plugin dev server (hot reload)
+```
+
+This is enough to develop and make changes to the plugin. The `file:`
+dependencies on the `packages/` subdirectories are resolved at install time.
+Changes to files inside `packages/ai-common/src/`, `packages/ai-ui/src/`,
+etc. are picked up automatically by the plugin bundler since they ship
+`.ts` directly.
+
+### Package Commands
+
+#### ai-common (shared logic)
+
+```bash
+cd packages/ai-common
+npm install
+npm test              # run 95 unit tests (vitest)
+```
+
+#### ai-app (Electron code)
+
+```bash
+cd packages/ai-app
+npm install
+npm run build         # compile TypeScript → dist/ (required for Electron)
+npm run clean         # remove dist/
+```
+
+#### ai-cli and ai-ui
+
+These packages ship `.ts` directly and have no build or test scripts.
+They are consumed by bundlers (plugin, Electron) or Node loaders (tsx).
+
+### Plugin Commands
+
+All commands run from the `ai-assistant/` root:
+
+| Command | Description |
+|---------|-------------|
+| `npm install` | Install all dependencies (plugin + packages) |
+| `npm start` | Start plugin dev server with hot reload |
+| `npm run build` | Production build of the plugin |
+| `npm run lint` | Run ESLint |
+| `npm run lint-fix` | Run ESLint with auto-fix |
+| `npm run format` | Format code with Prettier |
+| `npm run tsc` | TypeScript type-check |
+| `npm test` | Run plugin tests |
+| `npm run storybook` | Start Storybook dev server |
+| `npm run storybook-build` | Build static Storybook |
+| `npm run package` | Package plugin for distribution |
+
+### Full App Development (with KWOK)
+
+To run Headlamp with the ai-assistant plugin on a KWOK test cluster:
+
+```bash
+# 1. Create a KWOK cluster
+kwokctl create cluster --name headlamp-test
+
+# 2. Install ai-common dependencies (needed by app/ tests)
+cd plugins/examples/ai-assistant/packages/ai-common && npm install
+cd -
+
+# 3. Build the plugin
+cd plugins/examples/ai-assistant
+npm install
+npm run build
+cd -
+
+# 4. Build the frontend
+npm run frontend:build
+
+# 5. Build the backend
+cd backend && go build -o headlamp-server ./cmd && cd -
+
+# 6. Install the plugin
+mkdir -p ~/.config/Headlamp/plugins/ai-assistant
+cp -r plugins/examples/ai-assistant/dist/* ~/.config/Headlamp/plugins/ai-assistant/
+cp plugins/examples/ai-assistant/package.json ~/.config/Headlamp/plugins/ai-assistant/
+
+# 7. Start the backend
+KUBECONFIG=$(kwokctl get kubeconfig --name headlamp-test) \
+  backend/headlamp-server \
+  -plugins-dir ~/.config/Headlamp/plugins \
+  -in-cluster=false
+
+# 8. Open http://localhost:4466
+```
+
+### Makefile Targets
+
+From the repository root, these Make targets involve the ai-assistant:
+
+| Target | Description |
+|--------|-------------|
+| `make ai-build` | Install ai-common dependencies (prereq for app/plugin builds) |
+| `make app-build` | Build frontend + app (depends on `ai-build`) |
+| `make app-test` | Run app tests (depends on `ai-build`) |
+| `make plugins-test` | Run all plugin tests (depends on `ai-build`) |
+
+### Releasing
+
+1. **Version bump** — Update `version` in:
+   - `plugins/examples/ai-assistant/package.json` (the plugin)
+   - `packages/ai-common/package.json`
+   - `packages/ai-cli/package.json`
+   - `packages/ai-ui/package.json`
+   - `packages/ai-app/package.json`
+
+2. **Build the plugin** — `npm run build` in the `ai-assistant/` directory.
+
+3. **Package** — `npm run package` creates a tarball suitable for
+   distribution via ArtifactHub or manual installation.
+
+4. **Docker** — The plugin is included in `Dockerfile.plugins` automatically.
+   The Docker build copies the `packages/` directory, installs deps, and
+   runs `headlamp-plugin build` for ai-assistant.
+
+### Troubleshooting
+
+- **`npm ci` fails with "Missing from lock file"** — Make sure `.npmrc`
+  contains `install-links=true`. Regenerate `package-lock.json` with
+  `npm install --install-links`.
+- **vitest walks up to plugin tsconfig** — The `ai-common` package has
+  its own `tsconfig.json` to stop consumers from resolving the plugin's
+  `tsconfig.json` (which extends `@kinvolk/headlamp-plugin` config).
+- **Plugin shows "Incompatible"** — The plugin SDK version
+  (`@kinvolk/headlamp-plugin@^0.13.0-alpha.14`) must match the runtime.
+  This is expected in development when using a pre-built frontend.
