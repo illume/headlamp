@@ -18,28 +18,47 @@ import { getProviderById } from '@headlamp-k8s/ai-ui/config/modelConfig';
 import TestModeInput from '@headlamp-k8s/ai-ui/components/assistant/TestModeInput';
 import { ToolsDialog } from './ToolsDialog';
 
+/** Props for the AIInputSection component that contains the chat input and controls. */
 interface AIInputSectionProps {
+  /** Current value of the prompt text field. */
   promptVal: string;
+  /** Setter for the prompt text field value. */
   setPromptVal: (value: string) => void;
+  /** Whether an AI request is currently in progress. */
   loading: boolean;
+  /** Whether the assistant is operating in test mode. */
   isTestMode: boolean;
+  /** The currently active provider configuration, or null if none is set. */
   activeConfig: StoredProviderConfig | null;
+  /** All available saved provider configurations. */
   availableConfigs: StoredProviderConfig[];
+  /** The currently selected model identifier. */
   selectedModel: string;
+  /** Whether agent (multi-step) mode is enabled. */
   isAgentMode?: boolean;
+  /** Current status of the agent mode availability check. */
   agentModeStatus?: 'idle' | 'checking' | 'found' | 'not-found';
+  /** Whether a proactive diagnosis cycle is currently running. */
   isDiagnosisRunning?: boolean;
+  /** Array of currently enabled tool identifiers. */
   enabledTools: string[];
+  /** Callback to send a user prompt to the AI. */
   onSend: (prompt: string) => void;
+  /** Callback to stop a running AI request. */
   onStop: () => void;
+  /** Callback to clear the chat history. */
   onClearHistory: () => void;
+  /** Callback invoked when the provider configuration or model selection changes. */
   onConfigChange: (config: StoredProviderConfig, model: string) => void;
+  /** Callback to toggle agent mode on or off. */
   onToggleAgentMode?: (enabled: boolean) => void;
+  /** Callback to inject a test-mode response into the chat. */
   onTestModeResponse: (
     content: string | object,
     type: 'assistant' | 'user',
     hasError?: boolean
   ) => void;
+  /** Callback invoked when the set of enabled tools changes. */
   onToolsChange: (enabledTools: string[]) => void;
 }
 

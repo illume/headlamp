@@ -11,10 +11,13 @@ import YamlDisplay from '@headlamp-k8s/ai-ui/components/common/YamlDisplay';
 import { parseKubernetesYAML } from '@headlamp-k8s/ai-ui/parsing/yamlParser';
 import LogsButton from './components/common/LogsButton';
 
-// Helper types for error handling
+/** Result of a parse attempt, indicating success or failure with optional data. */
 interface ParseResult<T> {
+  /** Whether the parse operation succeeded. */
   success: boolean;
+  /** The parsed data, present when parsing succeeds. */
   data?: T;
+  /** Error message describing why parsing failed. */
   error?: string;
 }
 
@@ -86,10 +89,15 @@ const parseLogsButtonData = (content: string, logsButtonIndex: number): ParseRes
   }
 };
 
+/** Props for the ContentRenderer component that renders AI assistant message content. */
 interface ContentRendererProps {
+  /** The raw text content (markdown, YAML, JSON, etc.) to render. */
   content: string;
+  /** Callback invoked when YAML content for a Kubernetes resource is detected. */
   onYamlDetected?: (yaml: string, resourceType: string) => void;
-  promptWidth?: string; // Add width prop
+  /** CSS width value for the prompt container. */
+  promptWidth?: string;
+  /** Callback to retry a failed tool invocation with the given name and arguments. */
   onRetryTool?: (toolName: string, args: Record<string, any>) => void;
 }
 

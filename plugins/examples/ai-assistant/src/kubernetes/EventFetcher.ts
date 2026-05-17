@@ -8,13 +8,21 @@
 
 import { clusterRequest } from '@kinvolk/headlamp-plugin/lib/ApiProxy';
 
+/** Raw Kubernetes Event object as returned by the API server. */
 export interface RawK8sEvent {
+  /** Standard Kubernetes object metadata. */
   metadata: { uid: string; name: string; namespace: string; creationTimestamp: string };
-  type: string; // "Normal" | "Warning" | "Error"
+  /** Event severity type, e.g. "Normal", "Warning", or "Error". */
+  type: string;
+  /** Short machine-readable reason for the event. */
   reason: string;
+  /** Human-readable description of the event. */
   message: string;
+  /** Reference to the Kubernetes object this event is about. */
   involvedObject: { kind: string; name: string; namespace: string };
+  /** Timestamp of the last occurrence of this event. */
   lastTimestamp?: string;
+  /** Additional fields from the Kubernetes Event resource. */
   [key: string]: any;
 }
 

@@ -15,19 +15,31 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 
+/** Configuration for a single MCP server process. */
 export interface MCPServer {
+  /** Unique display name for the server. */
   name: string;
+  /** Command used to start the MCP server process. */
   command: string;
+  /** Command-line arguments passed to the server process. */
   args: string[];
+  /** Optional environment variables for the server process. */
   env?: Record<string, string>;
+  /** Whether this server is currently enabled. */
   enabled: boolean;
 }
 
+/** Props for the MCPServerEditor dialog component. */
 interface MCPServerEditorProps {
+  /** Whether the editor dialog is currently visible. */
   open: boolean;
+  /** Callback invoked when the dialog is closed. */
   onClose: () => void;
+  /** Existing server to edit, or undefined when adding a new server. */
   server?: MCPServer;
+  /** Callback invoked when the user saves the server configuration. */
   onSave: (server: MCPServer) => void;
+  /** Names of existing servers, used to prevent duplicate names. */
   existingServerNames: string[];
 }
 

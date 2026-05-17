@@ -22,20 +22,31 @@ import { pluginStore } from '../../pluginState';
 import MCPConfigEditorDialog from './MCPConfigEditorDialog';
 import MCPServerEditor from './MCPServerEditor';
 
+/** Configuration for a single MCP server process. */
 export interface MCPServer {
+  /** Unique display name for the server. */
   name: string;
+  /** Command used to start the MCP server process. */
   command: string;
+  /** Command-line arguments passed to the server process. */
   args: string[];
+  /** Optional environment variables for the server process. */
   env?: Record<string, string>;
+  /** Whether this server is currently enabled. */
   enabled: boolean;
 }
 
+/** Top-level MCP configuration containing global enablement and server list. */
 export interface MCPConfig {
+  /** Whether MCP functionality is globally enabled. */
   enabled: boolean;
+  /** List of configured MCP servers. */
   servers: MCPServer[];
 }
 
+/** Props for the MCPSettings component. */
 interface MCPSettingsProps {
+  /** Callback invoked when the MCP configuration changes. */
   onConfigChange?: (config: MCPConfig) => void;
 }
 

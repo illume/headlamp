@@ -6,13 +6,21 @@ import React from 'react';
 import TextStreamContainer from '../../textstream';
 // [PROACTIVE_DIAGNOSIS_DISABLED] import ProactiveDiagnosisSection from './ProactiveDiagnosisSection';
 
+/** Props for the AIChatContent component that renders the chat message history. */
 interface AIChatContentProps {
+  /** Array of chat messages (prompts and responses) to display. */
   history: Prompt[];
+  /** Whether an AI response is currently being generated. */
   isLoading: boolean;
+  /** Error message from the last API call, or null if none. */
   apiError: string | null;
+  /** Callback invoked when a Kubernetes API operation succeeds. */
   onOperationSuccess: (response: any) => void;
+  /** Callback invoked when a Kubernetes API operation fails. */
   onOperationFailure: (error: any, operationType: string, resourceInfo?: any) => void;
+  /** Callback invoked when the user triggers a YAML apply/delete action. */
   onYamlAction: (yaml: string, title: string, type: string, isDeleteOp: boolean) => void;
+  /** Callback to retry a failed tool invocation with the given name and arguments. */
   onRetryTool?: (toolName: string, args: Record<string, any>) => void;
 }
 

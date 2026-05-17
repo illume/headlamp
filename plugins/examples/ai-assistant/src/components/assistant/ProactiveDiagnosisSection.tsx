@@ -28,11 +28,17 @@ import React, { useEffect, useRef, useState } from 'react';
 import ContentRenderer from '../../ContentRenderer';
 import type { DiagnosisResult, DiagnosisThinkingStep } from '@headlamp-k8s/ai-ui/diagnosis/ProactiveDiagnosisManager';
 
+/** Props for the ProactiveDiagnosisSection component that displays diagnosis results. */
 interface ProactiveDiagnosisSectionProps {
+  /** List of diagnosis results to render. */
   diagnoses: DiagnosisResult[];
+  /** UID of the event to auto-scroll to, or null if none. */
   scrollToEventUid: string | null;
+  /** Callback invoked after the auto-scroll animation completes. */
   onScrollComplete: () => void;
+  /** Whether a diagnosis cycle is currently in progress. */
   isCycleRunning: boolean;
+  /** Callback invoked when the user triggers a YAML apply/delete action from a diagnosis. */
   onYamlAction?: (yaml: string, title: string, resourceType: string, isDelete: boolean) => void;
 }
 
@@ -329,12 +335,19 @@ function splitDiagnosisContent(text: string): { thinking: string; answer: string
 
 /* ── Reusable collapsible section ─────────────────────────────────── */
 
+/** Props for the CollapsibleSection helper component used within diagnosis cards. */
 interface CollapsibleSectionProps {
+  /** Iconify icon identifier to display in the section header. */
   icon: string;
+  /** CSS color for the header icon. */
   iconColor: string;
+  /** Title text displayed in the section header. */
   title: string;
+  /** Optional subtitle text displayed below the title. */
   subtitle?: string;
+  /** Whether the section starts in expanded state. */
   defaultExpanded?: boolean;
+  /** Content rendered inside the collapsible area. */
   children: React.ReactNode;
 }
 

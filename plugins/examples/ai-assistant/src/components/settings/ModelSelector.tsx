@@ -38,9 +38,13 @@ import {
 } from '@headlamp-k8s/ai-ui/config/modelConfig';
 import TermsDialog from '@headlamp-k8s/ai-ui/components/settings/TermsDialog';
 
+/** Props for the ProviderSelectionDialog that lets users pick an AI provider. */
 interface ProviderSelectionDialogProps {
+  /** Whether the dialog is currently visible. */
   open: boolean;
+  /** Callback invoked when the dialog is dismissed. */
   onClose: () => void;
+  /** Callback invoked when the user selects a provider by its ID. */
   onSelectProvider: (providerId: string) => void;
 }
 
@@ -100,14 +104,23 @@ function ProviderSelectionDialog({
 }
 
 // Configuration dialog component
+/** Props for the ConfigurationDialog that edits provider-specific settings. */
 interface ConfigurationDialogProps {
+  /** Whether the dialog is currently visible. */
   open: boolean;
+  /** Callback invoked when the dialog is dismissed. */
   onClose: () => void;
+  /** The ID of the AI provider being configured. */
   providerId: string;
+  /** Current provider configuration key-value map. */
   config: Record<string, any>;
+  /** Callback invoked when configuration values change. */
   onConfigChange: (config: Record<string, any>) => void;
+  /** Display name for this configuration. */
   configName: string;
+  /** Callback invoked when the configuration name is changed. */
   onConfigNameChange?: (name: string) => void;
+  /** Callback invoked when the user saves, with flag indicating default status. */
   onSave?: (makeDefault: boolean) => void;
 }
 
@@ -398,18 +411,26 @@ function ConfigurationDialog({
   );
 }
 
+/** Props for the ModelSelector component that manages AI provider configurations. */
 interface ModelSelectorProps {
+  /** ID of the currently selected AI provider. */
   selectedProvider: string;
+  /** Current provider configuration key-value map. */
   config: Record<string, any>;
+  /** All saved provider configurations. */
   savedConfigs: SavedConfigurations;
+  /** Optional display name of the active configuration. */
   configName?: string;
+  /** Whether the component is rendered in the settings/config view. */
   isConfigView?: boolean;
+  /** Callback invoked when the provider selection or configuration changes. */
   onChange?: (changes: {
     providerId: string;
     config: Record<string, any>;
     displayName: string;
     savedConfigs?: SavedConfigurations;
   }) => void;
+  /** Callback invoked when the user accepts provider terms of service. */
   onTermsAccept?: (updatedConfigs: SavedConfigurations) => void;
 }
 

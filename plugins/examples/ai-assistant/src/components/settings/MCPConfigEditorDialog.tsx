@@ -15,23 +15,37 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 
+/** Configuration for a single MCP server process. */
 export interface MCPServer {
+  /** Unique display name for the server. */
   name: string;
+  /** Command used to start the MCP server process. */
   command: string;
+  /** Command-line arguments passed to the server process. */
   args: string[];
+  /** Optional environment variables for the server process. */
   env?: Record<string, string>;
+  /** Whether this server is currently enabled. */
   enabled: boolean;
 }
 
+/** Top-level MCP configuration containing global enablement and server list. */
 export interface MCPConfig {
+  /** Whether MCP functionality is globally enabled. */
   enabled: boolean;
+  /** List of configured MCP servers. */
   servers: MCPServer[];
 }
 
+/** Props for the MCPConfigEditorDialog that provides a raw JSON/YAML editor for MCP config. */
 interface MCPConfigEditorDialogProps {
+  /** Whether the editor dialog is currently visible. */
   open: boolean;
+  /** Callback invoked when the dialog is dismissed. */
   onClose: () => void;
+  /** Current MCP configuration to display and edit. */
   config: MCPConfig;
+  /** Callback invoked when the user saves the edited configuration. */
   onSave: (config: MCPConfig) => void;
 }
 

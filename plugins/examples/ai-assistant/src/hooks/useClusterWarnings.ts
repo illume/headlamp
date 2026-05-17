@@ -6,9 +6,12 @@
 import Event from '@kinvolk/headlamp-plugin/lib/K8s/event';
 import { useMemo } from 'react';
 
+/** Map of cluster names to their warning events and optional fetch error. */
 export interface EventsPerCluster {
   [cluster: string]: {
+    /** Warning-level Kubernetes events for this cluster. */
     warnings: Event[];
+    /** Error encountered while fetching events, if any. */
     error?: Error | null;
   };
 }

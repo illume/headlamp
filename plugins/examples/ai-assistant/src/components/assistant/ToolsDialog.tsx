@@ -25,17 +25,27 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 
+/** Describes an MCP tool available for use in the assistant. */
 interface MCPTool {
+  /** Unique name identifier of the tool. */
   name: string;
+  /** Human-readable description of what the tool does. */
   description?: string;
+  /** JSON Schema describing the tool's expected input parameters. */
   inputSchema?: any;
+  /** Name of the MCP server providing this tool. */
   server?: string;
 }
 
+/** Props for the ToolsDialog component that manages tool enablement. */
 interface ToolsDialogProps {
+  /** Whether the dialog is currently visible. */
   open: boolean;
+  /** Callback invoked when the dialog is closed. */
   onClose: () => void;
+  /** Array of currently enabled tool identifiers. */
   enabledTools: string[];
+  /** Callback invoked when the set of enabled tools changes. */
   onToolsChange: (enabledTools: string[]) => void;
 }
 

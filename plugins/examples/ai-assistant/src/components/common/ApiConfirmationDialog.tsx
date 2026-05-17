@@ -11,15 +11,25 @@ function cleanYamlContent(content: string): string {
   return content.trim();
 }
 
+/** Props for the ApiConfirmationDialog that previews and confirms Kubernetes API requests. */
 interface ApiConfirmationDialogProps {
+  /** Whether the confirmation dialog is currently visible. */
   open: boolean;
+  /** Callback invoked when the dialog is dismissed. */
   onClose: () => void;
+  /** HTTP method of the API request (e.g. "POST", "DELETE"). */
   method: string;
+  /** Target Kubernetes API URL for the request. */
   url: string;
+  /** Optional request body content (typically YAML or JSON). */
   body?: string;
-  onConfirm: (editedBody?: string, resourceInfo?: string) => void; // Updated to accept edited body
+  /** Callback invoked when the user confirms the action, with optional edited body. */
+  onConfirm: (editedBody?: string, resourceInfo?: string) => void;
+  /** Whether the API request is currently in progress. */
   isLoading?: boolean;
+  /** The result of the API call, if completed. */
   result?: any;
+  /** Error message if the API call failed. */
   error?: string;
 }
 

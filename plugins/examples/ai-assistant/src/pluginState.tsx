@@ -126,6 +126,7 @@ export type HeadlampEventPayload =
       objectEvent?: ResourceListViewLoadedEvent['data'];
     };
 
+/** Persistent configuration state for the AI assistant plugin. */
 interface PluginConfig extends SavedConfigurations {
   /** Is the AI Assistant UI panel open? */
   isUIPanelOpen?: boolean;

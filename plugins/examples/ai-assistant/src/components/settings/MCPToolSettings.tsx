@@ -21,30 +21,45 @@ import {
 } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
 
+/** Enablement state and usage statistics for a single MCP tool. */
 interface MCPToolState {
+  /** Whether the tool is currently enabled. */
   enabled: boolean;
+  /** Timestamp of the last time this tool was used. */
   lastUsed?: Date;
+  /** Total number of times this tool has been invoked. */
   usageCount?: number;
 }
 
+/** Map of tool names to their state for a given MCP server. */
 interface MCPServerToolState {
   [toolName: string]: MCPToolState;
 }
 
+/** Map of server names to their per-tool state configuration. */
 interface MCPToolsConfig {
   [serverName: string]: MCPServerToolState;
 }
 
+/** Resolved information about an MCP tool including its server context. */
 interface MCPToolInfo {
+  /** Display name of the tool (may be prefixed with server name). */
   name: string;
+  /** Human-readable description of what the tool does. */
   description?: string;
+  /** Name of the MCP server that provides this tool. */
   server: string;
+  /** Original tool name as registered on the server. */
   actualToolName: string;
+  /** Whether the tool is currently enabled. */
   enabled: boolean;
+  /** Usage statistics for this tool, or null if unavailable. */
   stats: MCPToolState | null;
 }
 
+/** Props for the MCPToolSettings component. */
 interface MCPToolSettingsProps {
+  /** Callback invoked when tool configuration has unsaved changes. */
   onConfigChange?: (hasChanges: boolean) => void;
 }
 

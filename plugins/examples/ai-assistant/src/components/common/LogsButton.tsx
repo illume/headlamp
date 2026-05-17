@@ -3,11 +3,17 @@ import { Box, Button, Paper, Typography } from '@mui/material';
 import React, { useState } from 'react';
 import LogsDialog from './LogsDialog';
 
+/** Props for the LogsButton component that shows a button to open a logs dialog. */
 interface LogsButtonProps {
+  /** The raw log text content to display when the button is clicked. */
   logs: string;
+  /** The Kubernetes resource name associated with these logs. */
   resourceName?: string;
+  /** The type/kind of the Kubernetes resource (e.g. "Pod"). */
   resourceType?: string;
+  /** The namespace of the Kubernetes resource. */
   namespace?: string;
+  /** The container name within the pod, if applicable. */
   containerName?: string;
 }
 

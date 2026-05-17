@@ -4,11 +4,17 @@ import Editor from '@monaco-editor/react';
 import { Box, Button, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
 import React from 'react';
 
+/** Props for the LogsDialog component that displays log content in a modal. */
 interface LogsDialogProps {
+  /** Whether the dialog is currently visible. */
   open: boolean;
+  /** Callback invoked when the dialog is closed. */
   onClose: () => void;
+  /** The raw log text content to display. */
   logs: string;
+  /** Title shown at the top of the dialog. */
   title: string;
+  /** Optional Kubernetes resource name associated with these logs. */
   resourceName?: string;
 }
 
