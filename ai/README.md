@@ -156,7 +156,7 @@ const result = await model.invoke([new HumanMessage('What is a Service?')]);
 ```
 
 For full instructions on running the AI assistant with KWOK and the mock model,
-see [`ai/docs/testing-with-mock-model.md`](docs/testing-with-mock-model.md).
+see [`plugins/examples/ai-assistant/docs/testing-with-mock-model.md`](../plugins/examples/ai-assistant/docs/testing-with-mock-model.md).
 
 ## Building
 
