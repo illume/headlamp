@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -38,6 +39,7 @@ import (
 	authv1 "k8s.io/api/authorization/v1"
 	corev1 "k8s.io/api/core/v1"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/util/httpstream"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/portforward"
@@ -242,6 +244,64 @@ func getKubeClientAndConfig(kContext *kubeconfig.Context, token string) (*kubern
 	return clientset, rConf, nil
 }
 
+// buildPortForwardDialer returns a dialer that performs the port-forward
+// upgrade. It tries WebSocket first (matching kubectl since v1.31) and falls
+// back to SPDY/3.1 over POST when WebSocket negotiation fails — the WebSocket
+// path is also required when the cluster is fronted by a reverse proxy (e.g.
+// Warpgate) that propagates WebSocket upgrades but drops SPDY upgrade headers.
+func buildPortForwardDialer(
+	rConf *rest.Config, fullURL *url.URL,
+	upgrader spdy.Upgrader, roundTripper http.RoundTripper,
+) httpstream.Dialer {
+	spdyDialer := spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, fullURL)
+
+	tunnelingDialer, err := portforward.NewSPDYOverWebsocketDialer(fullURL, rConf)
+	if err != nil {
+		// WebSocket dialer not available (e.g. config conversion failed);
+		// keep SPDY-only behavior.
+		return spdyDialer
+	}
+
+	return portforward.NewFallbackDialer(tunnelingDialer, spdyDialer, func(err error) bool {
+		return httpstream.IsUpgradeFailure(err) || httpstream.IsHTTPSProxyError(err)
+	})
+}
+
+// buildPortForwardURL constructs the upstream port-forward URL for a pod,
+// preserving any path prefix carried by the kubeconfig server URL (for
+// clusters fronted by a path-routing reverse proxy such as Warpgate).
+//
+// `hostURL.ResolveReference(&url.URL{Path: …})` cannot be used here because
+// `ResolveReference` replaces the host path when the reference path is
+// absolute, dropping the prefix.
+func buildPortForwardURL(host, namespace, podName string) (*url.URL, error) {
+	hostURL, err := url.Parse(host)
+	if err != nil {
+		return nil, fmt.Errorf("invalid REST config host: %w", err)
+	}
+
+	// url.Parse accepts scheme-less inputs like "example.com" or
+	// "kubernetes.default.svc:443" without erroring, producing a relative URL
+	// (the latter is parsed as scheme="kubernetes.default.svc", opaque="443").
+	// Default to https:// when the host parsed without one, then reject what
+	// still has no host.
+	if hostURL.Host == "" {
+		hostURL, err = url.Parse("https://" + host)
+		if err != nil {
+			return nil, fmt.Errorf("invalid REST config host: %w", err)
+		}
+	}
+
+	if hostURL.Host == "" {
+		return nil, fmt.Errorf("invalid REST config host %q: missing host", host)
+	}
+
+	prefix := strings.TrimSuffix(hostURL.Path, "/")
+	hostURL.Path = fmt.Sprintf("%s/api/v1/namespaces/%s/pods/%s/portforward", prefix, namespace, podName)
+
+	return hostURL, nil
+}
+
 // initPortForwarder sets up the SPDY dialer and creates a new port forwarder.
 // It requires a REST config, namespace, pod name, and the port mapping string (e.g., "8080:80").
 // It returns the port forwarder instance, stop/ready channels, output/error buffers, or an error.
@@ -253,16 +313,17 @@ func initPortForwarder(rConf *rest.Config, namespace, podName, portMapping strin
 		return nil, nil, nil, nil, nil, fmt.Errorf("failed to create SPDY round tripper: %w", err)
 	}
 
-	path := fmt.Sprintf("/api/v1/namespaces/%s/pods/%s/portforward", namespace, podName)
-
-	hostURL, err := url.Parse(rConf.Host)
+	fullURL, err := buildPortForwardURL(rConf.Host, namespace, podName)
 	if err != nil {
-		return nil, nil, nil, nil, nil, fmt.Errorf("invalid REST config host: %w", err)
+		return nil, nil, nil, nil, nil, err
 	}
 
-	fullURL := hostURL.ResolveReference(&url.URL{Path: path})
+	// Try WebSocket-based port-forward first, fall back to SPDY/3.1 over POST.
+	// This mirrors `kubectl port-forward` behavior since v1.31 and is required
+	// for clusters fronted by reverse proxies (e.g. Warpgate) that handle WS
+	// upgrades but drop SPDY upgrade headers.
+	dialer := buildPortForwardDialer(rConf, fullURL, upgrader, roundTripper)
 
-	dialer := spdy.NewDialer(upgrader, &http.Client{Transport: roundTripper}, http.MethodPost, fullURL)
 	stopChan, readyChan := make(chan struct{}), make(chan struct{}, 1)
 	out, errOut := new(bytes.Buffer), new(bytes.Buffer)
 
@@ -336,7 +397,6 @@ func handlePortForwardError(
 	pfDetails *portForward,
 	logParams map[string]string,
 	errMsg string,
-	isReady bool,
 ) error {
 	logger.Log(logger.LevelError, logParams, errors.New(errMsg), "portforward error")
 
@@ -345,10 +405,6 @@ func handlePortForwardError(
 
 	portforwardstore(cache, *pfDetails)
 	safeCloseChan(pfDetails.closeChan)
-
-	if isReady {
-		return nil
-	}
 
 	return errors.New(errMsg)
 }
@@ -380,14 +436,22 @@ func handlePortForwardReadiness(
 	case <-readyChan:
 		if errOut.String() != "" {
 			return handlePortForwardError(cache, pfDetails, logParams,
-				fmt.Sprintf("portforward failed to start, stderr: %s", errOut.String()), false)
+				fmt.Sprintf("portforward failed, stderr: %s", errOut.String()))
 		}
 
 		handlePortForwardSuccess(cache, pfDetails, logParams)
-	case err := <-forwardErrChan:
-		return handlePortForwardError(cache, pfDetails, logParams, err.Error(), false)
+	case err, ok := <-forwardErrChan:
+		if !ok {
+			return handlePortForwardError(cache, pfDetails, logParams, "portforward stopped before ready")
+		}
+
+		if err == nil {
+			return handlePortForwardError(cache, pfDetails, logParams, "portforward failed: nil error received")
+		}
+
+		return handlePortForwardError(cache, pfDetails, logParams, err.Error())
 	case <-time.After(PortForwardReadinessTimeout):
-		return handlePortForwardError(cache, pfDetails, logParams, "timeout waiting for portforward to become ready", false)
+		return handlePortForwardError(cache, pfDetails, logParams, "timeout waiting for portforward to be ready")
 	case <-pfDetails.closeChan:
 		msg := "portforward stopped before becoming ready"
 
@@ -437,8 +501,6 @@ func runAndMonitorPortForward(
 			case forwardErrChan <- err:
 			default:
 			}
-
-			safeCloseChan(pfDetails.closeChan)
 		} else {
 			logger.Log(logger.LevelInfo, logParams, nil, "ForwardPorts() exited.")
 
@@ -452,6 +514,7 @@ func runAndMonitorPortForward(
 			}
 		}
 
+		safeCloseChan(pfDetails.closeChan)
 		close(forwardErrChan)
 	}()
 

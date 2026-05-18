@@ -52,7 +52,20 @@ import {
   PluginManager,
 } from './plugin-management';
 import { addRunCmdConsent, removeRunCmdConsent, runScript, setupRunCmdHandlers } from './runCmd';
+import { cleanupHeadlampTray, createHeadlampTray } from './tray';
 import windowSize from './windowSize';
+
+if (process.env.APPIMAGE) {
+  app.commandLine.appendSwitch('disable-setuid-sandbox');
+}
+
+// On Linux, force the GTK 3 backend. Electron 36+ defaults to GTK 4, which
+// conflicts with GTK 2/3 symbols pulled into the process by IM modules and
+// other shims on common desktops (e.g. GNOME on Fedora), aborting before
+// the window is shown.
+if (process.platform === 'linux') {
+  app.commandLine.appendSwitch('gtk-version', '3');
+}
 
 let isRunningScript = false;
 if (process.env.HEADLAMP_RUN_SCRIPT) {
@@ -145,6 +158,8 @@ const shouldCheckForUpdates = process.env.HEADLAMP_CHECK_FOR_UPDATES !== 'false'
 // make it global so that it doesn't get garbage collected
 let mainWindow: BrowserWindow | null;
 let mcpClient: MCPClient | null = null;
+let isQuitting = false;
+let hasTray = false;
 
 /**
  * `Action` is an interface for an action to be performed by the plugin manager.
@@ -1553,6 +1568,16 @@ function startElectron() {
       mainWindow?.webContents.send('currentMenu', currentMenu);
     });
 
+    mainWindow.on('close', event => {
+      if (process.platform === 'darwin' && hasTray && !isQuitting) {
+        event.preventDefault();
+        mainWindow?.hide();
+        return;
+      }
+      isQuitting = true;
+      app.quit();
+    });
+
     mainWindow.on('closed', () => {
       mainWindow = null;
     });
@@ -1751,6 +1776,17 @@ function startElectron() {
 
   app.on('ready', async () => {
     await Promise.all([startServerIfNeeded(), createWindow()]);
+    hasTray = createHeadlampTray({
+      backendToken,
+      createWindow,
+      getBackendPort: () => actualPort,
+      getMainWindow: () => mainWindow,
+      isDev,
+      quit: () => {
+        isQuitting = true;
+        app.quit();
+      },
+    });
   });
   app.on('activate', async function () {
     if (mainWindow === null) {
@@ -1758,9 +1794,16 @@ function startElectron() {
     }
   });
 
-  app.once('window-all-closed', app.quit);
+  app.on('window-all-closed', () => {
+    if (!hasTray) {
+      app.quit();
+    }
+  });
 
   app.once('before-quit', async () => {
+    isQuitting = true;
+    cleanupHeadlampTray();
+    hasTray = false;
     saveZoomFactor(cachedZoom);
     i18n.off('languageChanged');
     if (mainWindow) {

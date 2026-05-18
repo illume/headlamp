@@ -28,6 +28,7 @@ import (
 	"fmt"
 	"io"
 	"io/fs"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -64,6 +65,7 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/metric"
 	"go.opentelemetry.io/otel/trace"
+	apierrors "k8s.io/apimachinery/pkg/api/errors"
 	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/client-go/kubernetes"
@@ -101,6 +103,7 @@ type clientConfig struct {
 	Clusters                []Cluster `json:"clusters"`
 	IsDynamicClusterEnabled bool      `json:"isDynamicClusterEnabled"`
 	AllowKubeconfigChanges  bool      `json:"allowKubeconfigChanges"`
+	DefaultPodDebugImage    string    `json:"defaultPodDebugImage"`
 }
 
 type OauthConfig struct {
@@ -364,7 +367,7 @@ func addPluginListRoute(config *HeadlampConfig, r *mux.Router) {
 		w.Header().Set("Content-Type", "application/json")
 
 		pluginsList, err := config.Cache.Get(context.Background(), plugins.PluginListKey)
-		if err != nil && err == cache.ErrNotFound {
+		if err != nil && errors.Is(err, cache.ErrNotFound) {
 			pluginsList = []plugins.PluginMetadata{}
 
 			if config.Telemetry != nil {
@@ -647,10 +650,15 @@ func createHeadlampHandler(ctx context.Context, config *HeadlampConfig) http.Han
 			return
 		}
 
+		if contentType := resp.Header.Get("Content-Type"); contentType != "" {
+			w.Header().Set("Content-Type", contentType)
+		}
+
+		w.WriteHeader(resp.StatusCode)
+
 		_, err = w.Write(respBody)
 		if err != nil {
 			logger.Log(logger.LevelError, nil, err, "writing response")
-			http.Error(w, err.Error(), http.StatusInternalServerError)
 
 			return
 		}
@@ -933,49 +941,6 @@ func createHeadlampHandler(ctx context.Context, config *HeadlampConfig) http.Han
 	return r
 }
 
-func (c *HeadlampConfig) refreshAndSetToken(oidcAuthConfig *kubeconfig.OidcConfig,
-	cache cache.Cache[interface{}], token string,
-	w http.ResponseWriter, r *http.Request, cluster string, span trace.Span, ctx context.Context,
-) {
-	// The token type to use
-	tokenType := "id_token"
-	if c.OidcUseAccessToken {
-		tokenType = "access_token"
-	}
-
-	idpIssuerURL := c.OidcIdpIssuerURL
-	if idpIssuerURL == "" {
-		idpIssuerURL = oidcAuthConfig.IdpIssuerURL
-	}
-
-	newToken, err := auth.RefreshAndCacheNewToken(
-		ctx,
-		oidcAuthConfig,
-		cache,
-		tokenType,
-		token,
-		idpIssuerURL,
-	)
-	if err != nil {
-		logger.Log(logger.LevelError, map[string]string{"cluster": cluster},
-			err, "failed to refresh token")
-		c.TelemetryHandler.RecordError(span, err, "Token refresh failed")
-		c.TelemetryHandler.RecordErrorCount(ctx, attribute.String("error", "token_refresh_failure"))
-	} else if newToken != nil {
-		var newTokenString string
-		if c.OidcUseAccessToken {
-			newTokenString = newToken.Extra("access_token").(string)
-		} else {
-			newTokenString = newToken.Extra("id_token").(string)
-		}
-
-		// Set refreshed token in cookie
-		auth.SetTokenCookie(w, r, cluster, newTokenString, c.BaseURL, c.SessionTTL)
-
-		c.TelemetryHandler.RecordEvent(span, "Token refreshed successfully")
-	}
-}
-
 // setTokenFromCookie attempts to get a token from the cookie and set it as Authorization header.
 func setTokenFromCookie(r *http.Request, clusterName string) {
 	tokenFromCookie, err := auth.GetTokenFromCookie(r, clusterName)
@@ -1062,6 +1027,9 @@ func (c *HeadlampConfig) handleOIDCAuthConfigError(err error, w http.ResponseWri
 	return false
 }
 
+// TODO: moving functions one at a time, this will be relocated
+//
+//nolint:funlen
 func (c *HeadlampConfig) OIDCTokenRefreshMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		ctx := r.Context()
@@ -1113,13 +1081,129 @@ func (c *HeadlampConfig) OIDCTokenRefreshMiddleware(next http.Handler) http.Hand
 		}
 
 		// refresh and cache new token
-		c.refreshAndSetToken(oidcAuthConfig, c.Cache, token, w, r, cluster, span, ctx)
+		auth.RefreshAndSetToken(auth.RefreshAndSetTokenParams{
+			Ctx:                       ctx,
+			OIDCAuthConfig:            oidcAuthConfig,
+			Cache:                     c.Cache,
+			Token:                     token,
+			Cluster:                   cluster,
+			Span:                      span,
+			Writer:                    w,
+			Request:                   r,
+			TelemetryHandler:          c.TelemetryHandler,
+			OIDCUseAccessToken:        c.OidcUseAccessToken,
+			OIDCIdpIssuerURL:          c.OidcIdpIssuerURL,
+			OIDCValidatorIdpIssuerURL: c.OidcValidatorIdpIssuerURL,
+			BaseURL:                   c.BaseURL,
+			SessionTTL:                c.SessionTTL,
+		})
 
 		next.ServeHTTP(w, r)
 		c.TelemetryHandler.RecordDuration(ctx, start,
 			attribute.String("api.route", "OIDCTokenRefreshMiddleware"),
 			attribute.String("status", "success"))
 	})
+}
+
+// isLoopbackAddr reports whether the given listen address is a loopback address.
+func isLoopbackAddr(addr string) bool {
+	if strings.EqualFold(addr, "localhost") {
+		return true
+	}
+
+	// Strip brackets from IPv6 addresses like "[::1]".
+	ip := net.ParseIP(strings.Trim(addr, "[]"))
+
+	return ip != nil && ip.IsLoopback()
+}
+
+// allowedHosts returns the set of normalized host values that are considered
+// valid for the given listen address and port. All entries are lowercased and
+// host:port pairs are built with net.JoinHostPort so that IPv6 literals are
+// always bracketed correctly.
+func allowedHosts(listenAddr string, port uint) map[string]bool {
+	portStr := fmt.Sprintf("%d", port)
+
+	loopbackHosts := []string{"localhost", "127.0.0.1", "::1"}
+
+	hosts := make(map[string]bool, len(loopbackHosts)*2+2)
+
+	for _, h := range loopbackHosts {
+		hosts[net.JoinHostPort(h, portStr)] = true
+		hosts[h] = true
+	}
+
+	// If the server was told to listen on a specific address, accept that too.
+	// Normalize via net.ParseIP so non-canonical IPv6 forms (e.g.
+	// "0:0:0:0:0:0:0:1") are reduced to their canonical representation ("::1")
+	// before being added to the set.
+	rawAddr := strings.ToLower(strings.Trim(listenAddr, "[]"))
+	normAddr := rawAddr
+
+	if ip := net.ParseIP(rawAddr); ip != nil {
+		normAddr = ip.String()
+	}
+
+	if normAddr != "" && !hosts[normAddr] {
+		hosts[net.JoinHostPort(normAddr, portStr)] = true
+		hosts[normAddr] = true
+	}
+
+	return hosts
+}
+
+// normalizeHost canonicalizes the Host header value. The host portion is
+// lowercased and, if it is an IP address, reduced to its canonical string form
+// so that e.g. "[0:0:0:0:0:0:0:1]" and "[::1]" are treated identically.
+// When a port is present the result is re-joined with net.JoinHostPort.
+func normalizeHost(raw string) string {
+	if raw == "" {
+		return ""
+	}
+
+	host, port, err := net.SplitHostPort(raw)
+	if err != nil {
+		// No port — strip brackets from IPv6 literals (e.g. "[::1]" → "::1"),
+		// then normalize to canonical IP form if applicable.
+		stripped := strings.ToLower(strings.Trim(raw, "[]"))
+		if ip := net.ParseIP(stripped); ip != nil {
+			return ip.String()
+		}
+
+		return stripped
+	}
+
+	// Normalize the host part: lowercase, then canonicalize if it's an IP.
+	lower := strings.ToLower(host)
+	if ip := net.ParseIP(lower); ip != nil {
+		lower = ip.String()
+	}
+
+	return net.JoinHostPort(lower, port)
+}
+
+// hostValidationMiddleware rejects requests whose Host header is not in the
+// allowlist derived from the configured port's loopback hostnames/IPs
+// (localhost, 127.0.0.1, and ::1, with or without the port) and, when
+// provided, the server's explicit listen address.
+func hostValidationMiddleware(listenAddr string, port uint) func(http.Handler) http.Handler {
+	allowed := allowedHosts(listenAddr, port)
+
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			normalized := normalizeHost(r.Host)
+
+			if !allowed[normalized] {
+				logger.Log(logger.LevelWarn, map[string]string{"host": r.Host},
+					nil, "Rejected request with unexpected Host header")
+				http.Error(w, "invalid Host header", http.StatusForbidden)
+
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
 }
 
 func StartHeadlampServer(config *HeadlampConfig) {
@@ -1157,7 +1241,15 @@ func StartHeadlampServer(config *HeadlampConfig) {
 	handler := createHeadlampHandler(ctx, config)
 	handler = config.OIDCTokenRefreshMiddleware(handler)
 
-	addr := fmt.Sprintf("%s:%d", config.ListenAddr, config.Port)
+	// Only validate the Host header when listening on a loopback address.
+	// When bound to a non-loopback address (e.g. behind a reverse proxy),
+	// arbitrary Host headers are expected and must be allowed through.
+	if isLoopbackAddr(config.ListenAddr) {
+		handler = hostValidationMiddleware(config.ListenAddr, config.Port)(handler)
+	}
+
+	listenHost := strings.TrimPrefix(strings.TrimSuffix(config.ListenAddr, "]"), "[")
+	addr := net.JoinHostPort(listenHost, fmt.Sprintf("%d", config.Port))
 
 	server := &http.Server{Addr: addr, Handler: handler} //nolint:gosec
 
@@ -1378,8 +1470,8 @@ func (c *HeadlampConfig) helmRouteReleaseHandler(
 	// Create a copy of the context to avoid modifying the cached context
 	context = context.Copy()
 
-	// If running in cluster or explicitly enabled via flag, use the token from the cookie for oidc auth
-	if (c.UseInCluster || c.OidcUseCookie) && context.OidcConf != nil {
+	// Only promote a cookie token when the request does not already provide Authorization.
+	if strings.TrimSpace(r.Header.Get("Authorization")) == "" {
 		setTokenFromCookie(r, clusterName)
 	}
 
@@ -1848,6 +1940,7 @@ func (c *HeadlampConfig) getConfig(w http.ResponseWriter, r *http.Request) {
 		Clusters:                c.getClusters(),
 		IsDynamicClusterEnabled: c.EnableDynamicClusters,
 		AllowKubeconfigChanges:  c.AllowKubeconfigChanges,
+		DefaultPodDebugImage:    c.PodDebugImage,
 	}
 
 	if err := json.NewEncoder(w).Encode(&clientConfig); err != nil {
@@ -2546,14 +2639,14 @@ func (c *HeadlampConfig) handleNodeDrain(w http.ResponseWriter, r *http.Request)
 	c.drainNode(clientset, drainPayload.NodeName, drainPayload.Cluster)
 }
 
-func (c *HeadlampConfig) drainNode(clientset *kubernetes.Clientset, nodeName string, cluster string) {
+func (c *HeadlampConfig) drainNode(clientset kubernetes.Interface, nodeName string, cluster string) {
 	go func() {
 		nodeClient := clientset.CoreV1().Nodes()
 		ctx := context.Background()
 		cacheKey := uuid.NewSHA1(uuid.Nil, []byte(nodeName+cluster)).String()
 		cacheItemTTL := DrainNodeCacheTTL * time.Minute
 
-		node, err := nodeClient.Get(context.TODO(), nodeName, v1.GetOptions{})
+		node, err := nodeClient.Get(ctx, nodeName, v1.GetOptions{})
 		if err != nil {
 			_ = c.Cache.SetWithTTL(ctx, cacheKey, "error: "+err.Error(), cacheItemTTL)
 			return
@@ -2562,13 +2655,13 @@ func (c *HeadlampConfig) drainNode(clientset *kubernetes.Clientset, nodeName str
 		// cordon the node first
 		node.Spec.Unschedulable = true
 
-		_, err = nodeClient.Update(context.TODO(), node, v1.UpdateOptions{})
+		_, err = nodeClient.Update(ctx, node, v1.UpdateOptions{})
 		if err != nil {
 			_ = c.Cache.SetWithTTL(ctx, cacheKey, "error: "+err.Error(), cacheItemTTL)
 			return
 		}
 
-		pods, err := clientset.CoreV1().Pods("").List(context.TODO(),
+		pods, err := clientset.CoreV1().Pods("").List(ctx,
 			v1.ListOptions{FieldSelector: "spec.nodeName=" + nodeName})
 		if err != nil {
 			_ = c.Cache.SetWithTTL(ctx, cacheKey, "error: "+err.Error(), cacheItemTTL)
@@ -2577,17 +2670,30 @@ func (c *HeadlampConfig) drainNode(clientset *kubernetes.Clientset, nodeName str
 
 		var gracePeriod int64 = 0
 
+		var deleteErrors []string
+
 		for _, pod := range pods.Items {
 			// ignore daemonsets
 			if pod.Labels["kubernetes.io/created-by"] == "daemonset-controller" {
 				continue
 			}
 
-			_ = clientset.CoreV1().Pods(pod.Namespace).Delete(context.TODO(),
-				pod.Name, v1.DeleteOptions{GracePeriodSeconds: &gracePeriod})
+			if err := clientset.CoreV1().Pods(pod.Namespace).Delete(ctx,
+				pod.Name, v1.DeleteOptions{GracePeriodSeconds: &gracePeriod}); err != nil && !apierrors.IsNotFound(err) {
+				deleteErrors = append(deleteErrors, fmt.Sprintf("%s/%s: %v", pod.Namespace, pod.Name, err))
+			}
 		}
 
-		_ = c.Cache.SetWithTTL(ctx, cacheKey, "success", cacheItemTTL)
+		if len(deleteErrors) > 0 {
+			errMsg := fmt.Sprintf("error: failed to delete %d pod(s)", len(deleteErrors))
+			logger.Log(logger.LevelError, nil, nil,
+				fmt.Sprintf("node drain: failed to delete %d pod(s): %s",
+					len(deleteErrors), strings.Join(deleteErrors, "; ")))
+
+			_ = c.Cache.SetWithTTL(ctx, cacheKey, errMsg, cacheItemTTL)
+		} else {
+			_ = c.Cache.SetWithTTL(ctx, cacheKey, "success", cacheItemTTL)
+		}
 	}()
 }
 

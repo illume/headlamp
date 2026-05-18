@@ -37,6 +37,14 @@ import (
 	"k8s.io/client-go/kubernetes"
 )
 
+// clientsetTTL is how long an idle clientset stays in the cache before
+// it becomes eligible for eviction.
+const clientsetTTL = 10 * time.Minute
+
+// janitorInterval is how often the background goroutine sweeps the
+// cache for expired entries.
+const janitorInterval = 5 * time.Minute
+
 type CachedClientSet struct {
 	clientset *kubernetes.Clientset
 	lastUsed  time.Time
@@ -45,17 +53,63 @@ type CachedClientSet struct {
 var (
 	clientsetCache = make(map[string]*CachedClientSet)
 	mu             sync.Mutex
+	janitorOnce    sync.Once
 )
 
-// GetClientSet return *kubernetes.ClientSet and error which further used for creating
+// startJanitor launches a background goroutine (exactly once) that
+// periodically scans clientsetCache and removes entries whose lastUsed
+// timestamp exceeds clientsetTTL. This prevents unbounded memory growth
+// when users with unique tokens never revisit the same cache key.
+func startJanitor() {
+	janitorOnce.Do(func() {
+		go func() {
+			ticker := time.NewTicker(janitorInterval)
+			defer ticker.Stop()
+
+			for range ticker.C {
+				evictExpiredClientsets()
+			}
+		}()
+	})
+}
+
+// evictExpiredClientsets walks the cache under the lock and deletes
+// every entry older than clientsetTTL.
+func evictExpiredClientsets() {
+	mu.Lock()
+
+	now := time.Now()
+	evicted := 0
+
+	for key, cs := range clientsetCache {
+		if now.Sub(cs.lastUsed) > clientsetTTL {
+			delete(clientsetCache, key)
+
+			evicted++
+		}
+	}
+
+	remaining := len(clientsetCache)
+
+	mu.Unlock()
+
+	if evicted > 0 {
+		logger.Log(logger.LevelInfo, nil, nil,
+			fmt.Sprintf("janitor: evicted %d expired clientset(s), %d remaining", evicted, remaining))
+	}
+}
+
+// GetClientSet returns *kubernetes.ClientSet and error which is further used for creating
 // SSAR requests to k8s server to authorize user. GetClientSet uses kubeconfig.Context and
-// authentication bearer token  which will help to create clientSet based on the user's
+// authentication bearer token which will help to create clientSet based on the user's
 // identity.
 func GetClientSet(k *kubeconfig.Context, token string) (*kubernetes.Clientset, error) {
 	contextKey := strings.Split(k.ClusterID, "+")
 	if len(contextKey) < 2 {
 		return nil, fmt.Errorf("unexpected ClusterID format in getClientSet: %q", k.ClusterID)
 	}
+
+	startJanitor()
 
 	cacheKey := fmt.Sprintf("%s-%s", contextKey[1], token)
 
@@ -65,18 +119,20 @@ func GetClientSet(k *kubeconfig.Context, token string) (*kubernetes.Clientset, e
 	if cs, found := clientsetCache[cacheKey]; found {
 		now := time.Now()
 
-		if now.Sub(cs.lastUsed) > 10*time.Minute { // If the clientset was expired then delete
-			// the existing clientset resulting only fresh clientset.
+		// If the clientset was expired then delete the existing clientset resulting only fresh clientset.
+		if now.Sub(cs.lastUsed) > clientsetTTL {
 			delete(clientsetCache, cacheKey)
-			logger.Log(logger.LevelInfo, nil, nil, "clientset "+cacheKey+" was deleted")
+			logger.Log(logger.LevelInfo, nil, nil, fmt.Sprintf("expired clientset for cluster %s was deleted", contextKey[1]))
 		} else {
-			return cs.clientset, nil // If the clientset is not expired then return directly.
+			// If the clientset is not expired then refresh its last-used time and return it.
+			cs.lastUsed = now
+			return cs.clientset, nil
 		}
 	}
 
 	cs, err := k.ClientSetWithToken(token)
 	if err != nil {
-		return nil, fmt.Errorf("error while creating clientset for key %s: %w", cacheKey, err)
+		return nil, fmt.Errorf("error while creating clientset for cluster %s: %w", contextKey[1], err)
 	}
 
 	clientsetCache[cacheKey] = &CachedClientSet{

@@ -18,6 +18,7 @@ import { Box } from '@mui/system';
 import { memo, ReactElement, useEffect } from 'react';
 import Deployment from '../../../lib/k8s/deployment';
 import Job from '../../../lib/k8s/job';
+import JobSet from '../../../lib/k8s/jobSet';
 import ReplicaSet from '../../../lib/k8s/replicaSet';
 import ConfigDetails from '../../configmap/Details';
 import { CustomResourceDetails } from '../../crd/CustomResourceDetails';
@@ -53,6 +54,7 @@ import ServiceAccountDetails from '../../serviceaccount/Details';
 import StatefulSetDetails from '../../statefulset/Details';
 import VolumeClaimDetails from '../../storage/ClaimDetails';
 import StorageClassDetails from '../../storage/ClassDetails';
+import VolumeAttributesClassDetails from '../../storage/VolumeAttributesClassDetails';
 import VolumeDetails from '../../storage/VolumeDetails';
 import VpaDetails from '../../verticalPodAutoscaler/Details';
 import MutatingWebhookConfigList from '../../webhookconfiguration/MutatingWebhookConfigDetails';
@@ -67,6 +69,7 @@ const kindComponentMap: Record<
   Deployment: props => <WorkloadDetails {...props} workloadKind={Deployment} />,
   ReplicaSet: props => <WorkloadDetails {...props} workloadKind={ReplicaSet} />,
   Job: props => <WorkloadDetails {...props} workloadKind={Job} />,
+  JobSet: props => <WorkloadDetails {...props} workloadKind={JobSet} />,
   Service: ServiceDetails,
   CronJob: CronJobDetails,
   DaemonSet: DaemonSetDetails,
@@ -92,6 +95,7 @@ const kindComponentMap: Record<
   StatefulSet: StatefulSetDetails,
   PersistentVolumeClaim: VolumeClaimDetails,
   StorageClass: StorageClassDetails,
+  VolumeAttributesClass: VolumeAttributesClassDetails,
   PersistentVolume: VolumeDetails,
   VerticalPodAutoscaler: VpaDetails,
   MutatingWebhookConfiguration: MutatingWebhookConfigList,
@@ -158,6 +162,7 @@ export const KubeObjectDetails = memo(
           `No details component for kind ${kind} was found. See KubeNodeDetails.tsx for more info`
         );
       }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [kind, kindComponentMap]);
 
     return (

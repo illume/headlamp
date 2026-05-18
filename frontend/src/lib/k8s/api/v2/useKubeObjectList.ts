@@ -140,21 +140,23 @@ export function useWatchKubeObjectLists<K extends KubeObject>({
   /** Which clusters and namespaces to watch */
   lists: Array<{ cluster: string; namespace?: string; resourceVersion: string }>;
 }) {
-  if (getWebsocketMultiplexerEnabled()) {
-    return useWatchKubeObjectListsMultiplexed({
-      kubeObjectClass,
-      endpoint,
-      lists,
-      queryParams,
-    });
-  } else {
-    return useWatchKubeObjectListsLegacy({
-      kubeObjectClass,
-      endpoint,
-      lists,
-      queryParams,
-    });
-  }
+  const multiplexerEnabled = getWebsocketMultiplexerEnabled();
+
+  useWatchKubeObjectListsMultiplexed({
+    kubeObjectClass,
+    endpoint,
+    lists: multiplexerEnabled ? lists : [],
+    queryParams: multiplexerEnabled ? queryParams : undefined,
+    enabled: multiplexerEnabled,
+  });
+
+  useWatchKubeObjectListsLegacy({
+    kubeObjectClass,
+    endpoint,
+    lists: !multiplexerEnabled ? lists : [],
+    queryParams: !multiplexerEnabled ? queryParams : undefined,
+    enabled: !multiplexerEnabled,
+  });
 }
 
 /**
@@ -173,11 +175,13 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
   endpoint,
   lists,
   queryParams,
+  enabled = true,
 }: {
   kubeObjectClass: (new (...args: any) => K) & typeof KubeObject<any>;
   endpoint?: KubeObjectEndpoint | null;
   lists: Array<{ cluster: string; namespace?: string; resourceVersion: string }>;
   queryParams?: QueryParameters;
+  enabled?: boolean;
 }): void {
   const client = useQueryClient();
 
@@ -186,12 +190,14 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
 
   // Stabilize queryParams to prevent unnecessary effect triggers
   // Only update when the stringified params change
-  const stableQueryParams = useMemo(() => queryParams, [JSON.stringify(queryParams)]);
+  const stableQueryParamsKey = enabled ? JSON.stringify(queryParams) : '__disabled__';
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stableQueryParams = useMemo(() => queryParams, [stableQueryParamsKey]);
 
   // Create stable connection URLs for each list
   // Updates only when endpoint, lists, or stableQueryParams change
   const connections = useMemo(() => {
-    if (!endpoint) {
+    if (!enabled || !endpoint) {
       return [];
     }
 
@@ -212,7 +218,7 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
         namespace: list.namespace,
       };
     });
-  }, [endpoint, lists, stableQueryParams]);
+  }, [enabled, endpoint, lists, stableQueryParams]);
 
   // Create stable update handler to process WebSocket messages
   // Re-create only when dependencies change
@@ -259,7 +265,7 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
 
   // Set up WebSocket subscriptions
   useEffect(() => {
-    if (!endpoint || connections.length === 0) {
+    if (!enabled || !endpoint || connections.length === 0) {
       return;
     }
 
@@ -290,7 +296,7 @@ function useWatchKubeObjectListsMultiplexed<K extends KubeObject>({
     return () => {
       cleanups.forEach(cleanup => cleanup());
     };
-  }, [connections, endpoint, handleUpdate]);
+  }, [connections, enabled, endpoint, handleUpdate]);
 }
 
 /**
@@ -306,6 +312,7 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
   endpoint,
   lists,
   queryParams,
+  enabled = true,
 }: {
   /** KubeObject class of the watched resource list */
   kubeObjectClass: (new (...args: any) => K) & typeof KubeObject<any>;
@@ -315,15 +322,20 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
   endpoint?: KubeObjectEndpoint | null;
   /** Which clusters and namespaces to watch */
   lists: Array<{ cluster: string; namespace?: string; resourceVersion: string }>;
+  enabled?: boolean;
 }) {
   const client = useQueryClient();
 
+  const stableQueryParamsKey = enabled ? JSON.stringify(queryParams) : '__disabled__';
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const stableQueryParams = useMemo(() => queryParams, [stableQueryParamsKey]);
+
   const connections = useMemo(() => {
-    if (!endpoint) return [];
+    if (!enabled || !endpoint) return [];
 
     return lists.map(({ cluster, namespace, resourceVersion }) => {
       const url = makeUrl([KubeObjectEndpoint.toUrl(endpoint!, namespace)], {
-        ...queryParams,
+        ...stableQueryParams,
         watch: 1,
         resourceVersion,
       });
@@ -337,7 +349,7 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
             endpoint,
             namespace,
             cluster,
-            queryParams ?? {}
+            stableQueryParams ?? {}
           ).queryKey;
           client.setQueryData(key, (oldResponse: ListResponse<any> | undefined | null) => {
             if (!oldResponse) return oldResponse;
@@ -353,10 +365,10 @@ function useWatchKubeObjectListsLegacy<K extends KubeObject>({
         },
       };
     });
-  }, [lists, kubeObjectClass, endpoint]);
+  }, [enabled, lists, kubeObjectClass, endpoint, stableQueryParams, client]);
 
   useWebSockets<KubeListUpdateEvent<K>>({
-    enabled: !!endpoint,
+    enabled: enabled && !!endpoint,
     connections,
   });
 }
@@ -453,6 +465,7 @@ export function useKubeObjectList<K extends KubeObject>({
                 )
           )
         : [],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [requests, kubeObjectClass, endpoint, cleanedUpQueryParams]
   );
 
@@ -516,11 +529,12 @@ export function useKubeObjectList<K extends KubeObject>({
 
   const listsToStopWatching = listsToWatch.filter(
     watching =>
-      requests.find(request =>
-        watching.cluster === request?.cluster && request.namespaces && watching.namespace
-          ? request.namespaces?.includes(watching.namespace)
-          : true
-      ) === undefined
+      requests.find(request => {
+        if (watching.cluster !== request?.cluster) return false;
+        return !request.namespaces?.length
+          ? !watching.namespace
+          : !!watching.namespace && request.namespaces.includes(watching.namespace);
+      }) === undefined
   );
 
   if (listsToStopWatching.length > 0) {

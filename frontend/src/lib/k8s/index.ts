@@ -41,6 +41,7 @@ import HTTPRoute from './httpRoute';
 import Ingress from './ingress';
 import IngressClass from './ingressClass';
 import Job from './job';
+import JobSet from './jobSet';
 import { Lease } from './lease';
 import { LimitRange } from './limitRange';
 import Namespace from './namespace';
@@ -62,6 +63,7 @@ import Service from './service';
 import ServiceAccount from './serviceAccount';
 import StatefulSet from './statefulSet';
 import StorageClass from './storageClass';
+import VolumeAttributesClass from './volumeAttributesClass';
 
 export const ResourceClasses = {
   ClusterRole,
@@ -84,6 +86,7 @@ export const ResourceClasses = {
   Ingress,
   IngressClass,
   Job,
+  JobSet,
   Namespace,
   NetworkPolicy,
   Node,
@@ -99,6 +102,7 @@ export const ResourceClasses = {
   ServiceAccount,
   StatefulSet,
   StorageClass,
+  VolumeAttributesClass,
   Gateway,
   GatewayClass,
   HTTPRoute,
@@ -126,6 +130,7 @@ export function useClustersConf(): ConfigState['allClusters'] {
 
   return useMemo(
     () => (state.clusters === null ? null : allClusters),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [state.clusters === null, Object.keys(allClusters).join(',')]
   );
 }
@@ -170,6 +175,7 @@ export function useSelectedClusters(): string[] {
 
   const clusterGroup = React.useMemo(() => {
     return getSelectedClusters([], location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clusterInURL, location.pathname]);
 
   return maybeSelectedClusters && maybeSelectedClusters.length > 0
@@ -433,6 +439,7 @@ export function useClustersVersion(clusters: Cluster[]) {
       cancelledRef.current = true;
       clearInterval(timeout);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return React.useMemo<
@@ -466,6 +473,7 @@ export * as event from './event';
 export * as ingress from './ingress';
 export * as ingressClass from './ingressClass';
 export * as job from './job';
+export * as jobSet from './jobSet';
 export * as namespace from './namespace';
 export * as node from './node';
 export * as persistentVolume from './persistentVolume';
@@ -479,3 +487,4 @@ export * as service from './service';
 export * as serviceAccount from './serviceAccount';
 export * as statefulSet from './statefulSet';
 export * as storageClass from './storageClass';
+export * as volumeAttributesClass from './volumeAttributesClass';

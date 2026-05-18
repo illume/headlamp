@@ -91,6 +91,24 @@ To check TypeScript types:
 npm run app:tsc
 ```
 
+## Translations (i18n)
+
+The app uses [i18next](https://www.i18next.com/) for translations. Translation keys are extracted from `app/electron/main.ts` using i18next-parser.
+
+To regenerate translation files after changing translatable strings:
+
+```bash
+cd app && npm run i18n
+```
+
+To check that translation files are up to date (exits with an error if any file would change):
+
+```bash
+npm run app:i18n-check
+```
+
+This check runs automatically in CI to prevent translation regressions when code or dependencies change.
+
 ## Packaging
 
 To package the app for all platforms:
@@ -115,8 +133,9 @@ The typical development workflow for the desktop app:
 1. Make changes to the app code in `app/electron/`
 2. Run linting and formatting: `npm run app:lint:fix && npm run app:format`
 3. Run type checking: `npm run app:tsc`
-4. Test your changes: `npm run app:test`
-5. Build and run: `npm run app:start`
+4. If you added or changed translatable strings, regenerate translations: `cd app && npm run i18n`
+5. Test your changes: `npm run app:test`
+6. Build and run: `npm run app:start`
 
 ## Notes
 

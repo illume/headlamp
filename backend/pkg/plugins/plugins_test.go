@@ -18,7 +18,6 @@ package plugins_test
 
 import (
 	"context"
-	"io"
 	"net/http/httptest"
 	"os"
 	"path"
@@ -27,6 +26,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/kubernetes-sigs/headlamp/backend/pkg/cache"
+	"github.com/kubernetes-sigs/headlamp/backend/pkg/logger"
 	"github.com/kubernetes-sigs/headlamp/backend/pkg/plugins"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -202,35 +202,10 @@ func TestGeneratePluginPaths(t *testing.T) { //nolint:funlen
 	require.NoError(t, err)
 }
 
-// Helper function for capturing output.
-func captureOutput(f func()) (string, error) {
-	r, w, err := os.Pipe()
-	if err != nil {
-		return "", err
-	}
-
-	originalStdout := os.Stdout
-	os.Stdout = w
-
-	f()
-
-	err = w.Close()
-	if err != nil {
-		return "", err
-	}
-
-	os.Stdout = originalStdout
-
-	outputBytes, err := io.ReadAll(r)
-	if err != nil {
-		return "", err
-	}
-
-	return string(outputBytes), nil
-}
-
-// Helper function for creating a plugin.
+// createPlugin creates a plugin directory with main.js and package.json.
 func createPlugin(t *testing.T, baseDir string, pluginName string) string {
+	t.Helper()
+
 	pluginDir := path.Join(baseDir, pluginName)
 	err := os.Mkdir(pluginDir, 0o750)
 	require.NoError(t, err)
@@ -248,59 +223,104 @@ func createPlugin(t *testing.T, baseDir string, pluginName string) string {
 	return pluginDir
 }
 
-func TestListPlugins(t *testing.T) {
-	// Create a temporary directory if it doesn't exist
-	_, err := os.Stat("/tmp/")
-	if os.IsNotExist(err) {
-		err = os.Mkdir("/tmp/", 0o750)
-		require.NoError(t, err)
-	}
+// logEntry captures a structured log event for test assertions.
+type logEntry struct {
+	msg    string
+	fields map[string]string
+}
 
-	// create a static plugin directory in /tmp
-	staticPluginDir := path.Join("/tmp", uuid.NewString())
-	err = os.Mkdir(staticPluginDir, 0o750)
-	require.NoError(t, err)
+const (
+	msgFoundPlugin    = "Found plugin"
+	testDevPluginName = "dev-plugin-1"
+)
+
+func TestListPlugins(t *testing.T) { //nolint:funlen
+	// Capture log output via logger.SetLogFunc.
+	var logEntries []logEntry
+
+	originalLogFunc := logger.SetLogFunc(
+		func(_ uint, fields map[string]string, _ interface{}, msg string) {
+			logEntries = append(logEntries, logEntry{msg: msg, fields: fields})
+		},
+	)
+	defer logger.SetLogFunc(originalLogFunc)
+
+	// Use t.TempDir() for automatic cleanup.
+	staticPluginDir := t.TempDir()
+	pluginDir := t.TempDir()
+	userPluginDir := t.TempDir()
 
 	createPlugin(t, staticPluginDir, "static-plugin-1")
+	createPlugin(t, userPluginDir, "user-plugin-1")
+	plugin1Dir := createPlugin(t, pluginDir, testDevPluginName)
 
-	// create a user plugin directory in /tmp
-	pluginDir := path.Join("/tmp", uuid.NewString())
-	err = os.Mkdir(pluginDir, 0o750)
+	// ListPlugins should succeed and emit log messages.
+	err := plugins.ListPlugins(staticPluginDir, userPluginDir, pluginDir)
 	require.NoError(t, err)
 
-	plugin1Dir := createPlugin(t, pluginDir, "user-plugin-1")
+	// Collect all messages for Contains checks.
+	messages := make([]string, 0, len(logEntries))
+	for _, e := range logEntries {
+		messages = append(messages, e.msg)
+	}
 
-	// capture the output of the ListPlugins function
-	output, err := captureOutput(func() {
-		err := plugins.ListPlugins(staticPluginDir, "", pluginDir)
-		require.NoError(t, err)
-	})
-	require.NoError(t, err)
+	assert.Contains(t, messages, "Listing shipped plugins")
+	assert.Contains(t, messages, "Listing user-installed plugins")
+	assert.Contains(t, messages, "Listing development plugins")
+	assert.Contains(t, messages, msgFoundPlugin)
 
-	require.Contains(t, output, "Shipped Plugins")
-	require.Contains(t, output, "static-plugin-1")
-	require.Contains(t, output, "Development Plugins")
-	require.Contains(t, output, "user-plugin-1")
+	// Verify structured fields on "Found plugin" entries.
+	for _, e := range logEntries {
+		if e.msg == msgFoundPlugin {
+			assert.NotEmpty(t, e.fields["plugin"], "plugin field should be set")
+			assert.NotEmpty(t, e.fields["type"], "type field should be set")
+		}
+	}
 
-	// test missing package.json
+	// Reset captured logs.
+	logEntries = nil
+
+	// test missing package.json — should still succeed (falls back to folder name).
 	_ = os.Remove(path.Join(plugin1Dir, "package.json"))
 
-	output, err = captureOutput(func() {
-		err := plugins.ListPlugins(staticPluginDir, "", pluginDir)
-		require.NoError(t, err)
-	})
+	err = plugins.ListPlugins(staticPluginDir, userPluginDir, pluginDir)
 	require.NoError(t, err)
-	require.Contains(t, output, "user-plugin-1") // should use folder name
 
-	// test invalid package.json
+	// Verify fallback: plugin name should be the folder name when package.json is missing.
+	foundFallback := false
+
+	for _, e := range logEntries {
+		if e.msg == msgFoundPlugin && e.fields["plugin"] == testDevPluginName {
+			foundFallback = true
+
+			break
+		}
+	}
+
+	assert.True(t, foundFallback, "should fall back to folder name when package.json is missing")
+
+	// Reset captured logs.
+	logEntries = nil
+
+	// test invalid package.json — should still succeed (falls back to folder name).
 	err = os.WriteFile(path.Join(plugin1Dir, "package.json"), []byte("invalid json"), 0o600)
 	require.NoError(t, err)
-	output, err = captureOutput(func() {
-		err := plugins.ListPlugins(staticPluginDir, "", pluginDir)
-		require.NoError(t, err)
-	})
+
+	err = plugins.ListPlugins(staticPluginDir, userPluginDir, pluginDir)
 	require.NoError(t, err)
-	require.Contains(t, output, "user-plugin-1") // should use folder name
+
+	// Verify fallback: plugin name should be the folder name when package.json is invalid.
+	foundFallback = false
+
+	for _, e := range logEntries {
+		if e.msg == msgFoundPlugin && e.fields["plugin"] == testDevPluginName {
+			foundFallback = true
+
+			break
+		}
+	}
+
+	assert.True(t, foundFallback, "should fall back to folder name when package.json is invalid")
 }
 
 func TestHandlePluginEvents(t *testing.T) { //nolint:funlen

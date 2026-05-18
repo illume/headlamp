@@ -65,7 +65,7 @@ export const useSidebarItems = (sidebarName: string = DefaultSidebars.IN_CLUSTER
 
   const [crds, error] = CRD.useList();
   if (error !== null) {
-    console.log(error);
+    console.error('Failed to fetch CRDs:', error);
   }
 
   const crdsSidebarEntries = useMemo(() => {
@@ -244,6 +244,10 @@ export const useSidebarItems = (sidebarName: string = DefaultSidebars.IN_CLUSTER
             name: 'CronJobs',
             label: t('glossary|CronJobs'),
           },
+          {
+            name: 'JobSets',
+            label: t('glossary|Job Sets'),
+          },
         ],
       },
       {
@@ -262,6 +266,10 @@ export const useSidebarItems = (sidebarName: string = DefaultSidebars.IN_CLUSTER
           {
             name: 'storageClasses',
             label: t('glossary|Storage Classes'),
+          },
+          {
+            name: 'volumeAttributesClasses',
+            label: t('glossary|Volume Attributes Classes'),
           },
         ],
       },
@@ -505,16 +513,20 @@ export const useSidebarItems = (sidebarName: string = DefaultSidebars.IN_CLUSTER
     }
 
     return sidebars;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     customSidebarEntries,
     shouldShowHomeItem,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     Object.keys(clusters).join(','),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     selectedClusters.join(','),
     allClustersConf,
     crdsSidebarEntries,
     t,
   ]);
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const unsortedItems =
     sidebars[sidebarName === '' ? DefaultSidebars.IN_CLUSTER : sidebarName] ?? [];
 

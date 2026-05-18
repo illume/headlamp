@@ -15,7 +15,7 @@
  */
 
 import '../../../i18n/config';
-import Editor from '@monaco-editor/react';
+import { DiffEditor, Editor } from '@monaco-editor/react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import DialogActions from '@mui/material/DialogActions';
@@ -31,7 +31,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { getCluster } from '../../../lib/cluster';
-import { apply } from '../../../lib/k8s/api/v1/apply';
+import { apply, ApplyOptions } from '../../../lib/k8s/api/v1/apply';
 import { KubeObjectInterface } from '../../../lib/k8s/KubeObject';
 import { useId } from '../../../lib/util';
 import { clusterAction } from '../../../redux/clusterActionSlice';
@@ -73,8 +73,19 @@ export interface EditorDialogProps extends DialogProps {
   title?: string;
   /** Extra optional actions. */
   actions?: React.ReactNode[];
+  /** Extra buttons rendered in the right-side toolbar next to the editor toggles. */
+  toolbarActions?: React.ReactNode[];
+  /** Content to render in a "Form" tab between Editor and Documentation. */
+  formContent?: React.ReactNode;
   /** Don't render the editor in the dialog */
   noDialog?: boolean;
+  /** When true, changes to `item` update the editor code but do not reset the
+   *  original-code baseline, so the Save button treats the new content as a
+   *  user edit. Useful when a form pushes updated YAML into the editor. */
+  treatItemChangesAsEdits?: boolean;
+  /** Override the target cluster for apply operations. When set, this takes
+   *  priority over `item.cluster` and the URL-derived cluster. */
+  cluster?: string;
 }
 
 export default function EditorDialog(props: EditorDialogProps) {
@@ -89,6 +100,10 @@ export default function EditorDialog(props: EditorDialogProps) {
     allowToHideManagedFields,
     title,
     actions = [],
+    toolbarActions,
+    formContent,
+    treatItemChangesAsEdits,
+    cluster,
     ...other
   } = props;
   const editorOptions = {
@@ -121,6 +136,7 @@ export default function EditorDialog(props: EditorDialogProps) {
     false
   );
   const [uploadFiles, setUploadFiles] = React.useState(false);
+  const [hasOpenedDiffEditor, setHasOpenedDiffEditor] = React.useState(false);
 
   const dispatchCreateEvent = useEventCallback(HeadlampEventType.CREATE_RESOURCE);
   const dispatch: AppDispatch = useDispatch();
@@ -151,7 +167,9 @@ export default function EditorDialog(props: EditorDialogProps) {
 
     // Update the code if the item representation has changed
     if (itemCode !== originalCodeRef.current.code) {
-      originalCodeRef.current = { code: itemCode, format };
+      if (!treatItemChangesAsEdits) {
+        originalCodeRef.current = { code: itemCode, format };
+      }
       setCode({ code: itemCode, format });
     }
 
@@ -173,6 +191,7 @@ export default function EditorDialog(props: EditorDialogProps) {
         }
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item, hideManagedFields]);
 
   React.useEffect(() => {
@@ -266,21 +285,31 @@ export default function EditorDialog(props: EditorDialogProps) {
   }
 
   function handleTabChange(tabIndex: number) {
-    // Check if the docs tab has been selected.
-    if (tabIndex !== 1) {
-      return;
+    const docsTabIndex = formContent ? 2 : 1;
+    const diffTabIndex = formContent ? 3 : 2;
+
+    if (tabIndex === diffTabIndex) {
+      setHasOpenedDiffEditor(true);
     }
 
-    const { obj: codeObjs } = getObjectsFromCode(code);
-    setDocSpecs(codeObjs);
+    if (tabIndex === docsTabIndex) {
+      const { obj: codeObjs } = getObjectsFromCode(code);
+      setDocSpecs(codeObjs);
+    }
   }
 
   function onUndo() {
+    window.clearTimeout(lastCodeCheckHandler.current);
     setCode(originalCodeRef.current);
+    setError('');
   }
 
-  const applyFunc = async (newItems: KubeObjectInterface[], clusterName: string) => {
-    await Promise.allSettled(newItems.map(newItem => apply(newItem, clusterName))).then(
+  const applyFunc = async (
+    newItems: KubeObjectInterface[],
+    clusterName: string,
+    options?: ApplyOptions
+  ) => {
+    await Promise.allSettled(newItems.map(newItem => apply(newItem, clusterName, options))).then(
       (values: any) => {
         values.forEach((value: any, index: number) => {
           if (value.status === 'rejected') {
@@ -306,10 +335,13 @@ export default function EditorDialog(props: EditorDialogProps) {
         });
       }
     );
-    onClose();
+
+    if (!options?.dryRun) {
+      onClose();
+    }
   };
 
-  function handleSave() {
+  function handleSave(mode: 'apply' | 'dryRun' = 'apply') {
     // Verify the YAML even means anything before trying to use it.
     const { obj, format, error } = getObjectsFromCode(code);
     if (!!error) {
@@ -328,10 +360,39 @@ export default function EditorDialog(props: EditorDialogProps) {
 
     const newItemDefs = obj!;
 
-    if (typeof onSave === 'string' && onSave === 'default') {
-      const resourceNames = newItemDefs.map(newItemDef => newItemDef.metadata.name);
-      const clusterName = (item as KubeObjectIsh)?.cluster || getCluster() || '';
+    if (mode === 'dryRun') {
+      const resourceNames = newItemDefs.map(
+        newItemDef => newItemDef.metadata?.name || newItemDef.kind || t('translation|resource')
+      );
+      const clusterName = cluster || (item as KubeObjectIsh)?.cluster || getCluster() || '';
 
+      setError('');
+      dispatch(
+        clusterAction(() => applyFunc(newItemDefs, clusterName, { dryRun: true }), {
+          startMessage: t('translation|Running dry run for {{ newItemName }}…', {
+            newItemName: resourceNames.join(','),
+          }),
+          cancelledMessage: t('translation|Cancelled dry run for {{ newItemName }}.', {
+            newItemName: resourceNames.join(','),
+          }),
+          successMessage: t('translation|Dry run passed for {{ newItemName }}.', {
+            newItemName: resourceNames.join(','),
+          }),
+          errorMessage: t('translation|Dry run failed for {{ newItemName }}.', {
+            newItemName: resourceNames.join(','),
+          }),
+        })
+      );
+      return;
+    }
+
+    if (typeof onSave === 'string' && onSave === 'default') {
+      const resourceNames = newItemDefs.map(
+        newItemDef => newItemDef.metadata?.name || newItemDef.kind || t('translation|resource')
+      );
+      const clusterName = cluster || (item as KubeObjectIsh)?.cluster || getCluster() || '';
+
+      setError('');
       dispatch(
         clusterAction(() => applyFunc(newItemDefs, clusterName), {
           startMessage: t('translation|Applying {{ newItemName }}…', {
@@ -360,7 +421,7 @@ export default function EditorDialog(props: EditorDialogProps) {
   function makeEditor() {
     const language = originalCodeRef.current.format || 'yaml';
     return (
-      <Box height="100%">
+      <Box height="100%" id={editorId}>
         {useSimpleEditor ? (
           <SimpleEditor language={language} value={code.code} onChange={onChange} />
         ) : (
@@ -377,6 +438,27 @@ export default function EditorDialog(props: EditorDialogProps) {
     );
   }
 
+  function makeDiffEditor() {
+    const language = code.format || originalCodeRef.current.format || 'yaml';
+
+    return (
+      <Box height="100%">
+        <DiffEditor
+          original={originalCodeRef.current.code}
+          modified={code.code}
+          language={language}
+          theme={theme.base === 'dark' ? 'vs-dark' : 'light'}
+          height="100%"
+          options={{
+            automaticLayout: true,
+            readOnly: true,
+            renderSideBySide: true,
+          }}
+        />
+      </Box>
+    );
+  }
+
   const errorLabel = error || errorMessage;
   let dialogTitle = title;
   if (!dialogTitle && item) {
@@ -387,6 +469,7 @@ export default function EditorDialog(props: EditorDialogProps) {
   }
 
   const dialogTitleId = useId('editor-dialog-title-');
+  const editorId = useId('editor-textarea-');
 
   const content = !item ? (
     <Loader title={t('Loading editor')} />
@@ -446,6 +529,10 @@ export default function EditorDialog(props: EditorDialogProps) {
                 >
                   {t('translation|Upload File/URL')}
                 </Button>
+                {toolbarActions &&
+                  toolbarActions.map((action, i) => (
+                    <React.Fragment key={`toolbar_action_${i}`}>{action}</React.Fragment>
+                  ))}
               </FormGroup>
             </Grid>
           </Grid>
@@ -461,6 +548,16 @@ export default function EditorDialog(props: EditorDialogProps) {
                 label: t('translation|Editor'),
                 component: makeEditor(),
               },
+              ...(formContent
+                ? [
+                    {
+                      label: t('translation|Form'),
+                      component: (
+                        <Box sx={{ height: '100%', overflowY: 'auto' }}>{formContent}</Box>
+                      ),
+                    },
+                  ]
+                : []),
               {
                 label: t('translation|Documentation'),
                 component: (
@@ -468,6 +565,10 @@ export default function EditorDialog(props: EditorDialogProps) {
                     <DocsViewer docSpecs={docSpecs} />
                   </Box>
                 ),
+              },
+              {
+                label: t('translation|Review Changes'),
+                component: hasOpenedDiffEditor ? makeDiffEditor() : null,
               },
             ]}
           />
@@ -485,7 +586,7 @@ export default function EditorDialog(props: EditorDialogProps) {
             confirmDescription={t(
               'This will discard your changes in the editor. Do you want to proceed?'
             )}
-            // @todo: aria-controls should point to the textarea id
+            aria-controls={editorId}
           >
             {t('translation|Undo Changes')}
           </ConfirmButton>
@@ -498,11 +599,25 @@ export default function EditorDialog(props: EditorDialogProps) {
         </Button>
         {!isReadOnly() && (
           <Button
-            onClick={handleSave}
-            color="primary"
+            onClick={() => handleSave('dryRun')}
+            color="secondary"
             variant="contained"
             disabled={originalCodeRef.current.code === code.code || !!error}
             // @todo: aria-controls should point to the textarea id
+            sx={{ whiteSpace: 'nowrap' }}
+          >
+            {t('translation|Dry Run')}
+          </Button>
+        )}
+        {!isReadOnly() && (
+          <Button
+            onClick={() => handleSave('apply')}
+            color="primary"
+            variant="contained"
+            disabled={originalCodeRef.current.code === code.code || !!error}
+            aria-controls={editorId}
+            // @todo: aria-controls should point to the textarea id
+            sx={{ whiteSpace: 'nowrap' }}
           >
             {saveLabel || t('translation|Save & Apply')}
           </Button>

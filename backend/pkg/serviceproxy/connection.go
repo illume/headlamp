@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"path"
+	"strings"
 )
 
 // ServiceConnection represents a connection to a service.
@@ -35,8 +37,17 @@ func (c *Connection) Get(requestURI string) ([]byte, error) {
 		return nil, fmt.Errorf("invalid request uri: %w", err)
 	}
 
-	if rel.IsAbs() {
+	if rel.IsAbs() || rel.Host != "" || rel.User != nil {
 		return nil, fmt.Errorf("request uri must be a relative path")
+	}
+
+	if rel.Path != "" {
+		cleaned := path.Clean(rel.Path)
+		if cleaned == ".." || strings.HasPrefix(cleaned, "../") {
+			return nil, fmt.Errorf("request uri must not traverse above base path")
+		}
+
+		rel.Path = cleaned
 	}
 
 	fullURL := base.ResolveReference(rel)

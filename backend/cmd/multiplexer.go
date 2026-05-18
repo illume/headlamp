@@ -739,6 +739,10 @@ func (m *Multiplexer) sendCompleteMessage(conn *Connection, clientConn *WSConnLo
 }
 
 // sendDataMessage sends the actual data message to the client.
+//
+// Lock ordering note: writeMu is released before acquiring mu to
+// maintain a consistent lock order (mu → writeMu) with updateStatus
+// and prevent a lock-order inversion deadlock.
 func (m *Multiplexer) sendDataMessage(
 	conn *Connection,
 	clientConn *WSConnLock,
@@ -748,9 +752,10 @@ func (m *Multiplexer) sendDataMessage(
 	dataMsg := m.createWrapperMessage(conn, messageType, message)
 
 	conn.writeMu.Lock()
-	defer conn.writeMu.Unlock()
+	err := clientConn.WriteJSON(dataMsg)
+	conn.writeMu.Unlock()
 
-	if err := clientConn.WriteJSON(dataMsg); err != nil {
+	if err != nil {
 		return err
 	}
 
@@ -907,8 +912,26 @@ func createWebSocketURL(host, path, query string) string {
 		u.Scheme = SecureWebSocketScheme
 	}
 
-	u.Path = path
+	u.Path = singleJoiningSlash(u.Path, path)
 	u.RawQuery = query
 
 	return u.String()
+}
+
+// singleJoiningSlash joins two URL paths with a single slash, mirroring the
+// helper used by net/http/httputil. It preserves the cluster server's path
+// prefix (e.g. when the kubeconfig points at a reverse-proxy that routes by
+// URL path such as Warpgate).
+func singleJoiningSlash(a, b string) string {
+	aslash := strings.HasSuffix(a, "/")
+	bslash := strings.HasPrefix(b, "/")
+
+	switch {
+	case aslash && bslash:
+		return a + b[1:]
+	case !aslash && !bslash:
+		return a + "/" + b
+	}
+
+	return a + b
 }

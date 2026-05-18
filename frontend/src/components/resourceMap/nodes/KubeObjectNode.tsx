@@ -27,7 +27,7 @@ import { useGraphView, useNode } from '../GraphView';
 import { KubeIcon } from '../kubeIcon/KubeIcon';
 import { NodeGlance } from '../KubeObjectGlance/NodeGlance';
 import { GroupNodeComponent } from './GroupNode';
-import { getStatus } from './KubeObjectStatus';
+import { getGraphNodeStatus } from './KubeObjectStatus';
 
 const Container = styled('div')<{
   isExpanded: boolean;
@@ -159,18 +159,11 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
   const isSelected = id === graph.nodeSelection;
   const isCollapsed = node?.nodes?.length ? node?.collapsed : true;
 
-  let status = 'success';
-
-  if (kubeObject) {
-    status = getStatus(kubeObject) ?? 'success';
-  }
+  let status = node ? getGraphNodeStatus(node) : 'success';
 
   if (node?.nodes) {
-    const errors =
-      node?.nodes?.filter(it => it.kubeObject && getStatus(it.kubeObject) === 'error')?.length ?? 0;
-    const warnings =
-      node?.nodes?.filter(it => it.kubeObject && getStatus(it.kubeObject) === 'warning')?.length ??
-      0;
+    const errors = node.nodes.filter(it => getGraphNodeStatus(it) === 'error').length;
+    const warnings = node.nodes.filter(it => getGraphNodeStatus(it) === 'warning').length;
 
     if (warnings) {
       status = 'warning';
@@ -182,6 +175,7 @@ export const KubeObjectNodeComponent = memo(({ id }: NodeProps) => {
 
   useEffect(() => {
     if (!isHovered) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsExpanded(false);
       return;
     }

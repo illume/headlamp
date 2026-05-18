@@ -38,7 +38,9 @@ export async function searchWithQuery<T extends { jsonData: any }>(
   const functionBody = query;
   try {
     filterExpression = jsep(functionBody);
-  } catch (e) {}
+  } catch (e) {
+    // Intentionally empty: parse errors are expected as users type partial queries
+  }
 
   if (!filterExpression) return { results: [], searchTimeMs: 0 };
 
@@ -47,6 +49,10 @@ export async function searchWithQuery<T extends { jsonData: any }>(
   // Create object that contains all keys of all objects
   const dummyObject: any = {};
   getTopLevelKeys(items.map(it => it.jsonData)).forEach(key => (dummyObject[key] = undefined));
+
+  let evalErrorCount = 0;
+  let firstEvalError: unknown = null;
+  let firstFailedResource: T | null = null;
 
   for (let i = 0; i < items.length; i++) {
     const resource = items[i];
@@ -57,7 +63,13 @@ export async function searchWithQuery<T extends { jsonData: any }>(
       if (res === true) {
         results.push(resource);
       }
-    } catch (e) {}
+    } catch (e) {
+      evalErrorCount++;
+      if (!firstEvalError) {
+        firstEvalError = e;
+        firstFailedResource = resource;
+      }
+    }
 
     // After processing a batch or at the end, yield to the event loop
     if ((i + 1) % batchSize === 0 || i === items.length - 1) {
@@ -68,6 +80,14 @@ export async function searchWithQuery<T extends { jsonData: any }>(
         return { results: [], searchTimeMs: 0 };
       }
     }
+  }
+
+  if (evalErrorCount > 0) {
+    console.debug('searchWithQuery: failed to evaluate filter expression', {
+      errorCount: evalErrorCount,
+      firstError: firstEvalError,
+      firstFailedResource,
+    });
   }
 
   const searchTimeEnd = performance.now();

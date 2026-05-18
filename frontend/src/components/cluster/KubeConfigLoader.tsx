@@ -105,12 +105,224 @@ const WideButton = styled(Button)({
   maxWidth: '300px',
 });
 
-const enum Step {
+export enum Step {
   LoadKubeConfig,
   SelectClusters,
   ValidateKubeConfig,
   ConfigureClusters,
   Success,
+}
+
+export interface PureKubeConfigLoaderProps {
+  /** The current step in the loading process */
+  step: Step;
+  /** Error message to display */
+  error?: string;
+  /** The parsed kubeconfig file content */
+  fileContent: kubeconfig;
+  /** List of selected cluster names */
+  selectedClusters: string[];
+  /** Callback for when a file is dropped or chosen */
+  onDrop: (acceptedFiles: File[]) => void;
+  /** Callback for checkbox changes in cluster selection */
+  onCheckboxChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
+  /** Callback for 'Next' button */
+  onNext: () => void;
+  /** Callback for 'Back' button */
+  onBack: () => void;
+  /** Callback for 'Finish' button */
+  onFinish: () => void;
+  /** Callback for 'Cancel/Back' button in initial step */
+  onCancel: () => void;
+}
+
+export function PureKubeConfigLoader(props: PureKubeConfigLoaderProps) {
+  const {
+    step,
+    error,
+    fileContent,
+    selectedClusters,
+    onDrop,
+    onCheckboxChange,
+    onNext,
+    onBack,
+    onFinish,
+    onCancel,
+  } = props;
+  const { t } = useTranslation(['translation']);
+
+  const { getRootProps, getInputProps, open } = useDropzone({
+    onDrop: (acceptedFiles: File[]) => onDrop(acceptedFiles),
+    multiple: false,
+  });
+
+  function renderSwitch() {
+    switch (step) {
+      case Step.LoadKubeConfig:
+        return (
+          <Box>
+            <DropZoneBox border={1} borderColor="secondary.main" {...getRootProps()}>
+              <FormControl>
+                <input {...getInputProps()} />
+                <Tooltip
+                  title={t('translation|Drag & drop or choose kubeconfig file here')}
+                  placement="top"
+                >
+                  <Button
+                    variant="contained"
+                    onClick={() => open}
+                    startIcon={<InlineIcon icon="mdi:upload" width={32} />}
+                  >
+                    {t('translation|Choose file')}
+                  </Button>
+                </Tooltip>
+              </FormControl>
+            </DropZoneBox>
+            <Box style={{ display: 'flex', justifyContent: 'center' }}>
+              <WideButton onClick={onCancel}>{t('translation|Back')}</WideButton>
+            </Box>
+          </Box>
+        );
+      case Step.SelectClusters:
+        return (
+          <Box
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              textAlign: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Typography>{t('translation|Select clusters')}</Typography>
+            {fileContent.clusters ? (
+              <>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    textAlign: 'center',
+                    justifyContent: 'center',
+                    padding: '15px',
+                    width: '100%',
+                    maxWidth: '300px',
+                  }}
+                >
+                  <FormControl
+                    sx={{
+                      overflowY: 'auto',
+                      height: '150px',
+                      paddingLeft: '10px',
+                      paddingRight: '10px',
+                      width: '100%',
+                    }}
+                  >
+                    {fileContent.contexts.map(context => {
+                      return (
+                        <FormControlLabel
+                          key={context.name}
+                          control={
+                            <Checkbox
+                              value={context.name}
+                              name={context.name}
+                              onChange={onCheckboxChange}
+                              color="primary"
+                              checked={selectedClusters.includes(context.name)}
+                            />
+                          }
+                          label={context.name}
+                        />
+                      );
+                    })}
+                  </FormControl>
+                  <Grid
+                    container
+                    direction="column"
+                    spacing={2}
+                    justifyContent="center"
+                    alignItems="stretch"
+                  >
+                    <Grid item>
+                      <WideButton
+                        variant="contained"
+                        color="primary"
+                        onClick={onNext}
+                        disabled={selectedClusters.length === 0}
+                      >
+                        {t('translation|Next')}
+                      </WideButton>
+                    </Grid>
+                    <Grid item>
+                      <WideButton onClick={onBack}>{t('translation|Back')}</WideButton>
+                    </Grid>
+                  </Grid>
+                </Box>
+              </>
+            ) : null}
+          </Box>
+        );
+      case Step.ValidateKubeConfig:
+        return (
+          <Box style={{ textAlign: 'center' }}>
+            <Typography>{t('translation|Validating selected clusters')}</Typography>
+            <Loader title={t('translation|Validating selected clusters')} />
+          </Box>
+        );
+      case Step.ConfigureClusters:
+        return (
+          <Box style={{ textAlign: 'center' }}>
+            <Typography>{t('translation|Setting up clusters')}</Typography>
+            <Loader title={t('translation|Setting up clusters')} />
+          </Box>
+        );
+      case Step.Success:
+        return (
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              textAlign: 'center',
+              alignItems: 'center',
+            }}
+          >
+            <Box style={{ padding: '32px' }}>
+              <Typography>{t('translation|Clusters successfully set up!')}</Typography>
+            </Box>
+            <WideButton variant="contained" onClick={onFinish}>
+              {t('translation|Finish')}
+            </WideButton>
+          </Box>
+        );
+    }
+  }
+
+  return (
+    <ClusterDialog
+      showInfoButton={false}
+      // Disable backdrop clicking.
+      onClose={() => {}}
+      useCover
+    >
+      <DialogTitle>{t('translation|Load from KubeConfig')}</DialogTitle>
+      {error && error !== '' ? (
+        <Box
+          style={{
+            backgroundColor: '#f44336',
+            color: 'white',
+            textAlign: 'center',
+            padding: '12px',
+            marginBottom: '16px',
+            borderRadius: '4px',
+          }}
+        >
+          {error}
+        </Box>
+      ) : null}
+      <Box>{renderSwitch()}</Box>
+    </ClusterDialog>
+  );
 }
 
 function KubeConfigLoader() {
@@ -125,6 +337,8 @@ function KubeConfigLoader() {
   });
   const [selectedClusters, setSelectedClusters] = useState<string[]>([]);
   const configuredClusters = useClustersConf(); // Get already configured clusters
+  const dispatch = useDispatch();
+  const { t } = useTranslation(['translation']);
 
   useEffect(() => {
     if (fileContent.contexts.length > 0) {
@@ -175,20 +389,16 @@ function KubeConfigLoader() {
       loadClusters();
     }
     return () => {};
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state]);
 
-  const dispatch = useDispatch();
-  const { t } = useTranslation(['translation']);
-
-  const onDrop = (acceptedFiles: Blob[]) => {
+  const onDrop = (acceptedFiles: File[]) => {
     setError('');
     const reader = new FileReader();
     reader.onerror = () => setError(t("translation|Couldn't read kubeconfig file"));
     reader.onload = () => {
       try {
-        const data = String.fromCharCode.apply(null, [
-          ...new Uint8Array(reader.result as ArrayBuffer),
-        ]);
+        const data = new TextDecoder().decode(reader.result as ArrayBuffer);
         const doc = yaml.load(data) as kubeconfig;
         if (!doc.clusters) {
           throw new Error(t('translation|No clusters found!'));
@@ -209,11 +419,6 @@ function KubeConfigLoader() {
     reader.readAsArrayBuffer(acceptedFiles[0]);
   };
 
-  const { getRootProps, getInputProps, open } = useDropzone({
-    onDrop: onDrop,
-    multiple: false,
-  });
-
   function handleCheckboxChange(event: React.ChangeEvent<HTMLInputElement>) {
     if (!event.target.checked) {
       // remove from selected clusters
@@ -226,170 +431,22 @@ function KubeConfigLoader() {
     }
   }
 
-  function renderSwitch() {
-    switch (state) {
-      case Step.LoadKubeConfig:
-        return (
-          <Box>
-            <DropZoneBox border={1} borderColor="secondary.main" {...getRootProps()}>
-              <FormControl>
-                <input {...getInputProps()} />
-                <Tooltip
-                  title={t('translation|Drag & drop or choose kubeconfig file here')}
-                  placement="top"
-                >
-                  <Button
-                    variant="contained"
-                    onClick={() => open}
-                    startIcon={<InlineIcon icon="mdi:upload" width={32} />}
-                  >
-                    {t('translation|Choose file')}
-                  </Button>
-                </Tooltip>
-              </FormControl>
-            </DropZoneBox>
-            <Box style={{ display: 'flex', justifyContent: 'center' }}>
-              <WideButton onClick={() => history.goBack()}>{t('translation|Back')}</WideButton>
-            </Box>
-          </Box>
-        );
-      case Step.SelectClusters:
-        return (
-          <Box
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              textAlign: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <Typography>{t('translation|Select clusters')}</Typography>
-            {fileContent.clusters ? (
-              <>
-                <Box
-                  sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    textAlign: 'center',
-                    justifyContent: 'center',
-                    padding: '15px',
-                    width: '100%',
-                    maxWidth: '300px',
-                  }}
-                >
-                  <FormControl
-                    sx={{
-                      overflowY: 'auto',
-                      height: '150px',
-                      paddingLeft: '10px',
-                      paddingRight: '10px',
-                      width: '100%',
-                    }}
-                  >
-                    {fileContent.contexts.map(context => {
-                      return (
-                        <FormControlLabel
-                          key={context.name}
-                          control={
-                            <Checkbox
-                              value={context.name}
-                              name={context.name}
-                              onChange={handleCheckboxChange}
-                              color="primary"
-                              checked={selectedClusters.includes(context.name)}
-                            />
-                          }
-                          label={context.name}
-                        />
-                      );
-                    })}
-                  </FormControl>
-                  <Grid
-                    container
-                    direction="column"
-                    spacing={2}
-                    justifyContent="center"
-                    alignItems="stretch"
-                  >
-                    <Grid item>
-                      <WideButton
-                        variant="contained"
-                        color="primary"
-                        onClick={() => {
-                          setState(Step.ValidateKubeConfig);
-                        }}
-                        disabled={selectedClusters.length === 0}
-                      >
-                        {t('translation|Next')}
-                      </WideButton>
-                    </Grid>
-                    <Grid item>
-                      <WideButton
-                        onClick={() => {
-                          setError('');
-                          setState(Step.LoadKubeConfig);
-                        }}
-                      >
-                        {t('translation|Back')}
-                      </WideButton>
-                    </Grid>
-                  </Grid>
-                </Box>
-              </>
-            ) : null}
-          </Box>
-        );
-      case Step.ValidateKubeConfig:
-        return (
-          <Box style={{ textAlign: 'center' }}>
-            <Typography>{t('translation|Validating selected clusters')}</Typography>
-            <Loader title={t('translation|Validating selected clusters')} />
-          </Box>
-        );
-      case Step.ConfigureClusters:
-        return (
-          <Box style={{ textAlign: 'center' }}>
-            <Typography>{t('translation|Setting up clusters')}</Typography>
-            <Loader title={t('translation|Setting up clusters')} />
-          </Box>
-        );
-      case Step.Success:
-        return (
-          <Box
-            sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              justifyContent: 'center',
-              textAlign: 'center',
-              alignItems: 'center',
-            }}
-          >
-            <Box style={{ padding: '32px' }}>
-              <Typography>{t('translation|Clusters successfully set up!')}</Typography>
-            </Box>
-            <WideButton variant="contained" onClick={() => history.replace('/')}>
-              {t('translation|Finish')}
-            </WideButton>
-          </Box>
-        );
-    }
-  }
-
   return (
-    <ClusterDialog
-      showInfoButton={false}
-      // Disable backdrop clicking.
-      onClose={() => {}}
-      useCover
-    >
-      <DialogTitle>{t('translation|Load from KubeConfig')}</DialogTitle>
-      {error && error !== '' ? (
-        <Box style={{ backgroundColor: 'red', textAlign: 'center', padding: '4px' }}>{error}</Box>
-      ) : null}
-      <Box>{renderSwitch()}</Box>
-    </ClusterDialog>
+    <PureKubeConfigLoader
+      step={state}
+      error={error}
+      fileContent={fileContent}
+      selectedClusters={selectedClusters}
+      onDrop={onDrop}
+      onCheckboxChange={handleCheckboxChange}
+      onNext={() => setState(Step.ValidateKubeConfig)}
+      onBack={() => {
+        setError('');
+        setState(Step.LoadKubeConfig);
+      }}
+      onFinish={() => history.replace('/')}
+      onCancel={() => history.goBack()}
+    />
   );
 }
 

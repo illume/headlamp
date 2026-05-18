@@ -22,12 +22,15 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"path/filepath"
 	"testing"
 
 	"github.com/kubernetes-sigs/headlamp/backend/pkg/cache"
 	"github.com/kubernetes-sigs/headlamp/backend/pkg/helm"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"helm.sh/helm/v3/pkg/cli"
+	"helm.sh/helm/v3/pkg/repo"
 )
 
 func newHelmHandler(t *testing.T) *helm.Handler {
@@ -117,6 +120,32 @@ func TestAddRepository(t *testing.T) {
 		helmHandler.AddRepo(rr, addRepoRequest)
 		assert.Equal(t, http.StatusBadRequest, rr.Code)
 	})
+
+	t.Run("missing_add_repo_name", func(t *testing.T) {
+		addRepoRequest, err := http.NewRequestWithContext(context.Background(),
+			"POST", "/clusters/minikube/helm/repositories/charts",
+			bytes.NewBufferString(`{"url":"https://kubernetes-sigs.github.io/headlamp/"}`))
+		require.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		helmHandler.AddRepo(rr, addRepoRequest)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		assert.Contains(t, rr.Body.String(), "name is required")
+	})
+
+	t.Run("missing_add_repo_url", func(t *testing.T) {
+		addRepoRequest, err := http.NewRequestWithContext(context.Background(),
+			"POST", "/clusters/minikube/helm/repositories/charts",
+			bytes.NewBufferString(`{"name":"headlamp_test_repo"}`))
+		require.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		helmHandler.AddRepo(rr, addRepoRequest)
+
+		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		assert.Contains(t, rr.Body.String(), "url is required")
+	})
 }
 
 // TestRemoveRepository.
@@ -136,6 +165,17 @@ func TestRemoveRepository(t *testing.T) {
 		helmHandler.RemoveRepo(rr, removeRepoRequest)
 
 		assert.False(t, checkRepoExists(t, helmHandler, "headlamp_test_repo"))
+	})
+
+	t.Run("remove_repo_not_found", func(t *testing.T) {
+		removeRepoRequest, err := http.NewRequestWithContext(context.Background(), "DELETE",
+			"/clusters/minikube/helm/repositories/?name=repo-that-does-not-exist", nil)
+		require.NoError(t, err)
+
+		rr := httptest.NewRecorder()
+		helmHandler.RemoveRepo(rr, removeRepoRequest)
+
+		assert.Equal(t, http.StatusNotFound, rr.Code)
 	})
 }
 
@@ -190,16 +230,39 @@ func TestUpdateRepo(t *testing.T) {
 	})
 
 	t.Run("invalid_update_repo_request", func(t *testing.T) {
-		updateRepoRequest, err := http.NewRequestWithContext(context.Background(), "PUT",
-			"/clusters/minikube/helm/repositories", bytes.NewBufferString("some invalid request string"))
-		require.NoError(t, err)
-
-		// response recorder
-		rr := httptest.NewRecorder()
-
-		helmHandler.UpdateRepository(rr, updateRepoRequest)
-		assert.Equal(t, http.StatusBadRequest, rr.Code)
+		testInvalidUpdateRepoRequest(t, helmHandler, "some invalid request string", "")
 	})
+
+	t.Run("missing_update_repo_name", func(t *testing.T) {
+		testInvalidUpdateRepoRequest(t, helmHandler,
+			`{"url":"https://kubernetes-sigs-update-url.github.io/headlamp/"}`, "name is required")
+	})
+
+	t.Run("missing_update_repo_url", func(t *testing.T) {
+		testInvalidUpdateRepoRequest(t, helmHandler, `{"name":"headlamp_test_repo"}`, "url is required")
+	})
+}
+
+func testInvalidUpdateRepoRequest(
+	t *testing.T,
+	helmHandler *helm.Handler,
+	requestBody string,
+	expectedError string,
+) {
+	t.Helper()
+
+	updateRepoRequest, err := http.NewRequestWithContext(context.Background(), "PUT",
+		"/clusters/minikube/helm/repositories", bytes.NewBufferString(requestBody))
+	require.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	helmHandler.UpdateRepository(rr, updateRepoRequest)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
+
+	if expectedError != "" {
+		assert.Contains(t, rr.Body.String(), expectedError)
+	}
 }
 
 // TestListRepositories.
@@ -217,9 +280,53 @@ func TestListRepositories(t *testing.T) {
 	rr := httptest.NewRecorder()
 
 	helmHandler.ListRepo(rr, listRepoReq)
+	require.Equal(t, http.StatusOK, rr.Code)
+	assert.Contains(t, rr.Header().Get("Content-Type"), "application/json")
 
 	var listRepoResponse helm.ListRepoResponse
 
 	err = json.Unmarshal(rr.Body.Bytes(), &listRepoResponse)
 	assert.NoError(t, err)
+}
+
+func TestRemoveRepositoryMissingNameReturnsBadRequest(t *testing.T) {
+	helmHandler := newHelmHandler(t)
+
+	removeRepoRequest, err := http.NewRequestWithContext(context.Background(), "DELETE",
+		"/clusters/minikube/helm/repositories/", nil)
+	require.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	helmHandler.RemoveRepo(rr, removeRepoRequest)
+
+	require.Equal(t, http.StatusBadRequest, rr.Code)
+	assert.Contains(t, rr.Body.String(), "name query parameter is required")
+}
+
+func TestListRepoSetsJSONContentType(t *testing.T) {
+	customSettings := cli.New()
+	customSettings.RepositoryConfig = filepath.Join(t.TempDir(), "repositories.yaml")
+
+	repoFile := repo.NewFile()
+	repoFile.Update(&repo.Entry{
+		Name: "sample",
+		URL:  "https://example.test/charts",
+	})
+	require.NoError(t, repoFile.WriteFile(customSettings.RepositoryConfig, 0o644))
+
+	cache := cache.New[interface{}]()
+	require.NotNil(t, cache)
+
+	helmHandler, err := helm.NewHandlerWithSettings(cache, customSettings)
+	require.NoError(t, err)
+
+	listRepoReq, err := http.NewRequestWithContext(context.Background(),
+		"GET", "/clusters/minikube/helm/repositories", nil)
+	require.NoError(t, err)
+
+	rr := httptest.NewRecorder()
+	helmHandler.ListRepo(rr, listRepoReq)
+
+	assert.Equal(t, http.StatusOK, rr.Code)
+	assert.Contains(t, rr.Header().Get("Content-Type"), "application/json")
 }
