@@ -204,7 +204,12 @@ export async function apiDiscovery(clusters: string[]): Promise<ApiResource[]> {
                 }
               }
             } catch (e) {
-              // This catch block intentionally left blank.
+              // Log failure to fetch core API resources for better observability.
+              console.debug(
+                `Failed to fetch core API resources for cluster ${cluster}:`,
+                { version: v },
+                e
+              );
             }
           });
           await Promise.allSettled(coreResourceFetchPromises);
@@ -243,11 +248,19 @@ export async function apiDiscovery(clusters: string[]): Promise<ApiResource[]> {
                   );
                 }
               }
-            } catch (e) {}
+            } catch (e) {
+              console.debug(
+                `Failed to fetch group API resources for cluster ${cluster}:`,
+                { group: group?.name, version: group?.preferredVersion?.version },
+                e
+              );
+            }
           });
           await Promise.allSettled(groupResourceFetchPromises);
         }
-      } catch (legacyError) {}
+      } catch (legacyError) {
+        console.debug(`Failed to fetch legacy API resources for cluster ${cluster}:`, legacyError);
+      }
     }
   }
 

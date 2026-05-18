@@ -68,10 +68,11 @@ func stopOrDeletePortForward(cache cache.Cache[interface{}], cluster string, id 
 		return err
 	}
 
-	if isStopRequest {
-		// close the channel to stop the portforward
-		portforward.closeChan <- struct{}{}
+	// Always signal the portforward to stop, whether it's a stop or delete request.
+	// This prevents orphaned goroutines and leaked ports.
+	safeCloseChan(portforward.closeChan)
 
+	if isStopRequest {
 		portforward.Status = STOPPED
 		portforwardstore(cache, portforward)
 	} else {

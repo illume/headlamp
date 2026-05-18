@@ -37,13 +37,15 @@ import { TooltipIcon } from '../common/Tooltip';
 import LightTooltip from '../common/Tooltip/TooltipLight';
 
 function getPodStatus(pod: Pod) {
-  const phase = pod.status.phase;
+  const phase = pod.status?.phase;
   let status: StatusLabelProps['status'] = '';
 
   if (phase === 'Failed') {
     status = 'error';
   } else if (phase === 'Succeeded' || phase === 'Running') {
-    const readyCondition = pod.status.conditions.find(condition => condition.type === 'Ready');
+    const readyCondition = (pod.status?.conditions || []).find(
+      condition => condition.type === 'Ready'
+    );
     if (readyCondition?.status === 'True' || phase === 'Succeeded') {
       status = 'success';
     } else {
@@ -240,6 +242,9 @@ export interface PodListProps {
   reflectTableInURL?: SimpleTableProps['reflectInURL'];
   noNamespaceFilter?: boolean;
   errors?: ApiError[] | null;
+  hideCreateButton?: boolean;
+  enableRowActions?: boolean;
+  enableRowSelection?: boolean;
 }
 
 export function PodListRenderer(props: PodListProps) {
@@ -250,11 +255,16 @@ export function PodListRenderer(props: PodListProps) {
     reflectTableInURL = 'pods',
     noNamespaceFilter,
     errors,
+    hideCreateButton,
+    enableRowActions,
+    enableRowSelection,
   } = props;
   const { t } = useTranslation(['glossary', 'translation']);
 
   const getCpuUsage = (pod: Pod) => {
-    const metric = metrics?.find(it => it.getName() === pod.getName());
+    const metric = metrics?.find(
+      it => it.getName() === pod.getName() && it.getNamespace() === pod.getNamespace()
+    );
     if (!metric) return;
 
     return (
@@ -263,7 +273,9 @@ export function PodListRenderer(props: PodListProps) {
   };
 
   const getMemoryUsage = (pod: Pod) => {
-    const metric = metrics?.find(it => it.getName() === pod.getName());
+    const metric = metrics?.find(
+      it => it.getName() === pod.getName() && it.getNamespace() === pod.getNamespace()
+    );
     if (!metric) return;
 
     return (
@@ -277,7 +289,9 @@ export function PodListRenderer(props: PodListProps) {
       title={t('Pods')}
       headerProps={{
         noNamespaceFilter,
-        titleSideActions: [<CreateResourceButton resourceClass={Pod} key="create-pod-button" />],
+        titleSideActions: hideCreateButton
+          ? []
+          : [<CreateResourceButton resourceClass={Pod} key="create-pod-button" />],
       }}
       hideColumns={hideColumns}
       errors={errors}
@@ -314,7 +328,13 @@ export function PodListRenderer(props: PodListProps) {
           gridTemplate: 'min-content',
           filterVariant: 'multi-select',
           label: t('translation|Status'),
-          getValue: pod => pod.getDetailedStatus().reason,
+          // include ready condition status so the cell re-renders when icon state changes
+          getValue: pod => {
+            const status = pod.getDetailedStatus();
+            const readyCondition = (pod.status?.conditions || []).find(c => c.type === 'Ready');
+            const phase = pod.status?.phase || '';
+            return `${phase}:${status.reason}:${readyCondition?.status ?? ''}`;
+          },
           render: makePodStatusLabel,
         },
         ...(metrics?.length
@@ -528,11 +548,14 @@ export function PodListRenderer(props: PodListProps) {
           },
           show: false,
         },
+        'labels',
         'age',
       ]}
       data={pods}
       reflectInURL={reflectTableInURL}
       id="headlamp-pods"
+      enableRowActions={enableRowActions}
+      enableRowSelection={enableRowSelection}
     />
   );
 }
@@ -552,6 +575,7 @@ export default function PodList() {
       resourceKind: 'Pod',
       error: errors?.[0] || undefined,
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items, errors]);
 
   return <PodListRenderer pods={items} errors={errors} metrics={podMetrics} reflectTableInURL />;

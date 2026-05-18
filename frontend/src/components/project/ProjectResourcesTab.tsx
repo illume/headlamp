@@ -203,9 +203,9 @@ export function ProjectResourcesTab({
               <Icon
                 icon={
                   status === 'error'
-                    ? 'mdi:alert'
-                    : status === 'warning'
                     ? 'mdi:alert-circle'
+                    : status === 'warning'
+                    ? 'mdi:alert'
                     : 'mdi:check-circle'
                 }
                 style={{
@@ -382,6 +382,7 @@ export function ProjectResourcesTab({
         },
       },
     ],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [t, showClusterColumn]
   );
 

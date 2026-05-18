@@ -267,6 +267,40 @@ func isCatalogInstalledPlugin(pluginDir, pluginName string) bool {
 	return packageData.IsManagedByHeadlampPlugin
 }
 
+// getPluginName reads the plugin's package.json to extract its display name.
+// If the file is missing, unreadable, or lacks a name field, it falls back to the directory basename.
+func getPluginName(pluginDir string) string {
+	packageJSONPath := filepath.Join(pluginDir, "package.json")
+
+	content, err := os.ReadFile(filepath.Clean(packageJSONPath))
+	if err != nil {
+		return filepath.Base(pluginDir)
+	}
+
+	var packageData struct {
+		Name string `json:"name"`
+	}
+
+	if err := json.Unmarshal(content, &packageData); err != nil || packageData.Name == "" {
+		return strings.TrimPrefix(filepath.Base(pluginDir), "plugins/")
+	}
+
+	return packageData.Name
+}
+
+func logPluginGroup(plugins []string, baseDir, pluginType, listingMsg, emptyMsg string) {
+	if len(plugins) > 0 {
+		logger.Log(logger.LevelInfo, map[string]string{"directory": baseDir}, nil, listingMsg)
+
+		for _, plugin := range plugins {
+			name := getPluginName(filepath.Join(baseDir, filepath.Base(plugin)))
+			logger.Log(logger.LevelInfo, map[string]string{"plugin": name, "type": pluginType}, nil, "Found plugin")
+		}
+	} else {
+		logger.Log(logger.LevelInfo, map[string]string{"directory": baseDir, "type": pluginType}, nil, emptyMsg)
+	}
+}
+
 // ListPlugins lists the plugins in the static, user-installed, and development plugin directories.
 func ListPlugins(staticPluginDir, userPluginDir, pluginDir string) error {
 	staticPlugins, userPlugins, devPlugins, err := generateSeparatePluginPaths(staticPluginDir, userPluginDir, pluginDir)
@@ -275,58 +309,12 @@ func ListPlugins(staticPluginDir, userPluginDir, pluginDir string) error {
 		return fmt.Errorf("listing plugins: %w", err)
 	}
 
-	getPluginName := func(pluginDir string) string {
-		packageJSONPath := filepath.Join(pluginDir, "package.json")
-
-		content, err := os.ReadFile(packageJSONPath) //nolint:gosec
-		if err != nil {
-			// If there's an error reading package.json, just return the folder name as fallback.
-			return filepath.Base(pluginDir)
-		}
-
-		var packageData struct {
-			Name string `json:"name"`
-		}
-
-		// Parse the JSON and extract the name. If it fails, return the folder name.
-		if err := json.Unmarshal(content, &packageData); err != nil || packageData.Name == "" {
-			return strings.TrimPrefix(filepath.Base(pluginDir), "plugins/")
-		}
-
-		return packageData.Name
-	}
-
-	if len(staticPlugins) > 0 {
-		fmt.Printf("Shipped Plugins (%s):\n", staticPluginDir)
-
-		for _, plugin := range staticPlugins {
-			fmt.Println(" -", getPluginName(plugin))
-		}
-	} else {
-		fmt.Println("No shipped plugins found.")
-	}
-
-	if len(userPlugins) > 0 {
-		fmt.Printf("\nUser-installed Plugins (%s):\n", userPluginDir)
-
-		for _, plugin := range userPlugins {
-			pluginName := getPluginName(filepath.Join(userPluginDir, plugin))
-			fmt.Println(" -", pluginName)
-		}
-	} else {
-		fmt.Println("No user-installed plugins found.")
-	}
-
-	if len(devPlugins) > 0 {
-		fmt.Printf("\nDevelopment Plugins (%s):\n", pluginDir)
-
-		for _, plugin := range devPlugins {
-			pluginName := getPluginName(filepath.Join(pluginDir, plugin))
-			fmt.Println(" -", pluginName)
-		}
-	} else {
-		fmt.Println("No development plugins found.")
-	}
+	logPluginGroup(staticPlugins, staticPluginDir, PluginTypeShipped,
+		"Listing shipped plugins", "No shipped plugins found")
+	logPluginGroup(userPlugins, userPluginDir, PluginTypeUser,
+		"Listing user-installed plugins", "No user-installed plugins found")
+	logPluginGroup(devPlugins, pluginDir, PluginTypeDevelopment,
+		"Listing development plugins", "No development plugins found")
 
 	return nil
 }

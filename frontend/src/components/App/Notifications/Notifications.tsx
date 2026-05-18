@@ -32,7 +32,7 @@ import { useDispatch } from 'react-redux';
 import { useHistory } from 'react-router';
 import { FixedSizeList, ListChildComponentProps } from 'react-window';
 import { useClustersConf } from '../../../lib/k8s';
-import Event from '../../../lib/k8s/event';
+import Event, { useEventWarningList } from '../../../lib/k8s/event';
 import { createRouteURL } from '../../../lib/router/createRouteURL';
 import { useTypedSelector } from '../../../redux/hooks';
 import Empty from '../../common/EmptyContent';
@@ -158,7 +158,7 @@ export default function Notifications() {
   const notifications = useTypedSelector(state => state.notifications.notifications);
   const dispatch = useDispatch();
   const clusters = useClustersConf();
-  const warnings = Event.useWarningList(
+  const warnings = useEventWarningList(
     Object.values(clusters ?? {})?.map(c => c.name, {
       queryParams: {
         limit: defaultMaxNotificationsStored,
@@ -213,6 +213,7 @@ export default function Notifications() {
       // we are here means the events list changed and we have now new set of events, so we will notify the store about it
       dispatch(setNotifications(notificationsToShow.concat(currentNotifications)));
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [warnings, notifications]);
 
   const [areAllNotificationsInDeleteState, areThereUnseenNotifications, filteredNotifications] =

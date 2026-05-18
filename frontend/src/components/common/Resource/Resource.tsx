@@ -41,7 +41,9 @@ import { labelSelectorToQuery, ResourceClasses, useCluster } from '../../../lib/
 import { ApiError } from '../../../lib/k8s/api/v2/ApiError';
 import { KubeCondition, KubeContainer, KubeContainerStatus } from '../../../lib/k8s/cluster';
 import ConfigMap from '../../../lib/k8s/configMap';
+import type Event from '../../../lib/k8s/event';
 import { KubeEvent } from '../../../lib/k8s/event';
+import Job from '../../../lib/k8s/job';
 import { KubeObject } from '../../../lib/k8s/KubeObject';
 import { KubeObjectInterface } from '../../../lib/k8s/KubeObject';
 import { KubeObjectClass } from '../../../lib/k8s/KubeObject';
@@ -62,6 +64,7 @@ import {
   DefaultDetailsViewSection,
   DetailsViewSection,
 } from '../../DetailsViewSection/detailsViewSectionSlice';
+import { JobsListRenderer } from '../../job/List';
 import { PodListProps, PodListRenderer } from '../../pod/List';
 import { LightTooltip, Loader, ObjectEventList } from '..';
 import BackLink from '../BackLink';
@@ -70,7 +73,9 @@ import ErrorBoundary from '../ErrorBoundary';
 import InnerTable from '../InnerTable';
 import { DateLabel, HoverInfoLabel, StatusLabel, StatusLabelProps, ValueLabel } from '../Label';
 import Link, { LinkProps } from '../Link';
+import { useObjectEvents } from '../ObjectEventList';
 import { metadataStyles } from '.';
+import A8RInfo from './A8RInfo';
 import { MainInfoSection, MainInfoSectionProps } from './MainInfoSection/MainInfoSection';
 import { MainInfoHeader } from './MainInfoSection/MainInfoSectionHeader';
 import { MetadataDictGrid, MetadataDisplay } from './MetadataDisplay';
@@ -118,7 +123,10 @@ export interface DetailsGridProps<T extends KubeObjectClass>
   cluster?: string;
   /** Sections to show in the details grid (besides the default ones). */
   extraSections?:
-    | ((item: InstanceType<T>) => boolean | DetailsViewSection[] | ReactNode[])
+    | ((
+        item: InstanceType<T>,
+        context: { events: Event[] }
+      ) => boolean | DetailsViewSection[] | ReactNode[])
     | boolean
     | DetailsViewSection[];
   /** @deprecated Use extraSections instead. */
@@ -163,6 +171,7 @@ export function DetailsGrid<T extends KubeObjectClass>(props: DetailsGridProps<T
   const [item, error] = resourceType.useGet(name, namespace, {
     cluster: cluster ?? selectedCluster ?? undefined,
   }) as [InstanceType<T> | null, ApiError | null];
+  const events = useObjectEvents(withEvents ? item : null);
   const prevItemRef = React.useRef<{ uid?: string; version?: string; error?: ApiError | null }>({});
 
   React.useEffect(() => {
@@ -176,6 +185,7 @@ export function DetailsGrid<T extends KubeObjectClass>(props: DetailsGridProps<T
         },
       });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item]);
 
   React.useEffect(() => {
@@ -196,6 +206,7 @@ export function DetailsGrid<T extends KubeObjectClass>(props: DetailsGridProps<T
       error,
     };
     onResourceUpdate?.(item as InstanceType<T>, error!);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item, error]);
 
   const actualBackLink: string | Location | undefined = React.useMemo(() => {
@@ -231,6 +242,7 @@ export function DetailsGrid<T extends KubeObjectClass>(props: DetailsGridProps<T
     }
 
     return createRouteURL(route);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item]);
 
   const sections: (DetailsViewSection | ReactNode)[] = [];
@@ -288,6 +300,22 @@ export function DetailsGrid<T extends KubeObjectClass>(props: DetailsGridProps<T
     });
   }
 
+  // a8r.io Metadata section — rendered for any resource that carries a8r.io/* annotations
+  if (item) {
+    const annotations = item.metadata?.annotations ?? {};
+    const hasA8r = Object.keys(annotations).some(key => key.startsWith('a8r.io/'));
+    if (hasA8r) {
+      sections.push({
+        id: 'headlamp.a8r-info',
+        section: (
+          <SectionBox title={t('a8r.io Metadata')}>
+            <A8RInfo annotations={annotations} />
+          </SectionBox>
+        ),
+      });
+    }
+  }
+
   // Other sections
   if (!!sectionsFunc) {
     console.info(
@@ -306,7 +334,7 @@ export function DetailsGrid<T extends KubeObjectClass>(props: DetailsGridProps<T
     if (Array.isArray(extraSections)) {
       actualExtraSections = extraSections;
     } else if (typeof extraSections === 'function') {
-      const extraSectionsResult = extraSections(item!) || [];
+      const extraSectionsResult = extraSections(item!, { events }) || [];
       if (Array.isArray(extraSectionsResult)) {
         actualExtraSections = extraSectionsResult;
       }
@@ -332,7 +360,7 @@ export function DetailsGrid<T extends KubeObjectClass>(props: DetailsGridProps<T
   if (withEvents && item) {
     sections.push({
       id: DefaultDetailsViewSection.EVENTS,
-      section: <ObjectEventList object={item} />,
+      section: <ObjectEventList object={item} events={events} />,
     });
   }
 
@@ -980,7 +1008,31 @@ function buildEnvironmentVariables(
         }
 
         try {
-          const targetContainer = pod.spec?.containers?.find(c => c.name === containerName);
+          const allContainers: any[] = [
+            ...(pod.spec?.containers || []),
+            ...(pod.spec?.initContainers || []),
+            ...(pod.spec?.ephemeralContainers || []),
+          ];
+
+          const templateSpec = (pod.spec as any)?.template?.spec;
+          if (templateSpec) {
+            allContainers.push(
+              ...(templateSpec.containers || []),
+              ...(templateSpec.initContainers || []),
+              ...(templateSpec.ephemeralContainers || [])
+            );
+          }
+
+          const jobTemplateSpec = (pod.spec as any)?.jobTemplate?.spec?.template?.spec;
+          if (jobTemplateSpec) {
+            allContainers.push(
+              ...(jobTemplateSpec.containers || []),
+              ...(jobTemplateSpec.initContainers || []),
+              ...(jobTemplateSpec.ephemeralContainers || [])
+            );
+          }
+
+          const targetContainer = allContainers.find(c => c.name === containerName);
           if (!targetContainer) {
             throw new Error(`Container ${containerName} not found`);
           }
@@ -1061,6 +1113,7 @@ export function ContainerEnvironmentVariables(props: EnvironmentVariablesProps) 
   const references = extractEnvVarReferences(container);
 
   // Get unique resource names to fetch
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const secretsToFetch = React.useMemo(() => {
     const secrets = new Set<string>();
     references.forEach(ref => {
@@ -1071,6 +1124,7 @@ export function ContainerEnvironmentVariables(props: EnvironmentVariablesProps) 
     return Array.from(secrets);
   }, [references]);
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const configMapsToFetch = React.useMemo(() => {
     const configMaps = new Set<string>();
     references.forEach(ref => {
@@ -1082,6 +1136,7 @@ export function ContainerEnvironmentVariables(props: EnvironmentVariablesProps) 
   }, [references]);
 
   // Callbacks to handle fetched resources
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const handleSecretFetched = React.useCallback(
     (name: string, resource: KubeObject | null, error: ApiError | null) => {
       setFetchedSecrets(prev => {
@@ -1093,6 +1148,7 @@ export function ContainerEnvironmentVariables(props: EnvironmentVariablesProps) 
     []
   );
 
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const handleConfigMapFetched = React.useCallback(
     (name: string, resource: KubeObject | null, error: ApiError | null) => {
       setFetchedConfigMaps(prev => {
@@ -1105,6 +1161,7 @@ export function ContainerEnvironmentVariables(props: EnvironmentVariablesProps) 
   );
 
   // Copy handler using notistack
+  // eslint-disable-next-line react-hooks/rules-of-hooks
   const handleCopy = React.useCallback(
     (text: string) => {
       navigator.clipboard.writeText(text).then(
@@ -1307,25 +1364,32 @@ export function LivenessProbes(props: { liveness: KubeContainer['livenessProbe']
 
   return (
     <Box display="flex" flexDirection="column">
+      {/* eslint-disable-next-line react-hooks/static-components */}
       <LivenessProbeItem>
         {`http-get, path: ${liveness?.httpGet?.path}, port: ${liveness?.httpGet?.port},
     scheme: ${liveness?.httpGet?.scheme}`}
       </LivenessProbeItem>
+      {/* eslint-disable-next-line react-hooks/static-components */}
       <LivenessProbeItem>
         {liveness?.exec?.command && `exec[${liveness?.exec?.command.join(' ')}]`}
       </LivenessProbeItem>
+      {/* eslint-disable-next-line react-hooks/static-components */}
       <LivenessProbeItem>
         {liveness?.successThreshold && `success = ${liveness?.successThreshold}`}
       </LivenessProbeItem>
+      {/* eslint-disable-next-line react-hooks/static-components */}
       <LivenessProbeItem>
         {liveness?.failureThreshold && `failure = ${liveness?.failureThreshold}`}
       </LivenessProbeItem>
+      {/* eslint-disable-next-line react-hooks/static-components */}
       <LivenessProbeItem>
         {liveness?.initialDelaySeconds && `delay = ${liveness?.initialDelaySeconds}s`}
       </LivenessProbeItem>
+      {/* eslint-disable-next-line react-hooks/static-components */}
       <LivenessProbeItem>
         {liveness?.timeoutSeconds && `timeout = ${liveness?.timeoutSeconds}s`}
       </LivenessProbeItem>
+      {/* eslint-disable-next-line react-hooks/static-components */}
       <LivenessProbeItem>
         {liveness?.periodSeconds && `period = ${liveness?.periodSeconds}s`}
       </LivenessProbeItem>
@@ -1594,11 +1658,12 @@ export function ContainerInfo(props: ContainerInfoProps) {
         name: t('Ports'),
         value: (
           <Grid container>
-            {container.ports?.map(({ containerPort, protocol }, index) => (
+            {container.ports?.map(({ containerPort, protocol, name }, index) => (
               <>
                 <Grid item xs={12} key={`port_line_${index}`}>
                   <Box display="flex" alignItems={'center'}>
                     <Box px={0.5} minWidth={120}>
+                      {name && <ValueLabel>{`${name} `}</ValueLabel>}
                       <ValueLabel>{`${protocol}:`}</ValueLabel>
                       <ValueLabel>{containerPort}</ValueLabel>
                     </Box>
@@ -1643,10 +1708,11 @@ export interface OwnedPodsSectionProps {
    * Hides the namespace selector
    */
   noSearch?: boolean;
+  onPodsUpdate?: (resource: KubeObject, pods: Pod[] | null, errors: ApiError[] | null) => void;
 }
 
 export function OwnedPodsSection(props: OwnedPodsSectionProps) {
-  const { resource, hideColumns, noSearch } = props;
+  const { resource, hideColumns, noSearch, onPodsUpdate } = props;
   let namespace;
 
   if (resource.kind === 'Namespace') {
@@ -1654,11 +1720,16 @@ export function OwnedPodsSection(props: OwnedPodsSectionProps) {
   } else {
     namespace = resource.metadata.namespace;
   }
+  let labelSelector = '';
+  if (resource?.jsonData?.spec?.selector) {
+    labelSelector = labelSelectorToQuery(resource?.jsonData?.spec?.selector);
+  } else if (resource.kind === 'JobSet') {
+    labelSelector = `jobset.sigs.k8s.io/jobset-name=${resource.metadata.name}`;
+  }
+
   const queryData = {
     namespace,
-    labelSelector: resource?.jsonData?.spec?.selector
-      ? labelSelectorToQuery(resource?.jsonData?.spec?.selector)
-      : '',
+    labelSelector,
     fieldSelector: resource.kind === 'Node' ? `spec.nodeName=${resource.metadata.name}` : undefined,
     cluster: resource.cluster,
   };
@@ -1673,6 +1744,23 @@ export function OwnedPodsSection(props: OwnedPodsSectionProps) {
     ...podMetricsQueryData,
     refetchInterval: METRIC_REFETCH_INTERVAL_MS,
   });
+  const resourceRef = React.useRef(resource);
+  const resourceIdentity = [
+    resource.cluster,
+    resource.kind,
+    resource.metadata.uid ?? '',
+    resource.metadata.namespace ?? '',
+    resource.metadata.name,
+  ].join('|');
+
+  React.useEffect(() => {
+    resourceRef.current = resource;
+  }, [resource]);
+
+  React.useEffect(() => {
+    onPodsUpdate?.(resourceRef.current, pods, errors ?? null);
+  }, [onPodsUpdate, resourceIdentity, pods, errors]);
+
   const onlyOneNamespace = !!resource.metadata.namespace || resource.kind === 'Namespace';
   const hideNamespaceFilter = onlyOneNamespace || noSearch;
 
@@ -1683,6 +1771,43 @@ export function OwnedPodsSection(props: OwnedPodsSectionProps) {
       errors={errors}
       metrics={podMetrics}
       noNamespaceFilter={hideNamespaceFilter}
+      hideCreateButton
+      enableRowActions={resource.kind === 'JobSet' ? false : undefined}
+      enableRowSelection={resource.kind === 'JobSet' ? false : undefined}
+    />
+  );
+}
+
+export interface OwnedJobsSectionProps {
+  resource: KubeObject;
+}
+
+export function OwnedJobsSection(props: OwnedJobsSectionProps) {
+  const { resource } = props;
+
+  if (resource.kind !== 'JobSet') {
+    return null;
+  }
+
+  return <OwnedJobsSectionContent resource={resource} />;
+}
+
+function OwnedJobsSectionContent({ resource }: OwnedJobsSectionProps) {
+  const { items: jobs, errors } = Job.useList({
+    namespace: resource.metadata.namespace,
+    labelSelector: `jobset.sigs.k8s.io/jobset-name=${resource.metadata.name}`,
+    cluster: resource.cluster,
+  });
+
+  return (
+    <JobsListRenderer
+      jobs={jobs}
+      errors={errors}
+      hideColumns={['namespace']}
+      noNamespaceFilter
+      enableRowActions={false}
+      enableRowSelection={false}
+      hideCreateButton
     />
   );
 }
@@ -1702,6 +1827,7 @@ export function ContainersSection(props: { resource: KubeObjectInterface | null 
 
     if (resource.spec) {
       if (resource.spec.containers) {
+        // eslint-disable-next-line react-hooks/immutability
         title = t('Containers');
         containers = resource.spec.containers;
       } else if (resource.spec.template && resource.spec.template.spec) {

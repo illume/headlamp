@@ -72,4 +72,58 @@ describe('filterGraph', () => {
     // Finds node 2 that has an error, and node 1 that is related to it
     expect(filteredNodes.map(it => it.id)).toEqual(['2', '1']);
   });
+
+  it('filters nodes by explicit status', () => {
+    const customNodes: GraphNode[] = [
+      { id: 'warning-node', status: 'warning' },
+      { id: 'error-node', status: 'error' },
+      { id: 'success-node', status: 'success' },
+    ];
+
+    const { nodes: filteredNodes } = filterGraph(customNodes, [], [{ type: 'hasErrors' }]);
+
+    expect(filteredNodes.map(it => it.id)).toEqual(['warning-node', 'error-node']);
+  });
+
+  it('includes nodes related to explicit status matches', () => {
+    const customNodes: GraphNode[] = [
+      { id: 'warning-node', status: 'warning' },
+      { id: 'related-node' },
+      { id: 'success-node', status: 'success' },
+    ];
+    const customEdges: GraphEdge[] = [
+      { id: 'warning-node-related-node', source: 'warning-node', target: 'related-node' },
+    ];
+
+    const { nodes: filteredNodes } = filterGraph(customNodes, customEdges, [{ type: 'hasErrors' }]);
+
+    expect(filteredNodes.map(it => it.id)).toEqual(['warning-node', 'related-node']);
+  });
+
+  it('uses explicit status before kube object status', () => {
+    const pods: GraphNode[] = [
+      {
+        id: 'pod-with-explicit-success',
+        status: 'success',
+        kubeObject: new Pod({
+          kind: 'Pod',
+          metadata: { namespace: 'ns1', name: 'pod-with-explicit-success' },
+          status: { phase: 'Failed' },
+        } as any),
+      },
+      {
+        id: 'pod-with-explicit-error',
+        status: 'error',
+        kubeObject: new Pod({
+          kind: 'Pod',
+          metadata: { namespace: 'ns1', name: 'pod-with-explicit-error' },
+          status: { phase: 'Running', conditions: [{ type: 'Ready', status: 'True' }] },
+        } as any),
+      },
+    ];
+
+    const { nodes: filteredNodes } = filterGraph(pods, [], [{ type: 'hasErrors' }]);
+
+    expect(filteredNodes.map(it => it.id)).toEqual(['pod-with-explicit-error']);
+  });
 });

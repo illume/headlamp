@@ -113,9 +113,10 @@ export default function VolumeList() {
           label: t('translation|Status'),
           filterVariant: 'multi-select',
           getValue: volume => volume.status?.phase,
-          render: volume => makePVStatusLabel(volume),
+          render: volume => makePVStatusLabel(volume, t),
           gridTemplate: 0.3,
         },
+        'labels',
         'age',
       ]}
     />

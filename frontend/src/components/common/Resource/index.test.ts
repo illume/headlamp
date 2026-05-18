@@ -26,11 +26,14 @@ const avoidCheck = [
   'ActionsNotifier',
   'AlertNotification',
   'ErrorBoundary',
+  'logSeverityFilter',
 ];
 
 const checkExports = [
+  'A8RInfo',
   'CircularChart',
   'CreateButton',
+  'CreateResourceForm',
   'CopyButton',
   'DeleteButton',
   'DeleteMultipleButton',
@@ -52,9 +55,11 @@ const checkExports = [
   'RestartButton',
   'RestartMultipleButton',
   'RevisionHistorySection',
+  'DownloadButton',
   'RollbackButton',
   'RollbackDialog',
   'ScaleButton',
+  'ScaleMultipleButton',
   'SimpleEditor',
   'UploadDialog',
   'ViewButton',

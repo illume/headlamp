@@ -17,8 +17,10 @@ limitations under the License.
 package helm
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -38,6 +40,8 @@ const (
 	defaultNewConfigFolderMode os.FileMode = os.FileMode(0o770)
 )
 
+var errRepositoryNotFound = errors.New("repository not found")
+
 // add repository.
 type AddUpdateRepoRequest struct {
 	Name string `json:"name"`
@@ -45,6 +49,18 @@ type AddUpdateRepoRequest struct {
 	// TODO: Figure out how to support auth
 	// like username, password, certfile etc
 	// https://github.com/helm/helm/blob/39ca699ca790e02ba36753dec6ba4177cc68d417/cmd/helm/repo_add.go#L169
+}
+
+func (r AddUpdateRepoRequest) Validate() error {
+	if strings.TrimSpace(r.Name) == "" {
+		return errors.New("name is required")
+	}
+
+	if strings.TrimSpace(r.URL) == "" {
+		return errors.New("url is required")
+	}
+
+	return nil
 }
 
 // Creates a filename if it's not there, including any missing directories.
@@ -156,6 +172,14 @@ func (h *Handler) AddRepo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	err = request.Validate()
+	if err != nil {
+		logger.Log(logger.LevelError, nil, err, "validating request")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		return
+	}
+
 	err = addRepository(request.Name, request.URL, h.EnvSettings)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -235,15 +259,21 @@ func (h *Handler) ListRepo(w http.ResponseWriter, r *http.Request) {
 		Repositories: repositories,
 	}
 
-	w.WriteHeader(http.StatusOK)
-	w.Header().Set("Content-Type", "application/json")
+	var buf bytes.Buffer
 
-	err = json.NewEncoder(w).Encode(response)
+	err = json.NewEncoder(&buf).Encode(response)
 	if err != nil {
 		logger.Log(logger.LevelError, nil, err, "encoding response")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 
 		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusOK)
+
+	if _, err := w.Write(buf.Bytes()); err != nil {
+		logger.Log(logger.LevelError, nil, err, "writing repo list response")
 	}
 }
 
@@ -267,6 +297,11 @@ func RemoveRepository(name string, settings *cli.EnvSettings) error {
 		}()
 	}
 
+	if err != nil {
+		logger.Log(logger.LevelError, nil, err, "locking repository config file")
+		return err
+	}
+
 	repoFile, err := repo.LoadFile(settings.RepositoryConfig)
 	if err != nil {
 		logger.Log(logger.LevelError, nil, err, "reading repo file")
@@ -275,8 +310,8 @@ func RemoveRepository(name string, settings *cli.EnvSettings) error {
 
 	isRemoved := repoFile.Remove(name)
 	if !isRemoved {
-		logger.Log(logger.LevelError, nil, err, "repository not found")
-		return err
+		logger.Log(logger.LevelError, nil, errRepositoryNotFound, "repository not found")
+		return errRepositoryNotFound
 	}
 
 	// write repo file
@@ -292,10 +327,20 @@ func RemoveRepository(name string, settings *cli.EnvSettings) error {
 // Remove repository name.
 func (h *Handler) RemoveRepo(w http.ResponseWriter, r *http.Request) {
 	name := r.URL.Query().Get("name")
+	if name == "" {
+		http.Error(w, "name query parameter is required", http.StatusBadRequest)
+		return
+	}
 
 	err := RemoveRepository(name, h.EnvSettings)
 	if err != nil {
+		if errors.Is(err, errRepositoryNotFound) {
+			http.Error(w, err.Error(), http.StatusNotFound)
+			return
+		}
+
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+
 		return
 	}
 
@@ -320,6 +365,11 @@ func UpdateRepository(name, url string, settings *cli.EnvSettings) error {
 				logger.Log(logger.LevelError, nil, err, "unlocking repository config file")
 			}
 		}()
+	}
+
+	if err != nil {
+		logger.Log(logger.LevelError, nil, err, "locking repository config file")
+		return err
 	}
 
 	repoFile, err := repo.LoadFile(settings.RepositoryConfig)
@@ -351,6 +401,14 @@ func (h *Handler) UpdateRepository(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&request)
 	if err != nil {
 		logger.Log(logger.LevelError, nil, err, "parsing request")
+		http.Error(w, err.Error(), http.StatusBadRequest)
+
+		return
+	}
+
+	err = request.Validate()
+	if err != nil {
+		logger.Log(logger.LevelError, nil, err, "validating request")
 		http.Error(w, err.Error(), http.StatusBadRequest)
 
 		return

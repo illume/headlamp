@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { getStatus } from '../nodes/KubeObjectStatus';
+import { getGraphNodeStatus } from '../nodes/KubeObjectStatus';
 import { makeGraphLookup } from './graphLookup';
 import { GraphEdge, GraphNode } from './graphModel';
 
@@ -29,13 +29,13 @@ export type GraphFilter =
 
 /**
  * Filters the graph nodes and edges based on the provided filters
- * The filters are applied using an OR logic, meaning node will be included if it matches any of the filters
+ * The filters are applied using AND logic, meaning node must match all active filters
  *
  * Along with the matched node result also includes all the nodes that are related to it,
  * even if they don't match the filter
  *
  * The filters can be of the following types:
- * - `hasErrors`: Filters nodes that have errors based on their resource status. See {@link getStatus}
+ * - `hasErrors`: Filters nodes that have a warning or error status based on their graph node status.
  * - `namespace`: Filters nodes by their namespace
  *
  * @param nodes - List of all the nodes in the graph
@@ -93,10 +93,7 @@ export function filterGraph(nodes: GraphNode[], edges: GraphEdge[], filters: Gra
 
     filters.forEach(filter => {
       if (filter.type === 'hasErrors') {
-        keep &&=
-          'kubeObject' in node &&
-          node.kubeObject !== undefined &&
-          getStatus(node.kubeObject) !== 'success';
+        keep &&= getGraphNodeStatus(node) !== 'success';
       }
       if (filter.type === 'namespace' && filter.namespaces.size > 0) {
         keep &&=

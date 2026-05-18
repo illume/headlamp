@@ -72,7 +72,11 @@ const dependenciesToNotCopy = [
   'resize-observer-polyfill',
   'vitest-canvas-mock',
   '@tanstack/react-query-devtools',
+  'remark-gfm',
 ];
+
+// Dependencies that can have different versions
+const differentlyVersionedDependencies = ['eslint-plugin-react-hooks'];
 
 const yargs = require('yargs/yargs');
 const fs = require('fs-extra');
@@ -197,6 +201,8 @@ function updateDependencies(packageJsonPath, checkOnly) {
     const changed = [];
 
     for (const [key, value] of Object.entries(dependencies)) {
+      if (differentlyVersionedDependencies.includes(key)) continue;
+
       if (dependenciesFront[key] !== undefined && dependenciesFront[key] !== value) {
         changed.push({ name: key, frontend: dependenciesFront[key], headlampPlugin: value });
         dependencies[key] = dependenciesFront[key];

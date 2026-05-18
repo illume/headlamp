@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+export * from './A8RInfo';
+export { default as A8RInfo } from './A8RInfo';
 export * from './CircularChart';
 export * from './MetadataDisplay';
 export * from './EnvVarGrid';
@@ -25,6 +27,10 @@ export * from './AuthVisible';
 export { default as AuthVisible } from './AuthVisible';
 export * from './CreateButton';
 export { default as CreateButton } from './CreateButton';
+export * from '../../pod/CreatePodForm';
+export { default as CreatePodForm } from '../../pod/CreatePodForm';
+export * from './CreateResourceForm';
+export { default as CreateResourceForm } from './CreateResourceForm';
 export * from './CopyButton';
 export { default as CopyButton } from './CopyButton';
 export * from './DeleteButton';
@@ -33,6 +39,8 @@ export * from './DocsViewer';
 export { default as DocsViewer } from './DocsViewer';
 export * from './EditButton';
 export { default as EditButton } from './EditButton';
+export * from './DownloadButton';
+export { default as DownloadButton } from './DownloadButton';
 export * from './EditorDialog';
 export { default as EditorDialog } from './EditorDialog';
 export * from './MatchExpressions';
@@ -50,8 +58,10 @@ export * from './RollbackDialog';
 export { default as RollbackDialog } from './RollbackDialog';
 export { default as RevisionHistorySection } from './RevisionHistorySection';
 export * from './ScaleButton';
+export * from './ScaleMultipleButton';
 export * from './LogsButton';
 export { default as ScaleButton } from './ScaleButton';
+export { default as ScaleMultipleButton } from './ScaleMultipleButton';
 export * from './SimpleEditor';
 export { default as SimpleEditor } from './SimpleEditor';
 export * from './ViewButton';

@@ -36,7 +36,13 @@ interface NodeShellTerminalProps {
   onClose?: () => void;
 }
 
-const shellPod = (name: string, namespace: string, nodeName: string, nodeShellImage: string) => {
+const shellPod = (
+  name: string,
+  namespace: string,
+  nodeName: string,
+  nodeShellImage: string,
+  command: string[] = ['sh']
+) => {
   return {
     kind: 'Pod',
     apiVersion: 'v1',
@@ -60,6 +66,7 @@ const shellPod = (name: string, namespace: string, nodeName: string, nodeShellIm
         {
           name: 'debugger',
           image: nodeShellImage,
+          command,
           terminationMessagePolicy: 'File',
           tty: true,
           stdin: true,
@@ -206,7 +213,13 @@ export function NodeShellTerminal(props: NodeShellTerminalProps) {
           }
           return true;
         }
-      } catch {}
+      } catch (e) {
+        console.debug('NodeShellTerminal: failed to parse server error channel data', {
+          channel,
+          text,
+          error: e,
+        });
+      }
     }
     return false;
   }
@@ -219,7 +232,13 @@ export function NodeShellTerminal(props: NodeShellTerminalProps) {
         if (error.code === 500 && error.status === 'Failure' && error.reason === 'InternalError') {
           return true;
         }
-      } catch {}
+      } catch (e) {
+        console.debug('NodeShellTerminal: failed to parse server error channel data', {
+          channel,
+          text,
+          error: e,
+        });
+      }
     }
     // Windows container Error
     if (channel === Channel.StdOut) {
@@ -246,6 +265,7 @@ export function NodeShellTerminal(props: NodeShellTerminalProps) {
     return () => {
       window.removeEventListener('beforeunload', handleBeforeUnload);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (

@@ -19,6 +19,7 @@ import { useErrorState } from '../util';
 import { useConnectApi } from '.';
 import { metrics } from './api/v1/metricsApi';
 import type { ApiError } from './api/v2/ApiError';
+import { KubeNodeSummaryStats, nodeSummaryStats } from './api/v2/nodeSummaryApi';
 import type { KubeCondition, KubeMetrics } from './cluster';
 import type { KubeObjectInterface } from './KubeObject';
 import { KubeObject } from './KubeObject';
@@ -86,8 +87,10 @@ class Node extends KubeObject<KubeNode> {
     return this.jsonData.spec;
   }
 
-  static useMetrics(): [KubeMetrics[] | null, ApiError | null] {
+  static useMetrics(cluster?: string): [KubeMetrics[] | null, ApiError | null] {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const [nodeMetrics, setNodeMetrics] = React.useState<KubeMetrics[] | null>(null);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
     const [error, setError] = useErrorState(setNodeMetrics);
 
     function setMetrics(metrics: KubeMetrics[]) {
@@ -98,9 +101,35 @@ class Node extends KubeObject<KubeNode> {
       }
     }
 
-    useConnectApi(metrics.bind(null, '/apis/metrics.k8s.io/v1beta1/nodes', setMetrics, setError));
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useConnectApi(
+      metrics.bind(null, '/apis/metrics.k8s.io/v1beta1/nodes', setMetrics, setError, cluster)
+    );
 
     return [nodeMetrics, error];
+  }
+
+  static useNodeSummaryStats(
+    nodeName?: string,
+    cluster?: string
+  ): [KubeNodeSummaryStats | null, ApiError | null] {
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const [summaryStats, setSummaryStats] = React.useState<KubeNodeSummaryStats | null>(null);
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const [error, setError] = useErrorState(setSummaryStats);
+
+    function setStats(stats: KubeNodeSummaryStats) {
+      setSummaryStats(stats);
+
+      if (stats !== null) {
+        setError(null);
+      }
+    }
+
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    useConnectApi(nodeSummaryStats.bind(null, nodeName || '', setStats, setError, cluster));
+
+    return [summaryStats, error];
   }
 
   getExternalIP(): string {

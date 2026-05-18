@@ -76,6 +76,27 @@ var getTests = []struct {
 		wantBody:   nil,
 		wantErr:    true,
 	},
+	{
+		name:       "protocol-relative URI rejected",
+		uri:        "http://example.com",
+		requestURI: "//evil.example/path",
+		wantBody:   nil,
+		wantErr:    true,
+	},
+	{
+		name:       "path traversal with ../ rejected",
+		uri:        "http://example.com",
+		requestURI: "../secret",
+		wantBody:   nil,
+		wantErr:    true,
+	},
+	{
+		name:       "empty path resolves without error",
+		uri:        "http://example.com",
+		requestURI: "",
+		wantBody:   []byte("Hello, World!"),
+		wantErr:    false,
+	},
 }
 
 func TestGet(t *testing.T) {

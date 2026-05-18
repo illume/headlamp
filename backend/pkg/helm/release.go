@@ -21,6 +21,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/go-playground/validator/v10"
@@ -177,6 +178,8 @@ func (h *Handler) ListRelease(clientConfig clientcmd.ClientConfig, w http.Respon
 		Releases: releases,
 	}
 
+	w.Header().Set("Content-Type", "application/json")
+
 	err = json.NewEncoder(w).Encode(res)
 	if err != nil {
 		logger.Log(logger.LevelError, map[string]string{"request": "list_releases"},
@@ -185,8 +188,6 @@ func (h *Handler) ListRelease(clientConfig clientcmd.ClientConfig, w http.Respon
 
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
 }
 
 type GetReleaseRequest struct {
@@ -232,7 +233,7 @@ func (h *Handler) GetRelease(clientConfig clientcmd.ClientConfig, w http.Respons
 
 	// check if release exists
 	_, err = actionConfig.Releases.Deployed(req.Name)
-	if err == driver.ErrReleaseNotFound {
+	if errors.Is(err, driver.ErrReleaseNotFound) {
 		logger.Log(logger.LevelError, map[string]string{"releaseName": req.Name, "request": "get_release"},
 			err, "release not found")
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -251,6 +252,7 @@ func (h *Handler) GetRelease(clientConfig clientcmd.ClientConfig, w http.Respons
 		return
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	err = json.NewEncoder(w).Encode(result)
@@ -261,8 +263,6 @@ func (h *Handler) GetRelease(clientConfig clientcmd.ClientConfig, w http.Respons
 
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
 }
 
 type GetReleaseHistoryRequest struct {
@@ -300,7 +300,7 @@ func (h *Handler) GetReleaseHistory(clientConfig clientcmd.ClientConfig, w http.
 
 	// check if release exists
 	_, err = actionConfig.Releases.Deployed(req.Name)
-	if err == driver.ErrReleaseNotFound {
+	if errors.Is(err, driver.ErrReleaseNotFound) {
 		logger.Log(logger.LevelError, map[string]string{"releaseName": req.Name, "request": "get_release_history"},
 			err, "release not found")
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -323,6 +323,7 @@ func (h *Handler) GetReleaseHistory(clientConfig clientcmd.ClientConfig, w http.
 		Releases: result,
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 
 	err = json.NewEncoder(w).Encode(resp)
@@ -333,8 +334,6 @@ func (h *Handler) GetReleaseHistory(clientConfig clientcmd.ClientConfig, w http.
 
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
 }
 
 type UninstallReleaseRequest struct {
@@ -380,7 +379,7 @@ func (h *Handler) UninstallRelease(clientConfig clientcmd.ClientConfig, w http.R
 
 	// check if release exists
 	_, err = actionConfig.Releases.Deployed(req.Name)
-	if err == driver.ErrReleaseNotFound {
+	if errors.Is(err, driver.ErrReleaseNotFound) {
 		logger.Log(logger.LevelError, map[string]string{"releaseName": req.Name, "request": "uninstall_release"},
 			err, "release not found")
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -405,6 +404,7 @@ func (h *Handler) UninstallRelease(clientConfig clientcmd.ClientConfig, w http.R
 		"message": "uninstall request accepted",
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 
 	err = json.NewEncoder(w).Encode(response)
@@ -415,8 +415,6 @@ func (h *Handler) UninstallRelease(clientConfig clientcmd.ClientConfig, w http.R
 
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
 }
 
 func (h *Handler) uninstallRelease(req UninstallReleaseRequest, actionConfig *action.Configuration) {
@@ -478,7 +476,7 @@ func (h *Handler) RollbackRelease(clientConfig clientcmd.ClientConfig, w http.Re
 
 	// check if release exists
 	_, err = actionConfig.Releases.Deployed(req.Name)
-	if err == driver.ErrReleaseNotFound {
+	if errors.Is(err, driver.ErrReleaseNotFound) {
 		logger.Log(logger.LevelError, map[string]string{"releaseName": req.Name},
 			err, "release not found")
 		http.Error(w, err.Error(), http.StatusNotFound)
@@ -502,6 +500,7 @@ func (h *Handler) RollbackRelease(clientConfig clientcmd.ClientConfig, w http.Re
 		"message": "rollback request accepted",
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 
 	err = json.NewEncoder(w).Encode(response)
@@ -511,8 +510,6 @@ func (h *Handler) RollbackRelease(clientConfig clientcmd.ClientConfig, w http.Re
 
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
 }
 
 func (h *Handler) rollbackRelease(req RollbackReleaseRequest, actionConfig *action.Configuration) {
@@ -562,6 +559,7 @@ func (h *Handler) returnResponse(w http.ResponseWriter, reqName string, statusCo
 		"message": message,
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(statusCode)
 
 	err := json.NewEncoder(w).Encode(response)
@@ -569,8 +567,6 @@ func (h *Handler) returnResponse(w http.ResponseWriter, reqName string, statusCo
 		handleError(w, reqName, err, "encoding response", http.StatusInternalServerError)
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
 }
 
 func (h *Handler) InstallRelease(clientConfig clientcmd.ClientConfig, w http.ResponseWriter, r *http.Request) {
@@ -606,6 +602,8 @@ func (h *Handler) InstallRelease(clientConfig clientcmd.ClientConfig, w http.Res
 	if err != nil {
 		logger.Log(logger.LevelError, nil, err, "setting status")
 		http.Error(w, err.Error(), http.StatusInternalServerError)
+
+		return
 	}
 
 	go func(h *Handler) {
@@ -640,8 +638,10 @@ func (h *Handler) getChart(
 
 	// chart is installable only if it is of type application or empty
 	if chart.Metadata.Type != "" && chart.Metadata.Type != "application" {
-		h.logActionState(zlog.Error(), err, actionName, reqChart, reqName, failed, "chart is not installable")
-		return nil, err
+		typeErr := fmt.Errorf("chart type %q is not installable", chart.Metadata.Type)
+		h.logActionState(zlog.Error(), typeErr, actionName, reqChart, reqName, failed, "chart is not installable")
+
+		return nil, typeErr
 	}
 
 	// Update chart dependencies
@@ -787,7 +787,7 @@ func (h *Handler) UpgradeRelease(clientConfig clientcmd.ClientConfig, w http.Res
 
 	// check if release exists
 	_, err = actionConfig.Releases.Deployed(req.Name)
-	if err == driver.ErrReleaseNotFound {
+	if errors.Is(err, driver.ErrReleaseNotFound) {
 		handleError(w, req.Name, err, "release not found", http.StatusNotFound)
 		return
 	}
@@ -924,9 +924,15 @@ func (h *Handler) GetActionStatus(clientConfig clientcmd.ClientConfig, w http.Re
 	}
 
 	if stat.Status == failed {
-		response["message"] = "action failed with error: " + *stat.Err
+		errMsg := "unknown error"
+		if stat.Err != nil {
+			errMsg = *stat.Err
+		}
+
+		response["message"] = "action failed with error: " + errMsg
 	}
 
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 
 	err = json.NewEncoder(w).Encode(response)
@@ -936,6 +942,4 @@ func (h *Handler) GetActionStatus(clientConfig clientcmd.ClientConfig, w http.Re
 
 		return
 	}
-
-	w.Header().Set("Content-Type", "application/json")
 }
