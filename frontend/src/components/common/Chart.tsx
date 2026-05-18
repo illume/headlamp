@@ -20,9 +20,9 @@ import { useTheme } from '@mui/material/styles';
 import { styled } from '@mui/material/styles';
 import Typography from '@mui/material/Typography';
 import React, { ReactNode } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useRef } from 'react';
 import ReactDOM from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import {
   Bar,
   BarChart,

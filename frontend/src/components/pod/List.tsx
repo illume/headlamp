@@ -17,9 +17,9 @@
 import { Icon } from '@iconify/react';
 import Box from '@mui/material/Box';
 import Fade from '@mui/material/Fade';
+import { TFunction } from 'i18next';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import { TFunction } from 'i18next';
 import { ApiError } from '../../lib/k8s/api/v2/ApiError';
 import { KubeContainerStatus } from '../../lib/k8s/cluster';
 import Pod from '../../lib/k8s/pod';
