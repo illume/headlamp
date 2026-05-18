@@ -77,12 +77,12 @@ The slight total decrease is due to newly added packages bringing large amounts 
 | `pkg/cache` | 96.0% | 96.0% | Maintained |
 | `pkg/config` | 80.7% | 83.9% | +3.2% |
 | `pkg/exec` | 86.4% | 86.4% | Maintained |
-| `pkg/helm` | had tests | 34.3%* | *Some tests require network access |
+| `pkg/helm` | — (network-dependent) | 34.3%* | *Some tests require network access |
 | `pkg/k8cache` | 75.0% | 75.0% | Maintained (7 new test files added) |
 | `pkg/kubeconfig` | — (build failed) | 61.6% | **NEW** — new tests + refactored code |
 | `pkg/logger` | 13.0% | 50.0% | **+37%** |
 | `pkg/plugins` | 76.8% | 78.3% | +1.5% |
-| `pkg/portforward` | had tests | 46.3% | Refactored with new unit tests |
+| `pkg/portforward` | — (tests failed) | 46.3% | Refactored with new unit tests |
 | `pkg/serviceproxy` | — (no tests) | 74.4% | **NEW** — entirely new test suite |
 | `pkg/spa` | 74.2% | 74.2% | Maintained |
 | `pkg/telemetry` | 67.9% | 68.5% | +0.6% |
