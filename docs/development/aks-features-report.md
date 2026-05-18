@@ -859,7 +859,7 @@ The following plugins were discovered on GitHub but are **not yet** in the matur
 | **Capsule** | [buttahtoast/headlamp-plugins](https://github.com/buttahtoast/headlamp-plugins) | early | 5 | Capsule multi-tenancy plugin (part of multi-plugin repo) | Multi-tenancy |
 
 **Key observations:**
-- **15 new community plugins** discovered since last review — the ecosystem is growing rapidly
+- **15 new community plugins** discovered since last review (April 2026) — the ecosystem is growing rapidly
 - **Sealed Secrets** fills a gap identified in Part 8 (supporting infrastructure)
 - **KubeFleet** and **Crossview** address multi-cluster/Crossplane gaps from Part 7
 - **naval-group/headlamp-kubevirt** (43⭐) has superseded the older buttahtoast KubeVirt plugin
