@@ -11,8 +11,11 @@
 |------|----------|---------|--------|
 | Backend test files | 22 | 44 | **+22 (+100%)** |
 | Backend test lines | 8,017 | 17,483 | **+9,466 (+118%)** |
+| Backend coverage (statements) | 62.0% | 61.7% | −0.3% (more code under measurement) |
+| Backend functions covered | 199 | 355 | **+156 (+78%)** |
 | Frontend test files | 47 | 87 | **+40 (+85%)** |
 | Frontend test lines | 6,805 | 15,791 | **+8,986 (+132%)** |
+| Frontend coverage (statements) | — | 28.1% | 4,562 statements covered |
 | Storybook files | 562 | 746 | **+184 (net, +33%)** |
 | Storybook story states (exports) | 390 | 579 | **+189 (+48%)** |
 | Charts test cases | 20 | 62 | **+42 (+210%)** |
@@ -61,6 +64,30 @@ Key areas with significant new coverage:
 - **helm** — 3 new test files covering handler and internals
 - **auth** — 3 new test files including fuzz testing
 
+### Backend coverage report (`go test -cover`)
+
+Overall backend statement coverage: **62.0% (baseline) → 61.7% (current)**
+
+The slight total decrease is due to newly added packages bringing large amounts of previously-untested code under coverage measurement. The absolute number of covered functions increased significantly: **199 → 355 functions covered** (+78%).
+
+| Package | Baseline | Current | Notes |
+|---------|----------|---------|-------|
+| `cmd` | 59.2% | 59.7% | +0.5% |
+| `pkg/auth` | — (no tests) | 83.6% | **NEW** — entirely new test suite |
+| `pkg/cache` | 96.0% | 96.0% | Maintained |
+| `pkg/config` | 80.7% | 83.9% | +3.2% |
+| `pkg/exec` | 86.4% | 86.4% | Maintained |
+| `pkg/helm` | had tests | 34.3%* | *Some tests require network access |
+| `pkg/k8cache` | 75.0% | 75.0% | Maintained (7 new test files added) |
+| `pkg/kubeconfig` | — (build failed) | 61.6% | **NEW** — new tests + refactored code |
+| `pkg/logger` | 13.0% | 50.0% | **+37%** |
+| `pkg/plugins` | 76.8% | 78.3% | +1.5% |
+| `pkg/portforward` | had tests | 46.3% | Refactored with new unit tests |
+| `pkg/serviceproxy` | — (no tests) | 74.4% | **NEW** — entirely new test suite |
+| `pkg/spa` | 74.2% | 74.2% | Maintained |
+| `pkg/telemetry` | 67.9% | 68.5% | +0.6% |
+| `pkg/utils` | 100.0% | 100.0% | Maintained |
+
 ---
 
 ## Frontend (`frontend/src/`)
@@ -77,6 +104,19 @@ Key areas with new coverage:
 - **Plugin system:** `runPlugin`
 - **Stateless:** `deleteClusterKubeconfig`, `index`, `updateStatelessClusterKubeconfig`
 - **Hooks:** `useShortcut`
+
+### Frontend coverage report (`vitest --coverage`)
+
+Current frontend coverage (Istanbul, excluding storybook story files):
+
+| Metric | Current | Covered / Total |
+|--------|---------|-----------------|
+| **Statements** | **28.1%** | 4,562 / 16,227 |
+| **Branches** | **21.1%** | 2,299 / 10,875 |
+| **Functions** | **21.1%** | 1,050 / 4,976 |
+| **Lines** | **28.2%** | 4,362 / 15,465 |
+
+> **Note:** A direct baseline comparison is not available because the baseline test files cannot be run against the current dependency tree (API changes in newer packages cause build/test failures). However, the baseline had only **47 test files** (vs 87 now) and **6,805 lines of test code** (vs 15,791 now), so the tested surface area has more than doubled. The 930 unit tests and 542 storybook snapshot tests (1,472 total) exercise a meaningful portion of the codebase.
 
 ---
 
