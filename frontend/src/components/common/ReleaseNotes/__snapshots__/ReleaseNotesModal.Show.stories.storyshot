@@ -9,7 +9,7 @@
     <div
       aria-hidden="true"
       class="MuiBackdrop-root MuiModal-backdrop css-yiavyu-MuiBackdrop-root-MuiDialog-backdrop"
-      style="opacity: 1; transition: opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;"
+      style="opacity: 1; webkit-transition: opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms; transition: opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;"
     />
     <div
       data-testid="sentinelStart"
@@ -18,7 +18,7 @@
     <div
       class="MuiDialog-container MuiDialog-scrollPaper css-hz1bth-MuiDialog-container"
       role="presentation"
-      style="opacity: 1; transition: opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;"
+      style="opacity: 1; webkit-transition: opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms; transition: opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;"
       tabindex="-1"
     >
       <div
@@ -97,56 +97,15 @@
             </h2>
             
 
-            <table>
-              <thead>
-                <tr>
-                  <th>
-                    Feature
-                  </th>
-                  <th>
-                    Status
-                  </th>
-                  <th>
-                    Notes
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>
-                    Dark mode
-                  </td>
-                  <td>
-                    ✅ Done
-                  </td>
-                  <td>
-                    Available in settings
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    Tables
-                  </td>
-                  <td>
-                    ✅ Done
-                  </td>
-                  <td>
-                    Now rendered properly
-                  </td>
-                </tr>
-                <tr>
-                  <td>
-                    Images
-                  </td>
-                  <td>
-                    ✅ Done
-                  </td>
-                  <td>
-                    Bounded to container
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+            <p
+              id="release-notes-p-1"
+            >
+              | Feature | Status | Notes |
+|---------|--------|-------|
+| Dark mode | ✅ Done | Available in settings |
+| Tables | ✅ Done | Now rendered properly |
+| Images | ✅ Done | Bounded to container |
+            </p>
             
 
             <h2>
@@ -168,7 +127,9 @@ kind: Pod
             <blockquote>
               
 
-              <p>
+              <p
+                id="release-notes-p-2"
+              >
                 <strong>
                   Note:
                 </strong>

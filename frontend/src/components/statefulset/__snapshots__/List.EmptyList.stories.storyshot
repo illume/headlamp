@@ -19,19 +19,7 @@
             </h1>
             <div
               class="MuiBox-root css-ldp2l3"
-            >
-              <button
-                aria-label="Create StatefulSet"
-                class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-whz9ym-MuiButtonBase-root-MuiIconButton-root"
-                data-mui-internal-clone-element="true"
-                tabindex="0"
-                type="button"
-              >
-                <span
-                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
-                />
-              </button>
-            </div>
+            />
           </div>
         </div>
         <div
@@ -106,10 +94,10 @@
                       </div>
                       <fieldset
                         aria-hidden="true"
-                        class="MuiOutlinedInput-notchedOutline css-r01yff-MuiNotchedOutlined-root-MuiOutlinedInput-notchedOutline"
+                        class="MuiOutlinedInput-notchedOutline css-1d3z3hw-MuiOutlinedInput-notchedOutline"
                       >
                         <legend
-                          class="css-sl37lx-MuiNotchedOutlined-root"
+                          class="css-14lo706"
                         >
                           <span>
                             Namespaces

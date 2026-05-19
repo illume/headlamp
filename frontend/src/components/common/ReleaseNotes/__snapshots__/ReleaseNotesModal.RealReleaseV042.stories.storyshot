@@ -1,0 +1,174 @@
+<body>
+  <div
+    aria-hidden="true"
+  />
+  <div
+    class="MuiDialog-root MuiModal-root css-zw3mfo-MuiModal-root-MuiDialog-root"
+    role="presentation"
+  >
+    <div
+      aria-hidden="true"
+      class="MuiBackdrop-root MuiModal-backdrop css-yiavyu-MuiBackdrop-root-MuiDialog-backdrop"
+      style="opacity: 1; webkit-transition: opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms; transition: opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;"
+    />
+    <div
+      data-testid="sentinelStart"
+      tabindex="0"
+    />
+    <div
+      class="MuiDialog-container MuiDialog-scrollPaper css-hz1bth-MuiDialog-container"
+      role="presentation"
+      style="opacity: 1; webkit-transition: opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms; transition: opacity 225ms cubic-bezier(0.4, 0, 0.2, 1) 0ms;"
+      tabindex="-1"
+    >
+      <div
+        aria-labelledby=":mock-test-id:"
+        class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded MuiDialog-paper MuiDialog-paperScrollPaper MuiDialog-paperWidthXl css-h0fqyc-MuiPaper-root-MuiDialog-paper"
+        role="dialog"
+      >
+        <h2
+          class="MuiTypography-root MuiTypography-h6 MuiDialogTitle-root css-8yphvn-MuiTypography-root-MuiDialogTitle-root"
+          id=":mock-test-id:"
+          style="display: flex;"
+        >
+          <div
+            class="MuiGrid-root MuiGrid-container css-9cyib4-MuiGrid-root"
+          >
+            <div
+              class="MuiGrid-root MuiGrid-item css-13i4rnv-MuiGrid-root"
+            >
+              <h1
+                class="MuiTypography-root MuiTypography-h1 css-1kazmbo-MuiTypography-root"
+                style="font-size: 1.25rem; font-weight: 500; line-height: 1.6;"
+              >
+                Release Notes (0.42.0)
+              </h1>
+            </div>
+            <div
+              class="MuiGrid-root MuiGrid-item css-13i4rnv-MuiGrid-root"
+            >
+              <div
+                class="MuiBox-root css-0"
+              >
+                <button
+                  aria-label="Close"
+                  class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-whz9ym-MuiButtonBase-root-MuiIconButton-root"
+                  tabindex="0"
+                  type="button"
+                >
+                  <span
+                    class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                  />
+                </button>
+              </div>
+            </div>
+          </div>
+        </h2>
+        <div
+          class="MuiDialogContent-root MuiDialogContent-dividers css-1t4vnk2-MuiDialogContent-root"
+        >
+          <div
+            class="MuiBox-root css-wicc6q"
+          >
+            <h2>
+              Hitch hikers guide to Headlamp 0.42.0
+            </h2>
+            
+
+            <p
+              id="release-notes-p-0"
+            >
+              Deep-link support was added for pod terminals (?view=exec) and log views (?view=logs), letting users bookmark or share direct links to specific UI states. Resources can now be searched by label in all list views, the Log Viewer gains a severity filter dropdown, and a delete button has been added directly to the plugins list. Node Details received two new sections for pod capacity usage and resource allocation, and the Resource Map now renders status badges on plugin-provided nodes and includes previously missing configuration resources. GRPCRoute details reach full parity with HTTPRoute, and a guided form-based resource creation UI (starting with Pods) is now available alongside the YAML editor.
+            </p>
+            
+
+            <p
+              id="release-notes-p-1"
+            >
+              On the reliability side, a silent cache desync that caused permanently stale cluster data was fixed, along with a lock-order inversion deadlock that could freeze WebSocket connections under load, and a wave of React hooks rule violations across more than a dozen frontend components. Several backend panics were fixed in port-forwarding, kubeconfig parsing, cache key generation, and Helm chart type handling, alongside debounced log aggregation to prevent UI freezes in All Pods mode. Security hardening includes path traversal prevention in the service proxy and dependency bumps.
+            </p>
+            
+
+            <h2>
+              ✨ Enhancements
+            </h2>
+            
+
+            <h3>
+              Added a hidden 'labels' column to all resource list views so users can search resources by label (e.g. 
+              <code>
+                app=test
+              </code>
+              ) using the existing search bar.
+            </h3>
+            
+
+            <p
+              id="release-notes-p-2"
+            >
+              <a
+                class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineHover css-2ugbm1-MuiTypography-root-MuiLink-root"
+                href="https://private-user-images.githubusercontent.com/4517681/572758566-81e57f3f-5124-41e2-9e81-b68b31bc6bc8.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzkyMDY0NTUsIm5iZiI6MTc3OTIwNjE1NSwicGF0aCI6Ii80NTE3NjgxLzU3Mjc1ODU2Ni04MWU1N2YzZi01MTI0LTQxZTItOWU4MS1iNjhiMzFiYzZiYzgucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI2MDUxOSUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNjA1MTlUMTU1NTU1WiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9YmI2ZGI0MzgzMjNmZTA2ZTRlYTJiZGNiMWZlYmRkZjBlOTUzZmY2Y2E0YzA5ZDE4OThiYjgwYzc2OGNlOGZlOCZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QmcmVzcG9uc2UtY29udGVudC10eXBlPWltYWdlJTJGcG5nIn0.g91rIyXZaxwiivaBd_NX_d_L5xRRUvvZrbuSRsiDqkk"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                <img
+                  alt="frontend: ResourceTable: Add new 'labels' column to all list views to allow searching by label"
+                  src="https://private-user-images.githubusercontent.com/4517681/572758566-81e57f3f-5124-41e2-9e81-b68b31bc6bc8.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzkyMDY0NTUsIm5iZiI6MTc3OTIwNjE1NSwicGF0aCI6Ii80NTE3NjgxLzU3Mjc1ODU2Ni04MWU1N2YzZi01MTI0LTQxZTItOWU4MS1iNjhiMzFiYzZiYzgucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI2MDUxOSUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNjA1MTlUMTU1NTU1WiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9YmI2ZGI0MzgzMjNmZTA2ZTRlYTJiZGNiMWZlYmRkZjBlOTUzZmY2Y2E0YzA5ZDE4OThiYjgwYzc2OGNlOGZlOCZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QmcmVzcG9uc2UtY29udGVudC10eXBlPWltYWdlJTJGcG5nIn0.g91rIyXZaxwiivaBd_NX_d_L5xRRUvvZrbuSRsiDqkk"
+                />
+              </a>
+            </p>
+            
+
+            <h3>
+              Added a delete button directly to the plugins list page, so users can remove plugins without navigating to the detail page first.
+            </h3>
+            
+
+            <p
+              id="release-notes-p-3"
+            >
+              <a
+                class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineHover css-2ugbm1-MuiTypography-root-MuiLink-root"
+                href="https://private-user-images.githubusercontent.com/75609067/585967780-58dc151b-b211-4a00-bebb-71e3e43f7875.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzkyMDY0NTUsIm5iZiI6MTc3OTIwNjE1NSwicGF0aCI6Ii83NTYwOTA2Ny81ODU5Njc3ODAtNThkYzE1MWItYjIxMS00YTAwLWJlYmItNzFlM2U0M2Y3ODc1LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjA1MTklMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwNTE5VDE1NTU1NVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTg0ZmI2YmExNjUyNTlmNTYwNGQzMmIwMzFiNGJjODQ5ODk4NzVmM2I3YmNhODllNDM1YTEyNDA0OGJlOTAxZmUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JnJlc3BvbnNlLWNvbnRlbnQtdHlwZT1pbWFnZSUyRnBuZyJ9.RB-Hvhp0_C3Mq2orB1omo8kuLHvkrEH_ZtGkoNERhWw"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                <img
+                  alt="frontend: Add delete button to plugin list"
+                  src="https://private-user-images.githubusercontent.com/75609067/585967780-58dc151b-b211-4a00-bebb-71e3e43f7875.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzkyMDY0NTUsIm5iZiI6MTc3OTIwNjE1NSwicGF0aCI6Ii83NTYwOTA2Ny81ODU5Njc3ODAtNThkYzE1MWItYjIxMS00YTAwLWJlYmItNzFlM2U0M2Y3ODc1LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjA1MTklMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwNTE5VDE1NTU1NVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTg0ZmI2YmExNjUyNTlmNTYwNGQzMmIwMzFiNGJjODQ5ODk4NzVmM2I3YmNhODllNDM1YTEyNDA0OGJlOTAxZmUmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JnJlc3BvbnNlLWNvbnRlbnQtdHlwZT1pbWFnZSUyRnBuZyJ9.RB-Hvhp0_C3Mq2orB1omo8kuLHvkrEH_ZtGkoNERhWw"
+                />
+              </a>
+            </p>
+            
+
+            <h3>
+              Added a guided form-based UI for creating Kubernetes resources (starting with Pods), accessible from the sidebar and Pod list page alongside the existing YAML editor workflow.
+            </h3>
+            
+
+            <p
+              id="release-notes-p-4"
+            >
+              <a
+                class="MuiTypography-root MuiTypography-inherit MuiLink-root MuiLink-underlineHover css-2ugbm1-MuiTypography-root-MuiLink-root"
+                href="https://private-user-images.githubusercontent.com/78232183/578857753-1c871ccd-8d59-4748-89f1-f8934df991d6.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzkyMDY0NTUsIm5iZiI6MTc3OTIwNjE1NSwicGF0aCI6Ii83ODIzMjE4My81Nzg4NTc3NTMtMWM4NzFjY2QtOGQ1OS00NzQ4LTg5ZjEtZjg5MzRkZjk5MWQ2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjA1MTklMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwNTE5VDE1NTU1NVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWU3YmUzZTdmYmM1NTgxNTEzOTY0MzMwNzMxZjQwZGIzZTAzMzUyMWJjYjllZDEzY2IzZTg1YWFjZTIwOTUwM2MmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JnJlc3BvbnNlLWNvbnRlbnQtdHlwZT1pbWFnZSUyRnBuZyJ9.eCwt9ELuHvnnxavgnrnNiaUprKW9zI5P5cuDI1qUK4Y"
+                rel="noopener noreferrer"
+                target="_blank"
+              >
+                <img
+                  alt="frontend: CreateResourceForm: Add resource form create feature and CreateResourceForm"
+                  src="https://private-user-images.githubusercontent.com/78232183/578857753-1c871ccd-8d59-4748-89f1-f8934df991d6.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NzkyMDY0NTUsIm5iZiI6MTc3OTIwNjE1NSwicGF0aCI6Ii83ODIzMjE4My81Nzg4NTc3NTMtMWM4NzFjY2QtOGQ1OS00NzQ4LTg5ZjEtZjg5MzRkZjk5MWQ2LnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNjA1MTklMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjYwNTE5VDE1NTU1NVomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWU3YmUzZTdmYmM1NTgxNTEzOTY0MzMwNzMxZjQwZGIzZTAzMzUyMWJjYjllZDEzY2IzZTg1YWFjZTIwOTUwM2MmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JnJlc3BvbnNlLWNvbnRlbnQtdHlwZT1pbWFnZSUyRnBuZyJ9.eCwt9ELuHvnnxavgnrnNiaUprKW9zI5P5cuDI1qUK4Y"
+                />
+              </a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      data-testid="sentinelEnd"
+      tabindex="0"
+    />
+  </div>
+</body>
