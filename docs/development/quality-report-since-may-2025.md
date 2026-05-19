@@ -15,7 +15,10 @@
 | Backend functions covered | 199 | 355 | **+156 (+78%)** |
 | Frontend test files | 47 | 87 | **+40 (+85%)** |
 | Frontend test lines | 6,805 | 15,791 | **+8,986 (+132%)** |
-| Frontend coverage (statements) | — | 28.1% | 4,562 statements covered |
+| Frontend coverage (statements) | 54.6% | 58.8% | **+4.2%** (9,549 / 16,227 covered) |
+| Frontend coverage (branches) | 48.8% | 51.1% | **+2.3%** (5,554 / 10,875 covered) |
+| Frontend coverage (functions) | 50.7% | 54.4% | **+3.7%** (2,709 / 4,976 covered) |
+| Frontend coverage (lines) | 54.7% | 59.2% | **+4.5%** (9,156 / 15,465 covered) |
 | Storybook files | 562 | 746 | **+184 (net, +33%)** |
 | Storybook story states (exports) | 390 | 579 | **+189 (+48%)** |
 | Charts test cases | 20 | 62 | **+42 (+210%)** |
@@ -105,18 +108,20 @@ Key areas with new coverage:
 - **Stateless:** `deleteClusterKubeconfig`, `index`, `updateStatelessClusterKubeconfig`
 - **Hooks:** `useShortcut`
 
-### Frontend coverage report (`vitest --coverage`)
+### Frontend coverage report (`vitest --coverage`, Istanbul)
 
-Current frontend coverage (Istanbul, excluding storybook story files):
+Frontend coverage comparison (including storybook snapshot tests as regression tests):
 
-| Metric | Current | Covered / Total |
-|--------|---------|-----------------|
-| **Statements** | **28.1%** | 4,562 / 16,227 |
-| **Branches** | **21.1%** | 2,299 / 10,875 |
-| **Functions** | **21.1%** | 1,050 / 4,976 |
-| **Lines** | **28.2%** | 4,362 / 15,465 |
+| Metric | Baseline | Current | Change | Covered / Total |
+|--------|----------|---------|--------|-----------------|
+| **Statements** | **54.6%** | **58.8%** | **+4.2%** | 9,549 / 16,227 (was 6,014 / 11,010) |
+| **Branches** | **48.8%** | **51.1%** | **+2.3%** | 5,554 / 10,875 (was 3,375 / 6,914) |
+| **Functions** | **50.7%** | **54.4%** | **+3.7%** | 2,709 / 4,976 (was 1,790 / 3,533) |
+| **Lines** | **54.7%** | **59.2%** | **+4.5%** | 9,156 / 15,465 (was 5,774 / 10,547) |
 
-> **Note:** A direct baseline comparison is not available because the baseline test files cannot be run against the current dependency tree (API changes in newer packages cause build/test failures). However, the baseline had only **47 test files** (vs 87 now) and **6,805 lines of test code** (vs 15,791 now), so the tested surface area has more than doubled. The 930 unit tests and 542 storybook snapshot tests (1,472 total) exercise a meaningful portion of the codebase.
+Coverage percentages improved across every metric despite the codebase growing by ~47% (11,010 → 16,227 statements). The absolute number of covered statements grew by **59%** (6,014 → 9,549).
+
+> **Methodology:** Baseline coverage was measured by extracting the frontend source tree at commit `2a35da948`, installing its own `package-lock.json` dependencies, and running `vitest --coverage` with the same Istanbul provider. One non-frontend test (`make-env.test.js`, which requires git context) was excluded from both runs. Storybook snapshot tests are included as they serve as regression tests.
 
 ---
 
@@ -226,7 +231,7 @@ This reflects an architectural change consolidating plugin management tooling in
 
 1. **Backend testing more than doubled** — The most dramatic improvement, with entirely new test suites for k8cache (7 files), serviceproxy (4 files), helm (3 files), and auth (3 files including fuzz tests).
 
-2. **Frontend testing more than doubled** — 40 new test files covering components, utilities, API layers, Redux slices, and the plugin system.
+2. **Frontend testing more than doubled** — 40 new test files covering components, utilities, API layers, Redux slices, and the plugin system. Statement coverage improved from 54.6% → 58.8% (+4.2%) despite 47% codebase growth.
 
 3. **Storybook grew by ~50%** — 189 new story states providing visual regression coverage for UI components.
 
