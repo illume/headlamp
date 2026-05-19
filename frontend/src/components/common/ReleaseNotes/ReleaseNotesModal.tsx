@@ -57,6 +57,7 @@ function ParagraphWithVideo({ children }: { children?: React.ReactNode }) {
   const context = React.useContext(ParagraphContext);
   const paragraphId = React.useMemo(() => context.generateId(), [context.generateId]);
   const childrenArray = React.Children.toArray(children);
+  const { t } = useTranslation();
 
   // Check if this paragraph contains only a GitHub video URL (plain text)
   if (childrenArray.length === 1 && typeof childrenArray[0] === 'string') {
@@ -80,9 +81,9 @@ function ParagraphWithVideo({ children }: { children?: React.ReactNode }) {
             display: 'block',
           }}
         >
-          Video content is not available in your browser. Please{' '}
+          {t('translation|Video content is not available in your browser. Please')}{' '}
           <a href={text} target="_blank" rel="noopener noreferrer">
-            view the video here
+            {t('translation|view the video here')}
           </a>
           .
         </video>
@@ -113,6 +114,7 @@ function ParagraphWithVideo({ children }: { children?: React.ReactNode }) {
  */
 function LinkOrVideo({ children, href }: { children?: React.ReactNode; href?: string }) {
   const context = React.useContext(ParagraphContext);
+  const { t } = useTranslation();
 
   // Check if this link is a GitHub video URL
   if (href && isGitHubVideoUrl(href)) {
@@ -133,9 +135,9 @@ function LinkOrVideo({ children, href }: { children?: React.ReactNode; href?: st
           display: 'block',
         }}
       >
-        Video content is not available in your browser. Please{' '}
+        {t('translation|Video content is not available in your browser. Please')}{' '}
         <a href={href} target="_blank" rel="noopener noreferrer">
-          view the video here
+          {t('translation|view the video here')}
         </a>
         .
       </video>
