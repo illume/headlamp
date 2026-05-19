@@ -24,6 +24,7 @@
 | Charts test cases | 20 | 62 | **+42 (+210%)** |
 | App test files | 3 | 9 | **+6 (+200%)** |
 | E2E test files | 6 | 8 | **+2 (+33%)** |
+| E2E test lines | 572 | 830 | **+258 (+45%)** |
 | GitHub workflows | 22 | 24 | **+5 new, −3 removed (net +2)** |
 | Plugins test files | 8 | 8 | 2 moved (net 0) |
 
