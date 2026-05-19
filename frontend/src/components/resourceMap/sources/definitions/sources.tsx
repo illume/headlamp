@@ -16,6 +16,7 @@
 
 import { Icon } from '@iconify/react';
 import React, { useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useCluster } from '../../../../lib/k8s';
 import BackendTLSPolicy from '../../../../lib/k8s/backendTLSPolicy';
 import BackendTrafficPolicy from '../../../../lib/k8s/backendTrafficPolicy';
@@ -129,6 +130,7 @@ const generateCRSources = (crds: CRD[], vpaEnabled: boolean): GraphSource[] => {
 export function useGetAllSources(): GraphSource[] {
   const { items: CustomResourceDefinition } = CRD.useList({ namespace: useNamespaces() });
   const cluster = useCluster();
+  const { t } = useTranslation(['translation', 'glossary']);
   const [vpaEnabled, setVpaEnabled] = React.useState(false);
 
   React.useEffect(() => {
@@ -148,7 +150,7 @@ export function useGetAllSources(): GraphSource[] {
     const sources = [
       {
         id: 'workloads',
-        label: 'Workloads',
+        label: t('glossary|Workloads'),
         icon: (
           <Icon
             icon="mdi:circle-slice-2"
@@ -170,7 +172,7 @@ export function useGetAllSources(): GraphSource[] {
       },
       {
         id: 'storage',
-        label: 'Storage',
+        label: t('glossary|Storage'),
         icon: (
           <Icon
             icon="mdi:database"
@@ -183,7 +185,7 @@ export function useGetAllSources(): GraphSource[] {
       },
       {
         id: 'network',
-        label: 'Network',
+        label: t('translation|Network'),
         icon: (
           <Icon
             icon="mdi:folder-network-outline"
@@ -203,7 +205,7 @@ export function useGetAllSources(): GraphSource[] {
       },
       {
         id: 'security',
-        label: 'Security',
+        label: t('translation|Security'),
         isEnabledByDefault: false,
         icon: (
           <Icon icon="mdi:lock" width="100%" height="100%" color={getKindGroupColor('security')} />
@@ -216,7 +218,7 @@ export function useGetAllSources(): GraphSource[] {
       },
       {
         id: 'configuration',
-        label: 'Configuration',
+        label: t('translation|Configuration'),
         icon: (
           <Icon
             icon="mdi:format-list-checks"
@@ -243,7 +245,7 @@ export function useGetAllSources(): GraphSource[] {
       },
       {
         id: 'gateway-beta',
-        label: 'Gateway (beta)',
+        label: t('translation|Gateway (beta)'),
         icon: (
           <Icon
             icon="mdi:lan-connect"
@@ -268,7 +270,7 @@ export function useGetAllSources(): GraphSource[] {
     if (CustomResourceDefinition !== null) {
       sources.push({
         id: 'customresource',
-        label: 'Custom Resources',
+        label: t('glossary|Custom Resources'),
         icon: (
           <Icon
             icon="mdi:select-group"
@@ -283,5 +285,5 @@ export function useGetAllSources(): GraphSource[] {
     }
 
     return sources;
-  }, [CustomResourceDefinition, vpaEnabled]);
+  }, [CustomResourceDefinition, vpaEnabled, t]);
 }

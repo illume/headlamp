@@ -268,7 +268,7 @@ export function GlobalSearchContent({
       Object.keys(clusters).map(cluster => ({
         id: cluster,
         label: cluster,
-        subLabel: 'Cluster',
+        subLabel: t('glossary|Cluster'),
         icon: <Icon icon="mdi:hexagon-multiple-outline" />,
         onClick: () =>
           history.push({
@@ -308,7 +308,7 @@ export function GlobalSearchContent({
         })
         .map(([name, route]) => ({
           id: route.path,
-          label: route.name!,
+          label: t(`translation|${route.name!}`),
           subLabel: t('Page'),
           onClick: () => {
             history.push(createRouteURL(name));
@@ -323,9 +323,9 @@ export function GlobalSearchContent({
   const themeActions = useMemo(() => {
     return appThemes.map(theme => ({
       id: 'switch-theme-' + theme.name,
-      subLabel: 'Theme',
+      subLabel: t('translation|Theme'),
       icon: <ThemePreview theme={theme} size={32} />,
-      label: capitalize(theme.name),
+      label: t(`translation|${capitalize(theme.name)}`),
       onClick: () => dispatch(setTheme(theme.name)),
     }));
     // eslint-disable-next-line react-hooks/exhaustive-deps

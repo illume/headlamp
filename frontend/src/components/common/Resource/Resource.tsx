@@ -28,6 +28,7 @@ import { BaseTextFieldProps } from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { useTheme } from '@mui/system';
 import { Location } from 'history';
+import { TFunction } from 'i18next';
 import { Base64 } from 'js-base64';
 import { JSONPath } from 'jsonpath-plus';
 import _, { ceil, has } from 'lodash';
@@ -831,7 +832,8 @@ function buildEnvironmentVariables(
   fetchedConfigMaps: Map<string, FetchedResource>,
   pod: KubePod,
   container: KubeContainer,
-  containerStartTimestamp: string | undefined
+  containerStartTimestamp: string | undefined,
+  t: TFunction
 ): EnvironmentVariable[] {
   const variables = new Map<string, Omit<EnvironmentVariable, 'key'>>();
 
@@ -983,7 +985,7 @@ function buildEnvironmentVariables(
           }
         } catch (err) {
           isError = true;
-          value = err instanceof Error ? `Error: ${err.message}` : 'Unknown error';
+          value = err instanceof Error ? `Error: ${err.message}` : t('translation|Unknown error');
         }
         variables.set(ref.name, {
           value,
@@ -1050,7 +1052,7 @@ function buildEnvironmentVariables(
           if (err instanceof Error) {
             value = err.message;
           } else {
-            value = 'Unknown error occurred.';
+            value = t('translation|Unknown error occurred.');
           }
         }
 
@@ -1177,7 +1179,8 @@ export function ContainerEnvironmentVariables(props: EnvironmentVariablesProps) 
     fetchedConfigMaps,
     pod,
     container,
-    containerStartTimestamp
+    containerStartTimestamp,
+    t
   );
 
   // Define columns for the table
@@ -2058,13 +2061,13 @@ export function VolumeSection(props: VolumeSectionProps) {
       ...(volumeKind
         ? [
             {
-              name: 'Kind',
+              name: t('glossary|Kind'),
               value: volumeKind,
             },
           ]
         : []),
       {
-        name: 'Source',
+        name: t('glossary|Source'),
         value: <PrintVolumeLink volumeName={name} volumeKind={volumeKind} volume={volume} />,
       },
       ...(volumeDetails.directPrint

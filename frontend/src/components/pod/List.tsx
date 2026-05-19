@@ -17,6 +17,7 @@
 import { Icon } from '@iconify/react';
 import Box from '@mui/material/Box';
 import Fade from '@mui/material/Fade';
+import { TFunction } from 'i18next';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { ApiError } from '../../lib/k8s/api/v2/ApiError';
@@ -128,51 +129,97 @@ function getReadinessGatesStatus(pods: Pod) {
   return readinessGatesMap;
 }
 
-function getContainerDisplayStatus(container: KubeContainerStatus) {
+function getContainerDisplayStatus(container: KubeContainerStatus, t?: TFunction) {
   const state = container.state || {};
   let color = 'grey';
   let label = '';
-  const tooltipLines: string[] = [`Name: ${container.name}`];
+  const tooltipLines: string[] = [
+    t ? t('translation|Name: {{ name }}', { name: container.name }) : `Name: ${container.name}`,
+  ];
 
   if (state.waiting) {
     color = 'orange';
-    label = 'Waiting';
+    label = t ? t('translation|Waiting') : 'Waiting';
     if (state.waiting.reason) {
-      tooltipLines.push(`Reason: ${state.waiting.reason}`);
+      tooltipLines.push(
+        t
+          ? t('translation|Reason: {{ reason }}', { reason: state.waiting.reason })
+          : `Reason: ${state.waiting.reason}`
+      );
     }
   } else if (state.terminated) {
     color = 'green';
-    label = 'Terminated';
+    label = t ? t('translation|Terminated') : 'Terminated';
     if (state.terminated.reason === 'Error') {
       color = 'red';
     }
     if (state.terminated.reason) {
-      tooltipLines.push(`Reason: ${state.terminated.reason}`);
+      tooltipLines.push(
+        t
+          ? t('translation|Reason: {{ reason }}', { reason: state.terminated.reason })
+          : `Reason: ${state.terminated.reason}`
+      );
     }
     if (state.terminated.exitCode !== undefined) {
-      tooltipLines.push(`Exit Code: ${state.terminated.exitCode}`);
+      tooltipLines.push(
+        t
+          ? t('translation|Exit Code: {{ exitCode }}', {
+              exitCode: String(state.terminated.exitCode),
+            })
+          : `Exit Code: ${state.terminated.exitCode}`
+      );
     }
     if (state.terminated.startedAt) {
-      tooltipLines.push(`Started: ${new Date(state.terminated.startedAt).toLocaleString()}`);
+      tooltipLines.push(
+        t
+          ? t('translation|Started: {{ date }}', {
+              date: new Date(state.terminated.startedAt).toLocaleString(),
+            })
+          : `Started: ${new Date(state.terminated.startedAt).toLocaleString()}`
+      );
     }
     if (state.terminated.finishedAt) {
-      tooltipLines.push(`Finished: ${new Date(state.terminated.finishedAt).toLocaleString()}`);
+      tooltipLines.push(
+        t
+          ? t('translation|Finished: {{ date }}', {
+              date: new Date(state.terminated.finishedAt).toLocaleString(),
+            })
+          : `Finished: ${new Date(state.terminated.finishedAt).toLocaleString()}`
+      );
     }
     if (container.restartCount > 0) {
-      tooltipLines.push(`Restarts: ${container.restartCount}`);
+      tooltipLines.push(
+        t
+          ? t('translation|Restarts: {{ count }}', { count: container.restartCount })
+          : `Restarts: ${container.restartCount}`
+      );
     }
   } else if (state.running) {
     color = 'green';
-    label = 'Running';
+    label = t ? t('translation|Running') : 'Running';
     if (state.running.startedAt) {
-      tooltipLines.push(`Started: ${new Date(state.running.startedAt).toLocaleString()}`);
+      tooltipLines.push(
+        t
+          ? t('translation|Started: {{ date }}', {
+              date: new Date(state.running.startedAt).toLocaleString(),
+            })
+          : `Started: ${new Date(state.running.startedAt).toLocaleString()}`
+      );
     }
     if (container.restartCount > 0) {
-      tooltipLines.push(`Restarts: ${container.restartCount}`);
+      tooltipLines.push(
+        t
+          ? t('translation|Restarts: {{ count }}', { count: container.restartCount })
+          : `Restarts: ${container.restartCount}`
+      );
     }
   }
 
-  tooltipLines.splice(1, 0, `Status: ${label}`);
+  tooltipLines.splice(
+    1,
+    0,
+    t ? t('translation|Status: {{ status }}', { status: label }) : `Status: ${label}`
+  );
 
   return {
     color,

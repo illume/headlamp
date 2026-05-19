@@ -584,7 +584,7 @@ export default function EditorDialog(props: EditorDialogProps) {
             onConfirm={onUndo}
             confirmTitle={t('translation|Are you sure?')}
             confirmDescription={t(
-              'This will discard your changes in the editor. Do you want to proceed?'
+              'translation|This will discard your changes in the editor. Do you want to proceed?'
             )}
             aria-controls={editorId}
           >

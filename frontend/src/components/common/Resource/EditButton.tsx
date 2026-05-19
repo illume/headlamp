@@ -55,9 +55,9 @@ export default function EditButton(props: EditButtonProps) {
     const status: number = err.status;
     switch (status) {
       case 408:
-        return 'Conflicts when trying to perform operation (code 408).';
+        return t('translation|Conflicts when trying to perform operation (code 408).');
       default:
-        return `Failed to perform operation: code ${status}`;
+        return t('translation|Failed to perform operation: code {{ status }}', { status });
     }
   }
 

@@ -228,7 +228,7 @@ export default function IngressDetails(props: {
             value: getPorts(ingress).join(', '),
           },
           {
-            name: 'TLS',
+            name: t('glossary|TLS'),
             value: (
               <LabelListItem
                 labels={ingress.spec?.tls?.map(
