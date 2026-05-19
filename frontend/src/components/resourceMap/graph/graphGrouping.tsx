@@ -249,7 +249,11 @@ export function groupGraph(
         }
         return component.kubeObject?.metadata?.namespace;
       },
-      { idPrefix: 'Namespace', label: groupLabels?.namespace ?? 'Namespace', allowSingleMemberGroup: true }
+      {
+        idPrefix: 'Namespace',
+        label: groupLabels?.namespace ?? 'Namespace',
+        allowSingleMemberGroup: true,
+      }
     );
 
     components.forEach(component => {

@@ -80,7 +80,10 @@ export function ResourceCategoriesList({
                 <ListItemIcon>
                   <Icon icon={category.icon} style={{ fontSize: 32 }} />
                 </ListItemIcon>
-                <ListItemText primary={t(`translation|${category.label}`)} secondary={t(`translation|${category.description}`)} />
+                <ListItemText
+                  primary={t(`translation|${category.label}`)}
+                  secondary={t(`translation|${category.description}`)}
+                />
                 <ListItemIcon sx={{ justifyContent: 'flex-end' }}>
                   <Box display="flex" alignItems="center" gap={0.5}>
                     <Typography

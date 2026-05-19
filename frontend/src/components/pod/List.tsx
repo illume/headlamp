@@ -129,17 +129,12 @@ function getReadinessGatesStatus(pods: Pod) {
   return readinessGatesMap;
 }
 
-function getContainerDisplayStatus(
-  container: KubeContainerStatus,
-  t?: TFunction
-) {
+function getContainerDisplayStatus(container: KubeContainerStatus, t?: TFunction) {
   const state = container.state || {};
   let color = 'grey';
   let label = '';
   const tooltipLines: string[] = [
-    t
-      ? t('translation|Name: {{ name }}', { name: container.name })
-      : `Name: ${container.name}`,
+    t ? t('translation|Name: {{ name }}', { name: container.name }) : `Name: ${container.name}`,
   ];
 
   if (state.waiting) {
@@ -223,9 +218,7 @@ function getContainerDisplayStatus(
   tooltipLines.splice(
     1,
     0,
-    t
-      ? t('translation|Status: {{ status }}', { status: label })
-      : `Status: ${label}`
+    t ? t('translation|Status: {{ status }}', { status: label }) : `Status: ${label}`
   );
 
   return {
