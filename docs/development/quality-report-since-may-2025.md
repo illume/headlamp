@@ -121,7 +121,7 @@ Frontend coverage comparison (including storybook snapshot tests as regression t
 
 Coverage percentages improved across every metric despite the codebase growing by ~47% (11,010 → 16,227 statements). The absolute number of covered statements grew by **59%** (6,014 → 9,549).
 
-> **Methodology:** Baseline coverage was measured by extracting the frontend source tree at commit `2a35da948`, installing its own `package-lock.json` dependencies, and running `vitest --coverage` with the same Istanbul provider. One non-frontend test (`make-env.test.js`, which requires git context) was excluded from both runs. Storybook snapshot tests are included as they serve as regression tests.
+> **Methodology:** Baseline coverage was measured by extracting the frontend source tree at commit `2a35da948` (May 28, 2025), installing its own `package-lock.json` dependencies, and running `vitest --coverage` with the same Istanbul provider. One non-frontend test (`make-env.test.js`, which requires git context) was excluded from both runs. Storybook snapshot tests are included as they serve as regression tests.
 
 ---
 
