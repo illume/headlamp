@@ -642,7 +642,7 @@ graph TB
 
 ### Plugin Maturity Scorecard
 
-This table scores every existing plugin across 6 quality dimensions. Plugins with **all 6** ✅
+These tables score every existing plugin across 6 quality dimensions. Plugins with **all 6** ✅
 are 🟢 **green** (production-ready), **3-5** ✅ are 🟠 **orange** (needs work), and **0-2** ✅
 are 🔴 **red** (very immature).
 
@@ -658,53 +658,82 @@ Columns:
 - **Official repo** — lives in [headlamp-k8s/plugins](https://github.com/headlamp-k8s/plugins/)
   or is the official project-maintained plugin
 
-| Plugin | Tests | Storybook | a11y | i18n | ≥ 0.5 | Official repo | Score | Status |
-|--------|:-----:|:---------:|:----:|:----:|:-----:|:-------------:|:-----:|:------:|
-| ◆ **prometheus** (0.8.2) | ✅ | ✅ 2 stories | ✅ 7 files | ✅ 19 langs | ✅ | ✅ | 6/6 | 🟢 |
-| ◆ **app-catalog** (0.8.0) | ❌ | ✅ 3 stories | ✅ 10 files | ✅ 19 langs | ✅ | ✅ | 5/6 | 🟠 |
-| ● **knative** (0.2.0-alpha) | ✅ | ✅ 9 stories | ✅ 26 files | ⚠️ en only | ❌ | ✅ | 4/6 | 🟠 |
-| ◆ **Kubescape** (0.10.6) | ✅ | ❌ | ✅ 26 files | ✅ | ✅ | ⚠️ project repo | 4/6 | 🟠 |
-| ◆ **flux** (0.6.0) | ❌ | ❌ | ✅ 5 files | ⚠️ script only | ✅ | ✅ | 3/6 | 🟠 |
-| ● **cert-manager** (0.1.0) | ❌ | ✅ 13 stories | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
-| ● **plugin-catalog** (0.4.3) | ❌ | ✅ 5 stories | ✅ 7 files | ⚠️ script only | ❌ | ✅ | 3/6 | 🟠 |
-| ● **backstage** (0.1.0-beta-2) | ❌ | ✅ 2 stories | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
-| ● **opencost** (0.1.3) | ❌ | ✅ 1 story | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
-| ● **ai-assistant** (0.2.0-alpha) | ❌ | ❌ | ✅ 27 files | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
-| ● **karpenter** (0.2.0-alpha) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
-| ● **keda** (0.1.1-beta) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
-| ● **cluster-api** (0.1.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
-| ● **Kubeflow** (plugin exists) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
-| ● **Volcano** (plugin exists) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
-| ▲ **Inspektor Gadget** (0.1.0-beta.3) | ❌ | ❌ | ✅ 19 files | ❌ | ❌ | ⚠️ project repo | 1/6 | 🔴 |
-| ● **Strimzi** (0.4.0-alpha) | ❌ | ✅ 15 stories | ❌ | ✅ | ❌ | ✅ | 3/6 | 🟠 |
-| ▲ **Trivy** (0.3.1) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ external | 0/6 | 🔴 |
-| ▲ **Gatekeeper** (0.2.0) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ external | 0/6 | 🔴 |
-| ▲ **Kyverno** (0.1.1) | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ archived | 0/6 | 🔴 |
-| ▲ **KAITO** (0.0.7) | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ project repo | 0/6 | 🔴 |
-| ● **KubeVirt** (0.2.2) | ✅ | ✅ 5 stories | ❌ | ❌ | ❌ | ❌ external | 3/6 | 🟠 |
+#### Official Plugins (headlamp-k8s/plugins)
 
-**Key findings:**
-- **1 plugin is ◆ 🟢 green** — prometheus (6/6) is the only plugin meeting all 6 criteria.
-  Green in this scorecard means **all 6 criteria** are met, which is stricter than the Venn
-  diagram (where green = score 3+, meaning "most criteria met").
-- **7 plugins are 🟠 orange** (score 3-5/6): app-catalog (5/6), knative (4/6), Kubescape (4/6),
-  flux (3/6), plugin-catalog (3/6), Strimzi (3/6), KubeVirt (3/6) — promising but not fully mature
-- **14 plugins are 🔴 red** with score 0-2 (very immature or early-stage)
-- **Only 4 of 22 plugins have real unit/integration tests** — 2 official (prometheus: util.test.ts;
-  knative: url, ingress, nullable, time tests) and 2 community (Kubescape: layout.test.ts;
-  KubeVirt/naval-group: sanitize.test.ts, pluginSettings.test.ts).
-  All other plugins only have the auto-generated `storybook.test.tsx`, which does not count as
-  plugin-specific testing
-- **10 of 22 plugins have Storybook stories** — Strimzi leads with 15 stories, followed by
-  cert-manager (13), knative (9), plugin-catalog (5), KubeVirt/naval-group (5),
-  app-catalog (3), backstage (2), prometheus (2), opencost (1),
-  and minikube (1, not in this table). The remaining 12 plugins have no stories.
-- **8 of 22 plugins have ≥ 5 aria attributes** — ai-assistant leads (27 files), followed by
-  knative (26), Kubescape (26), Inspektor Gadget (19), app-catalog (10), plugin-catalog (7),
-  prometheus (7), flux (5). The remaining 14 plugins have fewer than 5 source files with aria
-  attributes.
+| Plugin | Tests | Storybook | a11y | i18n | ≥ 0.5 | Score | Status |
+|--------|:-----:|:---------:|:----:|:----:|:-----:|:-----:|:------:|
+| ◆ [prometheus](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) (0.8.2) | ✅ util.test.ts | ✅ 2 stories | ✅ 7 files | ✅ 19 langs | ✅ | 6/6 | 🟢 |
+| [app-catalog](https://github.com/headlamp-k8s/plugins/tree/main/app-catalog) (0.8.0) | ❌ | ✅ 3 stories | ✅ 10 files | ✅ 19 langs | ✅ | 5/6 | 🟠 |
+| [strimzi](https://github.com/headlamp-k8s/plugins/tree/main/strimzi) (0.4.0-alpha) | ✅ 5 tests | ✅ 15 stories | ✅ 5 files | ❌ | ❌ | 4/6 | 🟠 |
+| [knative](https://github.com/headlamp-k8s/plugins/tree/main/knative) (0.2.0-alpha) | ✅ 4 tests | ✅ 9 stories | ✅ 26 files | ⚠️ en only | ❌ | 4/6 | 🟠 |
+| [kubeflow](https://github.com/headlamp-k8s/plugins/tree/main/kubeflow) (0.2.0-alpha) | ✅ 3 tests | ✅ 30 stories | ❌ | ⚠️ en only | ❌ | 3/6 | 🟠 |
+| [flux](https://github.com/headlamp-k8s/plugins/tree/main/flux) (0.6.0) | ❌ | ❌ | ✅ 5 files | ⚠️ script only | ✅ | 3/6 | 🟠 |
+| [plugin-catalog](https://github.com/headlamp-k8s/plugins/tree/main/plugin-catalog) (0.4.3) | ❌ | ✅ 5 stories | ✅ 7 files | ⚠️ script only | ❌ | 3/6 | 🟠 |
+| [minikube](https://github.com/headlamp-k8s/plugins/tree/main/minikube) (0.3.0) | ✅ utils.test.ts | ✅ 1 story | ❌ | ⚠️ script only | ❌ | 3/6 | 🟠 |
+| [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) (0.1.0) | ❌ | ✅ 13 stories | ❌ | ❌ | ❌ | 2/6 | 🔴 |
+| [backstage](https://github.com/headlamp-k8s/plugins/tree/main/backstage) (0.1.0-beta-2) | ❌ | ✅ 2 stories | ❌ | ⚠️ script only | ❌ | 2/6 | 🔴 |
+| [opencost](https://github.com/headlamp-k8s/plugins/tree/main/opencost) (0.1.3) | ❌ | ✅ 1 story | ❌ | ⚠️ script only | ❌ | 2/6 | 🔴 |
+| [ai-assistant](https://github.com/headlamp-k8s/plugins/tree/main/ai-assistant) (0.2.0-alpha) | ❌ | ❌ | ✅ 27 files | ⚠️ script only | ❌ | 2/6 | 🔴 |
+| [karpenter](https://github.com/headlamp-k8s/plugins/tree/main/karpenter) (0.2.0) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | 1/6 | 🔴 |
+| [keda](https://github.com/headlamp-k8s/plugins/tree/main/keda) (0.1.1-beta) | ❌ | ❌ | ❌ | ❌ | ❌ | 1/6 | 🔴 |
+| [cluster-api](https://github.com/headlamp-k8s/plugins/tree/main/cluster-api) (0.1.0-alpha) | ❌ | ❌ | ❌ | ❌ | ❌ | 1/6 | 🔴 |
+| [volcano](https://github.com/headlamp-k8s/plugins/tree/main/volcano) (0.2.0-beta) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | 1/6 | 🔴 |
+| [kompose](https://github.com/headlamp-k8s/plugins/tree/main/kompose) (0.1.1-beta) | ❌ | ❌ | ❌ | ❌ | ❌ | 1/6 | 🔴 |
+| [radius](https://github.com/headlamp-k8s/plugins/tree/main/radius) (0.1.1) | ❌ | ❌ | ❌ | ❌ | ❌ | 1/6 | 🔴 |
+
+Official repo summary: **1 🟢, 7 🟠, 10 🔴** out of 18 plugins. All official plugins
+automatically get ✅ for the "Official repo" criterion (not shown as a column since it's
+always ✅ for this table). Scores above include this implicit +1.
+
+#### External / Community Plugins
+
+| Plugin | ⭐ | Tests | Storybook | a11y | i18n | ≥ 0.5 | Official | Score | Status |
+|--------|--:|:-----:|:---------:|:----:|:----:|:-----:|:--------:|:-----:|:------:|
+| [Kubescape](https://github.com/kubescape/headlamp-plugin) (v0.11.2) | 10 | ✅ layout.test.ts | ❌ | ✅ 26 files | ✅ | ✅ | ⚠️ project repo | 4/6 | 🟠 |
+| [KubeVirt](https://github.com/naval-group/headlamp-kubevirt) (0.2.2) | 43 | ✅ fast-check, msw | ✅ 5 stories | ❌ | ❌ | ❌ | ❌ | 2/6 | 🔴 |
+| [Trivy](https://github.com/kubebeam/trivy-headlamp-plugin) (v0.3.1) | 9 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 0/6 | 🔴 |
+| [Inspektor Gadget](https://github.com/inspektor-gadget/headlamp-plugin/) (0.1.0-beta.3) | 8 | ❌ | ❌ | ✅ 19 files | ❌ | ❌ | ⚠️ project repo | 1/6 | 🔴 |
+| [KAITO](https://github.com/kaito-project/headlamp-kaito) (0.0.7) | 7 | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ project repo | 0/6 | 🔴 |
+| [Gatekeeper](https://github.com/sozercan/gatekeeper-headlamp-plugin) (0.2.0) | 5 | ✅ dynamic-constraints | ❌ | ❌ | ❌ | ❌ | ❌ | 1/6 | 🔴 |
+| [Sealed Secrets](https://github.com/privilegedescalation/headlamp-sealed-secrets-plugin) (1.0.2) | 0 | ✅ vitest | ✅ | ❌ | ✅ | ✅ | ❌ | 4/6 | 🟠 |
+| [Rook-Ceph](https://github.com/privilegedescalation/headlamp-rook-plugin) (1.0.2) | 2 | ✅ vitest | ❌ | ❌ | ❌ | ✅ | ❌ | 2/6 | 🔴 |
+| [Polaris](https://github.com/privilegedescalation/headlamp-polaris-plugin) (1.0.0) | 0 | ✅ vitest | ❌ | ❌ | ❌ | ✅ | ❌ | 2/6 | 🔴 |
+| [Crossview](https://github.com/MoeidHeidari/crossview-headlamp) (0.1.4) | 3 | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | 4/6 | 🟠 |
+| [Crossplane](https://github.com/joaquimrocha/crossplane-headlamp-plugin) (0.1.0) | 0 | ✅ Playwright e2e | ✅ | ✅ | ✅ | ❌ | ❌ | 4/6 | 🟠 |
+| [KubeFleet](https://github.com/kubefleet-dev/kubefleet-headlamp-plugin) (0.2.2) | 1 | ✅ | ✅ | ✅ | ✅ | ❌ | ⚠️ project repo | 4/6 | 🟠 |
+| [Agones](https://github.com/agones-dev/headlamp-plugin) (0.1.0) | 2 | ✅ | ✅ | ✅ | ✅ | ❌ | ⚠️ project repo | 4/6 | 🟠 |
+| [MetalLB](https://github.com/YotamKorah/headlamp-metallb-plugin) (0.5.0) | 1 | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | 5/6 | 🟠 |
+| [Longhorn](https://github.com/giantswarm/headlamp-longhorn) (0.1.0) | 0 | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | 3/6 | 🟠 |
+| [External Secrets](https://github.com/magohl/external-secrets-operator-headlamp-plugin) (0.1.0-beta7) | 4 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 0/6 | 🔴 |
+| [Envoy Gateway](https://github.com/kahirokunn/headlamp-plugins) (0.3.0) | 1 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 0/6 | 🔴 |
+| [kube-vip](https://github.com/privilegedescalation/headlamp-kube-vip-plugin) (1.0.2) | 0 | ✅ vitest | ❌ | ❌ | ❌ | ✅ | ❌ | 2/6 | 🔴 |
+| [Intel GPU](https://github.com/privilegedescalation/headlamp-intel-gpu-plugin) (1.1.0) | 0 | ✅ vitest | ❌ | ❌ | ❌ | ✅ | ❌ | 2/6 | 🔴 |
+| [Kyverno](https://github.com/kubebeam/kyverno-headlamp-plugin) (0.1.1) | 1 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ archived | 0/6 | 🔴 |
+
+External summary: **0 🟢, 8 🟠, 12 🔴** out of 20 plugins. "⚠️ project repo" means the
+plugin is maintained by the upstream project (e.g., kubescape, agones-dev, kaito-project) but
+does not count toward the score.
+
+#### Combined Key Findings
+
+- **1 plugin is 🟢 green** (6/6) — prometheus is the only plugin meeting all 6 criteria
+- **15 plugins are 🟠 orange** (3-5/6) — 7 official + 8 external
+- **22 plugins are 🔴 red** (0-2/6) — 10 official + 12 external
+- **38 total plugins scored** (18 official + 20 external) — up from 22 in April 2026
+- **10 official plugins have real tests** — strimzi (5: crds, errors, readyChip, secretKeys,
+  strimziApiVersion), knative (4: url, ingress, nullable, time), kubeflow (3: katibUtils,
+  notebookUtils, pipelineUtils), prometheus (1: util.test.ts), minikube (1: utils.test.ts).
+  Community plugins with tests: Kubescape, KubeVirt, Gatekeeper, Sealed Secrets, Rook-Ceph,
+  Polaris, kube-vip, Intel GPU, Crossview, Crossplane (Playwright e2e), KubeFleet, Agones,
+  MetalLB, Longhorn
+- **Kubeflow has 30 Storybook stories** — the most of any plugin, followed by strimzi (15),
+  cert-manager (13), knative (9), plugin-catalog (5), KubeVirt (5), app-catalog (3),
+  backstage (2), prometheus (2), opencost (1), minikube (1)
+- **privilegedescalation** authored 5 external plugins (Sealed Secrets, Rook-Ceph, Polaris,
+  kube-vip, Intel GPU) — all with vitest and v1.0+ versions
+- **Crossplane (joaquimrocha)** is the only plugin with Playwright e2e tests
 - This confirms the crux: **making existing plugins production-grade is harder than building
-  new ones**, because only 1 of 22 plugins meets all 6 quality dimensions
+  new ones**, because only 1 of 38 plugins meets all 6 quality dimensions
 
 ---
 
@@ -767,57 +796,76 @@ plugins that could inform or be upstreamed to the open-source project:
 ### Plugin Maturity Assessment
 
 Most existing plugins need improvement work before they can be considered production-grade.
-This table assesses each plugin's maturity based on version number, internationalization
-support, accessibility testing, and repository location. Data sourced from
+This section assesses each plugin's maturity based on version number, internationalization
+support, accessibility testing, test coverage, and repository location. Data sourced from
 [headlamp-k8s/plugins](https://github.com/headlamp-k8s/plugins) package.json files and
-community plugin repositories on GitHub (checked April 2026).
+community plugin repositories on GitHub (checked May 2026).
 
 **Key findings:**
-- **Only 2 of 12 official plugins** have full i18n support (19 languages): app-catalog and
+- **Only 2 of 18 official plugins** have full i18n support (19 languages): app-catalog and
   prometheus. Flux has the i18n script but no language declarations beyond English.
 - **No plugins have dedicated a11y test suites** — all include `plugin:jsx-a11y/recommended`
   in ESLint (lint-time checks only), but none have runtime a11y testing (e.g. axe-core,
-  pa11y, or Storybook a11y addon integration tests). However, **8 plugins have ≥ 5 aria attributes**
-  in their src/ folder, indicating intentional accessibility work: ai-assistant (27 files),
-  knative (26), Kubescape (26), Inspektor Gadget (19), app-catalog (10), plugin-catalog (7),
-  prometheus (7), flux (5).
-- **Only 2 of 12 official plugins have real unit/integration tests** — prometheus (util.test.ts)
-  and knative (url, ingress, nullable, time tests). All other official plugins only have the
-  auto-generated `storybook.test.tsx`, which runs Storybook snapshot tests, not plugin-specific
-  tests. Among community plugins, only Kubescape (layout.test.ts) has real tests.
-- **8 of 12 official plugins are pre-v1.0**, with 5 at v0.1.x or alpha/beta.
-- **All community plugins live outside headlamp-k8s/plugins** — onboarding them into the
-  official repo would improve discoverability, CI quality gates, and maintenance.
+  pa11y, or Storybook a11y addon integration tests). However, **9 plugins have ≥ 5 aria
+  attributes** in their src/ folder, indicating intentional accessibility work: ai-assistant
+  (27 files), knative (26), Kubescape (26), Inspektor Gadget (19), app-catalog (10),
+  plugin-catalog (7), prometheus (7), flux (5), strimzi (5).
+- **5 of 18 official plugins have real unit/integration tests** — strimzi (5 test files:
+  crds, errors, readyChip, secretKeys, strimziApiVersion), knative (4 tests), kubeflow
+  (3 tests: katibUtils, notebookUtils, pipelineUtils), prometheus (util.test.ts), and
+  minikube (utils.test.ts). Among community plugins, Kubescape, KubeVirt, Gatekeeper,
+  and 7 more have real tests (see scorecard above).
+- **16 of 18 official plugins are pre-v1.0**, with most at v0.1.x or alpha/beta.
+- **20 community plugins** now exist outside headlamp-k8s/plugins, up from 8 — onboarding
+  the best (Kubescape, KubeVirt, Gatekeeper, Sealed Secrets) would improve discoverability.
 
-#### Official Plugins
+#### Official Plugins (headlamp-k8s/plugins)
 
-| Plugin | Version | i18n | a11y Lint | aria attrs | Storybook | Maturity | Notes |
-|--------|---------|------|-----------|------------|-----------|----------|-------|
-| [app-catalog](https://github.com/headlamp-k8s/plugins/tree/main/app-catalog) | 0.8.0 | ✅ 19 langs | ✅ jsx-a11y | ✅ 10 files | ✅ 3 stories | Maturing | Closest to v1.0 alongside Prometheus |
-| [prometheus](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) | 0.8.2 | ✅ 19 langs | ✅ jsx-a11y | ✅ 7 files | ✅ 2 stories | Maturing | Shipped by default; best i18n coverage |
-| [flux](https://github.com/headlamp-k8s/plugins/tree/main/flux) | 0.6.0 | ⚠️ Script only | ✅ jsx-a11y | ✅ 5 files | ❌ | Stable | Has i18n script but no `headlamp.i18n` lang config |
-| [plugin-catalog](https://github.com/headlamp-k8s/plugins/tree/main/plugin-catalog) | 0.4.3 | ⚠️ Script only | ✅ jsx-a11y | ✅ 7 files | ✅ 5 stories | Stable | Shipped by default |
-| [karpenter](https://github.com/headlamp-k8s/plugins/tree/main/karpenter) | 0.2.0 | ⚠️ Script only | ✅ jsx-a11y | ❌ | ❌ | Alpha | Description says "Alpha Release" |
-| [knative](https://github.com/headlamp-k8s/plugins/tree/main/knative) | 0.2.0-alpha | ⚠️ en only | ✅ jsx-a11y | ✅ 26 files | ✅ 9 stories | Alpha | i18n configured but only English |
-| [ai-assistant](https://github.com/headlamp-k8s/plugins/tree/main/ai-assistant) | 0.2.0-alpha | ⚠️ Script only | ✅ jsx-a11y | ✅ 27 files | ❌ | Alpha | Complex dependencies (LangChain, MCP) |
-| [opencost](https://github.com/headlamp-k8s/plugins/tree/main/opencost) | 0.1.3 | ⚠️ Script only | ✅ jsx-a11y | ❌ | ✅ 1 story | Early | |
-| [keda](https://github.com/headlamp-k8s/plugins/tree/main/keda) | 0.1.1-beta | ❌ No i18n | ✅ jsx-a11y | ❌ | ❌ | Beta | No i18n script or config |
-| [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) | 0.1.0 | ❌ No i18n | ✅ jsx-a11y | ❌ | ✅ 13 stories | Early | No i18n script or config |
-| [cluster-api](https://github.com/headlamp-k8s/plugins/tree/main/cluster-api) | 0.1.0 | ❌ No i18n | ✅ jsx-a11y | ❌ | ❌ | Early | No i18n script or config |
-| [backstage](https://github.com/headlamp-k8s/plugins/tree/main/backstage) | 0.1.0-beta-2 | ⚠️ Script only | ✅ jsx-a11y | ❌ | ✅ 2 stories | Beta | |
+| Plugin | Version | Tests | i18n | aria attrs | Storybook | Notes |
+|--------|---------|-------|------|------------|-----------|-------|
+| [prometheus](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) | 0.8.2 | ✅ util.test.ts | ✅ 19 langs | ✅ 7 files | ✅ 2 stories | Shipped by default; **only 🟢 green plugin** |
+| [app-catalog](https://github.com/headlamp-k8s/plugins/tree/main/app-catalog) | 0.8.0 | ❌ | ✅ 19 langs | ✅ 10 files | ✅ 3 stories | Closest to v1.0 alongside Prometheus |
+| [strimzi](https://github.com/headlamp-k8s/plugins/tree/main/strimzi) | 0.4.0-alpha | ✅ 5 tests (crds, errors, readyChip, secretKeys, strimziApiVersion) | ❌ | ✅ 5 files | ✅ 15 stories | Migrated from cesaroangelo's repo |
+| [knative](https://github.com/headlamp-k8s/plugins/tree/main/knative) | 0.2.0-alpha | ✅ 4 tests (url, ingress, nullable, time) | ⚠️ en only | ✅ 26 files | ✅ 9 stories | i18n configured but only English |
+| [kubeflow](https://github.com/headlamp-k8s/plugins/tree/main/kubeflow) | 0.2.0-alpha | ✅ 3 tests (katibUtils, notebookUtils, pipelineUtils) | ⚠️ en only | ❌ | ✅ 30 stories | Most stories of any plugin |
+| [flux](https://github.com/headlamp-k8s/plugins/tree/main/flux) | 0.6.0 | ❌ | ⚠️ Script only | ✅ 5 files | ❌ | Has i18n script but no `headlamp.i18n` lang config |
+| [plugin-catalog](https://github.com/headlamp-k8s/plugins/tree/main/plugin-catalog) | 0.4.3 | ❌ | ⚠️ Script only | ✅ 7 files | ✅ 5 stories | Shipped by default |
+| [minikube](https://github.com/headlamp-k8s/plugins/tree/main/minikube) | 0.3.0 | ✅ utils.test.ts | ⚠️ Script only | ❌ | ✅ 1 story | Desktop only |
+| [karpenter](https://github.com/headlamp-k8s/plugins/tree/main/karpenter) | 0.2.0 | ❌ | ⚠️ Script only | ❌ | ❌ | Description says "Alpha Release" |
+| [ai-assistant](https://github.com/headlamp-k8s/plugins/tree/main/ai-assistant) | 0.2.0-alpha | ❌ | ⚠️ Script only | ✅ 27 files | ❌ | Complex deps (LangChain, MCP) |
+| [opencost](https://github.com/headlamp-k8s/plugins/tree/main/opencost) | 0.1.3 | ❌ | ⚠️ Script only | ❌ | ✅ 1 story | |
+| [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) | 0.1.0 | ❌ | ❌ | ❌ | ✅ 13 stories | No i18n script or config |
+| [backstage](https://github.com/headlamp-k8s/plugins/tree/main/backstage) | 0.1.0-beta-2 | ❌ | ⚠️ Script only | ❌ | ✅ 2 stories | |
+| [keda](https://github.com/headlamp-k8s/plugins/tree/main/keda) | 0.1.1-beta | ❌ | ❌ | ❌ | ❌ | No i18n script or config |
+| [cluster-api](https://github.com/headlamp-k8s/plugins/tree/main/cluster-api) | 0.1.0-alpha | ❌ | ❌ | ❌ | ❌ | No i18n script or config |
+| [volcano](https://github.com/headlamp-k8s/plugins/tree/main/volcano) | 0.2.0-beta | ❌ | ⚠️ Script only | ❌ | ❌ | |
+| [kompose](https://github.com/headlamp-k8s/plugins/tree/main/kompose) | 0.1.1-beta | ❌ | ❌ | ❌ | ❌ | Docker-compose → K8s converter |
+| [radius](https://github.com/headlamp-k8s/plugins/tree/main/radius) | 0.1.1 | ❌ | ❌ | ❌ | ❌ | Microsoft Radius integration |
 
-#### Community Plugins
+#### Community / External Plugins
 
-| Plugin | Version | i18n | a11y Lint | aria attrs | Repo | Last Active | Maturity | Migration Work |
-|--------|---------|------|-----------|------------|------|-------------|----------|----------------|
-| [Kubescape](https://github.com/kubescape/headlamp-plugin) | 0.10.6 | ✅ i18n | ✅ jsx-a11y | ✅ 26 files | External | Mar 2026 | **Most mature community plugin** | Medium — different build system, needs CI integration |
-| [Strimzi](https://github.com/headlamp-k8s/plugins/tree/main/strimzi) | 0.4.0-alpha | ✅ i18n | ✅ jsx-a11y | ✅ 15 stories | **Official** | May 2026 | Stable | Low — already in official repo |
-| [Trivy](https://github.com/kubebeam/trivy-headlamp-plugin) | 0.3.1 | ❌ | ✅ jsx-a11y | ❌ | External | Oct 2025 | Developing | Medium — kubebeam org, compliance-focused |
-| [Gatekeeper](https://github.com/sozercan/gatekeeper-headlamp-plugin) | 0.2.0 | ❌ | ✅ jsx-a11y | ❌ | External | Nov 2025 | Stable | Low — single maintainer, smaller codebase |
-| [Inspektor Gadget](https://github.com/inspektor-gadget/headlamp-plugin/) | 0.1.0-beta.3 | ❌ | ✅ jsx-a11y | ✅ 19 files | External | Mar 2026 | Beta | High — WASM dependencies, complex build |
-| [KAITO](https://github.com/kaito-project/headlamp-kaito) | 0.0.7 | ❌ | ⚠️ Implicit | ❌ | External | Aug 2025 | Early | Medium — Microsoft-backed project |
-| [KubeVirt](https://github.com/naval-group/headlamp-kubevirt) | 0.2.2 | ❌ | ✅ jsx-a11y | ✅ 5 stories | External | May 2026 | **Most active** (43⭐) | Low — well-maintained, tests, i18n-ready |
-| [Kyverno](https://github.com/kubebeam/kyverno-headlamp-plugin) | 0.1.1 | ❌ | ✅ jsx-a11y | ❌ | External (archived) | Nov 2024 | **Unmaintained** | High — needs full rebuild or new maintainer |
+| Plugin | Version | ⭐ | Tests | i18n | aria attrs | Storybook | Repo | Last Active | Notes |
+|--------|---------|--:|-------|------|------------|-----------|------|-------------|-------|
+| [KubeVirt](https://github.com/naval-group/headlamp-kubevirt) | 0.2.2 | 43 | ✅ fast-check, msw | ❌ | ❌ | ✅ 5 stories | External | May 2026 | **Most starred** — VNC, live metrics |
+| [Kubescape](https://github.com/kubescape/headlamp-plugin) | v0.11.2 | 10 | ✅ layout.test.ts | ✅ | ✅ 26 files | ❌ | Project repo | May 2026 | **Most mature** — WASM, dagre graphs |
+| [Trivy](https://github.com/kubebeam/trivy-headlamp-plugin) | v0.3.1 | 9 | ❌ | ❌ | ❌ | ❌ | External | May 2026 | Compliance + vulnerability reports |
+| [Inspektor Gadget](https://github.com/inspektor-gadget/headlamp-plugin/) | 0.1.0-beta.3 | 8 | ❌ | ❌ | ✅ 19 files | ❌ | Project repo | Apr 2026 | eBPF gadgets via WASM |
+| [KAITO](https://github.com/kaito-project/headlamp-kaito) | 0.0.7 | 7 | ❌ | ❌ | ❌ | ❌ | Project repo | Aug 2025 | AI model deployment, MCP protocol |
+| [Gatekeeper](https://github.com/sozercan/gatekeeper-headlamp-plugin) | 0.2.0 | 5 | ✅ dynamic-constraints | ❌ | ❌ | ❌ | External | Nov 2025 | OPA policy management |
+| [External Secrets](https://github.com/magohl/external-secrets-operator-headlamp-plugin) | 0.1.0-beta7 | 4 | ❌ | ❌ | ❌ | ❌ | External | Jul 2025 | ESO resource management |
+| [Crossview](https://github.com/MoeidHeidari/crossview-headlamp) | 0.1.4 | 3 | ✅ | ✅ | ✅ | ✅ | External | Mar 2026 | Crossplane UI, ArtifactHub published |
+| [Rook-Ceph](https://github.com/privilegedescalation/headlamp-rook-plugin) | 1.0.2 | 2 | ✅ vitest | ❌ | ❌ | ❌ | External | May 2026 | CephCluster health, CSI monitoring |
+| [Agones](https://github.com/agones-dev/headlamp-plugin) | 0.1.0 | 2 | ✅ | ✅ | ✅ | ✅ | Project repo | May 2026 | Official Agones game server plugin |
+| [MetalLB](https://github.com/YotamKorah/headlamp-metallb-plugin) | 0.5.0 | 1 | ✅ | ✅ | ✅ | ✅ | External | May 2026 | IPAddressPool, BGP, ArtifactHub |
+| [KubeFleet](https://github.com/kubefleet-dev/kubefleet-headlamp-plugin) | 0.2.2 | 1 | ✅ | ✅ | ✅ | ✅ | Project repo | Apr 2026 | Multi-cluster fleet management |
+| [Envoy Gateway](https://github.com/kahirokunn/headlamp-plugins) | 0.3.0 | 1 | ❌ | ❌ | ❌ | ❌ | External | Dec 2025 | HTTPRoute, Gateway API |
+| [Kyverno](https://github.com/kubebeam/kyverno-headlamp-plugin) | 0.1.1 | 1 | ❌ | ❌ | ❌ | ❌ | **Archived** | Apr 2025 | **Unmaintained** — needs rebuild |
+| [Sealed Secrets](https://github.com/privilegedescalation/headlamp-sealed-secrets-plugin) | 1.0.2 | 0 | ✅ vitest | ✅ | ❌ | ✅ | External | May 2026 | Client-side encryption, typedoc |
+| [Polaris](https://github.com/privilegedescalation/headlamp-polaris-plugin) | 1.0.0 | 0 | ✅ vitest | ❌ | ❌ | ❌ | External | May 2026 | Security and best-practices audit |
+| [Crossplane](https://github.com/joaquimrocha/crossplane-headlamp-plugin) | 0.1.0 | 0 | ✅ Playwright e2e | ✅ | ✅ | ✅ | External | Apr 2026 | **Only plugin with e2e tests** |
+| [Longhorn](https://github.com/giantswarm/headlamp-longhorn) | 0.1.0 | 0 | ✅ | ❌ | ✅ | ✅ | External | May 2026 | Giant Swarm, block storage |
+| [kube-vip](https://github.com/privilegedescalation/headlamp-kube-vip-plugin) | 1.0.2 | 0 | ✅ vitest | ❌ | ❌ | ❌ | External | May 2026 | Virtual IP, ARP/BGP modes |
+| [Intel GPU](https://github.com/privilegedescalation/headlamp-intel-gpu-plugin) | 1.1.0 | 0 | ✅ vitest | ❌ | ❌ | ❌ | External | May 2026 | GPU device visibility |
 
 #### What "Production-Grade" Means for Plugins
 
@@ -835,37 +883,34 @@ To bring a plugin from its current state to v1.0 production quality, the typical
   build system, coordinate with original maintainers, establish maintenance plan. Effort:
   2-5 days per plugin.
 
-#### Newly Discovered Community Plugins (May 2026 Search)
+#### Additional Community Plugins (Not Scored)
 
-The following plugins were discovered on GitHub but are **not yet** in the maturity scorecard
-(too early or niche to score). They represent growing community activity:
+These plugins are too early or niche to score but represent growing community activity:
 
-| Plugin | Repository | Version | Stars | Description | Relevance |
-|--------|-----------|---------|:-----:|-------------|-----------|
-| **KubeFleet** | [kubefleet-dev/kubefleet-headlamp-plugin](https://github.com/kubefleet-dev/kubefleet-headlamp-plugin) | 0.2.2 | 1 | Multi-cluster fleet management (member clusters, staged resources, placement policies) | AKS multi-cluster |
-| **Agones** | [agones-dev/headlamp-plugin](https://github.com/agones-dev/headlamp-plugin) | 0.1.0 | 2 | Game server management (Agones CRDs) | Niche — gaming startups |
-| **dot-ai** | [vfarcic/dot-ai-headlamp](https://github.com/vfarcic/dot-ai-headlamp) | 0.1.0 | 3 | AI-powered Kubernetes operations (DevOps Toolkit) | AI workloads |
-| **Sealed Secrets** | [privilegedescalation/headlamp-sealed-secrets-plugin](https://github.com/privilegedescalation/headlamp-sealed-secrets-plugin) | early | 0 | Bitnami Sealed Secrets management with client-side encryption | Startup security |
-| **Rook-Ceph** | [privilegedescalation/headlamp-rook-plugin](https://github.com/privilegedescalation/headlamp-rook-plugin) | early | 2 | Rook-Ceph cluster visibility (CephCluster health, pool status, CSI) | Storage |
-| **Polaris** | [privilegedescalation/headlamp-polaris-plugin](https://github.com/privilegedescalation/headlamp-polaris-plugin) | early | 0 | Fairwinds Polaris security and best-practices auditing | Security |
-| **Helm Release Manager** | [vinish86/helm-headlamp](https://github.com/vinish86/helm-headlamp) | early | 2 | Helm release history, manifest inspection, rollback from UI | Startup DevOps |
-| **Crossview** | [MoeidHeidari/crossview-headlamp](https://github.com/MoeidHeidari/crossview-headlamp) | early | 3 | Crossplane multi-cluster management UI | Platform engineering |
-| **Fortem IDP** | [cybrixcc/headlamp-fortem](https://github.com/cybrixcc/headlamp-fortem) | early | 1 | Internal Developer Platform — environments, clusters, cost metrics | Platform engineering |
-| **kube-vip** | [privilegedescalation/headlamp-kube-vip-plugin](https://github.com/privilegedescalation/headlamp-kube-vip-plugin) | early | 0 | Virtual IP and load balancer visibility | Networking |
-| **Intel GPU** | [privilegedescalation/headlamp-intel-gpu-plugin](https://github.com/privilegedescalation/headlamp-intel-gpu-plugin) | early | 0 | Intel GPU device visibility and resource monitoring | AI workloads |
-| **Kmesh** | [WasThatRudy/headlamp-kmesh-plugin](https://github.com/WasThatRudy/headlamp-kmesh-plugin) | early | 0 | Kmesh service mesh resources (LFX mentorship seed) | Service mesh |
-| **kro** | [neildeng/kro-headlamp-plugin](https://github.com/neildeng/kro-headlamp-plugin) | early | 0 | kro (Kubernetes Resource Orchestrator) | Platform engineering |
-| **EKS Auto Token** | [witttness/headlamp-auto-token](https://github.com/witttness/headlamp-auto-token) | early | 0 | Automatic EKS token provisioning for in-cluster deployments | AWS/EKS |
-| **Capsule** | [buttahtoast/headlamp-plugins](https://github.com/buttahtoast/headlamp-plugins) | early | 5 | Capsule multi-tenancy plugin (part of multi-plugin repo) | Multi-tenancy |
+| Plugin | Repository | Stars | Description |
+|--------|-----------|:-----:|-------------|
+| **dot-ai** | [vfarcic/dot-ai-headlamp](https://github.com/vfarcic/dot-ai-headlamp) | 3 | AI-powered Kubernetes operations (DevOps Toolkit) |
+| **Capsule** | [buttahtoast/headlamp-plugins](https://github.com/buttahtoast/headlamp-plugins) | 5 | Capsule multi-tenancy (part of multi-plugin repo) |
+| **CloudNativePG** | [tylerauerbeck/cloudnativepg-headlamp-plugin](https://github.com/tylerauerbeck/cloudnativepg-headlamp-plugin) | 0 | PostgreSQL operator plugin (early stage) |
+| **Helm Release Manager** | [vinish86/helm-headlamp](https://github.com/vinish86/helm-headlamp) | 2 | Helm release history, rollback from UI |
+| **Fortem IDP** | [cybrixcc/headlamp-fortem](https://github.com/cybrixcc/headlamp-fortem) | 1 | Internal Developer Platform |
+| **Kmesh** | [WasThatRudy/headlamp-kmesh-plugin](https://github.com/WasThatRudy/headlamp-kmesh-plugin) | 0 | Kmesh service mesh (LFX mentorship) |
+| **kro** | [neildeng/kro-headlamp-plugin](https://github.com/neildeng/kro-headlamp-plugin) | 0 | Kubernetes Resource Orchestrator |
+| **EKS Auto Token** | [witttness/headlamp-auto-token](https://github.com/witttness/headlamp-auto-token) | 0 | Automatic EKS token provisioning |
+| **TrueNAS CSI** | [privilegedescalation/headlamp-tns-csi-plugin](https://github.com/privilegedescalation/headlamp-tns-csi-plugin) | 0 | TrueNAS CSI storage visibility |
 
 **Key observations:**
-- **15 new community plugins** discovered since last review (April 2026) — the ecosystem is growing rapidly
+- **38 plugins scored** (18 official + 20 external), plus 9 unscored early-stage plugins
+- **Ecosystem grew rapidly** — from 22 scored plugins (Apr 2026) to 38 (May 2026)
 - **Sealed Secrets** fills a gap identified in Part 8 (supporting infrastructure)
 - **KubeFleet** and **Crossview** address multi-cluster/Crossplane gaps from Part 7
 - **naval-group/headlamp-kubevirt** (43⭐) has superseded the older buttahtoast KubeVirt plugin
-  with full VM lifecycle, VNC console, Prometheus metrics, and proper test coverage
-- **Strimzi** has been migrated to the official headlamp-k8s/plugins repo (v0.4.0-alpha, 15 stories)
-- **privilegedescalation** user created 5+ plugins in Feb 2026 — active community contributor
+  with full VM lifecycle, VNC console, Prometheus metrics, and property-based testing
+- **Strimzi** has been migrated to the official repo with 5 real test files and 15 stories
+- **Kubeflow** has 30 Storybook stories and 3 real test files — more mature than previously assessed
+- **privilegedescalation** authored 6 plugins — all with vitest, v1.0+ versions, actively maintained
+- **Crossplane (joaquimrocha)** is the only plugin with Playwright e2e browser tests
+- **CloudNativePG** plugin exists (early stage) — addresses the top database priority from Part 8
 
 ---
 
