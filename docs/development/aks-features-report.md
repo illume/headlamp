@@ -660,53 +660,55 @@ Columns:
 
 #### Official Plugins (headlamp-k8s/plugins)
 
-| Plugin | Tests | Storybook | a11y | i18n | ≥ 0.5 | Official | Score | Status |
-|--------|:-----:|:---------:|:----:|:----:|:-----:|:--------:|:-----:|:------:|
-| ◆ [prometheus](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) (0.8.2) | ✅ util.test.ts | ✅ 2 stories | ✅ 7 files | ✅ 19 langs | ✅ | ✅ | 6/6 | 🟢 |
-| [app-catalog](https://github.com/headlamp-k8s/plugins/tree/main/app-catalog) (0.8.0) | ❌ | ✅ 3 stories | ✅ 10 files | ✅ 19 langs | ✅ | ✅ | 5/6 | 🟠 |
-| [strimzi](https://github.com/headlamp-k8s/plugins/tree/main/strimzi) (0.4.0-alpha) | ✅ 5 tests | ✅ 15 stories | ✅ 5 files | ❌ | ❌ | ✅ | 4/6 | 🟠 |
-| [knative](https://github.com/headlamp-k8s/plugins/tree/main/knative) (0.2.0-alpha) | ✅ 4 tests | ✅ 9 stories | ✅ 26 files | ⚠️ en only | ❌ | ✅ | 4/6 | 🟠 |
-| [kubeflow](https://github.com/headlamp-k8s/plugins/tree/main/kubeflow) (0.2.0-alpha) | ✅ 3 tests | ✅ 30 stories | ❌ | ⚠️ en only | ❌ | ✅ | 3/6 | 🟠 |
-| [flux](https://github.com/headlamp-k8s/plugins/tree/main/flux) (0.6.0) | ❌ | ❌ | ✅ 5 files | ⚠️ script only | ✅ | ✅ | 3/6 | 🟠 |
-| [plugin-catalog](https://github.com/headlamp-k8s/plugins/tree/main/plugin-catalog) (0.4.3) | ❌ | ✅ 5 stories | ✅ 7 files | ⚠️ script only | ❌ | ✅ | 3/6 | 🟠 |
-| [minikube](https://github.com/headlamp-k8s/plugins/tree/main/minikube) (0.3.0) | ✅ utils.test.ts | ✅ 1 story | ❌ | ⚠️ script only | ❌ | ✅ | 3/6 | 🟠 |
-| [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) (0.1.0) | ❌ | ✅ 13 stories | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
-| [backstage](https://github.com/headlamp-k8s/plugins/tree/main/backstage) (0.1.0-beta-2) | ❌ | ✅ 2 stories | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
-| [opencost](https://github.com/headlamp-k8s/plugins/tree/main/opencost) (0.1.3) | ❌ | ✅ 1 story | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
-| [ai-assistant](https://github.com/headlamp-k8s/plugins/tree/main/ai-assistant) (0.2.0-alpha) | ❌ | ❌ | ✅ 27 files | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
-| [karpenter](https://github.com/headlamp-k8s/plugins/tree/main/karpenter) (0.2.0) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
-| [keda](https://github.com/headlamp-k8s/plugins/tree/main/keda) (0.1.1-beta) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
-| [cluster-api](https://github.com/headlamp-k8s/plugins/tree/main/cluster-api) (0.1.0-alpha) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
-| [volcano](https://github.com/headlamp-k8s/plugins/tree/main/volcano) (0.2.0-beta) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
-| [kompose](https://github.com/headlamp-k8s/plugins/tree/main/kompose) (0.1.1-beta) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
-| [radius](https://github.com/headlamp-k8s/plugins/tree/main/radius) (0.1.1) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
+| Plugin | Tests | Storybook | a11y | i18n | ≥ 0.5 | Official | Score | Status | Goals |
+|--------|:-----:|:---------:|:----:|:----:|:-----:|:--------:|:-----:|:------:|:-----:|
+| ◆ [prometheus](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) (0.8.2) | ✅ util.test.ts | ✅ 2 stories | ✅ 7 files | ✅ 19 langs | ✅ | ✅ | 6/6 | 🟢 | A S AI |
+| [app-catalog](https://github.com/headlamp-k8s/plugins/tree/main/app-catalog) (0.8.0) | ❌ | ✅ 3 stories | ✅ 10 files | ✅ 19 langs | ✅ | ✅ | 5/6 | 🟠 | S |
+| [strimzi](https://github.com/headlamp-k8s/plugins/tree/main/strimzi) (0.4.0-alpha) | ✅ 5 tests | ✅ 15 stories | ✅ 5 files | ❌ | ❌ | ✅ | 4/6 | 🟠 | S |
+| [knative](https://github.com/headlamp-k8s/plugins/tree/main/knative) (0.2.0-alpha) | ✅ 4 tests | ✅ 9 stories | ✅ 26 files | ⚠️ en only | ❌ | ✅ | 4/6 | 🟠 | A S |
+| [kubeflow](https://github.com/headlamp-k8s/plugins/tree/main/kubeflow) (0.2.0-alpha) | ✅ 3 tests | ✅ 30 stories | ❌ | ⚠️ en only | ❌ | ✅ | 3/6 | 🟠 | S AI |
+| [flux](https://github.com/headlamp-k8s/plugins/tree/main/flux) (0.6.0) | ❌ | ❌ | ✅ 5 files | ⚠️ script only | ✅ | ✅ | 3/6 | 🟠 | A S |
+| [plugin-catalog](https://github.com/headlamp-k8s/plugins/tree/main/plugin-catalog) (0.4.3) | ❌ | ✅ 5 stories | ✅ 7 files | ⚠️ script only | ❌ | ✅ | 3/6 | 🟠 | — |
+| [minikube](https://github.com/headlamp-k8s/plugins/tree/main/minikube) (0.3.0) | ✅ utils.test.ts | ✅ 1 story | ❌ | ⚠️ script only | ❌ | ✅ | 3/6 | 🟠 | — |
+| [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) (0.1.0) | ❌ | ✅ 13 stories | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 | A S |
+| [backstage](https://github.com/headlamp-k8s/plugins/tree/main/backstage) (0.1.0-beta-2) | ❌ | ✅ 2 stories | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 | S |
+| [opencost](https://github.com/headlamp-k8s/plugins/tree/main/opencost) (0.1.3) | ❌ | ✅ 1 story | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 | A S |
+| [ai-assistant](https://github.com/headlamp-k8s/plugins/tree/main/ai-assistant) (0.2.0-alpha) | ❌ | ❌ | ✅ 27 files | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 | AI |
+| [karpenter](https://github.com/headlamp-k8s/plugins/tree/main/karpenter) (0.2.0) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 | A S AI |
+| [keda](https://github.com/headlamp-k8s/plugins/tree/main/keda) (0.1.1-beta) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 | A S AI |
+| [cluster-api](https://github.com/headlamp-k8s/plugins/tree/main/cluster-api) (0.1.0-alpha) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 | — |
+| [volcano](https://github.com/headlamp-k8s/plugins/tree/main/volcano) (0.2.0-beta) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 | AI |
+| [kompose](https://github.com/headlamp-k8s/plugins/tree/main/kompose) (0.1.1-beta) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 | — |
+| [radius](https://github.com/headlamp-k8s/plugins/tree/main/radius) (0.1.1) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 | — |
 
 Official repo summary: **1 🟢, 7 🟠, 10 🔴** out of 18 plugins.
 
+**Goals column:** A = AKS features, S = Startup needs, AI = AI workloads, — = general/niche.
+
 #### External / Community Plugins
 
-| Plugin | ⭐ | Tests | Storybook | a11y | i18n | ≥ 0.5 | Official | Score | Status |
-|--------|--:|:-----:|:---------:|:----:|:----:|:-----:|:--------:|:-----:|:------:|
-| [Kubescape](https://github.com/kubescape/headlamp-plugin) (v0.11.2) | 10 | ✅ layout.test.ts | ❌ | ✅ 26 files | ✅ | ✅ | ⚠️ project repo | 4/6 | 🟠 |
-| [KubeVirt](https://github.com/naval-group/headlamp-kubevirt) (0.2.2) | 43 | ✅ fast-check, msw | ✅ 5 stories | ❌ | ❌ | ❌ | ❌ | 2/6 | 🔴 |
-| [Trivy](https://github.com/kubebeam/trivy-headlamp-plugin) (v0.3.1) | 9 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 0/6 | 🔴 |
-| [Inspektor Gadget](https://github.com/inspektor-gadget/headlamp-plugin/) (0.1.0-beta.3) | 8 | ❌ | ❌ | ✅ 19 files | ❌ | ❌ | ⚠️ project repo | 1/6 | 🔴 |
-| [KAITO](https://github.com/kaito-project/headlamp-kaito) (0.0.7) | 7 | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ project repo | 0/6 | 🔴 |
-| [Gatekeeper](https://github.com/sozercan/gatekeeper-headlamp-plugin) (0.2.0) | 5 | ✅ dynamic-constraints | ❌ | ❌ | ❌ | ❌ | ❌ | 1/6 | 🔴 |
-| [Sealed Secrets](https://github.com/privilegedescalation/headlamp-sealed-secrets-plugin) (1.0.2) | 0 | ✅ vitest | ✅ | ❌ | ✅ | ✅ | ❌ | 4/6 | 🟠 |
-| [Rook-Ceph](https://github.com/privilegedescalation/headlamp-rook-plugin) (1.0.2) | 2 | ✅ vitest | ❌ | ❌ | ❌ | ✅ | ❌ | 2/6 | 🔴 |
-| [Polaris](https://github.com/privilegedescalation/headlamp-polaris-plugin) (1.0.0) | 0 | ✅ vitest | ❌ | ❌ | ❌ | ✅ | ❌ | 2/6 | 🔴 |
-| [Crossview](https://github.com/MoeidHeidari/crossview-headlamp) (0.1.4) | 3 | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | 4/6 | 🟠 |
-| [Crossplane](https://github.com/joaquimrocha/crossplane-headlamp-plugin) (0.1.0) | 0 | ✅ Playwright e2e | ✅ | ✅ | ✅ | ❌ | ❌ | 4/6 | 🟠 |
-| [KubeFleet](https://github.com/kubefleet-dev/kubefleet-headlamp-plugin) (0.2.2) | 1 | ✅ | ✅ | ✅ | ✅ | ❌ | ⚠️ project repo | 4/6 | 🟠 |
-| [Agones](https://github.com/agones-dev/headlamp-plugin) (0.1.0) | 2 | ✅ | ✅ | ✅ | ✅ | ❌ | ⚠️ project repo | 4/6 | 🟠 |
-| [MetalLB](https://github.com/YotamKorah/headlamp-metallb-plugin) (0.5.0) | 1 | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | 5/6 | 🟠 |
-| [Longhorn](https://github.com/giantswarm/headlamp-longhorn) (0.1.0) | 0 | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | 3/6 | 🟠 |
-| [External Secrets](https://github.com/magohl/external-secrets-operator-headlamp-plugin) (0.1.0-beta7) | 4 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 0/6 | 🔴 |
-| [Envoy Gateway](https://github.com/kahirokunn/headlamp-plugins) (0.3.0) | 1 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 0/6 | 🔴 |
-| [kube-vip](https://github.com/privilegedescalation/headlamp-kube-vip-plugin) (1.0.2) | 0 | ✅ vitest | ❌ | ❌ | ❌ | ✅ | ❌ | 2/6 | 🔴 |
-| [Intel GPU](https://github.com/privilegedescalation/headlamp-intel-gpu-plugin) (1.1.0) | 0 | ✅ vitest | ❌ | ❌ | ❌ | ✅ | ❌ | 2/6 | 🔴 |
-| [Kyverno](https://github.com/kubebeam/kyverno-headlamp-plugin) (0.1.1) | 1 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ archived | 0/6 | 🔴 |
+| Plugin | ⭐ | Tests | Storybook | a11y | i18n | ≥ 0.5 | Official | Score | Status | Goals |
+|--------|--:|:-----:|:---------:|:----:|:----:|:-----:|:--------:|:-----:|:------:|:-----:|
+| [Kubescape](https://github.com/kubescape/headlamp-plugin) (v0.11.2) | 10 | ✅ layout.test.ts | ❌ | ✅ 26 files | ✅ | ✅ | ⚠️ project repo | 4/6 | 🟠 | A S |
+| [KubeVirt](https://github.com/naval-group/headlamp-kubevirt) (0.2.2) | 43 | ✅ fast-check, msw | ✅ 5 stories | ❌ | ❌ | ❌ | ❌ | 2/6 | 🔴 | A |
+| [Trivy](https://github.com/kubebeam/trivy-headlamp-plugin) (v0.3.1) | 9 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 0/6 | 🔴 | A S |
+| [Inspektor Gadget](https://github.com/inspektor-gadget/headlamp-plugin/) (0.1.0-beta.3) | 8 | ❌ | ❌ | ✅ 19 files | ❌ | ❌ | ⚠️ project repo | 1/6 | 🔴 | A |
+| [KAITO](https://github.com/kaito-project/headlamp-kaito) (0.0.7) | 7 | ❌ | ❌ | ❌ | ❌ | ❌ | ⚠️ project repo | 0/6 | 🔴 | A AI |
+| [Gatekeeper](https://github.com/sozercan/gatekeeper-headlamp-plugin) (0.2.0) | 5 | ✅ dynamic-constraints | ❌ | ❌ | ❌ | ❌ | ❌ | 1/6 | 🔴 | A S |
+| [Sealed Secrets](https://github.com/privilegedescalation/headlamp-sealed-secrets-plugin) (1.0.2) | 0 | ✅ vitest | ✅ | ❌ | ✅ | ✅ | ❌ | 4/6 | 🟠 | S |
+| [Rook-Ceph](https://github.com/privilegedescalation/headlamp-rook-plugin) (1.0.2) | 2 | ✅ vitest | ❌ | ❌ | ❌ | ✅ | ❌ | 2/6 | 🔴 | S |
+| [Polaris](https://github.com/privilegedescalation/headlamp-polaris-plugin) (1.0.0) | 0 | ✅ vitest | ❌ | ❌ | ❌ | ✅ | ❌ | 2/6 | 🔴 | S |
+| [Crossview](https://github.com/MoeidHeidari/crossview-headlamp) (0.1.4) | 3 | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | 4/6 | 🟠 | S |
+| [Crossplane](https://github.com/joaquimrocha/crossplane-headlamp-plugin) (0.1.0) | 0 | ✅ Playwright e2e | ✅ | ✅ | ✅ | ❌ | ❌ | 4/6 | 🟠 | S |
+| [KubeFleet](https://github.com/kubefleet-dev/kubefleet-headlamp-plugin) (0.2.2) | 1 | ✅ | ✅ | ✅ | ✅ | ❌ | ⚠️ project repo | 4/6 | 🟠 | — |
+| [Agones](https://github.com/agones-dev/headlamp-plugin) (0.1.0) | 2 | ✅ | ✅ | ✅ | ✅ | ❌ | ⚠️ project repo | 4/6 | 🟠 | — |
+| [MetalLB](https://github.com/YotamKorah/headlamp-metallb-plugin) (0.5.0) | 1 | ✅ | ✅ | ✅ | ✅ | ✅ | ❌ | 5/6 | 🟠 | S |
+| [Longhorn](https://github.com/giantswarm/headlamp-longhorn) (0.1.0) | 0 | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | 3/6 | 🟠 | S |
+| [External Secrets](https://github.com/magohl/external-secrets-operator-headlamp-plugin) (0.1.0-beta7) | 4 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 0/6 | 🔴 | S |
+| [Envoy Gateway](https://github.com/kahirokunn/headlamp-plugins) (0.3.0) | 1 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ | 0/6 | 🔴 | S |
+| [kube-vip](https://github.com/privilegedescalation/headlamp-kube-vip-plugin) (1.0.2) | 0 | ✅ vitest | ❌ | ❌ | ❌ | ✅ | ❌ | 2/6 | 🔴 | — |
+| [Intel GPU](https://github.com/privilegedescalation/headlamp-intel-gpu-plugin) (1.1.0) | 0 | ✅ vitest | ❌ | ❌ | ❌ | ✅ | ❌ | 2/6 | 🔴 | AI |
+| [Kyverno](https://github.com/kubebeam/kyverno-headlamp-plugin) (0.1.1) | 1 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ archived | 0/6 | 🔴 | A |
 
 External summary: **0 🟢, 8 🟠, 12 🔴** out of 20 plugins. The "Official" column shows
 whether the plugin lives in the official repo (✅), is maintained by the upstream project
