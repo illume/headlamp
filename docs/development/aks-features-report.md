@@ -660,30 +660,28 @@ Columns:
 
 #### Official Plugins (headlamp-k8s/plugins)
 
-| Plugin | Tests | Storybook | a11y | i18n | ≥ 0.5 | Score | Status |
-|--------|:-----:|:---------:|:----:|:----:|:-----:|:-----:|:------:|
-| ◆ [prometheus](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) (0.8.2) | ✅ util.test.ts | ✅ 2 stories | ✅ 7 files | ✅ 19 langs | ✅ | 6/6 | 🟢 |
-| [app-catalog](https://github.com/headlamp-k8s/plugins/tree/main/app-catalog) (0.8.0) | ❌ | ✅ 3 stories | ✅ 10 files | ✅ 19 langs | ✅ | 5/6 | 🟠 |
-| [strimzi](https://github.com/headlamp-k8s/plugins/tree/main/strimzi) (0.4.0-alpha) | ✅ 5 tests | ✅ 15 stories | ✅ 5 files | ❌ | ❌ | 4/6 | 🟠 |
-| [knative](https://github.com/headlamp-k8s/plugins/tree/main/knative) (0.2.0-alpha) | ✅ 4 tests | ✅ 9 stories | ✅ 26 files | ⚠️ en only | ❌ | 4/6 | 🟠 |
-| [kubeflow](https://github.com/headlamp-k8s/plugins/tree/main/kubeflow) (0.2.0-alpha) | ✅ 3 tests | ✅ 30 stories | ❌ | ⚠️ en only | ❌ | 3/6 | 🟠 |
-| [flux](https://github.com/headlamp-k8s/plugins/tree/main/flux) (0.6.0) | ❌ | ❌ | ✅ 5 files | ⚠️ script only | ✅ | 3/6 | 🟠 |
-| [plugin-catalog](https://github.com/headlamp-k8s/plugins/tree/main/plugin-catalog) (0.4.3) | ❌ | ✅ 5 stories | ✅ 7 files | ⚠️ script only | ❌ | 3/6 | 🟠 |
-| [minikube](https://github.com/headlamp-k8s/plugins/tree/main/minikube) (0.3.0) | ✅ utils.test.ts | ✅ 1 story | ❌ | ⚠️ script only | ❌ | 3/6 | 🟠 |
-| [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) (0.1.0) | ❌ | ✅ 13 stories | ❌ | ❌ | ❌ | 2/6 | 🔴 |
-| [backstage](https://github.com/headlamp-k8s/plugins/tree/main/backstage) (0.1.0-beta-2) | ❌ | ✅ 2 stories | ❌ | ⚠️ script only | ❌ | 2/6 | 🔴 |
-| [opencost](https://github.com/headlamp-k8s/plugins/tree/main/opencost) (0.1.3) | ❌ | ✅ 1 story | ❌ | ⚠️ script only | ❌ | 2/6 | 🔴 |
-| [ai-assistant](https://github.com/headlamp-k8s/plugins/tree/main/ai-assistant) (0.2.0-alpha) | ❌ | ❌ | ✅ 27 files | ⚠️ script only | ❌ | 2/6 | 🔴 |
-| [karpenter](https://github.com/headlamp-k8s/plugins/tree/main/karpenter) (0.2.0) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | 1/6 | 🔴 |
-| [keda](https://github.com/headlamp-k8s/plugins/tree/main/keda) (0.1.1-beta) | ❌ | ❌ | ❌ | ❌ | ❌ | 1/6 | 🔴 |
-| [cluster-api](https://github.com/headlamp-k8s/plugins/tree/main/cluster-api) (0.1.0-alpha) | ❌ | ❌ | ❌ | ❌ | ❌ | 1/6 | 🔴 |
-| [volcano](https://github.com/headlamp-k8s/plugins/tree/main/volcano) (0.2.0-beta) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | 1/6 | 🔴 |
-| [kompose](https://github.com/headlamp-k8s/plugins/tree/main/kompose) (0.1.1-beta) | ❌ | ❌ | ❌ | ❌ | ❌ | 1/6 | 🔴 |
-| [radius](https://github.com/headlamp-k8s/plugins/tree/main/radius) (0.1.1) | ❌ | ❌ | ❌ | ❌ | ❌ | 1/6 | 🔴 |
+| Plugin | Tests | Storybook | a11y | i18n | ≥ 0.5 | Official | Score | Status |
+|--------|:-----:|:---------:|:----:|:----:|:-----:|:--------:|:-----:|:------:|
+| ◆ [prometheus](https://github.com/headlamp-k8s/plugins/tree/main/prometheus) (0.8.2) | ✅ util.test.ts | ✅ 2 stories | ✅ 7 files | ✅ 19 langs | ✅ | ✅ | 6/6 | 🟢 |
+| [app-catalog](https://github.com/headlamp-k8s/plugins/tree/main/app-catalog) (0.8.0) | ❌ | ✅ 3 stories | ✅ 10 files | ✅ 19 langs | ✅ | ✅ | 5/6 | 🟠 |
+| [strimzi](https://github.com/headlamp-k8s/plugins/tree/main/strimzi) (0.4.0-alpha) | ✅ 5 tests | ✅ 15 stories | ✅ 5 files | ❌ | ❌ | ✅ | 4/6 | 🟠 |
+| [knative](https://github.com/headlamp-k8s/plugins/tree/main/knative) (0.2.0-alpha) | ✅ 4 tests | ✅ 9 stories | ✅ 26 files | ⚠️ en only | ❌ | ✅ | 4/6 | 🟠 |
+| [kubeflow](https://github.com/headlamp-k8s/plugins/tree/main/kubeflow) (0.2.0-alpha) | ✅ 3 tests | ✅ 30 stories | ❌ | ⚠️ en only | ❌ | ✅ | 3/6 | 🟠 |
+| [flux](https://github.com/headlamp-k8s/plugins/tree/main/flux) (0.6.0) | ❌ | ❌ | ✅ 5 files | ⚠️ script only | ✅ | ✅ | 3/6 | 🟠 |
+| [plugin-catalog](https://github.com/headlamp-k8s/plugins/tree/main/plugin-catalog) (0.4.3) | ❌ | ✅ 5 stories | ✅ 7 files | ⚠️ script only | ❌ | ✅ | 3/6 | 🟠 |
+| [minikube](https://github.com/headlamp-k8s/plugins/tree/main/minikube) (0.3.0) | ✅ utils.test.ts | ✅ 1 story | ❌ | ⚠️ script only | ❌ | ✅ | 3/6 | 🟠 |
+| [cert-manager](https://github.com/headlamp-k8s/plugins/tree/main/cert-manager) (0.1.0) | ❌ | ✅ 13 stories | ❌ | ❌ | ❌ | ✅ | 2/6 | 🔴 |
+| [backstage](https://github.com/headlamp-k8s/plugins/tree/main/backstage) (0.1.0-beta-2) | ❌ | ✅ 2 stories | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
+| [opencost](https://github.com/headlamp-k8s/plugins/tree/main/opencost) (0.1.3) | ❌ | ✅ 1 story | ❌ | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
+| [ai-assistant](https://github.com/headlamp-k8s/plugins/tree/main/ai-assistant) (0.2.0-alpha) | ❌ | ❌ | ✅ 27 files | ⚠️ script only | ❌ | ✅ | 2/6 | 🔴 |
+| [karpenter](https://github.com/headlamp-k8s/plugins/tree/main/karpenter) (0.2.0) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
+| [keda](https://github.com/headlamp-k8s/plugins/tree/main/keda) (0.1.1-beta) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
+| [cluster-api](https://github.com/headlamp-k8s/plugins/tree/main/cluster-api) (0.1.0-alpha) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
+| [volcano](https://github.com/headlamp-k8s/plugins/tree/main/volcano) (0.2.0-beta) | ❌ | ❌ | ❌ | ⚠️ script only | ❌ | ✅ | 1/6 | 🔴 |
+| [kompose](https://github.com/headlamp-k8s/plugins/tree/main/kompose) (0.1.1-beta) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
+| [radius](https://github.com/headlamp-k8s/plugins/tree/main/radius) (0.1.1) | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ | 1/6 | 🔴 |
 
-Official repo summary: **1 🟢, 7 🟠, 10 🔴** out of 18 plugins. All official plugins
-automatically get ✅ for the "Official repo" criterion (not shown as a column since it's
-always ✅ for this table). Scores above include this implicit +1.
+Official repo summary: **1 🟢, 7 🟠, 10 🔴** out of 18 plugins.
 
 #### External / Community Plugins
 
@@ -710,9 +708,10 @@ always ✅ for this table). Scores above include this implicit +1.
 | [Intel GPU](https://github.com/privilegedescalation/headlamp-intel-gpu-plugin) (1.1.0) | 0 | ✅ vitest | ❌ | ❌ | ❌ | ✅ | ❌ | 2/6 | 🔴 |
 | [Kyverno](https://github.com/kubebeam/kyverno-headlamp-plugin) (0.1.1) | 1 | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ archived | 0/6 | 🔴 |
 
-External summary: **0 🟢, 8 🟠, 12 🔴** out of 20 plugins. "⚠️ project repo" means the
-plugin is maintained by the upstream project (e.g., kubescape, agones-dev, kaito-project) but
-does not count toward the score.
+External summary: **0 🟢, 8 🟠, 12 🔴** out of 20 plugins. The "Official" column shows
+whether the plugin lives in the official repo (✅), is maintained by the upstream project
+org (⚠️ — e.g., kubescape, agones-dev, kaito-project — does **not** count toward score),
+or is community-maintained (❌).
 
 #### Combined Key Findings
 
