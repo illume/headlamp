@@ -244,7 +244,7 @@
   "toggle field visibility": "hidupkan/matikan visibilitas bidang",
   "Tolerations": "Toleransi",
   "Uncapped Target": "Target Tidak Tercapai",
-  "Uncordon": "Batalkan kordon",
+  "Uncordon": "Batalkan cordon",
   "Uncordon node {{name}} cancelled.": "Pembatalan cordon node {{name}} dibatalkan.",
   "Uncordoned node {{name}}.": "Cordon node {{name}} dibatalkan.",
   "Uncordoning node {{name}}…": "Membatalkan cordon node {{name}}…",
