@@ -45,7 +45,11 @@ import ScalingTab from './components/Scaling/ScalingTab';
 import type { ProjectDefinition } from './types/project';
 import { getLoginStatus } from './utils/azure/az-auth';
 import { AZURE_ACCOUNT_POLL_INTERVAL_MS } from './utils/constants/timing';
-import { isAksProject, isArmManagedProject } from './utils/shared/isAksProject';
+import {
+  isAksProject,
+  isAksProjectWithResourceGroup,
+  isArmManagedProject,
+} from './utils/shared/isAksProject';
 import { azureTheme } from './utils/shared/theme';
 
 Headlamp.setAppMenu(menus => {
@@ -341,7 +345,7 @@ registerProjectDetailsTab({
   id: 'info',
   label: 'Info',
   icon: 'mdi:information',
-  isEnabled: isAksProject,
+  isEnabled: isAksProjectWithResourceGroup,
   component: ({ project }) => <InfoTab project={project} />,
 });
 
