@@ -622,7 +622,7 @@
   "successThreshold": "successThreshold",
   "Target CPU utilization": "Hedef CPU kullanımı",
   "Target CPU Utilization (%)": "Hedef CPU Kullanımı (%)",
-  "Tenant": "Tenant",
+  "Tenant": "Kiracı",
   "The agent has created the deployment PR. Review the generated files and merge to start the deployment pipeline.": "Aracı dağıtım PR’sini oluşturdu. Oluşturulan dosyaları inceleyin ve dağıtım işlem hattını başlatmak için birleştirin.",
   "The agent is creating the setup PR to enable the Copilot agent.": "Aracı, Copilot aracısını etkinleştirmek için kurulum PR’sini oluşturuyor.",
   "The AKS Desktop GitHub App must be installed on {{repoName}} to continue.": "Devam etmek için AKS Desktop GitHub Uygulamasının {{repoName}} üzerinde yüklenmiş olması gerekir.",

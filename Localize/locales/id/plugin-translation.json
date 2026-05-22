@@ -622,7 +622,7 @@
   "successThreshold": "successThreshold",
   "Target CPU utilization": "Pemanfaatan CPU target",
   "Target CPU Utilization (%)": "Pemanfaatan CPU Target (%)",
-  "Tenant": "Tenant",
+  "Tenant": "Penyewa",
   "The agent has created the deployment PR. Review the generated files and merge to start the deployment pipeline.": "Agen telah membuat PR penyebaran. Tinjau file yang dihasilkan dan gabungkan untuk memulai alur penyebaran.",
   "The agent is creating the setup PR to enable the Copilot agent.": "Agen sedang membuat PR penyiapan untuk mengaktifkan agen Copilot.",
   "The AKS Desktop GitHub App must be installed on {{repoName}} to continue.": "Aplikasi GitHub Desktop AKS harus diinstal {{repoName}} untuk melanjutkan.",
