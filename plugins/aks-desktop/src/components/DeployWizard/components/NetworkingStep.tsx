@@ -20,9 +20,9 @@ export default function NetworkingStep({ containerConfig }: NetworkingStepProps)
         <TextField
           label={
             <LabelWithInfo
-              label={t('Target port')}
+              label={t('Container port (target port)')}
               infoText={t(
-                'The port number that your container listens on. This is the port inside the container where your application runs.'
+                'The port number your application listens on inside the container. In Kubernetes, this is called the target port.'
               )}
             />
           }
