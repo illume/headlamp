@@ -218,6 +218,28 @@ export async function updateManagedNamespace(options: {
   maybePush('--ingress-policy', ingressPolicy as string | undefined);
   maybePush('--egress-policy', egressPolicy as string | undefined);
 
+  // Re-pass existing labels to pass into az namespace update command
+  // so the ARM PUT doesn't wipe them.
+  try {
+    const current = await getManagedNamespaceDetails({
+      clusterName,
+      resourceGroup,
+      namespaceName,
+      subscriptionId,
+    });
+    const labels = current?.properties?.labels ?? current?.labels;
+    const entries = labels && typeof labels === 'object' ? Object.entries(labels) : [];
+    if (entries.length > 0) {
+      args.push('--labels', ...entries.map(([k, v]) => `${k}=${v}`));
+    }
+  } catch (error) {
+    throw new Error(
+      `Failed to read existing namespace labels before update; aborting to avoid wiping labels: ${getErrorMessage(
+        error
+      )}`
+    );
+  }
+
   if (subscriptionId) {
     args.push('--subscription', subscriptionId);
   }
