@@ -270,7 +270,7 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
       >
         <Grid item sx={{ display: 'flex', alignItems: 'center' }}>
           <Tooltip title="Clear History">
-            <IconButton onClick={onClearHistory} size="small">
+            <IconButton onClick={onClearHistory} size="small" aria-label="Clear History">
               <Icon icon="mdi:broom" />
             </IconButton>
           </Tooltip>
@@ -384,7 +384,7 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
           {!isTestMode && !isAgentMode && (
             <Box ml={1}>
               <Tooltip title="Manage Tools">
-                <IconButton onClick={() => setShowToolsDialog(true)} size="small">
+                <IconButton onClick={() => setShowToolsDialog(true)} size="small" aria-label="Manage Tools">
                   <Icon icon="mdi:tools" />
                 </IconButton>
               </Tooltip>
