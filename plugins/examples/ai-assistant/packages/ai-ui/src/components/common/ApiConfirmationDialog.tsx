@@ -1,6 +1,7 @@
 import { Box, Typography } from '@mui/material';
 import React, { useEffect, useRef } from 'react';
 import YAML from 'yaml';
+import { DefaultConfirmDialog, DefaultEditorDialog } from '../defaults/DefaultSlots';
 
 // Helper function to clean YAML content by removing the |- prefix if present
 function cleanYamlContent(content: string): string {
@@ -30,10 +31,10 @@ export interface ApiConfirmationDialogProps {
   result?: any;
   /** Error message if the API call failed. */
   error?: string;
-  /** Slot for the confirm dialog component (e.g. headlamp ConfirmDialog). */
-  ConfirmDialogSlot: React.ComponentType<any>;
-  /** Slot for the editor dialog component (e.g. headlamp EditorDialog). */
-  EditorDialogSlot: React.ComponentType<any>;
+  /** Slot for the confirm dialog component. Falls back to a MUI-based confirm dialog. */
+  ConfirmDialogSlot?: React.ComponentType<any>;
+  /** Slot for the editor dialog component. Falls back to a MUI-based editor dialog. */
+  EditorDialogSlot?: React.ComponentType<any>;
 }
 
 export default function ApiConfirmationDialog({
@@ -43,8 +44,8 @@ export default function ApiConfirmationDialog({
   url,
   body,
   onConfirm,
-  ConfirmDialogSlot,
-  EditorDialogSlot,
+  ConfirmDialogSlot = DefaultConfirmDialog,
+  EditorDialogSlot = DefaultEditorDialog,
 }: ApiConfirmationDialogProps) {
   const [editedBody, setEditedBody] = React.useState('');
   const [resourceInfo, setResourceInfo] = React.useState<{

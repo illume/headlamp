@@ -13,6 +13,7 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import { DefaultDialog } from '../defaults/DefaultSlots';
 
 /** Configuration for a single MCP server process. */
 export interface MCPServer {
@@ -46,8 +47,8 @@ interface MCPConfigEditorDialogProps {
   config: MCPConfig;
   /** Callback invoked when the user saves the edited configuration. */
   onSave: (config: MCPConfig) => void;
-  /** Component used to render the dialog shell (e.g. headlamp Dialog). */
-  DialogSlot: React.ElementType;
+  /** Component used to render the dialog shell. Falls back to MUI Dialog. */
+  DialogSlot?: React.ElementType;
 }
 
 export default function MCPConfigEditorDialog({
@@ -55,7 +56,7 @@ export default function MCPConfigEditorDialog({
   onClose,
   config,
   onSave,
-  DialogSlot,
+  DialogSlot = DefaultDialog,
 }: MCPConfigEditorDialogProps) {
   const [content, setContent] = useState('');
   const [validationError, setValidationError] = useState('');

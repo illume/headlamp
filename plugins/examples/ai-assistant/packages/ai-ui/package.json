@@ -22,6 +22,7 @@
     "./components/common/ToolApprovalDialog": "./src/components/common/ToolApprovalDialog.tsx",
     "./components/common/YamlDisplay": "./src/components/common/YamlDisplay.tsx",
     "./components/mcpOutput/MCPOutputDisplay": "./src/components/mcpOutput/MCPOutputDisplay.tsx",
+    "./components/defaults/DefaultSlots": "./src/components/defaults/DefaultSlots.tsx",
     "./components/settings/HolmesAgentSettings": "./src/components/settings/HolmesAgentSettings.tsx",
     "./components/settings/MCPConfigEditorDialog": "./src/components/settings/MCPConfigEditorDialog.tsx",
     "./components/settings/MCPServerEditor": "./src/components/settings/MCPServerEditor.tsx",

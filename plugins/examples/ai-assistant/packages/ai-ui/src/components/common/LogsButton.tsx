@@ -10,6 +10,7 @@ import { Icon } from '@iconify/react';
 import { Box, Button, Paper, Typography } from '@mui/material';
 import React, { useState } from 'react';
 import { buildLogTitle } from '../../formatting/logFormatting';
+import { DefaultDialog } from '../defaults/DefaultSlots';
 import LogsDialog from './LogsDialog';
 
 /** Props for the LogsButton component that shows a button to open a logs dialog. */
@@ -24,8 +25,8 @@ export interface LogsButtonProps {
   namespace?: string;
   /** The container name within the pod, if applicable. */
   containerName?: string;
-  /** Component used to render the dialog shell (e.g. headlamp Dialog). */
-  DialogSlot: React.ElementType;
+  /** Component used to render the dialog shell. Falls back to MUI Dialog. */
+  DialogSlot?: React.ElementType;
 }
 
 /**
@@ -38,7 +39,7 @@ const LogsButton: React.FC<LogsButtonProps> = ({
   resourceType = 'Resource',
   namespace,
   containerName,
-  DialogSlot,
+  DialogSlot = DefaultDialog,
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
 

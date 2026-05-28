@@ -35,6 +35,7 @@ import {
   getProviderFields,
   modelProviders,
 } from '../../config/modelConfig';
+import { DefaultDialog } from '../defaults/DefaultSlots';
 import TermsDialog from './TermsDialog';
 
 /** Props for the ProviderSelectionDialog that lets users pick an AI provider. */
@@ -45,15 +46,15 @@ interface ProviderSelectionDialogProps {
   onClose: () => void;
   /** Callback invoked when the user selects a provider by its ID. */
   onSelectProvider: (providerId: string) => void;
-  /** Component used to render the dialog shell. */
-  DialogSlot: React.ElementType;
+  /** Component used to render the dialog shell. Falls back to MUI Dialog. */
+  DialogSlot?: React.ElementType;
 }
 
 function ProviderSelectionDialog({
   open,
   onClose,
   onSelectProvider,
-  DialogSlot,
+  DialogSlot = DefaultDialog,
 }: ProviderSelectionDialogProps) {
   return (
     <DialogSlot open={open} onClose={onClose} maxWidth="md">
@@ -124,8 +125,8 @@ interface ConfigurationDialogProps {
   onConfigNameChange?: (name: string) => void;
   /** Callback invoked when the user saves, with flag indicating default status. */
   onSave?: (makeDefault: boolean) => void;
-  /** Component used to render the dialog shell. */
-  DialogSlot: React.ElementType;
+  /** Component used to render the dialog shell. Falls back to MUI Dialog. */
+  DialogSlot?: React.ElementType;
 }
 
 function ConfigurationDialog({
@@ -137,7 +138,7 @@ function ConfigurationDialog({
   configName,
   onConfigNameChange,
   onSave,
-  DialogSlot,
+  DialogSlot = DefaultDialog,
 }: ConfigurationDialogProps) {
   const provider = getProviderById(providerId);
   const fields = getProviderFields(providerId);
@@ -437,8 +438,8 @@ interface ModelSelectorProps {
   }) => void;
   /** Callback invoked when the user accepts provider terms of service. */
   onTermsAccept?: (updatedConfigs: SavedConfigurations) => void;
-  /** Component used to render dialog shells (e.g. headlamp Dialog). */
-  DialogSlot: React.ElementType;
+  /** Component used to render dialog shells. Falls back to MUI Dialog. */
+  DialogSlot?: React.ElementType;
 }
 
 export default function ModelSelector({
@@ -449,7 +450,7 @@ export default function ModelSelector({
   isConfigView = false,
   onChange,
   onTermsAccept,
-  DialogSlot,
+  DialogSlot = DefaultDialog,
 }: ModelSelectorProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogProviderId, setDialogProviderId] = useState('');

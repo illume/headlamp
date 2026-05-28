@@ -15,6 +15,7 @@ import React from 'react';
 import { getModelDisplayName, getProviderModelsForChat } from '../../providers/modelProviders';
 import { getProviderById } from '../../config/modelConfig';
 import type { ActionButtonSlotProps } from './AIAssistantHeader';
+import { DefaultActionButton } from '../defaults/DefaultSlots';
 import TestModeInput from './TestModeInput';
 
 export type { ActionButtonSlotProps } from './AIAssistantHeader';
@@ -108,8 +109,8 @@ export interface AIInputSectionProps {
   AgentModeSelectorSlot?: React.ComponentType<AgentModeSelectorProps>;
   /** Optional component to render the tools dialog. */
   ToolsDialogSlot?: React.ComponentType<ToolsDialogSlotProps>;
-  /** Component used to render icon action buttons (e.g. headlamp ActionButton). */
-  ActionButtonSlot: React.ComponentType<ActionButtonSlotProps>;
+  /** Component used to render icon action buttons. Falls back to MUI IconButton + Tooltip. */
+  ActionButtonSlot?: React.ComponentType<ActionButtonSlotProps>;
 }
 
 export const AIInputSection: React.FC<AIInputSectionProps> = ({
@@ -139,7 +140,7 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
   isCheckingClusters = false,
   AgentModeSelectorSlot,
   ToolsDialogSlot,
-  ActionButtonSlot,
+  ActionButtonSlot = DefaultActionButton,
 }) => {
   const [showToolsDialog, setShowToolsDialog] = React.useState(false);
   const handleKeyDown = (e: React.KeyboardEvent) => {

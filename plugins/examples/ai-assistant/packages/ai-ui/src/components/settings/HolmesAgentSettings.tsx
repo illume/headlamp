@@ -1,5 +1,6 @@
 import { Box, TextField, Typography } from '@mui/material';
 import React from 'react';
+import { DefaultSectionWrapper } from '../defaults/DefaultSlots';
 
 /** Default Holmes service namespace. */
 export const DEFAULT_HOLMES_NAMESPACE = 'default';
@@ -14,7 +15,7 @@ export interface HolmesAgentSettingsProps {
   config: any | null | undefined;
   /** Callback invoked when a config field changes. */
   onConfigChange: (patch: Record<string, any>) => void;
-  /** Optional wrapper component for layout (e.g. SectionBox). */
+  /** Optional wrapper component for layout (e.g. SectionBox). Falls back to a simple Box with title. */
   SectionWrapper?: React.ComponentType<{ title: string; children: React.ReactNode }>;
   /** Default namespace value. */
   defaultNamespace?: string;
@@ -30,16 +31,6 @@ function normalizeTextSetting(value: string | undefined, fallback: string): stri
 
 function normalizePortSetting(value: number | undefined, defaultPort: number): number {
   return Number.isInteger(value) && value! >= 1 && value! <= 65535 ? value! : defaultPort;
-}
-
-/** Default section wrapper using a simple Box with title. */
-function DefaultSectionWrapper({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <Box sx={{ mb: 3 }}>
-      <Typography variant="h6" sx={{ mb: 1 }}>{title}</Typography>
-      {children}
-    </Box>
-  );
 }
 
 export function HolmesAgentSettings({

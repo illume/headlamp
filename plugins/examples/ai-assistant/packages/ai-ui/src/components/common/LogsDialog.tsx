@@ -17,6 +17,7 @@ import {
 } from '@mui/material';
 import React from 'react';
 import { getLogLanguage, getFormattedLogs } from '../../formatting/logFormatting';
+import { DefaultDialog } from '../defaults/DefaultSlots';
 
 /** Props for the LogsDialog component that displays log content in a modal. */
 export interface LogsDialogProps {
@@ -30,8 +31,8 @@ export interface LogsDialogProps {
   title: string;
   /** Optional Kubernetes resource name associated with these logs. */
   resourceName?: string;
-  /** Component used to render the dialog shell (e.g. headlamp Dialog). */
-  DialogSlot: React.ElementType;
+  /** Component used to render the dialog shell. Falls back to MUI Dialog. */
+  DialogSlot?: React.ElementType;
 }
 
 /**
@@ -43,7 +44,7 @@ export interface LogsDialogProps {
  * - Copy-to-clipboard and download-as-file actions.
  * - Full-width layout with a minimap for large log outputs.
  */
-const LogsDialog: React.FC<LogsDialogProps> = ({ open, onClose, logs, title, resourceName, DialogSlot }) => {
+const LogsDialog: React.FC<LogsDialogProps> = ({ open, onClose, logs, title, resourceName, DialogSlot = DefaultDialog }) => {
   const copyToClipboard = async () => {
     try {
       const formatted = getFormattedLogs(logs);

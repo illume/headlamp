@@ -1,5 +1,6 @@
 import { Box, Chip, Typography } from '@mui/material';
 import React from 'react';
+import { DefaultActionButton } from '../defaults/DefaultSlots';
 
 /** Props accepted by the ActionButton slot component. */
 export interface ActionButtonSlotProps {
@@ -23,8 +24,8 @@ export interface AIAssistantHeaderProps {
   onClose: () => void;
   /** Callback invoked when the user clicks the settings button. */
   onSettings: () => void;
-  /** Component used to render icon action buttons (e.g. headlamp ActionButton). */
-  ActionButtonSlot: React.ComponentType<ActionButtonSlotProps>;
+  /** Component used to render icon action buttons. Falls back to MUI IconButton + Tooltip. */
+  ActionButtonSlot?: React.ComponentType<ActionButtonSlotProps>;
 }
 
 export default function AIAssistantHeader({
@@ -32,7 +33,7 @@ export default function AIAssistantHeader({
   disableSettingsButton,
   onClose,
   onSettings,
-  ActionButtonSlot,
+  ActionButtonSlot = DefaultActionButton,
 }: AIAssistantHeaderProps) {
   return (
     <Box

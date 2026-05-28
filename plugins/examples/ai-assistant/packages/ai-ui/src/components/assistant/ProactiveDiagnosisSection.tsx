@@ -35,6 +35,7 @@ import {
   getStepTypeLabel,
   splitDiagnosisContent,
 } from '../../diagnosis/diagnosisHelpers';
+import { DefaultContentRenderer } from '../defaults/DefaultSlots';
 
 /** Props for the ProactiveDiagnosisSection component that displays diagnosis results. */
 export interface ProactiveDiagnosisSectionProps {
@@ -48,8 +49,8 @@ export interface ProactiveDiagnosisSectionProps {
   isCycleRunning: boolean;
   /** Callback invoked when the user triggers a YAML apply/delete action from a diagnosis. */
   onYamlAction?: (yaml: string, title: string, resourceType: string, isDelete: boolean) => void;
-  /** Slot for the content renderer component that handles markdown/YAML display. */
-  ContentRendererSlot: React.ComponentType<any>;
+  /** Slot for the content renderer component that handles markdown/YAML display. Falls back to a plain-text renderer. */
+  ContentRendererSlot?: React.ComponentType<any>;
 }
 
 /* ── Collapsible Thinking Block (mirrors AgentThinkingBlock style) ── */
@@ -494,7 +495,7 @@ export default function ProactiveDiagnosisSection({
   onScrollComplete,
   isCycleRunning,
   onYamlAction,
-  ContentRendererSlot,
+  ContentRendererSlot = DefaultContentRenderer,
 }: ProactiveDiagnosisSectionProps) {
   const theme = useTheme();
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});

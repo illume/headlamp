@@ -23,6 +23,7 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import { DefaultDialog } from '../defaults/DefaultSlots';
 
 /** Describes an MCP tool available for use in the assistant. */
 interface MCPTool {
@@ -46,8 +47,8 @@ interface ToolsDialogProps {
   enabledTools: string[];
   /** Callback invoked when the set of enabled tools changes. */
   onToolsChange: (enabledTools: string[]) => void;
-  /** Component used to render the dialog shell (e.g. headlamp Dialog). */
-  DialogSlot: React.ElementType;
+  /** Component used to render the dialog shell. Falls back to MUI Dialog. */
+  DialogSlot?: React.ElementType;
 }
 
 export const ToolsDialog: React.FC<ToolsDialogProps> = ({
@@ -55,7 +56,7 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
   onClose,
   enabledTools,
   onToolsChange,
-  DialogSlot,
+  DialogSlot = DefaultDialog,
 }) => {
   const [localEnabledTools, setLocalEnabledTools] = useState<string[]>(enabledTools);
   const [allKnownMcpTools, setAllKnownMcpTools] = useState<MCPTool[]>([]); // Track all tools ever seen

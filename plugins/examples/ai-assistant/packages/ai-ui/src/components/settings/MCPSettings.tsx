@@ -16,6 +16,7 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import { DefaultDialog, DefaultSectionWrapper } from '../defaults/DefaultSlots';
 import MCPConfigEditorDialog from './MCPConfigEditorDialog';
 import MCPServerEditor from './MCPServerEditor';
 
@@ -59,14 +60,14 @@ export interface MCPSettingsProps {
   isRunningAsApp: boolean;
   /** Plugin config store for reading/writing settings. */
   configStore: ConfigStore;
-  /** Optional wrapper component for layout (e.g. SectionBox). */
+  /** Optional wrapper component for layout (e.g. SectionBox). Falls back to a simple Box with title. */
   SectionWrapper?: React.ComponentType<{ title: string; children: React.ReactNode }>;
-  /** Component used to render dialog shells (e.g. headlamp Dialog). */
-  DialogSlot: React.ElementType;
+  /** Component used to render dialog shells. Falls back to MUI Dialog. */
+  DialogSlot?: React.ElementType;
 }
 
-/** Default section wrapper using a simple Box with title. */
-function DefaultSectionWrapper({ title, children }: { title: string; children: React.ReactNode }) {
+/** @deprecated Use {@link DefaultSectionWrapper} from defaults/DefaultSlots instead. */
+function MCPDefaultSectionWrapper({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <Box sx={{ mb: 3 }}>
       <Typography variant="h6" sx={{ mb: 1 }}>{title}</Typography>
@@ -80,7 +81,7 @@ export function MCPSettings({
   isRunningAsApp,
   configStore,
   SectionWrapper = DefaultSectionWrapper,
-  DialogSlot,
+  DialogSlot = DefaultDialog,
 }: MCPSettingsProps) {
   const [jsonEditorOpen, setJsonEditorOpen] = useState(false);
   const [serverEditorOpen, setServerEditorOpen] = useState(false);
