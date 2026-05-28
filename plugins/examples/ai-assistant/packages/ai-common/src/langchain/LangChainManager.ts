@@ -365,9 +365,14 @@ export default class LangChainManager extends AIManager {
             model: sanitizedConfig.model,
             verbose: true,
             configuration: {
-              baseURL: (url => (url.endsWith('/v1') ? url : `${url}/v1`))(
-                sanitizedConfig.baseUrl.replace(/\/+$/, '')
-              ),
+              baseURL: (() => {
+                // Strip trailing slashes and ensure /v1 suffix
+                let url = sanitizedConfig.baseUrl;
+                while (url.endsWith('/')) {
+                  url = url.slice(0, -1);
+                }
+                return url.endsWith('/v1') ? url : `${url}/v1`;
+              })(),
             },
           });
         }
