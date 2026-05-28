@@ -162,11 +162,13 @@ export function DefaultEditorDialog({
  *
  * A minimal fallback for headlamp's ContentRenderer that renders
  * content as preformatted text. Does not support markdown or YAML detection.
+ * The `onYamlDetected` prop is accepted for type compatibility but ignored.
  */
 export function DefaultContentRenderer({
   content,
 }: {
   content: string;
+  /** Accepted for type compatibility with the ContentRenderer slot interface. */
   onYamlDetected?: (yaml: string) => void;
 }) {
   return (

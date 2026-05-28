@@ -66,16 +66,6 @@ export interface MCPSettingsProps {
   DialogSlot?: React.ElementType;
 }
 
-/** @deprecated Use {@link DefaultSectionWrapper} from defaults/DefaultSlots instead. */
-function MCPDefaultSectionWrapper({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <Box sx={{ mb: 3 }}>
-      <Typography variant="h6" sx={{ mb: 1 }}>{title}</Typography>
-      {children}
-    </Box>
-  );
-}
-
 export function MCPSettings({
   onConfigChange,
   isRunningAsApp,
