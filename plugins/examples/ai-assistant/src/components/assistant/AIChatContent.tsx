@@ -1,11 +1,9 @@
 import { Prompt } from '@headlamp-k8s/ai-common/ai/manager';
 import { Link } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-import { Alert, Box, Button } from '@mui/material';
 import React from 'react';
 import type { AgentThinkingStep } from '../../agent/aksAgentManager';
-// [PROACTIVE_DIAGNOSIS_DISABLED] import { useProactiveDiagnosis } from '@headlamp-k8s/ai-ui/hooks/useProactiveDiagnosis';
 import TextStreamContainer from '../../textstream';
-// [PROACTIVE_DIAGNOSIS_DISABLED] import ProactiveDiagnosisSection from './ProactiveDiagnosisSection';
+import AIChatContentBase from '@headlamp-k8s/ai-ui/components/assistant/AIChatContent';
 
 /** Props for the AIChatContent component that renders the chat message history. */
 interface AIChatContentProps {
@@ -27,73 +25,20 @@ interface AIChatContentProps {
   agentThinkingSteps?: AgentThinkingStep[];
 }
 
-export default function AIChatContent({
-  history,
-  isLoading,
-  apiError,
-  onOperationSuccess,
-  onOperationFailure,
-  onYamlAction,
-  onRetryTool,
-  agentThinkingSteps,
-}: AIChatContentProps) {
-  // [PROACTIVE_DIAGNOSIS_DISABLED]
-  // const { diagnoses, isCycleRunning, scrollToEventUid, clearScrollTarget } =
-  //   useProactiveDiagnosis();
-
+function SettingsLink({ children }: { children: React.ReactNode }) {
   return (
-    <Box
-      sx={{
-        height: '100%',
-        overflowY: 'auto',
-        overflowX: 'auto', // Allow horizontal scrolling when needed
-        maxWidth: '100%',
-        minWidth: 0,
-        wordWrap: 'break-word',
-        overflowWrap: 'break-word',
-      }}
-    >
-      {/* [PROACTIVE_DIAGNOSIS_DISABLED]
-      <ProactiveDiagnosisSection
-        diagnoses={diagnoses}
-        scrollToEventUid={scrollToEventUid}
-        onScrollComplete={clearScrollTarget}
-        isCycleRunning={isCycleRunning}
-        onYamlAction={onYamlAction}
-      />
-      */}
+    <Link routeName="pluginDetails" params={{ name: '@headlamp-k8s/ai-assistant' }}>
+      {children}
+    </Link>
+  );
+}
 
-      {apiError && (
-        <Alert
-          severity="error"
-          sx={{ mb: 2 }}
-          action={
-            <Button color="inherit" size="small">
-              <Link
-                routeName="pluginDetails"
-                params={{
-                  name: '@headlamp-k8s/ai-assistant',
-                }}
-              >
-                Settings
-              </Link>
-            </Button>
-          }
-        >
-          {apiError}
-        </Alert>
-      )}
-
-      <TextStreamContainer
-        history={history}
-        isLoading={isLoading}
-        apiError={apiError}
-        onOperationSuccess={onOperationSuccess}
-        onOperationFailure={onOperationFailure}
-        onYamlAction={onYamlAction}
-        onRetryTool={onRetryTool}
-        agentThinkingSteps={agentThinkingSteps}
-      />
-    </Box>
+export default function AIChatContent(props: AIChatContentProps) {
+  return (
+    <AIChatContentBase
+      {...props}
+      TextStreamSlot={TextStreamContainer}
+      SettingsLinkSlot={SettingsLink}
+    />
   );
 }
