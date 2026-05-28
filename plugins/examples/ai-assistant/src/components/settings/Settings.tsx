@@ -9,11 +9,13 @@ import {
   Button,
   Divider,
   FormControlLabel,
+  Link,
   Switch,
   Typography,
 } from '@mui/material';
 import React from 'react';
 import {
+  AKS_AGENT_INSTALL_DOC_URL,
   getAllAvailableTools,
   isToolEnabled,
   pluginStore,
@@ -99,12 +101,41 @@ export default function Settings() {
     pluginStore.update(updatedSettings);
   };
 
+  const handlePreviewChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const previewEnabled = event.target.checked;
+    const currentConf = pluginStore.get() || {};
+    pluginStore.update({
+      ...currentConf,
+      previewEnabled,
+    });
+  };
+
+  const previewEnabled = savedConfigs?.previewEnabled ?? true;
+
   return (
     <Box width={'100%'}>
       <Typography variant="body1" sx={{ mb: 3 }}>
         This plugin is in early development and is not yet ready for production use. Using it may
         incur in costs from the AI provider! Use at your own risk.
       </Typography>
+
+      {/* Preview Feature Toggle */}
+      <Divider sx={{ my: 3 }} />
+      <Box sx={{ mb: 3, ml: 2 }}>
+        <FormControlLabel
+          control={
+            <Switch checked={previewEnabled} onChange={handlePreviewChange} color="primary" />
+          }
+          label={
+            <Box>
+              <Typography variant="body1">Preview Features</Typography>
+              <Typography variant="caption" color="text.secondary">
+                Enable preview features including the AI assistant button in the app bar
+              </Typography>
+            </Box>
+          }
+        />
+      </Box>
 
       <Divider sx={{ my: 3 }} />
       {isTestMode && (
@@ -197,6 +228,27 @@ export default function Settings() {
       {/* Holmes Agent Section */}
       <Divider sx={{ my: 3 }} />
       <HolmesAgentSettings config={savedConfigs} />
+
+      {/* AKS Agent Section */}
+      <Divider sx={{ my: 3 }} />
+      <Typography variant="h6" sx={{ mb: 2 }}>
+        AKS Agent
+      </Typography>
+      <Box sx={{ ml: 2 }}>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+          The AKS Agent provides AI-powered troubleshooting for Azure Kubernetes Service clusters.
+          When installed in your cluster, it enables an agent mode in the AI assistant that can
+          diagnose and help resolve cluster issues.
+        </Typography>
+        <Link
+          href={AKS_AGENT_INSTALL_DOC_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          sx={{ fontSize: '0.875rem' }}
+        >
+          Learn how to install the AKS Agent →
+        </Link>
+      </Box>
 
       {/* MCP Tool Configuration Section */}
       <Divider sx={{ my: 3 }} />

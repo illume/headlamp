@@ -31,3 +31,4 @@ dist
 packages/*/node_modules
 
 storybook-static/
+node_modules/

@@ -5,13 +5,20 @@ import { inlineToolApprovalManager } from '@headlamp-k8s/ai-common/approval/Inli
 import { Icon } from '@iconify/react';
 import { useClustersConf, useSelectedClusters } from '@kinvolk/headlamp-plugin/lib/k8s';
 import { getCluster, getClusterGroup } from '@kinvolk/headlamp-plugin/lib/Utils';
-import { Box, Button, Grid, Typography } from '@mui/material';
+import { Box, Button, CircularProgress, Grid, Typography } from '@mui/material';
 import { isEqual } from 'lodash';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
+import {
+  type AgentThinkingStep,
+  type ConversationEntry,
+  destroyAgentSession,
+  runAksAgent,
+} from './agent/aksAgentManager';
 import AIAssistantHeader from './components/assistant/AIAssistantHeader';
 import AIChatContent from './components/assistant/AIChatContent';
 import { AIInputSection } from './components/assistant/AllInputSection';
+import { ChatMode } from './components/agent/AgentModeSelector';
 import ApiConfirmationDialog from './components/common/ApiConfirmationDialog';
 import { PromptSuggestions } from '@headlamp-k8s/ai-ui/components/assistant/PromptSuggestions';
 import { getProviderById } from '@headlamp-k8s/ai-ui/config/modelConfig';
@@ -72,9 +79,38 @@ export default function AIPrompt(props: {
   const dynamicPrompts = useDynamicPrompts();
   const prompWidthContext = usePromptWidth();
 
+  // Agent mode state — aksAgentClusters and hasCheckedForAgents live in global state
+  // so the check that runs in index.tsx is shared here without re-running
+  const [chatMode, setChatMode] = React.useState<ChatMode>('chat');
+  const [selectedAgentCluster, setSelectedAgentCluster] = React.useState<string>('');
+  const [isCheckingClusters] = React.useState(false);
+
+  // Agent thinking-step progress (streamed in real time)
+  const [agentThinkingSteps, setAgentThinkingSteps] = React.useState<AgentThinkingStep[]>([]);
+
   useEffect(() => {
     prompWidthContext.setPromptWidth(width);
   }, [width]);
+
+  // React to AKS agent clusters detected by index.tsx and stored in global state.
+  // Auto-select the first cluster and switch to agent mode when no provider is configured.
+  React.useEffect(() => {
+    const aksClusters = _pluginSetting.aksAgentClusters;
+    if (!_pluginSetting.hasCheckedForAgents || aksClusters.length === 0) return;
+
+    setSelectedAgentCluster(prev => {
+      if (prev && aksClusters.includes(prev)) return prev;
+      return aksClusters[0];
+    });
+
+    // Auto-switch to agent mode when no AI provider is configured
+    const savedConfigData = getSavedConfigurations(pluginSettings);
+    const hasValidConfig = savedConfigData.providers && savedConfigData.providers.length > 0;
+    if (!hasValidConfig) {
+      setChatMode('agent');
+    }
+  }, [_pluginSetting.aksAgentClusters, _pluginSetting.hasCheckedForAgents]);
+
   // Get cluster names for warning lookup - use selected clusters or current cluster only
   const clusterNames = useMemo(() => {
     const currentCluster = getCluster();
@@ -681,7 +717,75 @@ export default function AIPrompt(props: {
     setOpenPopup(true);
   };
 
+  async function handleAksAgentPrompt(prompt: string) {
+    setOpenPopup(true);
+
+    const userPrompt: Prompt = { role: 'user', content: prompt };
+    setPromptHistory(prev => [...prev, userPrompt]);
+
+    if (!selectedAgentCluster) {
+      setPromptHistory(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: 'No cluster with AKS agent selected. Please select a cluster first.',
+          error: true,
+        },
+      ]);
+      return;
+    }
+
+    const agentPodInfo = _pluginSetting.aksAgentPodInfoMap?.[selectedAgentCluster] || null;
+    if (!agentPodInfo) {
+      setPromptHistory(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: `No AKS agent pod found on cluster "${selectedAgentCluster}". Make sure the AKS agent is installed and running.`,
+          error: true,
+        },
+      ]);
+      return;
+    }
+
+    setLoading(true);
+    setAgentThinkingSteps([]);
+    try {
+      // Build conversation history from prior exchanges for context
+      const conversationHistory: ConversationEntry[] = promptHistory
+        .filter(p => (p.role === 'user' || p.role === 'assistant') && !p.error && p.content)
+        .map(p => ({ role: p.role as 'user' | 'assistant', content: p.content }));
+
+      const response = await runAksAgent(
+        prompt,
+        agentPodInfo,
+        selectedAgentCluster,
+        steps => setAgentThinkingSteps(steps),
+        conversationHistory
+      );
+
+      setPromptHistory(prev => [...prev, { role: 'assistant', content: response }]);
+    } catch (error) {
+      setPromptHistory(prev => [
+        ...prev,
+        {
+          role: 'assistant',
+          content: `Error communicating with AKS agent: ${error?.message || 'Unknown error'}`,
+          error: true,
+        },
+      ]);
+    } finally {
+      setLoading(false);
+      setAgentThinkingSteps([]);
+    }
+  }
+
   async function AnalyzeResourceBasedOnPrompt(prompt: string) {
+    // Route to AKS agent flow when in agent mode
+    if (chatMode === 'agent') {
+      return handleAksAgentPrompt(prompt);
+    }
+
     setOpenPopup(true);
 
     // Always add user message to promptHistory immediately so it shows up right away
@@ -1436,7 +1540,9 @@ export default function AIPrompt(props: {
   }, [shouldShowGreeting, getGreetingMessage, promptHistory]);
 
   // If no valid configuration AND NOT in agent mode, show setup message
-  if (!hasValidConfig && !isAgentMode) {
+  // If no valid configuration AND NOT in any agent mode AND no AKS agents, show setup message
+  const hasAksAgents = _pluginSetting.aksAgentClusters.length > 0;
+  if (!hasValidConfig && !isAgentMode && chatMode !== 'agent' && !hasAksAgents) {
     return (
       <Box
         sx={{
@@ -1538,6 +1644,7 @@ export default function AIPrompt(props: {
               onOperationFailure={handleOperationFailure}
               onYamlAction={handleYamlAction}
               onRetryTool={handleRetryTool}
+              agentThinkingSteps={agentThinkingSteps}
             />
           </Grid>
           <Grid
@@ -1590,7 +1697,10 @@ export default function AIPrompt(props: {
               }}
               onStop={handleStopRequest}
               onClearHistory={() => {
-                if (isTestMode) {
+                if (chatMode === 'agent') {
+                  destroyAgentSession();
+                  setPromptHistory([]);
+                } else if (isTestMode) {
                   setPromptHistory([]);
                 } else {
                   aiManager?.reset();
@@ -1611,6 +1721,25 @@ export default function AIPrompt(props: {
                 // Recreate AI manager with new tools
                 handleChangeConfig(activeConfig, selectedModel);
               }}
+              chatMode={chatMode}
+              onChatModeChange={mode => {
+                if (chatMode === 'agent') {
+                  destroyAgentSession();
+                }
+                setChatMode(mode);
+                setPromptHistory([]);
+                setApiError(null);
+              }}
+              aksAgentClusters={_pluginSetting.aksAgentClusters}
+              selectedAgentCluster={selectedAgentCluster}
+              onAgentClusterChange={cluster => {
+                if (cluster !== selectedAgentCluster) {
+                  destroyAgentSession();
+                  setPromptHistory([]);
+                }
+                setSelectedAgentCluster(cluster);
+              }}
+              isCheckingClusters={isCheckingClusters}
             />
           </Grid>
         </Grid>

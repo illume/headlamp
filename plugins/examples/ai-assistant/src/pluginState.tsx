@@ -8,10 +8,13 @@ import type {
 } from '@kinvolk/headlamp-plugin/lib/plugin/registry';
 import React from 'react';
 import { useBetween } from 'use-between';
+import type { AksAgentPodInfo } from './agent/aksAgentManager';
 import type { MCPConfig } from './components/settings/MCPSettings';
 
 export const PLUGIN_NAME = '@headlamp-k8s/ai-assistant';
 export const getSettingsURL = () => `/settings/plugins/${encodeURIComponent(PLUGIN_NAME)}`;
+export const AKS_AGENT_INSTALL_DOC_URL =
+  'https://learn.microsoft.com/en-us/azure/aks/agentic-cli-for-aks-install';
 
 //@todo: In index.tsx the setEvent uses things from event.data into the root of the event.
 //       Why does it do this? Maybe it can just use event.data as is?
@@ -144,6 +147,8 @@ interface PluginConfig extends SavedConfigurations {
   enabledTools?: string[] | Record<string, boolean>;
   /** MCP configuration */
   mcpConfig?: MCPConfig;
+  /** Is the AI Assistant preview enabled? Disabled by default. */
+  previewEnabled?: boolean;
 
   /** HolmesGPT Kubernetes Service settings (used by the Holmes agent mode) */
   holmesNamespace?: string; // default: "default"
@@ -159,6 +164,15 @@ function usePluginSettings() {
   // Add states to track providers and active provider
   const [savedProviders, setSavedProviders] = React.useState<StoredProviderConfig[]>([]);
   const [activeProvider, setActiveProvider] = React.useState<StoredProviderConfig | null>(null);
+
+  // AKS agent clusters detected from headlamp config (shared across components)
+  const [aksAgentClusters, setAksAgentClusters] = React.useState<string[]>([]);
+  const [aksClusterServerMap, setAksClusterServerMap] = React.useState<Record<string, string>>({});
+  // Map of cluster name -> pod info (namespace, podName, containerName) for the AKS agent
+  const [aksAgentPodInfoMap, setAksAgentPodInfoMap] = React.useState<
+    Record<string, AksAgentPodInfo>
+  >({});
+  const [hasCheckedForAgents, setHasCheckedForAgents] = React.useState(false);
 
   // Get the current configuration
   const conf = pluginStore.get();
@@ -242,6 +256,14 @@ function usePluginSettings() {
     setSavedProviders,
     activeProvider,
     setActiveProvider,
+    aksAgentClusters,
+    setAksAgentClusters,
+    aksClusterServerMap,
+    setAksClusterServerMap,
+    aksAgentPodInfoMap,
+    setAksAgentPodInfoMap,
+    hasCheckedForAgents,
+    setHasCheckedForAgents,
     isUIPanelOpen,
     setIsUIPanelOpen,
     enabledTools,

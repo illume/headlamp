@@ -2,6 +2,7 @@ import { Prompt } from '@headlamp-k8s/ai-common/ai/manager';
 import { Link } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import { Alert, Box, Button } from '@mui/material';
 import React from 'react';
+import type { AgentThinkingStep } from '../../agent/aksAgentManager';
 // [PROACTIVE_DIAGNOSIS_DISABLED] import { useProactiveDiagnosis } from '@headlamp-k8s/ai-ui/hooks/useProactiveDiagnosis';
 import TextStreamContainer from '../../textstream';
 // [PROACTIVE_DIAGNOSIS_DISABLED] import ProactiveDiagnosisSection from './ProactiveDiagnosisSection';
@@ -22,6 +23,8 @@ interface AIChatContentProps {
   onYamlAction: (yaml: string, title: string, type: string, isDeleteOp: boolean) => void;
   /** Callback to retry a failed tool invocation with the given name and arguments. */
   onRetryTool?: (toolName: string, args: Record<string, any>) => void;
+  /** Live thinking steps streamed from the AKS agent during processing. */
+  agentThinkingSteps?: AgentThinkingStep[];
 }
 
 export default function AIChatContent({
@@ -32,6 +35,7 @@ export default function AIChatContent({
   onOperationFailure,
   onYamlAction,
   onRetryTool,
+  agentThinkingSteps,
 }: AIChatContentProps) {
   // [PROACTIVE_DIAGNOSIS_DISABLED]
   // const { diagnoses, isCycleRunning, scrollToEventUid, clearScrollTarget } =
@@ -88,6 +92,7 @@ export default function AIChatContent({
         onOperationFailure={onOperationFailure}
         onYamlAction={onYamlAction}
         onRetryTool={onRetryTool}
+        agentThinkingSteps={agentThinkingSteps}
       />
     </Box>
   );

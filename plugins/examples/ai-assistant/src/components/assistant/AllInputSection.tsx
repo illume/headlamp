@@ -16,6 +16,7 @@ import React from 'react';
 import { getModelDisplayName, getProviderModelsForChat } from '@headlamp-k8s/ai-ui/providers/modelProviders';
 import { getProviderById } from '@headlamp-k8s/ai-ui/config/modelConfig';
 import TestModeInput from '@headlamp-k8s/ai-ui/components/assistant/TestModeInput';
+import { AgentModeSelector, ChatMode } from '../agent/AgentModeSelector';
 import { ToolsDialog } from './ToolsDialog';
 
 /** Props for the AIInputSection component that contains the chat input and controls. */
@@ -60,6 +61,18 @@ interface AIInputSectionProps {
   ) => void;
   /** Callback invoked when the set of enabled tools changes. */
   onToolsChange: (enabledTools: string[]) => void;
+  /** AKS agent chat mode ('chat' or 'agent'). */
+  chatMode?: ChatMode;
+  /** Callback to change the AKS agent chat mode. */
+  onChatModeChange?: (mode: ChatMode) => void;
+  /** AKS clusters that have the agent installed. */
+  aksAgentClusters?: string[];
+  /** Currently selected AKS agent cluster. */
+  selectedAgentCluster?: string;
+  /** Callback when the AKS agent cluster selection changes. */
+  onAgentClusterChange?: (cluster: string) => void;
+  /** Whether AKS cluster checking is in progress. */
+  isCheckingClusters?: boolean;
 }
 
 export const AIInputSection: React.FC<AIInputSectionProps> = ({
@@ -81,6 +94,12 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
   onTestModeResponse,
   onToggleAgentMode,
   onToolsChange,
+  chatMode = 'chat',
+  onChatModeChange,
+  aksAgentClusters = [],
+  selectedAgentCluster = '',
+  onAgentClusterChange,
+  isCheckingClusters = false,
 }) => {
   const [showToolsDialog, setShowToolsDialog] = React.useState(false);
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -143,6 +162,18 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
     <Box>
       {/* Test Mode Input Component */}
       <TestModeInput onAddTestResponse={onTestModeResponse} isTestMode={isTestMode} />
+
+      {/* AKS Agent Mode Selector */}
+      {!isTestMode && onChatModeChange && aksAgentClusters.length > 0 && (
+        <AgentModeSelector
+          mode={chatMode}
+          onModeChange={onChatModeChange}
+          aksAgentClusters={aksAgentClusters}
+          selectedAgentCluster={selectedAgentCluster}
+          onAgentClusterChange={onAgentClusterChange || (() => {})}
+          isCheckingClusters={isCheckingClusters}
+        />
+      )}
 
       {/* Proactive diagnosis in-progress banner */}
       {isDiagnosisRunning && (

@@ -6,21 +6,10 @@ import { alpha } from '@mui/material/styles';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import AgentThinkingBlock from '@headlamp-k8s/ai-ui/components/assistant/AgentThinkingBlock';
 import InlineToolConfirmation from '@headlamp-k8s/ai-ui/components/common/InlineToolConfirmation';
+import type { AgentThinkingStep } from './agent/aksAgentManager';
+import AgentThinkingSteps from './components/agent/AgentThinkingSteps';
 import ContentRenderer from './ContentRenderer';
 import EditorDialog from './editordialog';
-
-declare module '@mui/material/styles' {
-  interface Palette {
-    sidebar: {
-      selectedBackground: string;
-    };
-  }
-  interface PaletteOptions {
-    sidebar: {
-      selectedBackground: string;
-    };
-  }
-}
 
 const TextStreamContainer = React.memo(function TextStreamContainer({
   history,
@@ -30,6 +19,7 @@ const TextStreamContainer = React.memo(function TextStreamContainer({
   onOperationFailure,
   onYamlAction,
   onRetryTool,
+  agentThinkingSteps,
 }: {
   history: Prompt[];
   isLoading: boolean;
@@ -39,6 +29,8 @@ const TextStreamContainer = React.memo(function TextStreamContainer({
   onYamlAction?: (yaml: string, title: string, resourceType: string, isDelete: boolean) => void;
   onRetryTool?: (toolName: string, args: Record<string, any>) => void;
   promptWidth?: string;
+  /** Live thinking steps streamed from the AKS agent during processing. */
+  agentThinkingSteps?: AgentThinkingStep[];
 }) {
   const [showEditor, setShowEditor] = useState(false);
   const [editorContent, setEditorContent] = useState('');
@@ -451,7 +443,8 @@ const TextStreamContainer = React.memo(function TextStreamContainer({
               last?.agentThinkingSteps &&
               last.agentThinkingSteps.length > 0 &&
               !last.agentThinkingDone;
-            if (agentThinking) return null;
+            // Also hide when AKS agent thinking steps are being streamed
+            if (agentThinking || (agentThinkingSteps && agentThinkingSteps.length > 0)) return null;
             return (
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', my: 2 }}>
                 <CircularProgress size={24} sx={{ mr: 1 }} />
@@ -459,6 +452,11 @@ const TextStreamContainer = React.memo(function TextStreamContainer({
               </Box>
             );
           })()}
+
+        {/* AKS Agent thinking steps (streamed in real time) */}
+        {agentThinkingSteps && agentThinkingSteps.length > 0 && (
+          <AgentThinkingSteps steps={agentThinkingSteps} isRunning={isLoading} />
+        )}
 
         {/* This is an invisible element that we'll scroll to */}
         <div ref={messagesEndRef} />
