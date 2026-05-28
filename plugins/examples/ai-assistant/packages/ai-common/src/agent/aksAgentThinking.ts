@@ -76,9 +76,10 @@ export function friendlyToolLabel(rawToolLine: string): string | null {
 export function extractTaskRow(
   line: string
 ): { content: string; status: 'pending' | 'in_progress' | 'completed' } | null {
-  // Use [^|] instead of .*? to avoid polynomial backtracking (CodeQL js/polynomial-redos)
+  // Use [^|]* (greedy, no surrounding \s*) and trim the capture to avoid
+  // polynomial backtracking (CodeQL js/polynomial-redos).
   const m = line.match(
-    /^\|\s*t\d+\s*\|\s*([^|]*?)\s*\|\s*\[(.)\]\s*(pending|in_progress|completed)\s*\|$/
+    /^\|\s*t\d+\s*\|([^|]*)\|\s*\[(.)\]\s*(pending|in_progress|completed)\s*\|$/
   );
   if (!m) return null;
   const statusMap: Record<string, 'pending' | 'in_progress' | 'completed'> = {
