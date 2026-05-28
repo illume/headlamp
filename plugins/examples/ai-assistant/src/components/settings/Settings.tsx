@@ -20,6 +20,7 @@ import {
   toggleTool,
   usePluginConfig,
 } from '../../pluginState';
+import { HolmesAgentSettings } from './HolmesAgentSettings';
 import { MCPSettings } from './MCPSettings';
 import ModelSelector from './ModelSelector';
 
@@ -192,6 +193,10 @@ export default function Settings() {
       {/* MCP Servers Section */}
       <Divider sx={{ my: 3 }} />
       <MCPSettings />
+
+      {/* Holmes Agent Section */}
+      <Divider sx={{ my: 3 }} />
+      <HolmesAgentSettings config={savedConfigs} />
 
       {/* MCP Tool Configuration Section */}
       <Divider sx={{ my: 3 }} />

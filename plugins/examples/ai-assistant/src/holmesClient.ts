@@ -17,6 +17,13 @@
 import { HttpAgent } from '@ag-ui/client';
 import { clusterRequest } from '@kinvolk/headlamp-plugin/lib/ApiProxy';
 
+/** Plugin configuration type for Holmes service settings */
+export interface HolmesPluginConfig {
+  holmesNamespace?: string;
+  holmesServiceName?: string;
+  holmesPort?: number;
+}
+
 /**
  * Default base URL for the Holmes ag-ui server (direct / port-forward fallback).
  */
@@ -30,6 +37,27 @@ export const HOLMES_SERVICE_NAME = 'holmesgpt-holmes';
 export const HOLMES_SERVICE_PORT = 80;
 export const HOLMES_SERVICE_NAMESPACE = 'default';
 
+function normalizeConfigString(value: string | undefined, fallback: string): string {
+  const normalized = value?.trim();
+  return normalized || fallback;
+}
+
+function normalizeConfigPort(value: number | undefined, fallback: number): number {
+  return Number.isInteger(value) && value >= 1 && value <= 65535 ? value : fallback;
+}
+
+function getHolmesServiceConfig(config?: HolmesPluginConfig): {
+  namespace: string;
+  serviceName: string;
+  servicePort: number;
+} {
+  return {
+    namespace: normalizeConfigString(config?.holmesNamespace, HOLMES_SERVICE_NAMESPACE),
+    serviceName: normalizeConfigString(config?.holmesServiceName, HOLMES_SERVICE_NAME),
+    servicePort: normalizeConfigPort(config?.holmesPort, HOLMES_SERVICE_PORT),
+  };
+}
+
 /**
  * Build the K8s API path that proxies to the Holmes service.
  *
@@ -38,12 +66,8 @@ export const HOLMES_SERVICE_NAMESPACE = 'default';
  *
  * This path can be used with Headlamp's `clusterRequest()` directly.
  */
-export function getHolmesServiceProxyPath(
-  subPath = '',
-  namespace: string = HOLMES_SERVICE_NAMESPACE,
-  serviceName: string = HOLMES_SERVICE_NAME,
-  servicePort: number = HOLMES_SERVICE_PORT
-): string {
+export function getHolmesServiceProxyPath(config?: HolmesPluginConfig, subPath = ''): string {
+  const { namespace, serviceName, servicePort } = getHolmesServiceConfig(config);
   const base = `/api/v1/namespaces/${namespace}/services/${serviceName}:${servicePort}/proxy`;
   return subPath ? `${base}/${subPath.replace(/^\//, '')}` : base;
 }
@@ -56,9 +80,16 @@ export function getHolmesServiceProxyPath(
  * We probe the root path (/) which uvicorn will respond to (even with 404/405)
  * rather than /healthz which the experimental server may not implement.
  */
-export async function checkHolmesAgentHealth(cluster: string): Promise<boolean> {
+export async function checkHolmesAgentHealth(
+  cluster: string,
+  config?: HolmesPluginConfig
+): Promise<boolean> {
   try {
-    await clusterRequest(getHolmesServiceProxyPath(''), { cluster, isJSON: false, timeout: 5000 });
+    await clusterRequest(getHolmesServiceProxyPath(config, ''), {
+      cluster,
+      isJSON: false,
+      timeout: 5000,
+    });
     return true;
   } catch (err: any) {
     // A 404/405 from the Holmes server itself means the pod IS reachable
@@ -119,9 +150,7 @@ function getHeadlampBackendOrigin(): string {
  */
 export function getHolmesProxyBaseUrl(
   cluster: string,
-  namespace: string = HOLMES_SERVICE_NAMESPACE,
-  serviceName: string = HOLMES_SERVICE_NAME,
-  servicePort: number = HOLMES_SERVICE_PORT
+  config?: HolmesPluginConfig
 ): string {
   const origin = getHeadlampBackendOrigin();
   // Respect any base URL prefix (e.g. /headlamp)
@@ -132,12 +161,7 @@ export function getHolmesProxyBaseUrl(
       baseUrlPrefix = raw;
     }
   }
-  return `${origin}${baseUrlPrefix}/clusters/${cluster}${getHolmesServiceProxyPath(
-    '',
-    namespace,
-    serviceName,
-    servicePort
-  )}`;
+  return `${origin}${baseUrlPrefix}/clusters/${cluster}${getHolmesServiceProxyPath(config, '')}`;
 }
 
 /**

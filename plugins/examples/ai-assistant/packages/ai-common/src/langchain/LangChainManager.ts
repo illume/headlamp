@@ -353,6 +353,24 @@ export default class LangChainManager extends AIManager {
             verbose: true,
           });
         }
+        case 'vllm': {
+          if (!sanitizedConfig.baseUrl) {
+            throw new Error('Base URL is required for vLLM');
+          }
+          if (!sanitizedConfig.model) {
+            throw new Error('Model is required for vLLM');
+          }
+          return new ChatOpenAI({
+            apiKey: sanitizedConfig.apiKey || 'sk-noop',
+            model: sanitizedConfig.model,
+            verbose: true,
+            configuration: {
+              baseURL: (url => (url.endsWith('/v1') ? url : `${url}/v1`))(
+                sanitizedConfig.baseUrl.replace(/\/+$/, '')
+              ),
+            },
+          });
+        }
         case 'local': {
           if (!sanitizedConfig.baseUrl) {
             throw new Error('Base URL is required for local models');
@@ -406,7 +424,7 @@ export default class LangChainManager extends AIManager {
    */
   private canUseDirectToolCalling(): boolean {
     // All major providers support direct tool calling
-    return ['openai', 'azure', 'anthropic', 'mistral', 'gemini'].includes(this.providerId);
+    return ['openai', 'azure', 'anthropic', 'mistral', 'gemini', 'vllm'].includes(this.providerId);
   }
 
   /**
@@ -804,6 +822,9 @@ The user is waiting for you to explain what the tools discovered. Provide a dire
   }
 
   async userSend(message: string): Promise<Prompt> {
+    // Sync MCP auto-approve settings before processing
+    await inlineToolApprovalManager.loadAndApplyAutoApproveSettings();
+
     // Clear previous progress steps
 
     const userPrompt: Prompt = { role: 'user', content: message };

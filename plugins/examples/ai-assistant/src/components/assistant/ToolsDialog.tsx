@@ -559,5 +559,3 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
     </Dialog>
   );
 };
-
-export default ToolsDialog;

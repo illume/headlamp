@@ -36,6 +36,7 @@ export class InlineToolApprovalManager extends EventEmitter {
   private autoApproveSettings: Map<string, boolean> = new Map();
   private sessionAutoApproval: boolean = false;
   private approvalHandler: ToolApprovalHandler | null = null;
+  private autoApprovedServers: Set<string> = new Set();
 
   private constructor() {
     super();
@@ -135,7 +136,7 @@ export class InlineToolApprovalManager extends EventEmitter {
     const needsApprovalTools: ToolCall[] = [];
 
     for (const tool of toolCalls) {
-      if (this.autoApproveSettings.get(tool.name)) {
+      if (this.autoApproveSettings.get(tool.name) || this.isToolAutoApproved(tool.name)) {
         autoApprovedTools.push(tool.id);
       } else {
         needsApprovalTools.push(tool);
@@ -310,6 +311,43 @@ export class InlineToolApprovalManager extends EventEmitter {
    */
   public isToolAutoApprovalEnabled(toolName: string): boolean {
     return this.autoApproveSettings.get(toolName) === true;
+  }
+
+  /**
+   * Set auto-approved MCP servers by name
+   */
+  public setAutoApprovedServers(serverNames: string[]): void {
+    this.autoApprovedServers = new Set(serverNames);
+  }
+
+  /**
+   * Check if a tool is auto-approved based on its MCP server prefix
+   */
+  public isToolAutoApproved(toolName: string): boolean {
+    for (const server of this.autoApprovedServers) {
+      if (toolName.startsWith(server + '__')) return true;
+    }
+    return false;
+  }
+
+  /**
+   * Load and apply autoApprove settings from MCP server config
+   */
+  public async loadAndApplyAutoApproveSettings(): Promise<void> {
+    try {
+      if (typeof window !== 'undefined' && window.desktopApi?.mcp) {
+        const response = await window.desktopApi.mcp.getConfig();
+        if (response.success && response.config) {
+          const autoApprovedNames = response.config.servers
+            .filter(s => s.enabled && s.autoApprove)
+            .map(s => s.name);
+          this.setAutoApprovedServers(autoApprovedNames);
+        }
+      }
+    } catch (e) {
+      // safe default: no auto-approvals
+      this.setAutoApprovedServers([]);
+    }
   }
 }
 

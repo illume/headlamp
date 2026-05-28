@@ -810,7 +810,7 @@ export default function AIPrompt(props: {
         console.error('[AgentMode] No cluster available');
         return;
       }
-      const agent = new HolmesAgent(getHolmesProxyBaseUrl(cluster));
+      const agent = new HolmesAgent(getHolmesProxyBaseUrl(cluster, pluginSettings));
       agent.subscribe({
         onEvent: ({ event }) => {
           console.log('[AgentMode] onEvent:', event.type, event);
@@ -1011,7 +1011,7 @@ export default function AIPrompt(props: {
         // One HolmesAgent instance, reused sequentially for all diagnoses.
         // Between each diagnosis we resetThread() to get a fresh conversation.
         // Chat is blocked (loading=true) while diagnosis runs.
-        const diagAgent = new HolmesAgent(getHolmesProxyBaseUrl(cluster));
+        const diagAgent = new HolmesAgent(getHolmesProxyBaseUrl(cluster, pluginSettings));
         diagnosisAgentRef.current = diagAgent;
 
         const agentDiagnoseFn = async (prompt: string, onStep?: DiagnosisStepCallback): Promise<string> => {

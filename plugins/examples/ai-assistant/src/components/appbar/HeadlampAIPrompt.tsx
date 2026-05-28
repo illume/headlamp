@@ -49,13 +49,13 @@ export default function HeadlampAIPrompt() {
       setIsAgentAvailable(false);
       return;
     }
-    checkHolmesAgentHealth(cluster).then(available => {
+    checkHolmesAgentHealth(cluster, savedConfigs).then(available => {
       if (!cancelled) setIsAgentAvailable(available);
     });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [savedConfigs]);
 
   React.useEffect(() => {
     if (hasAnyValidConfig && hasShownPopover) {
@@ -115,7 +115,7 @@ export default function HeadlampAIPrompt() {
           size="small"
           value="ai-assistant"
         >
-          <Icon icon="ai-assistant:logo" width="24px" />
+          <Icon icon="ai-assistant:logo" width="24px" color={theme.palette.text.primary} />
         </ToggleButton>
       </Tooltip>
 

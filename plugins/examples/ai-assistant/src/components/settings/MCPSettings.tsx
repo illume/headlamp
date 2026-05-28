@@ -34,6 +34,8 @@ export interface MCPServer {
   env?: Record<string, string>;
   /** Whether this server is currently enabled. */
   enabled: boolean;
+  /** Whether tool calls from this server skip the approval prompt. */
+  autoApprove?: boolean;
 }
 
 /** Top-level MCP configuration containing global enablement and server list. */
@@ -246,6 +248,15 @@ export function MCPSettings({ onConfigChange }: MCPSettingsProps) {
     updatePendingConfig(newConfig);
   };
 
+  const handleToggleServerAutoApprove = (serverName: string) => {
+    if (!pendingConfig) return;
+    const newServers = pendingConfig.servers.map(s =>
+      s.name === serverName ? { ...s, autoApprove: s.autoApprove ? undefined : true } : s
+    );
+    const newConfig = { ...pendingConfig, servers: newServers };
+    updatePendingConfig(newConfig);
+  };
+
   const handleSaveConfig = (newConfig: MCPConfig) => {
     updatePendingConfig(newConfig);
   };
@@ -343,43 +354,51 @@ export function MCPSettings({ onConfigChange }: MCPSettingsProps) {
                   <TableRow>
                     <TableCell>Name</TableCell>
                     <TableCell align="center">Enabled</TableCell>
-                    <TableCell align="right">Actions</TableCell>
-                  </TableRow>
-                </TableHead>
-                <TableBody>
-                  {displayConfig.servers.map((server, index) => (
-                    <TableRow key={index}>
-                      <TableCell>
-                        <Typography variant="body2">
-                          <strong>{server.name}</strong>
-                        </Typography>
-                      </TableCell>
-                      <TableCell align="center">
-                        <Switch
-                          checked={server.enabled}
-                          onChange={() => handleToggleServerEnabled(server.name)}
-                          size="small"
-                        />
-                      </TableCell>
-                      <TableCell align="right">
-                        <Tooltip title="Edit">
-                          <IconButton size="small" onClick={() => handleOpenServerEditor(server)}>
-                            <Icon icon="mdi:pencil" />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Delete">
-                          <IconButton
-                            size="small"
-                            onClick={() => handleDeleteServer(server.name)}
-                            color="error"
-                          >
-                            <Icon icon="mdi:delete" />
-                          </IconButton>
-                        </Tooltip>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
+                   <TableCell align="center">Auto Approve</TableCell>
+                   <TableCell align="right">Actions</TableCell>
+                 </TableRow>
+               </TableHead>
+               <TableBody>
+                 {displayConfig.servers.map((server, index) => (
+                   <TableRow key={index}>
+                     <TableCell>
+                       <Typography variant="body2">
+                         <strong>{server.name}</strong>
+                       </Typography>
+                     </TableCell>
+                     <TableCell align="center">
+                       <Switch
+                         checked={server.enabled}
+                         onChange={() => handleToggleServerEnabled(server.name)}
+                         size="small"
+                       />
+                     </TableCell>
+                     <TableCell align="center">
+                       <Switch
+                         checked={!!server.autoApprove}
+                         onChange={() => handleToggleServerAutoApprove(server.name)}
+                         size="small"
+                       />
+                     </TableCell>
+                     <TableCell align="right">
+                       <Tooltip title="Edit">
+                         <IconButton size="small" onClick={() => handleOpenServerEditor(server)}>
+                           <Icon icon="mdi:pencil" />
+                         </IconButton>
+                       </Tooltip>
+                       <Tooltip title="Delete">
+                         <IconButton
+                           size="small"
+                           onClick={() => handleDeleteServer(server.name)}
+                           color="error"
+                         >
+                           <Icon icon="mdi:delete" />
+                         </IconButton>
+                       </Tooltip>
+                     </TableCell>
+                   </TableRow>
+                 ))}
+               </TableBody>
               </Table>
             </TableContainer>
           ) : (

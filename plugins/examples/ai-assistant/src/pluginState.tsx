@@ -144,6 +144,11 @@ interface PluginConfig extends SavedConfigurations {
   enabledTools?: string[] | Record<string, boolean>;
   /** MCP configuration */
   mcpConfig?: MCPConfig;
+
+  /** HolmesGPT Kubernetes Service settings (used by the Holmes agent mode) */
+  holmesNamespace?: string; // default: "default"
+  holmesServiceName?: string; // default: "holmesgpt-holmes"
+  holmesPort?: number; // default: 80
 }
 
 export const pluginStore = new ConfigStore<PluginConfig>(PLUGIN_NAME);
