@@ -32,10 +32,10 @@
     "@headlamp-k8s/ai-common": "file:../ai-common"
   },
   "peerDependencies": {
-    "react": "^18.0.0",
-    "@mui/material": "^5.0.0",
     "@iconify/react": "^4.0.0",
     "@monaco-editor/react": "^4.0.0",
+    "@mui/material": "^5.0.0",
+    "react": "^18.0.0",
     "react-markdown": "^8.0.0",
     "react-syntax-highlighter": "^15.0.0",
     "remark-gfm": "^4.0.0",
@@ -66,5 +66,12 @@
     "yaml": {
       "optional": true
     }
+  },
+  "devDependencies": {
+    "vitest": "^4.1.7",
+    "yaml": "^2.9.0"
+  },
+  "scripts": {
+    "test": "vitest run --passWithNoTests"
   }
 }
