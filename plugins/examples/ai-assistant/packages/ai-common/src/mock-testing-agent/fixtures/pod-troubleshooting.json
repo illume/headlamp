@@ -1,0 +1,46 @@
+{
+  "name": "pod-troubleshooting",
+  "description": "Simulates an agent diagnosing a failing pod — walks through model loading, planning, kubectl calls, and diagnosis.",
+  "question": "why is my pod failing",
+  "steps": [
+    { "phase": "init", "label": "Model: gpt-4o", "durationMs": 150 },
+    { "phase": "init", "label": "Toolset: kubernetes-tools loaded", "durationMs": 100 },
+    { "phase": "planning", "label": "Get pod status and events", "durationMs": 80 },
+    { "phase": "planning", "label": "Check container logs for errors", "durationMs": 80 },
+    { "phase": "planning", "label": "Analyze resource limits and node conditions", "durationMs": 80 },
+    {
+      "phase": "executing",
+      "label": "Running kubectl get pods",
+      "toolCall": {
+        "tool": "call_kubectl",
+        "input": "get pods -A -o wide",
+        "output": "NAMESPACE   NAME                    READY   STATUS             RESTARTS   AGE\ndefault     nginx-abc123            0/1     CrashLoopBackOff   5          10m",
+        "durationMs": 300
+      },
+      "durationMs": 300
+    },
+    {
+      "phase": "executing",
+      "label": "Running kubectl describe pod",
+      "toolCall": {
+        "tool": "call_kubectl",
+        "input": "describe pod nginx-abc123",
+        "output": "Events:\n  Warning  BackOff  2m   kubelet  Back-off restarting failed container\n  Warning  Failed   3m   kubelet  Error: ImagePullBackOff",
+        "durationMs": 250
+      },
+      "durationMs": 250
+    },
+    {
+      "phase": "executing",
+      "label": "Running kubectl logs",
+      "toolCall": {
+        "tool": "call_kubectl",
+        "input": "logs nginx-abc123 --previous",
+        "output": "Error: unable to pull image \"nginx:latest-invalid\": not found",
+        "durationMs": 200
+      },
+      "durationMs": 200
+    }
+  ],
+  "answer": "Your pod **nginx-abc123** is in a `CrashLoopBackOff` state. Here's what I found:\n\n## Root Cause\n\nThe container image `nginx:latest-invalid` cannot be pulled — the tag does not exist.\n\n## Events\n\n```\nWarning  BackOff  2m   kubelet  Back-off restarting failed container\nWarning  Failed   3m   kubelet  Error: ImagePullBackOff\n```\n\n## Fix\n\nUpdate the pod's image to a valid tag:\n\n```bash\nkubectl set image deployment/nginx nginx=nginx:1.25\n```\n\nOr edit the deployment directly:\n\n```bash\nkubectl edit deployment nginx\n```\n\nChange `image: nginx:latest-invalid` to `image: nginx:1.25` (or another valid tag)."
+}

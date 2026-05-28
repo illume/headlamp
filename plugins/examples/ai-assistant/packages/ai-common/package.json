@@ -30,6 +30,8 @@
     "./mcp/mcpServerConfig": "./src/mcp/mcpServerConfig.ts",
     "./mock-testing-model/MockTestingModel": "./src/mock-testing-model/MockTestingModel.ts",
     "./mock-testing-model/builtinFixtures": "./src/mock-testing-model/builtinFixtures.ts",
+    "./mock-testing-agent/MockTestingAgent": "./src/mock-testing-agent/MockTestingAgent.ts",
+    "./mock-testing-agent/builtinFixtures": "./src/mock-testing-agent/builtinFixtures.ts",
     "./approval/InlineToolApprovalManager": "./src/approval/InlineToolApprovalManager.ts",
     "./approval/ToolApprovalManager": "./src/approval/ToolApprovalManager.ts",
     "./managers/ProviderConfigManager": "./src/managers/ProviderConfigManager.ts",

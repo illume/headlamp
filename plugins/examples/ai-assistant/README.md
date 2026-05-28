@@ -137,14 +137,26 @@ Once servers are configured, the assistant automatically discovers the tools the
 ai-assistant/
   package.json          # Plugin package — consumes the shared packages
   src/                  # Plugin source (only headlamp-plugin-dependent code)
+    agent/              #   AKS agent session management (uses headlamp-plugin
+                        #   stream/clusterRequest). Pure parsing, prompts, and
+                        #   thinking-step logic moved to ai-common.
   tsconfig.json         # Extends @kinvolk/headlamp-plugin config
   .npmrc                # install-links=true for file: deps
 
   packages/
     ai-common/          # @headlamp-k8s/ai-common — shared logic
       package.json      #   Config, prompts, tool approval, mock-testing-model,
-      src/              #   LangChain orchestration, MCP utilities.
-                        #   Ships .ts directly (no build step). 95 unit tests.
+      src/              #   mock-testing-agent, LangChain orchestration, MCP
+                        #   utilities, agent parsing/prompts/thinking.
+                        #   Ships .ts directly (no build step).
+        agent/          #   Pure agent business logic (no headlamp-plugin dep):
+                        #     aksAgentParsing — terminal output normalization
+                        #     aksAgentPrompts — prompt building, shell escaping
+                        #     aksAgentThinking — thinking step state machine
+                        #     debugLog — levelled debug logger
+        mock-testing-agent/  # Scripted agent session simulator for testing
+                        #     agent UI and workflow without real backend.
+        mock-testing-model/  # Canned LLM response model for testing.
 
     ai-cli/             # @headlamp-k8s/ai-cli — Node CLI entrypoint
       package.json      #   `headlamp-ai` binary.
