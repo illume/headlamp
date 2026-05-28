@@ -216,11 +216,20 @@ function sleep(ms: number): Promise<void> {
  *
  * The JSON file should be an array of `MockAgentSession` objects or a single
  * `MockAgentSession` object.
+ *
+ * @throws {Error} if called in a browser environment where `fs` is unavailable.
  */
 export function loadSessionsFromFile(filePath: string): MockAgentSession[] {
-  // Lazy-require fs so this module can be imported in browsers
-  // eslint-disable-next-line @typescript-eslint/no-var-requires
-  const fs = require('fs');
+  let fs: typeof import('fs');
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    fs = require('fs');
+  } catch {
+    throw new Error(
+      'loadSessionsFromFile() requires Node.js (fs module). ' +
+        'In browser environments, pass sessions directly via extraSessions instead.'
+    );
+  }
   const raw = fs.readFileSync(filePath, 'utf-8');
   const data = JSON.parse(raw);
   return Array.isArray(data) ? data : [data];

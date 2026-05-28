@@ -48,14 +48,14 @@ export type AgentProgressCallback = (steps: AgentThinkingStep[]) => void;
  * Map a raw "Running tool #N <toolname>: ..." line to a friendly label.
  * Returns null for tools that are tracked elsewhere (TodoWrite, kubectl).
  */
-export function friendlyToolLabel(rawToolLine: string): string {
+export function friendlyToolLabel(rawToolLine: string): string | null {
   const match = rawToolLine.match(/^Running tool\s+#\d+\s+(.+)/);
   if (!match) return 'Running tool';
 
   const toolPart = match[1].trim();
 
-  if (/^call_kubectl/i.test(toolPart)) return null as any; // tracked via task table, skip
-  if (/^TodoWrite/i.test(toolPart)) return null as any; // handled separately, skip
+  if (/^call_kubectl/i.test(toolPart)) return null; // tracked via task table, skip
+  if (/^TodoWrite/i.test(toolPart)) return null; // handled separately, skip
   if (/^web_search/i.test(toolPart)) return 'Searching the web';
   if (/^read_file|file_read/i.test(toolPart)) return 'Reading file';
 
@@ -76,8 +76,9 @@ export function friendlyToolLabel(rawToolLine: string): string {
 export function extractTaskRow(
   line: string
 ): { content: string; status: 'pending' | 'in_progress' | 'completed' } | null {
+  // Use [^|] instead of .*? to avoid polynomial backtracking (CodeQL js/polynomial-redos)
   const m = line.match(
-    /^\|\s*t\d+\s*\|\s*(.*?)\s*\|\s*\[(.)\]\s*(pending|in_progress|completed)\s*\|$/
+    /^\|\s*t\d+\s*\|\s*([^|]*?)\s*\|\s*\[(.)\]\s*(pending|in_progress|completed)\s*\|$/
   );
   if (!m) return null;
   const statusMap: Record<string, 'pending' | 'in_progress' | 'completed'> = {
