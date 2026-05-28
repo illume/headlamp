@@ -1,13 +1,18 @@
 import YAML from 'yaml';
 
+/** Describes a named YAML example used in the UI. */
 export interface YamlExample {
+  /** Display title for the example. */
   title: string;
+  /** Suggested filename for the YAML example. */
   filename: string;
+  /** Raw YAML manifest content. */
   yaml: string;
+  /** Kubernetes resource kind represented by the YAML. */
   resourceType: string;
 }
 
-// Function to validate and parse YAML to extract resource type and metadata
+/** Parses Kubernetes YAML and extracts basic resource metadata when the manifest is valid. */
 export function parseKubernetesYAML(yamlStr: string): {
   isValid: boolean;
   resourceType?: string;
@@ -68,7 +73,7 @@ export function parseKubernetesYAML(yamlStr: string): {
   }
 }
 
-// Extract YAML content from text that may contain markdown-style code blocks or separator patterns
+/** Extracts Kubernetes YAML snippets from markdown, separator blocks, or plain text responses. */
 export function extractYamlContent(
   content: string
 ): { yaml: string; resourceType: string; title?: string }[] | null {

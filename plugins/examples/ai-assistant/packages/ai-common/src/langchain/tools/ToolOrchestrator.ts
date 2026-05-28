@@ -34,17 +34,27 @@ import { z } from 'zod';
  * - Any tool that can be executed and returns results
  */
 
+/** A tool recommendation produced for a single execution step. */
 export interface RecommendedTool {
+  /** Exact tool name to execute. */
   name: string;
+  /** Human-readable summary of what the tool does. */
   description: string;
+  /** Arguments to pass to the tool. */
   arguments: Record<string, any>;
+  /** Relative execution priority for the tool. */
   priority: 'high' | 'medium' | 'low';
+  /** Explanation of why this tool was selected. */
   reason: string;
 }
 
+/** The full tool orchestration recommendation for a user request. */
 export interface ToolRecommendation {
+  /** Tools that should be executed to answer the request. */
   tools: RecommendedTool[];
+  /** Summary of the orchestration reasoning. */
   analysis: string;
+  /** Whether the recommended tools should run together as one plan. */
   shouldExecuteAll: boolean;
 }
 
@@ -89,6 +99,7 @@ const ToolRecommendationSchema = z.object({
     .describe('Whether all tools should be executed together for a complete answer'),
 });
 
+/** Analyzes user requests and recommends tool execution plans. */
 export class ToolOrchestrator {
   /**
    * Analyzes a user request and determines all relevant tools to execute together

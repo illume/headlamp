@@ -17,11 +17,12 @@
 import { KubernetesTool } from './kubernetes/KubernetesTool';
 import { ToolBase } from './ToolBase';
 
-// To add a new tool, simply import it and add it to this array
+/** Constructors for all built-in tools available to the AI assistant. */
 export const AVAILABLE_TOOLS: Array<new () => ToolBase> = [
   KubernetesTool, // Main Kubernetes API tool
 ];
 
+/** Returns the configured tool instance that matches the given name. */
 export function getToolByName(name: string, tools: ToolBase[]): ToolBase | undefined {
   return tools.find(tool => tool.config.name === name);
 }

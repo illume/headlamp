@@ -3,25 +3,27 @@ import { Box, CircularProgress, Collapse, LinearProgress, Typography } from '@mu
 import { alpha, useTheme } from '@mui/material/styles';
 import React, { useState } from 'react';
 
+/** Represents one intermediate step emitted during agent reasoning. */
 export interface ThinkingStep {
+  /** Unique identifier for the step. */
   id: string;
+  /** Text shown for this step in the UI. */
   content: string;
-  /** 'tool-start' | 'tool-result' | 'intermediate-text' | 'todo-update' */
+  /** Category used to summarize and style the step. */
   type: 'tool-start' | 'tool-result' | 'intermediate-text' | 'todo-update';
+  /** Unix timestamp for when the step was recorded. */
   timestamp: number;
 }
 
+/** Props for {@link AgentThinkingBlock}. */
 interface AgentThinkingBlockProps {
+  /** Ordered reasoning steps to display. */
   steps: ThinkingStep[];
-  /** Whether the agent is still processing (show animated indicator) */
+  /** Whether the agent is still actively processing. */
   isActive: boolean;
 }
 
-/**
- * Collapsible "Thinking" block styled to match Headlamp's UI theme.
- * Shows agent intermediate steps (tool calls, plan updates, etc.)
- * while the agent works. Auto-collapses when the run finishes.
- */
+/** Displays a collapsible summary of agent reasoning steps while a run is active or completed. */
 export default function AgentThinkingBlock({ steps, isActive }: AgentThinkingBlockProps) {
   const [expanded, setExpanded] = useState(false);
   const theme = useTheme();

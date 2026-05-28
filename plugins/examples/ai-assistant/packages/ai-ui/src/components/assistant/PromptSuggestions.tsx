@@ -2,15 +2,23 @@ import { Icon } from '@iconify/react';
 import { Box, Chip, Typography } from '@mui/material';
 import React from 'react';
 
+/** Props for {@link PromptSuggestions}. */
 interface PromptSuggestionsProps {
+  /** Suggested prompts to show as chips. */
   suggestions: string[];
+  /** Current API error, if one should influence the suggestion UI. */
   apiError: string | null;
+  /** Whether suggestions are still being fetched. */
   loading: boolean;
+  /** Called when a suggestion is inserted into the prompt input. */
   onPromptSelect: (prompt: string) => void;
+  /** Called when a suggestion is sent immediately. */
   onPromptSend: (prompt: string) => void;
+  /** Clears any displayed error before resending a prompt. */
   onErrorClear: () => void;
 }
 
+/** Renders clickable suggestion chips and content-filter fallback guidance for the prompt input. */
 export const PromptSuggestions: React.FC<PromptSuggestionsProps> = ({
   suggestions,
   apiError,

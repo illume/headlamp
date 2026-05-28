@@ -14,17 +14,23 @@
  * limitations under the License.
  */
 
-// ToolConfigManager.ts
-// Simple utility for managing AI tool enable/disable state in plugin settings
-
+/**
+ * Describes a tool that can be exposed to the AI assistant.
+ */
 type ToolInfo = {
+  /** Stable identifier used in settings and tool calls. */
   id: string;
+  /** Human-readable tool name. */
   name: string;
+  /** Short summary shown in tool selection UIs. */
   description: string;
+  /** Origin of the tool implementation. */
   source: 'built-in' | 'mcp';
 };
 
-// List of all available tools (add more here as needed)
+/**
+ * Built-in tools available without querying MCP servers.
+ */
 const AVAILABLE_TOOLS: ToolInfo[] = [
   {
     id: 'kubernetes_api_request',
@@ -36,12 +42,16 @@ const AVAILABLE_TOOLS: ToolInfo[] = [
   // Add more tools here as needed
 ];
 
-// Returns the list of all available tools
+/**
+ * Returns the built-in tools registry.
+ */
 export function getAllAvailableTools(): ToolInfo[] {
   return AVAILABLE_TOOLS;
 }
 
-// Checks if a tool is enabled in the plugin settings (default: true)
+/**
+ * Returns whether a tool is enabled in plugin settings.
+ */
 export function isToolEnabled(pluginSettings: any, toolId: string): boolean {
   if (!pluginSettings || typeof pluginSettings !== 'object') return true;
   if (!pluginSettings.enabledTools) return true;
@@ -52,7 +62,9 @@ export function isToolEnabled(pluginSettings: any, toolId: string): boolean {
   return true; // Default to enabled
 }
 
-// Toggles a tool's enabled state in the plugin settings
+/**
+ * Toggles a tool's enabled state in plugin settings.
+ */
 export function toggleTool(pluginSettings: any, toolId: string): any {
   const current = pluginSettings?.enabledTools?.[toolId];
   const newEnabled = !current;
@@ -65,13 +77,17 @@ export function toggleTool(pluginSettings: any, toolId: string): any {
   };
 }
 
-// Returns a list of enabled tool IDs from plugin settings
+/**
+ * Returns enabled built-in tool identifiers from plugin settings.
+ */
 export function getEnabledToolIds(pluginSettings: any): string[] {
   const allTools = getAllAvailableTools();
   return allTools.map(tool => tool.id).filter(toolId => isToolEnabled(pluginSettings, toolId));
 }
 
-// Sets the enabled tools list in plugin settings
+/**
+ * Sets enabled built-in tools in plugin settings.
+ */
 export function setEnabledTools(pluginSettings: any, enabledToolIds: string[]): any {
   const enabledTools: Record<string, boolean> = {};
 
@@ -87,27 +103,34 @@ export function setEnabledTools(pluginSettings: any, enabledToolIds: string[]): 
   };
 }
 
-// Check if a tool is a built-in tool (from AVAILABLE_TOOLS registry)
+/**
+ * Returns whether a tool comes from the built-in registry.
+ */
 export function isBuiltInTool(toolName: string): boolean {
   return AVAILABLE_TOOLS.some(tool => tool.id === toolName);
 }
 
-// Check if a tool is an MCP tool by consulting the tool registry
-// This is async because we need to fetch MCP tools to check
+/**
+ * Returns whether a tool is provided by an MCP server.
+ */
 export async function isMCPTool(toolName: string): Promise<boolean> {
   const allTools = await getAllAvailableToolsIncludingMCP();
   const tool = allTools.find(t => t.id === toolName);
   return tool?.source === 'mcp';
 }
 
-// Get the source of a tool (built-in or MCP)
+/**
+ * Returns the source of the named tool.
+ */
 export async function getToolSource(toolName: string): Promise<'built-in' | 'mcp' | 'unknown'> {
   const allTools = await getAllAvailableToolsIncludingMCP();
   const tool = allTools.find(t => t.id === toolName);
   return tool?.source || 'unknown';
 }
 
-// Parse MCP tool name to extract server and tool components
+/**
+ * Splits an MCP tool name into server and tool components.
+ */
 export function parseMCPToolName(fullToolName: string): { serverName: string; toolName: string } {
   const parts = fullToolName.split('__');
   if (parts.length >= 2) {
@@ -122,8 +145,9 @@ export function parseMCPToolName(fullToolName: string): { serverName: string; to
   };
 }
 
-// Get all available tools (both built-in and MCP tools)
-// This function needs to be async to fetch MCP tools
+/**
+ * Returns built-in tools plus any MCP tools exposed by the desktop API.
+ */
 export async function getAllAvailableToolsIncludingMCP(): Promise<ToolInfo[]> {
   const builtInTools = getAllAvailableTools();
 
@@ -154,15 +178,17 @@ export async function getAllAvailableToolsIncludingMCP(): Promise<ToolInfo[]> {
   return builtInTools;
 }
 
-// Get enabled tool IDs including MCP tools
+/**
+ * Returns enabled tool identifiers, including MCP tools.
+ */
 export async function getEnabledToolIdsIncludingMCP(pluginSettings: any): Promise<string[]> {
   const allTools = await getAllAvailableToolsIncludingMCP();
   return allTools.map(tool => tool.id).filter(toolId => isToolEnabled(pluginSettings, toolId));
 }
 
-// Initialize tools state properly on app load
-// This ensures that on first load, all tools are enabled (default behavior)
-// but respects any saved configuration if it exists
+/**
+ * Initializes tool state so missing settings default to all tools enabled.
+ */
 export async function initializeToolsState(pluginSettings: any): Promise<string[]> {
   const allTools = await getAllAvailableToolsIncludingMCP();
 

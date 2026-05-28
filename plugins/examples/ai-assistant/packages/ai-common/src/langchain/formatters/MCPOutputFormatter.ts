@@ -17,29 +17,48 @@
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { HumanMessage, SystemMessage } from '@langchain/core/messages';
 
+/** AI-formatted representation of raw MCP tool output. */
 export interface FormattedMCPOutput {
+  /** Presentation type the UI should use for the response. */
   type: 'table' | 'metrics' | 'list' | 'graph' | 'text' | 'error' | 'raw';
+  /** Short title describing the formatted result. */
   title: string;
+  /** Concise summary of the output and its meaning. */
   summary: string;
+  /** Structured data payload for the selected presentation type. */
   data: any;
+  /** Optional key insights extracted from the output. */
   insights?: string[];
+  /** Optional warnings about issues found in the output. */
   warnings?: string[];
+  /** Optional recommended next steps for the user. */
   actionable_items?: string[];
+  /** Metadata describing the formatting operation. */
   metadata?: {
+    /** Name of the tool that produced the raw output. */
     toolName: string;
+    /** Size of the original response in characters. */
     responseSize: number;
+    /** Time spent formatting the response in milliseconds. */
     processingTime: number;
+    /** Estimated number of data points contained in the formatted payload. */
     dataPoints?: number;
   };
 }
 
+/** Options that control how MCP output is formatted. */
 export interface MCPFormatterOptions {
+  /** Maximum token budget to use when formatting the output. */
   maxTokens?: number;
+  /** Whether the formatted result should include insights. */
   includeInsights?: boolean;
+  /** Whether the formatted result should include actionable items. */
   includeActionableItems?: boolean;
+  /** Desired level of detail for the formatted output. */
   formatStyle?: 'detailed' | 'compact' | 'minimal';
 }
 
+/** Formats raw MCP tool output into a user-friendly structured response. */
 export class MCPOutputFormatter {
   private model: BaseChatModel;
   private readonly SYSTEM_PROMPT = `You are an expert data analyst specializing in Kubernetes debugging and system monitoring data. Your task is to analyze raw tool outputs and format them in a user-friendly way.
@@ -151,6 +170,7 @@ ERROR: For error responses or failed tool executions
 
 Remember: Focus on making complex data accessible and actionable for Kubernetes operators and developers.`;
 
+  /** Creates an output formatter backed by the provided chat model. */
   constructor(model: BaseChatModel) {
     this.model = model;
   }

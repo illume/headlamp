@@ -11,6 +11,7 @@ import { addCollection } from '@iconify/react';
  *   Otherwise it downloads the icon too even if it's in icons.
  */
 
+/** Bundled AI provider icons that are registered for offline use. */
 const aiProviderIcons = {
   prefix: 'ai-providers',
   icons: {

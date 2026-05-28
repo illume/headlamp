@@ -4,19 +4,29 @@ import { Alert, Box, Paper, Typography } from '@mui/material';
 import React, { useCallback } from 'react';
 import MCPOutputDisplay from '../mcpOutput/MCPOutputDisplay';
 
+/** Props for {@link MCPFormattedMessage}. */
 interface MCPFormattedMessageProps {
+  /** Raw message content that may contain formatted MCP output JSON. */
   content: string;
+  /** Whether to render assistant-specific framing around the message. */
   isAssistant?: boolean;
+  /** Retries the original tool call when retry metadata is present. */
   onRetryTool?: (toolName: string, args: Record<string, any>) => void;
 }
 
+/** Parsed MCP payload extracted from a message string. */
 interface ParsedMCPContent {
+  /** Indicates that the payload uses the formatted MCP structure. */
   formatted: boolean;
+  /** Structured MCP output to render. */
   mcpOutput: FormattedMCPOutput;
+  /** Original raw output preserved for export. */
   raw: string;
+  /** Whether the payload represents an error response. */
   isError?: boolean;
 }
 
+/** Renders AI-formatted MCP output messages and exposes export and retry actions when available. */
 const MCPFormattedMessage: React.FC<MCPFormattedMessageProps> = ({
   content,
   isAssistant = true,
@@ -232,7 +242,7 @@ const MCPFormattedMessage: React.FC<MCPFormattedMessageProps> = ({
   );
 };
 
-// Helper component to detect and render MCP content in existing messages
+/** Wraps a message component so formatted MCP payloads render with {@link MCPFormattedMessage}. */
 export const withMCPFormatting = <P extends object>(
   Component: React.ComponentType<P & { content: string }>
 ) => {

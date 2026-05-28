@@ -22,23 +22,37 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 
+/** Describes a tool call awaiting approval in the dialog. */
 interface ToolCall {
+  /** Unique identifier for the tool invocation. */
   id: string;
+  /** Tool name shown in the dialog. */
   name: string;
+  /** Optional description of what the tool does. */
   description?: string;
+  /** Arguments that will be passed to the tool. */
   arguments: Record<string, any>;
+  /** Whether the tool is a regular or MCP-backed call. */
   type: 'mcp' | 'regular';
 }
 
+/** Props for {@link ToolApprovalDialog}. */
 interface ToolApprovalDialogProps {
+  /** Whether the dialog is currently open. */
   open: boolean;
+  /** Tool calls that the user can review. */
   toolCalls: ToolCall[];
+  /** Approves the selected tool ids. */
   onApprove: (approvedToolIds: string[]) => void;
+  /** Rejects all pending tool calls. */
   onDeny: () => void;
+  /** Closes the dialog without approval. */
   onClose: () => void;
+  /** Whether tool execution is currently in progress. */
   loading?: boolean;
 }
 
+/** Presents a modal review flow for approving or denying pending tool executions. */
 const ToolApprovalDialog: React.FC<ToolApprovalDialogProps> = ({
   open,
   toolCalls,

@@ -25,6 +25,7 @@ import { KubernetesToolContext } from './kubernetes/types';
 import { AVAILABLE_TOOLS, getToolByName } from './registry';
 import { ToolBase, ToolResponse } from './ToolBase';
 
+/** Manages built-in and MCP-backed tools for LangChain requests. */
 export class ToolManager {
   private tools: ToolBase[] = [];
   private toolHandlers: Map<string, ToolBase> = new Map();
@@ -36,6 +37,7 @@ export class ToolManager {
   private mcpFormatter: MCPOutputFormatter | null = null;
   private mcpClient: ElectronMCPClient;
 
+  /** Creates a tool manager and starts loading configured tools. */
   constructor({
     kubernetesContext,
     enabledToolIds,

@@ -17,35 +17,57 @@
 // Frontend MCP client that communicates with Electron main process
 // This replaces the direct MCP client import to avoid spawn issues in renderer process
 
+/** Describes an MCP tool exposed by the Electron bridge. */
 interface MCPTool {
+  /** Unique tool name, optionally prefixed with its server. */
   name: string;
+  /** Optional description shown in tool listings. */
   description?: string;
+  /** JSON schema describing accepted input arguments. */
   inputSchema?: any;
-  server?: string; // Add server information
+  /** MCP server that provides the tool. */
+  server?: string;
 }
 
+/** Represents a response returned from Electron MCP APIs. */
 interface MCPResponse {
+  /** Whether the Electron-side operation succeeded. */
   success: boolean;
+  /** Tools returned by list operations. */
   tools?: MCPTool[];
+  /** Arbitrary result payload from tool execution. */
   result?: any;
+  /** Error message returned when the operation fails. */
   error?: string;
+  /** Tool call identifier echoed back from execution requests. */
   toolCallId?: string;
 }
 
+/** Defines the MCP methods exposed on the Electron desktop API bridge. */
 interface ElectronMCPApi {
+  /** Retrieves the available MCP tools. */
   getTools: () => Promise<MCPResponse>;
+  /** Executes a named MCP tool with the provided arguments. */
   executeTool: (
     toolName: string,
     args: Record<string, any>,
     toolCallId?: string
   ) => Promise<MCPResponse>;
+  /** Returns initialization state for the Electron MCP client. */
   getStatus: () => Promise<{ isInitialized: boolean; hasClient: boolean }>;
+  /** Resets the Electron MCP client. */
   resetClient: () => Promise<MCPResponse>;
+  /** Reads the persisted MCP server configuration. */
   getConfig: () => Promise<{ success: boolean; config?: any; error?: string }>;
+  /** Updates the persisted MCP server configuration. */
   updateConfig: (config: any) => Promise<MCPResponse>;
+  /** Reads per-tool MCP configuration. */
   getToolsConfig: () => Promise<{ success: boolean; config?: any; error?: string }>;
+  /** Updates per-tool MCP configuration. */
   updateToolsConfig: (config: any) => Promise<MCPResponse>;
+  /** Enables or disables a specific tool on a server. */
   setToolEnabled: (serverName: string, toolName: string, enabled: boolean) => Promise<MCPResponse>;
+  /** Retrieves usage stats for a specific tool. */
   getToolStats: (
     serverName: string,
     toolName: string
@@ -54,6 +76,7 @@ interface ElectronMCPApi {
 
 // desktopApi is already declared on Window by @kinvolk/headlamp-plugin as `any`.
 // We use a helper to access it with proper typing.
+/** Returns the Electron MCP bridge when it is available on the desktop API. */
 function getDesktopMCPApi(): ElectronMCPApi | undefined {
   const api = (window as any).desktopApi;
   if (api && typeof api.mcp !== 'undefined') {
@@ -63,23 +86,22 @@ function getDesktopMCPApi(): ElectronMCPApi | undefined {
 }
 // Type augmentation is handled by src/types/electron.d.ts
 
+/** Wraps Electron desktop API calls for MCP tool discovery and execution. */
 class ElectronMCPClient {
+  /** Whether the current runtime exposes the Electron MCP bridge. */
   private isElectron: boolean;
 
+  /** Creates a client and detects whether Electron MCP APIs are available. */
   constructor() {
     this.isElectron = typeof window !== 'undefined' && getDesktopMCPApi() !== undefined;
   }
 
-  /**
-   * Check if running in Electron environment with MCP support
-   */
+  /** Returns whether MCP operations can be performed in the current environment. */
   isAvailable(): boolean {
     return this.isElectron;
   }
 
-  /**
-   * Get available MCP tools from Electron main process
-   */
+  /** Fetches the list of MCP tools exposed by the Electron main process. */
   async getTools(): Promise<MCPTool[]> {
     if (!this.isElectron) {
       console.warn('MCP client not available - not running in Electron environment');
@@ -104,9 +126,7 @@ class ElectronMCPClient {
     }
   }
 
-  /**
-   * Execute an MCP tool via Electron main process
-   */
+  /** Executes an MCP tool through the Electron main process bridge. */
   async executeTool(
     toolName: string,
     args: Record<string, any>,
@@ -131,9 +151,7 @@ class ElectronMCPClient {
     }
   }
 
-  /**
-   * Get MCP client status from Electron main process
-   */
+  /** Returns the current initialization status of the Electron MCP client. */
   async getStatus(): Promise<{ isInitialized: boolean; hasClient: boolean }> {
     if (!this.isElectron) {
       return { isInitialized: false, hasClient: false };
@@ -147,9 +165,7 @@ class ElectronMCPClient {
     }
   }
 
-  /**
-   * Reset/restart MCP client in Electron main process
-   */
+  /** Requests a reset of the Electron MCP client and reports whether it succeeded. */
   async resetClient(): Promise<boolean> {
     if (!this.isElectron) {
       return false;
@@ -164,9 +180,7 @@ class ElectronMCPClient {
     }
   }
 
-  /**
-   * Get MCP configuration from Electron main process
-   */
+  /** Retrieves the current MCP server configuration from Electron. */
   async getConfig(): Promise<{ success: boolean; config?: any; error?: string }> {
     if (!this.isElectron) {
       return {
@@ -184,9 +198,7 @@ class ElectronMCPClient {
     }
   }
 
-  /**
-   * Get MCP tools configuration from Electron main process
-   */
+  /** Retrieves the current per-tool MCP configuration from Electron. */
   async getToolsConfig(): Promise<{ success: boolean; config?: any; error?: string }> {
     if (!this.isElectron) {
       return {
@@ -204,9 +216,7 @@ class ElectronMCPClient {
     }
   }
 
-  /**
-   * Update MCP tools configuration in Electron main process
-   */
+  /** Persists updated per-tool MCP configuration through Electron. */
   async updateToolsConfig(config: any): Promise<boolean> {
     if (!this.isElectron) {
       return false;
@@ -222,9 +232,7 @@ class ElectronMCPClient {
     }
   }
 
-  /**
-   * Enable or disable a specific MCP tool
-   */
+  /** Enables or disables a specific MCP tool in the Electron configuration. */
   async setToolEnabled(serverName: string, toolName: string, enabled: boolean): Promise<boolean> {
     if (!this.isElectron) {
       return false;
@@ -239,9 +247,7 @@ class ElectronMCPClient {
     }
   }
 
-  /**
-   * Get tool statistics for a specific MCP tool
-   */
+  /** Retrieves usage statistics for a specific MCP tool. */
   async getToolStats(serverName: string, toolName: string): Promise<any | null> {
     if (!this.isElectron) {
       return null;
@@ -256,10 +262,7 @@ class ElectronMCPClient {
     }
   }
 
-  /**
-   * Parse MCP tool name to extract server and tool components
-   * Format: "serverName__toolName"
-   */
+  /** Splits a full tool name into its server and tool components. */
   parseToolName(fullToolName: string): { serverName: string; toolName: string } {
     const parts = fullToolName.split('__');
     if (parts.length >= 2) {
@@ -274,9 +277,7 @@ class ElectronMCPClient {
     };
   }
 
-  /**
-   * Check if a specific tool is enabled
-   */
+  /** Returns whether a tool is currently enabled in the Electron MCP config. */
   async isToolEnabled(fullToolName: string): Promise<boolean> {
     if (!this.isElectron) {
       return true; // Default to enabled if not in Electron
@@ -302,9 +303,7 @@ class ElectronMCPClient {
     }
   }
 
-  /**
-   * Get all enabled MCP tools
-   */
+  /** Returns the subset of configured MCP tools that are enabled. */
   async getEnabledTools(): Promise<MCPTool[]> {
     if (!this.isElectron) {
       return [];
@@ -338,7 +337,7 @@ class ElectronMCPClient {
   }
 }
 
-// Export a function that returns enabled tools (compatible with existing interface)
+/** Returns enabled MCP tools in the shape expected by existing callers. */
 const tools = async function (): Promise<MCPTool[]> {
   const client = new ElectronMCPClient();
   return client.getEnabledTools();

@@ -197,10 +197,12 @@ export class ProactiveDiagnosisManager extends EventEmitter {
     }
   }
 
+  /** Returns the event UID that the UI should scroll into view, if one is pending. */
   getScrollToEventUid(): string | null {
     return this._scrollToEventUid;
   }
 
+  /** Clears any pending scroll target after the UI has handled it. */
   clearScrollToEventUid() {
     this._scrollToEventUid = null;
   }

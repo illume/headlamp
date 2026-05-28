@@ -25,7 +25,7 @@ import {
  * This helps maintain consistency across different AI interactions
  */
 
-// Base system prompt template
+/** Base system prompt used across Kubernetes assistant interactions. */
 // @ts-ignore - Complex inferred type cannot be named in declaration
 export const baseSystemPromptTemplate: any = SystemMessagePromptTemplate.fromTemplate(`
 You are an AI assistant specialized in Kubernetes management through a web dashboard.
@@ -41,7 +41,7 @@ IMPORTANT GUIDELINES:
 Current context: {context}
 `);
 
-// Troubleshooting prompt template
+/** Prompt template for troubleshooting Kubernetes issues. */
 export const troubleshootingPromptTemplate = ChatPromptTemplate.fromMessages([
   baseSystemPromptTemplate,
   HumanMessagePromptTemplate.fromTemplate(`
@@ -56,7 +56,7 @@ Format your response as structured JSON with problem analysis, investigation ste
   `),
 ]);
 
-// Resource analysis prompt template
+/** Prompt template for analyzing a specific Kubernetes resource. */
 export const resourceAnalysisPromptTemplate = ChatPromptTemplate.fromMessages([
   baseSystemPromptTemplate,
   HumanMessagePromptTemplate.fromTemplate(`
@@ -72,7 +72,7 @@ Use the kubernetes_api_request tool to gather information and format your respon
   `),
 ]);
 
-// Configuration review prompt template
+/** Prompt template for reviewing Kubernetes configuration content. */
 export const configReviewPromptTemplate = ChatPromptTemplate.fromMessages([
   baseSystemPromptTemplate,
   HumanMessagePromptTemplate.fromTemplate(`
@@ -91,7 +91,7 @@ Provide structured recommendations with priorities and tool actions for implemen
   `),
 ]);
 
-// User guidance prompt template
+/** Prompt template for guiding a user through dashboard-based actions. */
 export const userGuidancePromptTemplate = ChatPromptTemplate.fromMessages([
   baseSystemPromptTemplate,
   HumanMessagePromptTemplate.fromTemplate(`
@@ -107,7 +107,7 @@ Provide step-by-step guidance that's easy to follow.
   `),
 ]);
 
-// Error explanation prompt template
+/** Prompt template for explaining user-facing errors. */
 export const errorExplanationPromptTemplate = ChatPromptTemplate.fromMessages([
   baseSystemPromptTemplate,
   HumanMessagePromptTemplate.fromTemplate(`
@@ -123,7 +123,7 @@ Keep the explanation beginner-friendly but technically accurate.
   `),
 ]);
 
-// API Error prompt template - specifically for tool call failures
+/** Prompt template for explaining failed Kubernetes API requests. */
 export const apiErrorPromptTemplate = ChatPromptTemplate.fromMessages([
   SystemMessagePromptTemplate.fromTemplate(`
 A Kubernetes API request has failed. You must clearly communicate this error to the user.
@@ -149,7 +149,7 @@ Format your response to clearly highlight the error and provide actionable solut
   `),
 ]);
 
-// Tool failure notification template
+/** Prompt template for reporting one or more failed tool operations. */
 export const toolFailurePromptTemplate = ChatPromptTemplate.fromMessages([
   SystemMessagePromptTemplate.fromTemplate(`
 One or more tool operations have failed. You must inform the user about these failures.
@@ -171,7 +171,7 @@ Use a format that makes the errors easy to understand and act upon.
   `),
 ]);
 
-// Quick action prompt template
+/** Prompt template for executing a focused quick action. */
 export const quickActionPromptTemplate = ChatPromptTemplate.fromMessages([
   baseSystemPromptTemplate,
   HumanMessagePromptTemplate.fromTemplate(`
@@ -184,9 +184,7 @@ Execute the action using appropriate tools and provide a clear summary of what w
   `),
 ]);
 
-/**
- * Utility function to create custom prompt templates
- */
+/** Creates a chat prompt template from custom system and human prompt text. */
 export function createCustomPromptTemplate(
   systemPrompt: string,
   humanPrompt: string
@@ -197,9 +195,7 @@ export function createCustomPromptTemplate(
   ]);
 }
 
-/**
- * Template for tool-specific prompts
- */
+/** Prompt template for executing a specific tool-focused action. */
 export const toolSpecificPromptTemplate = ChatPromptTemplate.fromMessages([
   SystemMessagePromptTemplate.fromTemplate(`
 You are executing a specific tool action for Kubernetes management.

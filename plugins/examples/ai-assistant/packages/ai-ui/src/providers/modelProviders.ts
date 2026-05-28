@@ -1,6 +1,7 @@
 import { StoredProviderConfig } from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
 import { getProviderById } from '../config/modelConfig';
 
+/** Converts lightweight markdown formatting into plain text for UI-friendly suggestion labels. */
 export function markdownToPlainText(markdown: string): string {
   return (
     markdown
@@ -32,6 +33,7 @@ export function markdownToPlainText(markdown: string): string {
   );
 }
 
+/** Extracts inline prompt suggestions from a model response and returns the remaining content. */
 export function parseSuggestionsFromResponse(content: string | any): {
   cleanContent: string;
   suggestions: string[];
@@ -76,6 +78,7 @@ export function parseSuggestionsFromResponse(content: string | any): {
   return { cleanContent: processedContent, suggestions: [] };
 }
 
+/** Returns the available models for a provider, including any custom model saved in config. */
 export function getProviderModels(providerConfig: StoredProviderConfig): string[] {
   const providerInfo = getProviderById(providerConfig.providerId);
 
@@ -104,6 +107,7 @@ export function getProviderModels(providerConfig: StoredProviderConfig): string[
   return models;
 }
 
+/** Returns chat-selectable models, respecting provider configs that pin chats to one model. */
 export function getProviderModelsForChat(
   providerConfig: StoredProviderConfig,
   allConfigs: StoredProviderConfig[]
@@ -121,6 +125,7 @@ export function getProviderModelsForChat(
   return getProviderModels(providerConfig);
 }
 
+/** Returns the label used to display a model name in the UI. */
 export function getModelDisplayName(model: string): string {
   // You can customize this if you want more user-friendly names
   return model;

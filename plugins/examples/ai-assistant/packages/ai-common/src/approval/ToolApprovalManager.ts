@@ -16,43 +16,39 @@
 
 import { EventEmitter } from 'events';
 
+/** Describes a tool call that may require approval before execution. */
 export interface ToolCall {
+  /** Unique identifier for the tool call. */
   id: string;
+  /** Tool name used for approval rules and execution. */
   name: string;
+  /** Optional description shown in approval UI. */
   description?: string;
+  /** Arguments that will be passed to the tool. */
   arguments: Record<string, any>;
+  /** Origin of the tool implementation. */
   type: 'mcp' | 'regular';
 }
 
+/** Represents a pending approval request shared with UI listeners. */
 export interface ToolApprovalRequest {
+  /** Unique identifier for the approval request. */
   requestId: string;
+  /** Tool calls that still need approval. */
   toolCalls: ToolCall[];
+  /** Resolves the request with approved tool IDs. */
   resolve: (approvedToolIds: string[]) => void;
+  /** Rejects the request with an error. */
   reject: (error: Error) => void;
 }
 
-/**
- * Pluggable approval handler interface.
- *
- * Consumers (CLI, eval frameworks, TUI) implement this to control
- * how tool-execution requests are approved or denied.
- *
- * Built-in strategies:
- *   - `autoApproveAll()` — approves every tool call (useful for evals)
- *   - Default (no handler set) — emits 'approval-requested' event for UI
- */
+/** Lets non-UI consumers decide which tool calls should be approved. */
 export interface ToolApprovalHandler {
-  /**
-   * Called when tools need human/programmatic approval.
-   * Return the IDs of the approved tool calls; throw or return [] to deny.
-   */
+  /** Returns the IDs of approved tool calls for the current request. */
   handleApproval(toolCalls: ToolCall[]): Promise<string[]>;
 }
 
-/**
- * Built-in handler that auto-approves every tool call.
- * Use for eval frameworks or non-interactive CLI runs.
- */
+/** Returns a handler that approves every requested tool call. */
 export function autoApproveAll(): ToolApprovalHandler {
   return {
     async handleApproval(toolCalls: ToolCall[]) {
@@ -61,6 +57,7 @@ export function autoApproveAll(): ToolApprovalHandler {
   };
 }
 
+/** Manages tool execution approvals using handlers, events, and session rules. */
 export class ToolApprovalManager extends EventEmitter {
   private static instance: ToolApprovalManager | null = null;
   private pendingRequest: ToolApprovalRequest | null = null;
@@ -68,10 +65,12 @@ export class ToolApprovalManager extends EventEmitter {
   private sessionAutoApproval: boolean = false;
   private approvalHandler: ToolApprovalHandler | null = null;
 
+  /** Creates the singleton approval manager. */
   private constructor() {
     super();
   }
 
+  /** Returns the shared approval manager instance. */
   public static getInstance(): ToolApprovalManager {
     if (!ToolApprovalManager.instance) {
       ToolApprovalManager.instance = new ToolApprovalManager();
@@ -79,28 +78,12 @@ export class ToolApprovalManager extends EventEmitter {
     return ToolApprovalManager.instance;
   }
 
-  /**
-   * Set a custom approval handler.
-   *
-   * When set, `requestApproval` delegates to this handler instead of
-   * emitting 'approval-requested' events.  Pass `null` to revert to
-   * the default event-based flow (used by the React UI).
-   *
-   * Example (CLI auto-approve):
-   *   toolApprovalManager.setApprovalHandler(autoApproveAll());
-   *
-   * Example (terminal prompt):
-   *   toolApprovalManager.setApprovalHandler({
-   *     async handleApproval(tools) { ... prompt user ... }
-   *   });
-   */
+  /** Sets a custom handler used instead of the default event-based approval flow. */
   public setApprovalHandler(handler: ToolApprovalHandler | null): void {
     this.approvalHandler = handler;
   }
 
-  /**
-   * Request approval for tool execution
-   */
+  /** Requests approval for the given tool calls and resolves with approved IDs. */
   public async requestApproval(toolCalls: ToolCall[]): Promise<string[]> {
     // Check if session auto-approval is enabled
     if (this.sessionAutoApproval) {
@@ -159,9 +142,7 @@ export class ToolApprovalManager extends EventEmitter {
     });
   }
 
-  /**
-   * Approve tools from the UI
-   */
+  /** Approves selected tools for the matching request and optionally remembers the choice. */
   public approveTools(requestId: string, approvedToolIds: string[], rememberChoice = false): void {
     if (!this.pendingRequest || this.pendingRequest.requestId !== requestId) {
       console.warn('No matching pending request for approval:', requestId);
@@ -187,9 +168,7 @@ export class ToolApprovalManager extends EventEmitter {
     this.pendingRequest.resolve(approvedToolIds);
   }
 
-  /**
-   * Deny all tools from the UI
-   */
+  /** Denies the matching pending tool request. */
   public denyTools(requestId: string): void {
     if (!this.pendingRequest || this.pendingRequest.requestId !== requestId) {
       console.warn('No matching pending request for denial:', requestId);
@@ -199,38 +178,28 @@ export class ToolApprovalManager extends EventEmitter {
     this.pendingRequest.reject(new Error('User denied tool execution'));
   }
 
-  /**
-   * Get current pending request
-   */
+  /** Returns the current pending approval request, if one exists. */
   public getPendingRequest(): ToolApprovalRequest | null {
     return this.pendingRequest;
   }
 
-  /**
-   * Clear session settings (called when user explicitly clears or starts new session)
-   */
+  /** Clears all session-scoped auto-approval settings. */
   public clearSession(): void {
     this.sessionAutoApproval = false;
     this.autoApproveSettings.clear();
   }
 
-  /**
-   * Set session auto-approval
-   */
+  /** Enables or disables session-wide auto-approval. */
   public setSessionAutoApproval(enabled: boolean): void {
     this.sessionAutoApproval = enabled;
   }
 
-  /**
-   * Check if session auto-approval is enabled
-   */
+  /** Returns whether session-wide auto-approval is currently enabled. */
   public isSessionAutoApprovalEnabled(): boolean {
     return this.sessionAutoApproval;
   }
 
-  /**
-   * Get auto-approval settings for debugging
-   */
+  /** Returns session and per-tool auto-approval settings for inspection. */
   public getAutoApprovalSettings(): {
     sessionAutoApproval: boolean;
     toolSettings: Array<{ toolName: string; autoApprove: boolean }>;

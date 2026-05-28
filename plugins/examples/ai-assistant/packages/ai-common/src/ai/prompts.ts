@@ -16,6 +16,7 @@
 
 import { promptLinksInstructions } from '../prompts/promptLinks';
 
+/** Base system prompt that defines assistant behavior, tool usage, and response format. */
 export const basePrompt = `You are an AI assistant for Headlamp with Kubernetes management capabilities and extended functionality via MCP (Model Context Protocol) tools.
 
 CAPABILITIES:

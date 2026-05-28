@@ -17,35 +17,57 @@
 // Frontend MCP client that communicates with Electron main process
 // This replaces the direct MCP client import to avoid spawn issues in renderer process
 
+/** Metadata describing an MCP tool exposed by Electron. */
 interface MCPTool {
+  /** Fully qualified tool name. */
   name: string;
+  /** Optional description shown in the UI. */
   description?: string;
+  /** JSON schema describing accepted input arguments. */
   inputSchema?: any;
-  server?: string; // Add server information
+  /** Server that provides the tool. */
+  server?: string;
 }
 
+/** Standard response envelope returned by Electron MCP IPC calls. */
 interface MCPResponse {
+  /** Whether the request completed successfully. */
   success: boolean;
+  /** Tool definitions returned by discovery calls. */
   tools?: MCPTool[];
+  /** Raw result returned from a tool execution. */
   result?: any;
+  /** Error message when the request fails. */
   error?: string;
+  /** Optional tool call identifier echoed by the backend. */
   toolCallId?: string;
 }
 
+/** Electron bridge methods exposed for MCP operations in the renderer. */
 interface ElectronMCPApi {
+  /** Fetches the list of available MCP tools. */
   getTools: () => Promise<MCPResponse>;
+  /** Executes a specific MCP tool through Electron. */
   executeTool: (
     toolName: string,
     args: Record<string, any>,
     toolCallId?: string
   ) => Promise<MCPResponse>;
+  /** Returns renderer-visible MCP initialization status. */
   getStatus: () => Promise<{ isInitialized: boolean; hasClient: boolean }>;
+  /** Resets the Electron-side MCP client. */
   resetClient: () => Promise<MCPResponse>;
+  /** Retrieves the persisted MCP server configuration. */
   getConfig: () => Promise<{ success: boolean; config?: any; error?: string }>;
+  /** Updates the persisted MCP server configuration. */
   updateConfig: (config: any) => Promise<MCPResponse>;
+  /** Retrieves per-tool enablement configuration. */
   getToolsConfig: () => Promise<{ success: boolean; config?: any; error?: string }>;
+  /** Updates per-tool enablement configuration. */
   updateToolsConfig: (config: any) => Promise<MCPResponse>;
+  /** Enables or disables a specific tool on a server. */
   setToolEnabled: (serverName: string, toolName: string, enabled: boolean) => Promise<MCPResponse>;
+  /** Returns execution statistics for a specific tool. */
   getToolStats: (
     serverName: string,
     toolName: string
@@ -54,6 +76,7 @@ interface ElectronMCPApi {
 
 // desktopApi is already declared on Window by @kinvolk/headlamp-plugin as `any`.
 // We use a helper to access it with proper typing.
+/** Returns the Electron MCP bridge when running in the desktop environment. */
 function getDesktopMCPApi(): ElectronMCPApi | undefined {
   const api = (window as any).desktopApi;
   if (api && typeof api.mcp !== 'undefined') {
@@ -63,6 +86,7 @@ function getDesktopMCPApi(): ElectronMCPApi | undefined {
 }
 // Type augmentation is handled by src/types/electron.d.ts
 
+/** Wraps Electron MCP IPC calls in a renderer-friendly client API. */
 class ElectronMCPClient {
   private isElectron: boolean;
 
@@ -339,6 +363,7 @@ class ElectronMCPClient {
 }
 
 // Export a function that returns enabled tools (compatible with existing interface)
+/** Returns the enabled Electron MCP tools using the default client instance. */
 const tools = async function (): Promise<MCPTool[]> {
   const client = new ElectronMCPClient();
   return client.getEnabledTools();

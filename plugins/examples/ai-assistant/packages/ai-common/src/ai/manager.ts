@@ -14,56 +14,88 @@
  * limitations under the License.
  */
 
+/** Describes a tool call requested by the assistant. */
 export type ToolCall = {
+  /** Unique identifier for this tool call. */
   id: string;
+  /** Tool name shown to the user and execution layer. */
   name: string;
+  /** Optional human-readable summary of what the tool does. */
   description?: string;
+  /** Arguments that should be passed to the tool. */
   arguments: Record<string, any>;
+  /** Source of the tool implementation. */
   type: 'mcp' | 'regular';
 };
 
+/** Represents one step in the agent's visible reasoning trace. */
 export type AgentThinkingStep = {
+  /** Unique identifier for the thinking step. */
   id: string;
+  /** Text shown for this reasoning step. */
   content: string;
+  /** Category used to render the step in the UI. */
   type: 'tool-start' | 'tool-result' | 'intermediate-text' | 'todo-update';
+  /** Unix timestamp for when the step was recorded. */
   timestamp: number;
 };
 
+/** Defines a chat prompt or response stored in conversation history. */
 export type Prompt = {
+  /** Chat role associated with the message. */
   role: string;
+  /** Main text content for the message. */
   content: string;
+  /** Tool calls attached to the message. */
   toolCalls?: any[];
+  /** Identifier of the tool call this message belongs to. */
   toolCallId?: string;
+  /** Optional display name for the message author. */
   name?: string;
+  /** Whether the message represents an error state. */
   error?: boolean;
+  /** Whether the message represents a successful result. */
   success?: boolean;
+  /** Whether the message was blocked by a content filter. */
   contentFilterError?: boolean;
+  /** Whether the message has already been rendered to the user. */
   alreadyDisplayed?: boolean;
-  isDisplayOnly?: boolean; // Mark messages that shouldn't be sent to LLM
-  requestId?: string; // For tracking tool confirmation messages
-  /** Agent-mode thinking steps shown in a collapsible block */
+  /** Whether the message is for UI display only and should not reach the LLM. */
+  isDisplayOnly?: boolean;
+  /** Request identifier used to track tool confirmation updates. */
+  requestId?: string;
+  /** Agent-mode thinking steps shown in a collapsible block. */
   agentThinkingSteps?: AgentThinkingStep[];
-  /** Whether the agent run is complete (thinking block should collapse) */
+  /** Whether the agent run is complete and the thinking block can collapse. */
   agentThinkingDone?: boolean;
-  // Add support for inline tool confirmations
+  /** Inline approval controls for pending tool execution. */
   toolConfirmation?: {
+    /** Tool calls awaiting approval. */
     tools: ToolCall[];
+    /** Approves the selected tool call IDs. */
     onApprove: (approvedToolIds: string[]) => void;
+    /** Denies the pending tool request. */
     onDeny: () => void;
+    /** Whether approval UI should show a loading state. */
     loading?: boolean;
-    //TODO: added this, because there was no userContext
-    userContext?: any; // Additional context about the user or conversation for tool confirmation
+    /** Additional user or conversation context for approval UI. */
+    userContext?: any;
   };
 };
 
+/** Base contract for AI managers that track history and execute tool workflows. */
 export default abstract class AIManager {
+  /** Conversation history maintained by the manager. */
   history: Prompt[] = [];
+  /** Extra contextual text prepended to requests. */
   currentContext: string = '';
 
+  /** Replaces the current request context with the provided description. */
   setContext(contextDescription: string) {
     this.currentContext = contextDescription;
   }
 
+  /** Appends one contextual line or block to the existing request context. */
   addContextualInfo(info: string) {
     if (this.currentContext) {
       this.currentContext += '\n' + info;
@@ -72,26 +104,26 @@ export default abstract class AIManager {
     }
   }
 
+  /** Clears conversation history and any accumulated context. */
   reset() {
     this.history = [];
     this.currentContext = '';
   }
 
-  // Abstract method that must be implemented
+  /** Sends a user message through the manager and returns the resulting prompt. */
   abstract userSend(message: string): Promise<Prompt>;
 
-  // Changed from protected to public to allow external calling
+  /** Processes queued tool results and returns the next prompt. */
   abstract processToolResponses(): Promise<Prompt>;
 
-  // Abstract method to abort current request
+  /** Cancels the current in-flight request, if any. */
   abstract abort(): void;
 
-  // Define configureTools method for tool configuration - made generic to support different contexts
+  /** Configures the tools available to the manager for a given context. */
   configureTools?(tools: any[], context: any): void;
 
+  /** Returns suggested prompts for the UI. */
   getPromptSuggestions(): string[] {
-    // Return empty array as suggestions are now dynamically generated by the LLM
-    // and parsed from responses in the modal component
     return [];
   }
 }

@@ -25,7 +25,9 @@ import type { MCPSettings, MCPToolsConfig } from './types';
  * (e.g. Electron settings file, in-memory store for tests).
  */
 export interface MCPSettingsProvider {
+  /** Loads the currently persisted MCP settings. */
   loadMCPSettings(): MCPSettings | null;
+  /** Persists MCP settings after a confirmed update. */
   saveMCPSettings(settings: MCPSettings): void;
 }
 
@@ -35,14 +37,17 @@ export interface MCPSettingsProvider {
  * (e.g. Electron dialog boxes, CLI prompts, auto-approve for tests).
  */
 export interface MCPConfirmationHandler {
+  /** Confirms a pending MCP settings change with the user. */
   confirmSettingsChange(
     currentSettings: MCPSettings | null,
     nextSettings: MCPSettings
   ): Promise<boolean>;
+  /** Confirms a pending MCP tools configuration change. */
   confirmToolsConfigChange(
     currentConfig: MCPToolsConfig,
     nextConfig: MCPToolsConfig
   ): Promise<boolean>;
+  /** Confirms a generic sensitive MCP operation. */
   confirmOperation(title: string, message: string, operation: string): Promise<boolean>;
 }
 
@@ -76,6 +81,9 @@ export class MCPClientCore {
   private currentClusters: string[] | null = null;
   private initialized = false;
 
+  /**
+   * Creates a platform-agnostic MCP client core.
+   */
   constructor(
     private readonly configPath: string,
     private readonly settingsProvider: MCPSettingsProvider,

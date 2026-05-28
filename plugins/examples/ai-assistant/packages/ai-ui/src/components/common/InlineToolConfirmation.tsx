@@ -30,22 +30,35 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 
+/** Describes a tool call awaiting inline approval. */
 interface ToolCall {
+  /** Unique identifier for the tool invocation. */
   id: string;
+  /** Tool name shown to the user. */
   name: string;
+  /** Optional human-readable description of the tool. */
   description?: string;
+  /** Arguments that will be sent when the tool runs. */
   arguments: Record<string, any>;
+  /** Source of the tool invocation. */
   type: 'mcp' | 'regular';
 }
 
+/** Props for {@link InlineToolConfirmation}. */
 interface InlineToolConfirmationProps {
+  /** Tool calls that require approval. */
   toolCalls: ToolCall[];
+  /** Executes the selected tool calls. */
   onApprove: (approvedToolIds: string[]) => void;
+  /** Rejects the pending tool calls. */
   onDeny: () => void;
+  /** Whether approval handling is currently in progress. */
   loading?: boolean;
+  /** Optional chat context used to prefill MCP arguments. */
   userContext?: UserContext;
 }
 
+/** Shows tool approval inline in chat and lets users inspect or edit tool arguments before running them. */
 const InlineToolConfirmation: React.FC<InlineToolConfirmationProps> = ({
   toolCalls,
   onApprove,

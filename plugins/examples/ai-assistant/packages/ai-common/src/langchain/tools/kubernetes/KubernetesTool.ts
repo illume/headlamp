@@ -18,7 +18,9 @@ import { z } from 'zod';
 import { ToolBase, ToolConfig, ToolHandler, ToolResponse } from '../ToolBase';
 import { KubernetesToolContext } from './types';
 
+/** Tool implementation that routes requests through the Kubernetes API UI workflow. */
 export class KubernetesTool extends ToolBase {
+  /** Configuration used to expose the Kubernetes API tool to LangChain. */
   readonly config: ToolConfig = {
     name: 'kubernetes_api_request',
     shortDescription: 'Make requests to the Kubernetes API',
@@ -69,6 +71,7 @@ LOG HANDLING FOR MULTI-CONTAINER PODS:
 
   private context: KubernetesToolContext | null = null;
 
+  /** Creates a Kubernetes tool instance with no bound UI context. */
   constructor() {
     super();
   }
@@ -105,6 +108,7 @@ LOG HANDLING FOR MULTI-CONTAINER PODS:
     return clustersChanged;
   }
 
+  /** Executes Kubernetes API requests or queues them for confirmation. */
   handler: ToolHandler = async (
     { url, method, body },
     toolCallId,

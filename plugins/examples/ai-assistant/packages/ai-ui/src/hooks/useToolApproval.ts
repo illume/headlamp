@@ -1,15 +1,23 @@
 import { toolApprovalManager, ToolApprovalRequest } from '@headlamp-k8s/ai-common/approval/ToolApprovalManager';
 import { useCallback, useEffect, useState } from 'react';
 
+/** State and handlers returned by {@link useToolApproval}. */
 export interface UseToolApprovalResult {
+  /** Whether the approval UI should be visible. */
   showApprovalDialog: boolean;
+  /** Current approval request awaiting a user decision. */
   pendingRequest: ToolApprovalRequest | null;
+  /** Approves a subset of tools for the pending request. */
   handleApprove: (approvedToolIds: string[], rememberChoice?: boolean) => void;
+  /** Rejects the pending request. */
   handleDeny: () => void;
+  /** Closes the approval UI, treating it as a denial. */
   handleClose: () => void;
+  /** Whether approval actions are currently being processed. */
   isProcessing: boolean;
 }
 
+/** Connects React state to the shared tool approval manager for dialog-driven approvals. */
 export const useToolApproval = (): UseToolApprovalResult => {
   const [showApprovalDialog, setShowApprovalDialog] = useState(false);
   const [pendingRequest, setPendingRequest] = useState<ToolApprovalRequest | null>(null);

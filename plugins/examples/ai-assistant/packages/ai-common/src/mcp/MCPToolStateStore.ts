@@ -83,6 +83,9 @@ export class MCPToolStateStore {
   private toolStatePath: string;
   private config: MCPToolsConfig = {};
 
+  /**
+   * Creates a store backed by the given tool-state file path.
+   */
   constructor(configPath: string) {
     this.toolStatePath = configPath;
   }

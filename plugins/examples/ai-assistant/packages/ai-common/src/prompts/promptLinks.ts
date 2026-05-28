@@ -27,6 +27,9 @@ const HEADLAMP_LINK_HOST = 'headlamp';
 const HEADLAMP_RESOURCE_DETAILS_LINK = 'resource-details';
 const HEADLAMP_CLUSTER_LINK = 'cluster';
 
+/**
+ * Instructions that tell prompts how to format Headlamp resource and cluster links.
+ */
 export const promptLinksInstructions = `RESOURCE LINKING:
 - When you mention a Kubernetes resource (such as a Pod, Deployment, Service, etc.) in your response, ALWAYS format the resource name as a markdown link using this pattern:
   \[RESOURCE_NAME\]\(https://${HEADLAMP_LINK_HOST}/${HEADLAMP_RESOURCE_DETAILS_LINK}?cluster=CLUSTER&kind=KIND&resource=RESOURCE_NAME&ns=NAMESPACE\)

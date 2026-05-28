@@ -18,28 +18,43 @@ import { tool } from '@langchain/core/tools';
 import { z } from 'zod';
 import { Prompt } from '../../ai/manager';
 
+/** Configuration used to register a tool with the AI tool system. */
 export interface ToolConfig {
+  /** Unique name used to identify and invoke the tool. */
   name: string;
+  /** Short summary shown in compact tool listings. */
   shortDescription: string;
+  /** Full description provided to the language model. */
   description: string;
+  /** Zod schema describing the tool input arguments. */
   schema: z.ZodSchema;
 }
 
+/** Structured response returned after a tool executes. */
 export interface ToolResponse {
+  /** Tool output content returned to the caller. */
   content: string;
+  /** Whether the response should be written into chat history. */
   shouldAddToHistory: boolean;
+  /** Whether the assistant should generate a follow-up response from this result. */
   shouldProcessFollowUp: boolean;
+  /** Optional metadata about the tool execution. */
   metadata?: Record<string, any>;
 }
 
+/** Function signature implemented by concrete tool handlers. */
 export interface ToolHandler {
   (args: Record<string, any>, toolCallId?: string, pendingPrompt?: Prompt): Promise<ToolResponse>;
 }
 
+/** Base class for tools that can be exposed through LangChain. */
 export abstract class ToolBase {
+  /** Static metadata used to register the tool. */
   abstract readonly config: ToolConfig;
+  /** Execution handler that performs the tool action. */
   abstract handler: ToolHandler;
 
+  /** Creates the LangChain-compatible wrapper for this tool. */
   createLangChainTool() {
     return tool(
       async args => {

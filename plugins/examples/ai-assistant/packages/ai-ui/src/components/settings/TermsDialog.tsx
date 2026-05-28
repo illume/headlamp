@@ -16,12 +16,17 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 
+/** Props for {@link TermsDialog}. */
 interface TermsDialogProps {
+  /** Whether the terms dialog is visible. */
   open: boolean;
+  /** Closes the dialog without accepting. */
   onClose: () => void;
+  /** Continues after the user accepts the terms. */
   onAccept: () => void;
 }
 
+/** Shows the AI assistant terms and requires explicit acceptance before continuing. */
 export default function TermsDialog({ open, onClose, onAccept }: TermsDialogProps) {
   const [accepted, setAccepted] = useState(false);
 

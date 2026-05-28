@@ -14,27 +14,49 @@
  * limitations under the License.
  */
 
+/**
+ * Describes one configurable input for a model provider.
+ */
 export interface ModelField {
+  /** Unique field key stored in provider configuration. */
   name: string;
+  /** Label shown for the field in the UI. */
   label: string;
+  /** Input control type used to render the field. */
   type: 'text' | 'select' | 'number';
+  /** Whether the field must be provided by the user. */
   required: boolean;
+  /** Optional placeholder text shown before input. */
   placeholder?: string;
+  /** Allowed values for select fields. */
   options?: string[];
+  /** Default value used when creating a new config. */
   default?: string | number;
+  /** Short helper text describing the field. */
   description?: string;
 }
 
+/**
+ * Describes a supported AI model provider.
+ */
 export interface ModelProvider {
+  /** Stable provider identifier stored in settings. */
   id: string;
+  /** Human-readable provider name. */
   name: string;
+  /** Icon identifier used in provider pickers. */
   icon: string;
+  /** Fields required to configure the provider. */
   fields: ModelField[];
+  /** Optional curated list of supported model names. */
   models?: string[];
+  /** Short provider description shown in the UI. */
   description?: string;
 }
 
-// Define the available model providers and their configuration fields
+/**
+ * Registry of supported model providers and their configuration fields.
+ */
 export const modelProviders: ModelProvider[] = [
   {
     id: 'openai',
@@ -349,18 +371,24 @@ export const modelProviders: ModelProvider[] = [
   },
 ];
 
-// Function to get provider by ID
+/**
+ * Returns the provider definition for the given identifier.
+ */
 export function getProviderById(id: string): ModelProvider | undefined {
   return modelProviders.find(provider => provider.id === id);
 }
 
-// Function to get fields for a specific provider
+/**
+ * Returns the configuration fields for a provider.
+ */
 export function getProviderFields(providerId: string): ModelField[] {
   const provider = getProviderById(providerId);
   return provider ? provider.fields : [];
 }
 
-// Function to get default configuration for a provider
+/**
+ * Returns default field values for a provider configuration.
+ */
 export function getDefaultConfig(providerId: string): Record<string, string | number> {
   const fields = getProviderFields(providerId);
   const config: Record<string, string | number> = {};

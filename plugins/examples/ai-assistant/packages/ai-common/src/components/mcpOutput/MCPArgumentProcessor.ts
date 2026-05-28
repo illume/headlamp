@@ -16,44 +16,66 @@
 
 import { ElectronMCPClient } from '../../ai/mcp/electron-client';
 
+/** Describes the subset of MCP tool schema data used for argument processing. */
 export interface MCPToolSchema {
+  /** Full tool name, including any server prefix. */
   name: string;
+  /** Optional description shown to users. */
   description?: string;
+  /** JSON schema describing the tool input payload. */
   inputSchema?: {
+    /** Root JSON schema type for the tool input. */
     type: string;
+    /** Field definitions keyed by argument name. */
     properties?: Record<string, any>;
+    /** Names of required arguments. */
     required?: string[];
   };
 }
 
+/** Supplies conversational context used to suggest or fill MCP arguments. */
 export interface UserContext {
+  /** Latest user message being processed. */
   userMessage?: string;
+  /** Recent conversation messages for additional context. */
   conversationHistory?: Array<{ role: string; content: string }>;
+  /** Kubernetes context that may help populate tool fields. */
   kubernetesContext?: {
+    /** Currently selected clusters. */
     selectedClusters?: string[];
+    /** Active namespace, if known. */
     namespace?: string;
+    /** Current resource in focus. */
     currentResource?: any;
   };
+  /** Recent tool results keyed by inferred context name. */
   lastToolResults?: Record<string, any>;
+  /** Timestamp context used for time-sensitive suggestions. */
   timeContext?: Date;
 }
 
+/** Captures the result of validating and enriching tool arguments. */
 export interface ProcessedArguments {
+  /** Arguments received from the AI model before cleanup. */
   original: Record<string, any>;
+  /** Final arguments after validation and inferred fills. */
   processed: Record<string, any>;
+  /** Schema used during processing, if available. */
   schema: MCPToolSchema | null;
+  /** Suggested field values for UI display. */
   suggestions: Record<string, any>;
+  /** Validation errors found during processing. */
   errors: string[];
+  /** Fields filled automatically, with explanation and confidence. */
   intelligentFills: Record<string, { value: any; reason: string; confidence: number }>;
 }
 
+/** Loads MCP schemas and helps validate, clean, and enrich tool arguments. */
 export class MCPArgumentProcessor {
   private static toolSchemas: Map<string, MCPToolSchema> = new Map();
   private static schemasLoaded = false;
 
-  /**
-   * Load MCP tool schemas
-   */
+  /** Loads available MCP tool schemas from the Electron client once per session. */
   static async loadSchemas(): Promise<void> {
     if (this.schemasLoaded) return;
 
@@ -82,10 +104,7 @@ export class MCPArgumentProcessor {
     }
   }
 
-  /**
-   * Validate and process arguments for MCP tools (simplified version)
-   * Main argument generation is now handled by AI in LangChainManager
-   */
+  /** Validates arguments, applies required defaults, and returns UI-facing metadata. */
   static async processArguments(
     toolName: string,
     aiProcessedArgs: Record<string, any> = {},
@@ -166,9 +185,7 @@ export class MCPArgumentProcessor {
     };
   }
 
-  /**
-   * Get appropriate empty value for required field
-   */
+  /** Returns an empty placeholder value that satisfies a required field schema. */
   private static getEmptyValueForRequiredField(fieldSchema: any): any {
     const type = fieldSchema.type;
 
@@ -189,9 +206,7 @@ export class MCPArgumentProcessor {
     }
   }
 
-  /**
-   * Generate intelligent suggestions based on tool schema and context
-   */
+  /** Builds suggested argument values from schema metadata and optional user context. */
   private static generateIntelligentSuggestions(
     schema: MCPToolSchema,
     userContext?: UserContext
@@ -213,9 +228,7 @@ export class MCPArgumentProcessor {
     return suggestions;
   }
 
-  /**
-   * Generate suggestion for a specific property
-   */
+  /** Suggests a value for one schema property using context and field heuristics. */
   private static generatePropertySuggestion(
     propertyName: string,
     propertySchema: any,
@@ -269,9 +282,7 @@ export class MCPArgumentProcessor {
     }
   }
 
-  /**
-   * Suggest string values based on property name and context
-   */
+  /** Suggests a string value for a field based on its name, description, and schema. */
   private static suggestStringValue(
     propertyName: string,
     description: string,
@@ -323,9 +334,7 @@ export class MCPArgumentProcessor {
     return undefined;
   }
 
-  /**
-   * Suggest number values
-   */
+  /** Suggests a numeric value for a field based on schema defaults and common patterns. */
   private static suggestNumberValue(
     propertyName: string,
     description: string,
@@ -360,9 +369,7 @@ export class MCPArgumentProcessor {
     return undefined;
   }
 
-  /**
-   * Suggest boolean values
-   */
+  /** Suggests conservative defaults for boolean fields based on naming patterns. */
   private static suggestBooleanValue(propertyName: string): boolean | undefined {
     const lowerName = propertyName.toLowerCase();
     // Note: description analysis could be added here for more intelligent suggestions
@@ -387,25 +394,17 @@ export class MCPArgumentProcessor {
     return undefined;
   }
 
-  /**
-   * Suggest array values
-   */
+  /** Suggests an empty array for optional array arguments. */
   private static suggestArrayValue(): any[] | undefined {
-    // Return empty array for optional arrays
     return [];
   }
 
-  /**
-   * Suggest object values
-   */
+  /** Suggests an empty object for optional object arguments. */
   private static suggestObjectValue(): Record<string, any> | undefined {
-    // Return empty object for optional objects
     return {};
   }
 
-  /**
-   * Clean up arguments by removing empty non-required fields
-   */
+  /** Removes empty optional values while keeping required fields and schema defaults. */
   static cleanupArguments(args: Record<string, any>, schema: MCPToolSchema): Record<string, any> {
     if (!schema.inputSchema) return args;
 
@@ -433,9 +432,7 @@ export class MCPArgumentProcessor {
     return cleaned;
   }
 
-  /**
-   * Check if a value is meaningful (not empty/null/undefined)
-   */
+  /** Returns whether a value should be treated as meaningfully populated. */
   private static hasActualValue(value: any): boolean {
     if (value === null || value === undefined || value === '') {
       return false;
@@ -452,9 +449,7 @@ export class MCPArgumentProcessor {
     return true;
   }
 
-  /**
-   * Validate arguments against schema with support for empty objects/arrays
-   */
+  /** Validates required fields and basic type compatibility for processed arguments. */
   private static validateArgumentsWithEmptyObjectSupport(
     args: Record<string, any>,
     schema: MCPToolSchema
@@ -492,17 +487,13 @@ export class MCPArgumentProcessor {
     return errors;
   }
 
-  /**
-   * Get tool schema
-   */
+  /** Returns the cached schema for a tool after loading schemas if needed. */
   static async getToolSchema(toolName: string): Promise<MCPToolSchema | null> {
     await this.loadSchemas();
     return this.toolSchemas.get(toolName) || null;
   }
 
-  /**
-   * Get all available tool names
-   */
+  /** Returns the names of all MCP tools with loaded schemas. */
   static async getAvailableTools(): Promise<string[]> {
     await this.loadSchemas();
     return Array.from(this.toolSchemas.keys());

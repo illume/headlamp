@@ -15,23 +15,35 @@
  */
 
 /**
- * Utility functions for managing AI provider configurations
+ * Utility functions for managing AI provider configurations.
  */
 
+/**
+ * Represents one saved AI provider configuration.
+ */
 export interface StoredProviderConfig {
+  /** Provider identifier for this saved configuration. */
   providerId: string;
+  /** Optional name shown to users for this configuration. */
   displayName?: string;
+  /** Provider-specific settings persisted for reuse. */
   config: Record<string, any>;
 }
 
+/**
+ * Stores all persisted provider configurations and related preferences.
+ */
 export interface SavedConfigurations {
+  /** Saved provider configurations in display order. */
   providers?: StoredProviderConfig[];
+  /** Index of the default provider in {@link providers}. */
   defaultProviderIndex?: number;
+  /** Whether the user accepted the assistant terms. */
   termsAccepted?: boolean;
 }
 
 /**
- * Gets saved provider configurations from plugin data
+ * Returns saved provider configurations from plugin data.
  */
 export function getSavedConfigurations(data: any): SavedConfigurations {
   if (!data) {
@@ -57,7 +69,7 @@ export function getSavedConfigurations(data: any): SavedConfigurations {
 }
 
 /**
- * Gets the active configuration based on the default config
+ * Returns the active provider configuration.
  */
 export function getActiveConfig(
   savedConfigs: SavedConfigurations | null | undefined
@@ -73,7 +85,7 @@ export function getActiveConfig(
 }
 
 /**
- * Saves or updates a provider configuration
+ * Saves or updates a provider configuration.
  */
 export function saveProviderConfig(
   savedConfigs: SavedConfigurations | null | undefined,
@@ -174,7 +186,7 @@ export function saveProviderConfig(
 }
 
 /**
- * Deletes a provider configuration
+ * Deletes a saved provider configuration.
  */
 export function deleteProviderConfig(
   savedConfigs: SavedConfigurations | null | undefined,
@@ -216,7 +228,7 @@ export function deleteProviderConfig(
 }
 
 /**
- * Saves the terms acceptance status
+ * Marks the terms as accepted in saved configurations.
  */
 export function saveTermsAcceptance(
   savedConfigs: SavedConfigurations | null | undefined

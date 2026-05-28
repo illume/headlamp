@@ -15,88 +15,63 @@
  */
 
 /**
- * MCP types - shared type definitions for MCP (Model Context Protocol) functionality.
- *
- * These types are used by the Electron app's MCPClient/MCPToolStateStore
- * and by the ai-assistant plugin.
+ * MCP types shared by the AI assistant and Electron integrations.
  */
 
 /**
- * Settings for MCP configuration.
+ * Stores the persisted MCP feature configuration.
  */
 export interface MCPSettings {
-  /**
-   * Whether MCP is enabled or not
-   */
+  /** Whether MCP integrations are globally enabled. */
   enabled: boolean;
-  /**
-   * List of MCP servers
-   */
+  /** Configured MCP servers available to the client. */
   servers: MCPServer[];
 }
 
 /**
- * Configuration for an MCP server.
+ * Describes a single MCP server process.
  */
 export interface MCPServer {
-  /**
-   * Server name
-   */
+  /** Unique server name used in tool prefixes and settings. */
   name: string;
-  /**
-   * Command to run the MCP tool
-   */
+  /** Executable or command used to start the server. */
   command: string;
-  /**
-   * Arguments for the MCP tool command
-   */
+  /** Arguments passed to the MCP server command. */
   args: string[];
-  /**
-   * Whether the MCP server is enabled or not
-   */
+  /** Whether this server should be started by the client. */
   enabled: boolean;
-  /**
-   * Environment variables for the MCP tool command
-   */
+  /** Optional environment variables added to the server process. */
   env?: Record<string, string>;
 }
 
 /**
- * State of a single MCP tool.
+ * Tracks persisted state for a single MCP tool.
  */
 export interface MCPToolState {
-  /**
-   * Whether the tool is enabled or disabled
-   */
+  /** Whether the tool is currently enabled. */
   enabled: boolean;
-  /**
-   * Timestamp of the last time the tool was used
-   */
+  /** Timestamp of the most recent tool execution. */
   lastUsed?: Date;
-  /**
-   * Number of times the tool has been used
-   */
+  /** Number of recorded executions for the tool. */
   usageCount?: number;
-  /**
-   * JSON schema for tool parameters
-   */
+  /** JSON schema used to validate tool input arguments. */
   inputSchema?: any;
-  /**
-   * Description of the tool from MCP server
-   */
+  /** Human-readable description returned by the MCP server. */
   description?: string;
 }
 
 /**
- * State of all MCP tools for a specific server.
+ * Groups tool state for one MCP server.
  */
 export interface MCPServerToolState {
+  /** Tool state keyed by tool name. */
   [toolName: string]: MCPToolState;
 }
 
 /**
- * Configuration for MCP tools across multiple servers.
+ * Groups tool state for all configured MCP servers.
  */
 export interface MCPToolsConfig {
+  /** Server tool state keyed by server name. */
   [serverName: string]: MCPServerToolState;
 }

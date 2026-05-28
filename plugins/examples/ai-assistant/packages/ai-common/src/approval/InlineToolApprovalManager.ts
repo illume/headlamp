@@ -19,17 +19,23 @@ import { ToolCall } from '../ai/manager';
 import { UserContext } from '../components/mcpOutput/MCPArgumentProcessor';
 import { ToolApprovalHandler } from './ToolApprovalManager';
 
+/** Tracks a pending inline approval request for tool execution. */
 export interface InlineToolApprovalRequest {
+  /** Unique identifier for the approval request. */
   requestId: string;
+  /** Tool calls awaiting approval. */
   toolCalls: ToolCall[];
+  /** Resolves the request with the approved tool IDs. */
   resolve: (approvedToolIds: string[]) => void;
+  /** Rejects the request with the provided error. */
   reject: (error: Error) => void;
-  // Reference to the AI manager for adding messages to history
+  /** AI manager that originated the request. */
   aiManager?: any;
-  // Callback to update the specific message with loading state
+  /** Updates the corresponding UI message loading state. */
   updateMessage?: (loading: boolean) => void;
 }
 
+/** Coordinates inline tool approvals for chat-based assistant interactions. */
 export class InlineToolApprovalManager extends EventEmitter {
   private static instance: InlineToolApprovalManager | null = null;
   private pendingRequest: InlineToolApprovalRequest | null = null;
@@ -38,10 +44,12 @@ export class InlineToolApprovalManager extends EventEmitter {
   private approvalHandler: ToolApprovalHandler | null = null;
   private autoApprovedServers: Set<string> = new Set();
 
+  /** Creates the singleton approval manager. */
   private constructor() {
     super();
   }
 
+  /** Returns the shared inline approval manager instance. */
   public static getInstance(): InlineToolApprovalManager {
     if (!InlineToolApprovalManager.instance) {
       InlineToolApprovalManager.instance = new InlineToolApprovalManager();
@@ -49,29 +57,12 @@ export class InlineToolApprovalManager extends EventEmitter {
     return InlineToolApprovalManager.instance;
   }
 
-  /**
-   * Set a custom approval handler.
-   *
-   * When set, `requestApproval` delegates to this handler instead of
-   * emitting event-based confirmation requests for the React UI.
-   * Pass `null` to revert to the default event-based flow.
-   *
-   * Example (CLI auto-approve):
-   *   import { autoApproveAll } from '@headlamp-k8s/ai-common/approval';
-   *   inlineToolApprovalManager.setApprovalHandler(autoApproveAll());
-   *
-   * Example (terminal prompt):
-   *   inlineToolApprovalManager.setApprovalHandler({
-   *     async handleApproval(tools) { ... prompt user on stdin ... }
-   *   });
-   */
+  /** Sets a custom handler used instead of the default event-based approval flow. */
   public setApprovalHandler(handler: ToolApprovalHandler | null): void {
     this.approvalHandler = handler;
   }
 
-  /**
-   * Extract user context from AI manager
-   */
+  /** Extracts recent user, Kubernetes, and tool context from the originating AI manager. */
   private extractUserContext(aiManager: any): UserContext {
     const userContext: UserContext = {
       timeContext: new Date(),
@@ -122,9 +113,7 @@ export class InlineToolApprovalManager extends EventEmitter {
     return userContext;
   }
 
-  /**
-   * Request approval for tool execution via inline chat message
-   */
+  /** Requests approval for tool calls and resolves with the IDs that may run. */
   async requestApproval(toolCalls: any[], aiManager: any): Promise<string[]> {
     // Check if session auto-approval is enabled
     if (this.sessionAutoApproval) {
@@ -226,9 +215,7 @@ export class InlineToolApprovalManager extends EventEmitter {
     });
   }
 
-  /**
-   * Approve tools (called from inline confirmation component)
-   */
+  /** Approves selected tools for the matching request and optionally remembers the choice. */
   public approveTools(requestId: string, approvedToolIds: string[], rememberChoice = false): void {
     if (!this.pendingRequest || this.pendingRequest.requestId !== requestId) {
       console.warn('No matching pending request for approval:', requestId);
@@ -254,9 +241,7 @@ export class InlineToolApprovalManager extends EventEmitter {
     this.pendingRequest.resolve(approvedToolIds);
   }
 
-  /**
-   * Deny all tools (called from inline confirmation component)
-   */
+  /** Denies all tools for the matching pending request. */
   public denyTools(requestId: string): void {
     if (!this.pendingRequest || this.pendingRequest.requestId !== requestId) {
       console.warn('No matching pending request for denial:', requestId);
@@ -266,38 +251,28 @@ export class InlineToolApprovalManager extends EventEmitter {
     this.pendingRequest.reject(new Error('User denied tool execution'));
   }
 
-  /**
-   * Get current pending request
-   */
+  /** Returns the currently pending inline approval request, if any. */
   public getPendingRequest(): InlineToolApprovalRequest | null {
     return this.pendingRequest;
   }
 
-  /**
-   * Clear session settings (called when user explicitly clears or starts new session)
-   */
+  /** Clears all session-scoped approval state. */
   public clearSession(): void {
     this.sessionAutoApproval = false;
     this.autoApproveSettings.clear();
   }
 
-  /**
-   * Set session auto-approval
-   */
+  /** Enables or disables session-wide auto-approval. */
   public setSessionAutoApproval(enabled: boolean): void {
     this.sessionAutoApproval = enabled;
   }
 
-  /**
-   * Get session auto-approval status
-   */
+  /** Returns whether session-wide auto-approval is enabled. */
   public isSessionAutoApprovalEnabled(): boolean {
     return this.sessionAutoApproval;
   }
 
-  /**
-   * Set auto-approval for a specific tool
-   */
+  /** Enables or disables auto-approval for one named tool. */
   public setToolAutoApproval(toolName: string, enabled: boolean): void {
     if (enabled) {
       this.autoApproveSettings.set(toolName, true);
@@ -306,23 +281,17 @@ export class InlineToolApprovalManager extends EventEmitter {
     }
   }
 
-  /**
-   * Check if a tool has auto-approval enabled
-   */
+  /** Returns whether a named tool has explicit auto-approval enabled. */
   public isToolAutoApprovalEnabled(toolName: string): boolean {
     return this.autoApproveSettings.get(toolName) === true;
   }
 
-  /**
-   * Set auto-approved MCP servers by name
-   */
+  /** Replaces the list of MCP servers whose tools should auto-approve. */
   public setAutoApprovedServers(serverNames: string[]): void {
     this.autoApprovedServers = new Set(serverNames);
   }
 
-  /**
-   * Check if a tool is auto-approved based on its MCP server prefix
-   */
+  /** Returns whether a tool name matches one of the auto-approved MCP servers. */
   public isToolAutoApproved(toolName: string): boolean {
     for (const server of this.autoApprovedServers) {
       if (toolName.startsWith(server + '__')) return true;
@@ -330,9 +299,7 @@ export class InlineToolApprovalManager extends EventEmitter {
     return false;
   }
 
-  /**
-   * Load and apply autoApprove settings from MCP server config
-   */
+  /** Loads auto-approve server settings from desktop MCP config when available. */
   public async loadAndApplyAutoApproveSettings(): Promise<void> {
     try {
       if (typeof window !== 'undefined' && window.desktopApi?.mcp) {

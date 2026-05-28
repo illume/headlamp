@@ -1,14 +1,7 @@
-/**
- * useProactiveDiagnosis hook
- *
- * Provides React state bindings for the ProactiveDiagnosisManager singleton.
- * - Subscribes to manager events and keeps local state in sync.
- * - Returns the list of diagnoses, loading state, and control functions.
- */
-
 import { useCallback, useEffect, useState } from 'react';
 import { DiagnosisResult, proactiveDiagnosisManager } from '../diagnosis/ProactiveDiagnosisManager';
 
+/** Subscribes to proactive diagnosis state and exposes diagnosis results plus scroll controls. */
 export function useProactiveDiagnosis() {
   const [diagnoses, setDiagnoses] = useState<DiagnosisResult[]>(
     proactiveDiagnosisManager.getAllDiagnoses()

@@ -44,6 +44,7 @@ import { KubernetesToolContext } from './tools/kubernetes/types';
 import { ToolManager } from './tools/ToolManager';
 import { RecommendedTool, ToolOrchestrator } from './tools/ToolOrchestrator';
 
+/** Coordinates model calls, tool execution, and chat history for the AI assistant. */
 export default class LangChainManager extends AIManager {
   private model: BaseChatModel;
   private boundModel: BaseChatModel | null = null;
@@ -59,6 +60,7 @@ export default class LangChainManager extends AIManager {
   private readonly CACHE_TTL_MS = 10 * 60 * 1000; // 10 minutes
   private readonly MAX_CACHE_SIZE = 30; // Maximum cached responses
 
+  /** Creates a LangChain manager for the selected provider and enabled tools. */
   constructor(providerId: string, config: Record<string, any>, enabledTools?: string[]) {
     super();
     this.providerId = providerId;
@@ -124,7 +126,7 @@ export default class LangChainManager extends AIManager {
     }
   }
 
-  // Method to abort current request
+  /** Aborts the currently running model request, if one exists. */
   abort() {
     if (this.currentAbortController) {
       this.currentAbortController.abort();
@@ -405,6 +407,7 @@ export default class LangChainManager extends AIManager {
     }
   }
 
+  /** Configures available tools, binds them to the model, and sets Kubernetes context. */
   async configureTools(tools: any[], kubernetesContext: KubernetesToolContext): Promise<void> {
     await this.toolManager.waitForMCPToolsInitialization();
 
@@ -524,6 +527,7 @@ export default class LangChainManager extends AIManager {
     }
   }
 
+  /** Updates a previously rendered tool confirmation message in chat history. */
   public updateToolConfirmationMessage(requestId: string, updatedToolConfirmation: any): void {
     // Find the message with matching requestId
     const messageIndex = this.history.findIndex(
@@ -826,6 +830,7 @@ The user is waiting for you to explain what the tools discovered. Provide a dire
     return this.addToHistory({ role: 'assistant', content, ...additional });
   }
 
+  /** Processes a user message and returns the assistant response. */
   async userSend(message: string): Promise<Prompt> {
     // Sync MCP auto-approve settings before processing
     await inlineToolApprovalManager.loadAndApplyAutoApproveSettings();
@@ -2101,7 +2106,7 @@ Format your response to make the errors prominent and actionable.`,
     return cleanMessage || 'An unexpected error occurred. Please try again.';
   }
 
-  // Change from 'protected' to 'public' to match the base class
+  /** Generates the assistant's follow-up response from completed tool outputs. */
   public async processToolResponses(): Promise<Prompt> {
     // Check if there are any tool responses in the history
     if (!this.hasToolResponses()) {

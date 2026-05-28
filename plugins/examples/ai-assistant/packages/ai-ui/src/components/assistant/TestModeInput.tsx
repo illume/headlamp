@@ -19,15 +19,19 @@ import {
 } from '@mui/material';
 import React, { useState } from 'react';
 
+/** Props for {@link TestModeInput}. */
 interface TestModeInputProps {
+  /** Adds a simulated chat message to the conversation. */
   onAddTestResponse: (
     content: string | object,
     type: 'assistant' | 'user',
     hasError?: boolean
   ) => void;
+  /** Whether test mode controls should be visible. */
   isTestMode: boolean;
 }
 
+/** Provides quick sample responses and a dialog for injecting custom test messages. */
 const TestModeInput: React.FC<TestModeInputProps> = ({ onAddTestResponse, isTestMode }) => {
   const [open, setOpen] = useState(false);
   const [testContent, setTestContent] = useState('');

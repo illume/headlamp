@@ -29,10 +29,15 @@ import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkGfm from 'remark-gfm';
 
+/** Props for {@link MCPOutputDisplay}. */
 interface MCPOutputDisplayProps {
+  /** Structured MCP output to render. */
   output: FormattedMCPOutput;
+  /** Retries the underlying tool invocation when supported. */
   onRetry?: () => void;
+  /** Exports the rendered data in the selected format. */
   onExport?: (format: 'json' | 'csv' | 'txt') => void;
+  /** Starts in a collapsed layout when true. */
   compact?: boolean;
 }
 
@@ -374,6 +379,7 @@ function usePromptWidth() {
   return { promptWidth };
 }
 
+/** Displays formatted MCP output, including summaries, structured renderers, exports, and raw data. */
 const MCPOutputDisplay: React.FC<MCPOutputDisplayProps> = ({
   output,
   onRetry,
