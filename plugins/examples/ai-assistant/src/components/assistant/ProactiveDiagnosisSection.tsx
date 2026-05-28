@@ -27,6 +27,15 @@ import { alpha, useTheme } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
 import ContentRenderer from '../../ContentRenderer';
 import type { DiagnosisResult, DiagnosisThinkingStep } from '@headlamp-k8s/ai-ui/diagnosis/ProactiveDiagnosisManager';
+import {
+  getStatusIcon,
+  getStatusLabel,
+  getStepSummary,
+  getStepIcon,
+  getStepIconColor,
+  getStepTypeLabel,
+  splitDiagnosisContent,
+} from '@headlamp-k8s/ai-ui/diagnosis/diagnosisHelpers';
 
 /** Props for the ProactiveDiagnosisSection component that displays diagnosis results. */
 interface ProactiveDiagnosisSectionProps {
@@ -40,22 +49,6 @@ interface ProactiveDiagnosisSectionProps {
   isCycleRunning: boolean;
   /** Callback invoked when the user triggers a YAML apply/delete action from a diagnosis. */
   onYamlAction?: (yaml: string, title: string, resourceType: string, isDelete: boolean) => void;
-}
-
-/* ── Status helpers ──────────────────────────────────────────────── */
-
-function getStatusIcon(d: DiagnosisResult) {
-  if (d.loading) return '⏳';
-  if (d.pending) return '⬜';
-  if (d.error) return '❌';
-  return '✅';
-}
-
-function getStatusLabel(d: DiagnosisResult) {
-  if (d.loading) return 'Diagnosing…';
-  if (d.pending) return 'Queued';
-  if (d.error) return 'Failed';
-  return 'Completed';
 }
 
 /* ── Collapsible Thinking Block (mirrors AgentThinkingBlock style) ── */
@@ -227,111 +220,7 @@ function DiagnosisThinkingBlock({
   );
 }
 
-/* ── Step display helpers ───────────────────────────────────────── */
-
-function getStepSummary(step: DiagnosisThinkingStep): string {
-  if (step.type === 'tool-start') {
-    const match = step.content.match(/:\s*(.+)/);
-    return match ? `${match[1].trim()}…` : 'Calling tool…';
-  }
-  if (step.type === 'tool-result') return 'Tool done';
-  if (step.type === 'todo-update') return 'Updating plan…';
-  return 'Thinking…';
-}
-
-function getStepIcon(type: DiagnosisThinkingStep['type']): string {
-  switch (type) {
-    case 'tool-start':
-      return 'mdi:wrench';
-    case 'tool-result':
-      return 'mdi:check';
-    case 'todo-update':
-      return 'mdi:format-list-checks';
-    default:
-      return 'mdi:message-text-outline';
-  }
-}
-
-function getStepIconColor(type: DiagnosisThinkingStep['type'], theme: any): string {
-  switch (type) {
-    case 'tool-start':
-      return theme.palette.info.main;
-    case 'tool-result':
-      return theme.palette.success.main;
-    case 'todo-update':
-      return theme.palette.warning.main;
-    default:
-      return theme.palette.text.secondary;
-  }
-}
-
-function getStepTypeLabel(type: DiagnosisThinkingStep['type']): string {
-  switch (type) {
-    case 'tool-start':
-      return 'Tool call';
-    case 'tool-result':
-      return 'Tool result';
-    case 'todo-update':
-      return 'Plan update';
-    default:
-      return 'Intermediate';
-  }
-}
-
 /* ── Content parser: split diagnosis text into thinking vs answer ── */
-
-/**
- * Splits the raw diagnosis text into two parts:
- *   - thinking: tool calls, investigation task lists, intermediate output
- *   - answer:   the final summary / root-cause / remediation
- *
- * Heuristic: lines starting with 🔧 or "### Investigation Tasks" are thinking.
- * The last contiguous block of non-thinking text is the answer.
- */
-function splitDiagnosisContent(text: string): { thinking: string; answer: string } {
-  if (!text) return { thinking: '', answer: '' };
-
-  const lines = text.split('\n');
-
-  // Patterns that indicate "thinking / intermediate" content
-  const thinkingPatterns = [
-    /^🔧/, // tool call lines
-    /^###?\s*Investigation Tasks/i, // task list headers
-    /^\d+\.\s*[⏳⬜✅❌]/, // task list items with status emojis
-  ];
-
-  const isThinkingLine = (line: string) => thinkingPatterns.some(p => p.test(line.trim()));
-
-  // Walk through lines; consecutive thinking lines are grouped.
-  // The final non-thinking block is the "answer".
-  // Everything before it (including any intermediate non-thinking gaps
-  // sandwiched between thinking blocks) is "thinking".
-  //
-  // Strategy: find the index of the last thinking line, then everything
-  // after that line is the answer.
-  let lastThinkingIdx = -1;
-  for (let i = 0; i < lines.length; i++) {
-    if (isThinkingLine(lines[i])) {
-      lastThinkingIdx = i;
-    }
-  }
-
-  // If no thinking was found, the whole thing is the answer
-  if (lastThinkingIdx === -1) {
-    return { thinking: '', answer: text };
-  }
-
-  // Skip any blank lines right after the last thinking line
-  let answerStart = lastThinkingIdx + 1;
-  while (answerStart < lines.length && lines[answerStart].trim() === '') {
-    answerStart++;
-  }
-
-  const thinking = lines.slice(0, answerStart).join('\n').trim();
-  const answer = lines.slice(answerStart).join('\n').trim();
-
-  return { thinking, answer };
-}
 
 /* ── Reusable collapsible section ─────────────────────────────────── */
 
