@@ -3798,7 +3798,4 @@ export function extractAIAnswer(rawOutput: string): string {
 }
 
 // ─── Real-time thinking-step parser ──────────────────────────────────────────
-
-/**
- * Convert a raw "Running tool #N ToolName: description" line into a
- * user-friendly label for the executing phase.
+// See aksAgentThinking.ts for the ThinkingStepTracker class.

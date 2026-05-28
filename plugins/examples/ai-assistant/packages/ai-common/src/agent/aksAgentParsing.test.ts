@@ -14,37 +14,17 @@
  * limitations under the License.
  */
 
-import fs from 'node:fs';
-import { transform } from 'esbuild';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-async function loadParsingModule() {
-  const sourcePath = new URL('./aksAgentParsing.ts', import.meta.url);
-  const source = fs.readFileSync(sourcePath, 'utf8');
-  const cutMarker = '// ─── Real-time thinking-step parser';
-  const cutIndex = source.indexOf(cutMarker);
+vi.mock('./debugLog', () => ({
+  detailLog: vi.fn(),
+  dumpForTestCase: vi.fn(),
+  verboseLog: vi.fn(),
+  warnLog: vi.fn(),
+  debugLog: vi.fn(),
+}));
 
-  if (cutIndex < 0) {
-    throw new Error(`Could not find parser cut marker: ${cutMarker}`);
-  }
-
-  const safeSource = source
-    .slice(0, cutIndex)
-    .replace(
-      "import { detailLog, dumpForTestCase, verboseLog } from './debugLog';",
-      'const detailLog = () => {}; const dumpForTestCase = () => {}; const verboseLog = () => {};' 
-    );
-
-  const { code } = await transform(safeSource, {
-    format: 'esm',
-    loader: 'ts',
-    target: 'es2020',
-  });
-
-  return import(`data:text/javascript;base64,${Buffer.from(code).toString('base64')}`);
-}
-
-const {
+import {
   blockContainsCode,
   collapseTerminalBlankLines,
   extractAIAnswer,
@@ -60,7 +40,7 @@ const {
   stripAgentNoise,
   stripAnsi,
   stripCommandEcho,
-} = await loadParsingModule();
+} from './aksAgentParsing';
 
 describe('aksAgentParsing', () => {
   describe('stripAnsi', () => {
