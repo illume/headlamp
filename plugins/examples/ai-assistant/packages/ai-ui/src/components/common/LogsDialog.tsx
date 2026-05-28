@@ -10,7 +10,6 @@ import Editor from '@monaco-editor/react';
 import {
   Box,
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -31,6 +30,8 @@ export interface LogsDialogProps {
   title: string;
   /** Optional Kubernetes resource name associated with these logs. */
   resourceName?: string;
+  /** Component used to render the dialog shell (e.g. headlamp Dialog). */
+  DialogSlot: React.ElementType;
 }
 
 /**
@@ -42,7 +43,7 @@ export interface LogsDialogProps {
  * - Copy-to-clipboard and download-as-file actions.
  * - Full-width layout with a minimap for large log outputs.
  */
-const LogsDialog: React.FC<LogsDialogProps> = ({ open, onClose, logs, title, resourceName }) => {
+const LogsDialog: React.FC<LogsDialogProps> = ({ open, onClose, logs, title, resourceName, DialogSlot }) => {
   const copyToClipboard = async () => {
     try {
       const formatted = getFormattedLogs(logs);
@@ -72,7 +73,7 @@ const LogsDialog: React.FC<LogsDialogProps> = ({ open, onClose, logs, title, res
   };
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="lg" fullWidth>
+    <DialogSlot open={open} onClose={onClose} maxWidth="lg" fullWidth>
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h6">
@@ -155,7 +156,7 @@ const LogsDialog: React.FC<LogsDialogProps> = ({ open, onClose, logs, title, res
           Close
         </Button>
       </DialogActions>
-    </Dialog>
+    </DialogSlot>
   );
 };
 

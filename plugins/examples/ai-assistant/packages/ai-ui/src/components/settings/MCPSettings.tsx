@@ -61,6 +61,8 @@ export interface MCPSettingsProps {
   configStore: ConfigStore;
   /** Optional wrapper component for layout (e.g. SectionBox). */
   SectionWrapper?: React.ComponentType<{ title: string; children: React.ReactNode }>;
+  /** Component used to render dialog shells (e.g. headlamp Dialog). */
+  DialogSlot: React.ElementType;
 }
 
 /** Default section wrapper using a simple Box with title. */
@@ -78,6 +80,7 @@ export function MCPSettings({
   isRunningAsApp,
   configStore,
   SectionWrapper = DefaultSectionWrapper,
+  DialogSlot,
 }: MCPSettingsProps) {
   const [jsonEditorOpen, setJsonEditorOpen] = useState(false);
   const [serverEditorOpen, setServerEditorOpen] = useState(false);
@@ -426,6 +429,7 @@ export function MCPSettings({
         onClose={() => setJsonEditorOpen(false)}
         config={displayConfig}
         onSave={handleSaveConfig}
+        DialogSlot={DialogSlot}
       />
 
       {/* Server Editor Dialog */}
@@ -435,6 +439,7 @@ export function MCPSettings({
         server={editingServer}
         onSave={handleSaveServer}
         existingServerNames={displayConfig.servers.map(s => s.name)}
+        DialogSlot={DialogSlot}
       />
     </SectionWrapper>
   );

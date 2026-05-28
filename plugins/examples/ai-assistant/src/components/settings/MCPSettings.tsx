@@ -1,5 +1,5 @@
 import { Headlamp } from '@kinvolk/headlamp-plugin/lib';
-import { SectionBox } from '@kinvolk/headlamp-plugin/lib/components/common';
+import { Dialog, SectionBox } from '@kinvolk/headlamp-plugin/lib/components/common';
 import React from 'react';
 import { pluginStore } from '../../pluginState';
 import {
@@ -18,6 +18,7 @@ export function MCPSettings({ onConfigChange }: MCPSettingsProps) {
       isRunningAsApp={Headlamp.isRunningAsApp()}
       configStore={pluginStore}
       SectionWrapper={SectionBox}
+      DialogSlot={Dialog}
     />
   );
 }

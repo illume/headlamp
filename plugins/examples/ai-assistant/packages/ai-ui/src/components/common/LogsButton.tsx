@@ -24,6 +24,8 @@ export interface LogsButtonProps {
   namespace?: string;
   /** The container name within the pod, if applicable. */
   containerName?: string;
+  /** Component used to render the dialog shell (e.g. headlamp Dialog). */
+  DialogSlot: React.ElementType;
 }
 
 /**
@@ -36,6 +38,7 @@ const LogsButton: React.FC<LogsButtonProps> = ({
   resourceType = 'Resource',
   namespace,
   containerName,
+  DialogSlot,
 }) => {
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -78,6 +81,7 @@ const LogsButton: React.FC<LogsButtonProps> = ({
         logs={logs}
         title={title}
         resourceName={resourceName}
+        DialogSlot={DialogSlot}
       />
     </>
   );

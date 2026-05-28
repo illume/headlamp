@@ -1,5 +1,6 @@
 import React from 'react';
 import { useHistory } from 'react-router-dom';
+import { ActionButton } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import { getSettingsURL } from '../../pluginState';
 import AIAssistantHeaderBase from '@headlamp-k8s/ai-ui/components/assistant/AIAssistantHeader';
 
@@ -26,6 +27,7 @@ export default function AIAssistantHeader({
       disableSettingsButton={disableSettingsButton}
       onClose={onClose}
       onSettings={() => history.push(getSettingsURL())}
+      ActionButtonSlot={ActionButton}
     />
   );
 }

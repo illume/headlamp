@@ -11,7 +11,6 @@ import {
   Box,
   Button,
   Chip,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogContentText,
@@ -46,15 +45,18 @@ interface ProviderSelectionDialogProps {
   onClose: () => void;
   /** Callback invoked when the user selects a provider by its ID. */
   onSelectProvider: (providerId: string) => void;
+  /** Component used to render the dialog shell. */
+  DialogSlot: React.ElementType;
 }
 
 function ProviderSelectionDialog({
   open,
   onClose,
   onSelectProvider,
+  DialogSlot,
 }: ProviderSelectionDialogProps) {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md">
+    <DialogSlot open={open} onClose={onClose} maxWidth="md">
       <DialogTitle>
         <Box display="flex" alignItems="center" gap={1}>
           <Icon icon="mdi:plus-circle" width="24px" height="24px" />
@@ -99,7 +101,7 @@ function ProviderSelectionDialog({
       <DialogActions>
         <Button onClick={onClose}>Cancel</Button>
       </DialogActions>
-    </Dialog>
+    </DialogSlot>
   );
 }
 
@@ -122,6 +124,8 @@ interface ConfigurationDialogProps {
   onConfigNameChange?: (name: string) => void;
   /** Callback invoked when the user saves, with flag indicating default status. */
   onSave?: (makeDefault: boolean) => void;
+  /** Component used to render the dialog shell. */
+  DialogSlot: React.ElementType;
 }
 
 function ConfigurationDialog({
@@ -133,6 +137,7 @@ function ConfigurationDialog({
   configName,
   onConfigNameChange,
   onSave,
+  DialogSlot,
 }: ConfigurationDialogProps) {
   const provider = getProviderById(providerId);
   const fields = getProviderFields(providerId);
@@ -166,7 +171,7 @@ function ConfigurationDialog({
   );
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
+    <DialogSlot open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle>
         <Box display="flex" alignItems="center" gap={1}>
           {provider && <Icon icon={provider.icon} width="24px" height="24px" />}
@@ -407,7 +412,7 @@ function ConfigurationDialog({
           </Button>
         )}
       </DialogActions>
-    </Dialog>
+    </DialogSlot>
   );
 }
 
@@ -432,6 +437,8 @@ interface ModelSelectorProps {
   }) => void;
   /** Callback invoked when the user accepts provider terms of service. */
   onTermsAccept?: (updatedConfigs: SavedConfigurations) => void;
+  /** Component used to render dialog shells (e.g. headlamp Dialog). */
+  DialogSlot: React.ElementType;
 }
 
 export default function ModelSelector({
@@ -442,6 +449,7 @@ export default function ModelSelector({
   isConfigView = false,
   onChange,
   onTermsAccept,
+  DialogSlot,
 }: ModelSelectorProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogProviderId, setDialogProviderId] = useState('');
@@ -1011,6 +1019,7 @@ export default function ModelSelector({
         open={providerSelectionOpen}
         onClose={() => setProviderSelectionOpen(false)}
         onSelectProvider={handleProviderSelection}
+        DialogSlot={DialogSlot}
       />
 
       {/* Configuration Dialog */}
@@ -1023,9 +1032,10 @@ export default function ModelSelector({
         configName={dialogConfigName}
         onConfigNameChange={handleDialogConfigNameChange}
         onSave={handleSaveDialog}
+        DialogSlot={DialogSlot}
       />
 
-      <Dialog
+      <DialogSlot
         open={showDeleteConfirm}
         onClose={() => {
           setShowDeleteConfirm(false);
@@ -1058,7 +1068,7 @@ export default function ModelSelector({
             Delete
           </Button>
         </DialogActions>
-      </Dialog>
+      </DialogSlot>
     </Box>
   );
 }

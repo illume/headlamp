@@ -4,7 +4,6 @@ import {
   Alert,
   Box,
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -47,6 +46,8 @@ interface MCPConfigEditorDialogProps {
   config: MCPConfig;
   /** Callback invoked when the user saves the edited configuration. */
   onSave: (config: MCPConfig) => void;
+  /** Component used to render the dialog shell (e.g. headlamp Dialog). */
+  DialogSlot: React.ElementType;
 }
 
 export default function MCPConfigEditorDialog({
@@ -54,6 +55,7 @@ export default function MCPConfigEditorDialog({
   onClose,
   config,
   onSave,
+  DialogSlot,
 }: MCPConfigEditorDialogProps) {
   const [content, setContent] = useState('');
   const [validationError, setValidationError] = useState('');
@@ -184,7 +186,7 @@ export default function MCPConfigEditorDialog({
   };
 
   return (
-    <Dialog open={open} maxWidth="lg" fullWidth onClose={onClose}>
+    <DialogSlot open={open} maxWidth="lg" fullWidth onClose={onClose}>
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h6">Edit MCP Configuration</Typography>
@@ -335,6 +337,6 @@ export default function MCPConfigEditorDialog({
           Save Configuration
         </Button>
       </DialogActions>
-    </Dialog>
+    </DialogSlot>
   );
 }

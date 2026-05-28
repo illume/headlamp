@@ -2,7 +2,6 @@ import { AVAILABLE_TOOLS } from '@headlamp-k8s/ai-common/langchain/tools/registr
 import { ElectronMCPClient } from '@headlamp-k8s/ai-common/ai/mcp/electron-client';
 import { Icon } from '@iconify/react';
 import {
-  Dialog,
   Accordion,
   AccordionDetails,
   AccordionSummary,
@@ -47,6 +46,8 @@ interface ToolsDialogProps {
   enabledTools: string[];
   /** Callback invoked when the set of enabled tools changes. */
   onToolsChange: (enabledTools: string[]) => void;
+  /** Component used to render the dialog shell (e.g. headlamp Dialog). */
+  DialogSlot: React.ElementType;
 }
 
 export const ToolsDialog: React.FC<ToolsDialogProps> = ({
@@ -54,6 +55,7 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
   onClose,
   enabledTools,
   onToolsChange,
+  DialogSlot,
 }) => {
   const [localEnabledTools, setLocalEnabledTools] = useState<string[]>(enabledTools);
   const [allKnownMcpTools, setAllKnownMcpTools] = useState<MCPTool[]>([]); // Track all tools ever seen
@@ -501,7 +503,7 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
   );
 
   return (
-    <Dialog
+    <DialogSlot
       open={open}
       onClose={handleCancel}
       maxWidth="md"
@@ -556,6 +558,6 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
           Save Changes
         </Button>
       </DialogActions>
-    </Dialog>
+    </DialogSlot>
   );
 };

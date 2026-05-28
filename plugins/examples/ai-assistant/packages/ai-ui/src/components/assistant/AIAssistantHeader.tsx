@@ -1,9 +1,20 @@
-import { Icon } from '@iconify/react';
-import { Box, Chip, IconButton, Tooltip, Typography } from '@mui/material';
+import { Box, Chip, Typography } from '@mui/material';
 import React from 'react';
 
+/** Props accepted by the ActionButton slot component. */
+export interface ActionButtonSlotProps {
+  /** Short description shown as a tooltip. */
+  description: string;
+  /** Iconify icon identifier. */
+  icon: string;
+  /** Click handler. */
+  onClick: React.MouseEventHandler<HTMLElement>;
+  /** Additional props forwarded to the underlying IconButton. */
+  iconButtonProps?: Record<string, any>;
+}
+
 /** Props for the AIAssistantHeader component displayed at the top of the assistant panel. */
-interface AIAssistantHeaderProps {
+export interface AIAssistantHeaderProps {
   /** Whether the assistant is operating in test mode. */
   isTestMode: boolean;
   /** Whether the settings navigation button should be disabled. */
@@ -12,6 +23,8 @@ interface AIAssistantHeaderProps {
   onClose: () => void;
   /** Callback invoked when the user clicks the settings button. */
   onSettings: () => void;
+  /** Component used to render icon action buttons (e.g. headlamp ActionButton). */
+  ActionButtonSlot: React.ComponentType<ActionButtonSlotProps>;
 }
 
 export default function AIAssistantHeader({
@@ -19,6 +32,7 @@ export default function AIAssistantHeader({
   disableSettingsButton,
   onClose,
   onSettings,
+  ActionButtonSlot,
 }: AIAssistantHeaderProps) {
   return (
     <Box
@@ -45,22 +59,18 @@ export default function AIAssistantHeader({
         </Typography>
       </Box>
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
-        <Tooltip title="Settings">
-          <span>
-            <IconButton
-              onClick={onSettings}
-              disabled={disableSettingsButton}
-              size="small"
-            >
-              <Icon icon="mdi:settings" />
-            </IconButton>
-          </span>
-        </Tooltip>
-        <Tooltip title="Close">
-          <IconButton onClick={onClose} size="small">
-            <Icon icon="mdi:close" />
-          </IconButton>
-        </Tooltip>
+        <ActionButtonSlot
+          description="Settings"
+          icon="mdi:settings"
+          onClick={onSettings}
+          iconButtonProps={{ disabled: disableSettingsButton, size: 'small' }}
+        />
+        <ActionButtonSlot
+          description="Close"
+          icon="mdi:close"
+          onClick={onClose}
+          iconButtonProps={{ size: 'small' }}
+        />
       </Box>
     </Box>
   );

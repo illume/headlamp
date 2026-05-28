@@ -5,18 +5,19 @@ import {
   Button,
   CircularProgress,
   Grid,
-  IconButton,
   ListSubheader,
   MenuItem,
   Select,
   TextField,
-  Tooltip,
   Typography,
 } from '@mui/material';
 import React from 'react';
 import { getModelDisplayName, getProviderModelsForChat } from '../../providers/modelProviders';
 import { getProviderById } from '../../config/modelConfig';
+import type { ActionButtonSlotProps } from './AIAssistantHeader';
 import TestModeInput from './TestModeInput';
+
+export type { ActionButtonSlotProps } from './AIAssistantHeader';
 
 /** Chat or agent mode selection. */
 export type ChatMode = 'chat' | 'agent';
@@ -107,6 +108,8 @@ export interface AIInputSectionProps {
   AgentModeSelectorSlot?: React.ComponentType<AgentModeSelectorProps>;
   /** Optional component to render the tools dialog. */
   ToolsDialogSlot?: React.ComponentType<ToolsDialogSlotProps>;
+  /** Component used to render icon action buttons (e.g. headlamp ActionButton). */
+  ActionButtonSlot: React.ComponentType<ActionButtonSlotProps>;
 }
 
 export const AIInputSection: React.FC<AIInputSectionProps> = ({
@@ -136,6 +139,7 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
   isCheckingClusters = false,
   AgentModeSelectorSlot,
   ToolsDialogSlot,
+  ActionButtonSlot,
 }) => {
   const [showToolsDialog, setShowToolsDialog] = React.useState(false);
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -269,11 +273,11 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
         }}
       >
         <Grid item sx={{ display: 'flex', alignItems: 'center' }}>
-          <Tooltip title="Clear History">
-            <IconButton onClick={onClearHistory} size="small" aria-label="Clear History">
-              <Icon icon="mdi:broom" />
-            </IconButton>
-          </Tooltip>
+          <ActionButtonSlot
+            description="Clear History"
+            icon="mdi:broom"
+            onClick={onClearHistory}
+          />
 
           {/* Mode Selector: Chat / Holmes Agent */}
           {!isTestMode && onToggleAgentMode && (
@@ -383,11 +387,11 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
           {/* Tools Button */}
           {!isTestMode && !isAgentMode && (
             <Box ml={1}>
-              <Tooltip title="Manage Tools">
-                <IconButton onClick={() => setShowToolsDialog(true)} size="small" aria-label="Manage Tools">
-                  <Icon icon="mdi:tools" />
-                </IconButton>
-              </Tooltip>
+              <ActionButtonSlot
+                description="Manage Tools"
+                icon="mdi:tools"
+                onClick={() => setShowToolsDialog(true)}
+              />
             </Box>
           )}
         </Grid>

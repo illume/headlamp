@@ -3,7 +3,6 @@ import {
   Alert,
   Box,
   Button,
-  Dialog,
   DialogActions,
   DialogContent,
   DialogTitle,
@@ -41,6 +40,8 @@ interface MCPServerEditorProps {
   onSave: (server: MCPServer) => void;
   /** Names of existing servers, used to prevent duplicate names. */
   existingServerNames: string[];
+  /** Component used to render the dialog shell (e.g. headlamp Dialog). */
+  DialogSlot: React.ElementType;
 }
 
 export default function MCPServerEditor({
@@ -49,6 +50,7 @@ export default function MCPServerEditor({
   server,
   onSave,
   existingServerNames,
+  DialogSlot,
 }: MCPServerEditorProps) {
   const [name, setName] = useState('');
   const [command, setCommand] = useState('');
@@ -159,7 +161,7 @@ export default function MCPServerEditor({
   };
 
   return (
-    <Dialog open={open} maxWidth="md" fullWidth onClose={onClose}>
+    <DialogSlot open={open} maxWidth="md" fullWidth onClose={onClose}>
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h6">{isEditing ? 'Edit Server' : 'Add MCP Server'}</Typography>
@@ -283,6 +285,6 @@ export default function MCPServerEditor({
           {isEditing ? 'Save' : 'Add Server'}
         </Button>
       </DialogActions>
-    </Dialog>
+    </DialogSlot>
   );
 }
