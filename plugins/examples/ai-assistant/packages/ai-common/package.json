@@ -5,6 +5,10 @@
   "type": "module",
   "exports": {
     "./agent/agentTypes": "./src/agent/agentTypes.ts",
+    "./agent/aksAgentParsing": "./src/agent/aksAgentParsing.ts",
+    "./agent/aksAgentPrompts": "./src/agent/aksAgentPrompts.ts",
+    "./agent/aksAgentThinking": "./src/agent/aksAgentThinking.ts",
+    "./agent/debugLog": "./src/agent/debugLog.ts",
     "./ai/manager": "./src/ai/manager.ts",
     "./ai/mcp/electron-client": "./src/ai/mcp/electron-client.ts",
     "./ai/prompts": "./src/ai/prompts.ts",
