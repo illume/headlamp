@@ -12,8 +12,6 @@ import React, { useState } from 'react';
 import { buildLogTitle } from '../../formatting/logFormatting';
 import LogsDialog from './LogsDialog';
 
-export { buildLogTitle } from '../../formatting/logFormatting';
-
 /** Props for the LogsButton component that shows a button to open a logs dialog. */
 export interface LogsButtonProps {
   /** The raw log text content to display when the button is clicked. */

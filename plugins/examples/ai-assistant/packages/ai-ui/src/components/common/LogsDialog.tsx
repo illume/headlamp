@@ -19,8 +19,6 @@ import {
 import React from 'react';
 import { getLogLanguage, getFormattedLogs } from '../../formatting/logFormatting';
 
-export { getLogLanguage, getFormattedLogs } from '../../formatting/logFormatting';
-
 /** Props for the LogsDialog component that displays log content in a modal. */
 export interface LogsDialogProps {
   /** Whether the dialog is currently visible. */

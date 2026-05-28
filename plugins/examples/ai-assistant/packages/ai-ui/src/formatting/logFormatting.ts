@@ -18,8 +18,9 @@ export function getLogLanguage(logs: string): string {
   const jsonPattern = /^\s*[\{\[].*[\}\]]\s*$/m;
   const hasJson = jsonPattern.test(logs);
 
-  const structuredLogPattern = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}|\w+\s*=\s*\w+|level=|msg=/m;
-  const hasStructuredLogs = structuredLogPattern.test(logs);
+  const structuredLogPattern = /^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}/m;
+  const kvPattern = /(?:level|msg)=/m;
+  const hasStructuredLogs = structuredLogPattern.test(logs) || kvPattern.test(logs);
 
   if (hasJson) return 'json';
   if (hasStructuredLogs) return 'properties';
