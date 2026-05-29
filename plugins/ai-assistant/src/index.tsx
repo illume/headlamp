@@ -31,6 +31,7 @@ import {
   getClustersFromHeadlampConfig,
 } from './agent/aksAgentManager';
 import { ModelSelector } from './components';
+import DetectedProvidersDialog from './components/settings/DetectedProvidersDialog';
 import { getDefaultConfig } from './config/modelConfig';
 import { isTestModeCheck } from './helper';
 import AIPrompt from './modal';
@@ -42,10 +43,13 @@ import {
   useGlobalState,
   usePluginConfig,
 } from './utils';
+import type { DetectedProvider } from './utils/providerAutoDetect';
+import { detectProviders } from './utils/providerAutoDetect';
 import {
   getActiveConfig,
   getSavedConfigurations,
   SavedConfigurations,
+  saveProviderConfig,
 } from './utils/ProviderConfigManager';
 import { getAllAvailableTools, isToolEnabled, toggleTool } from './utils/ToolConfigManager';
 
@@ -150,14 +154,93 @@ function HeadlampAIPrompt() {
   const [showPopover, setShowPopover] = React.useState(false);
   const theme = useTheme();
 
+  // Auto-detection state
+  const [detectedProviders, setDetectedProviders] = React.useState<DetectedProvider[]>([]);
+  const [showDetectedDialog, setShowDetectedDialog] = React.useState(false);
+  const [hasRunAutoDetect, setHasRunAutoDetect] = React.useState(false);
+
   const previewEnabled = savedConfigs?.previewEnabled ?? false;
   const hasShownPopover = savedConfigs?.configPopoverShown || false;
+  const dismissedProviderIds: string[] = savedConfigs?.autoDetectDismissedProviders || [];
 
   const savedConfigData = React.useMemo(() => {
     return getSavedConfigurations(savedConfigs);
   }, [savedConfigs]);
 
   const hasAnyValidConfig = savedConfigData.providers && savedConfigData.providers.length > 0;
+
+  // Auto-detect AI providers when preview is enabled.
+  // Runs once per app session. `detectProviders` skips provider types
+  // that are already configured, and we further filter out providers
+  // the user has explicitly dismissed in a previous session.
+  React.useEffect(() => {
+    if (hasRunAutoDetect || !previewEnabled) {
+      console.debug(
+        `[ai-assistant auto-detect] useEffect skipped: hasRunAutoDetect=${hasRunAutoDetect}, previewEnabled=${previewEnabled}`
+      );
+      return;
+    }
+    console.debug(
+      `[ai-assistant auto-detect] starting auto-detection (${savedConfigData.providers.length} existing providers, ${dismissedProviderIds.length} dismissed)`
+    );
+    setHasRunAutoDetect(true);
+
+    detectProviders(savedConfigData.providers).then(detected => {
+      // Filter out providers the user previously declined
+      const newProviders = detected.filter(p => !dismissedProviderIds.includes(p.providerId));
+      console.debug(
+        `[ai-assistant auto-detect] ${detected.length} detected, ${
+          newProviders.length
+        } new (after filtering dismissed: ${dismissedProviderIds.join(', ') || 'none'})`
+      );
+      if (newProviders.length > 0) {
+        setDetectedProviders(newProviders);
+        setShowDetectedDialog(true);
+      }
+    });
+  }, [hasRunAutoDetect, previewEnabled, savedConfigData.providers, dismissedProviderIds]);
+
+  const handleDetectedConfirm = (selected: DetectedProvider[]) => {
+    setShowDetectedDialog(false);
+    let configs: SavedConfigurations = getSavedConfigurations(savedConfigs);
+    for (const provider of selected) {
+      configs = saveProviderConfig(
+        configs,
+        provider.providerId,
+        provider.config,
+        configs.providers.length === 0, // Make first one default
+        provider.displayName
+      );
+    }
+    // Mark unselected providers as dismissed so they aren't offered again
+    const selectedIds = new Set(selected.map(p => p.providerId));
+    const newlyDismissed = detectedProviders
+      .filter(p => !selectedIds.has(p.providerId))
+      .map(p => p.providerId);
+    const allDismissed = [...new Set([...dismissedProviderIds, ...newlyDismissed])];
+
+    // Merge into the current config to avoid overwriting unrelated settings
+    const currentConf = pluginStore.get() || {};
+    pluginStore.update({
+      ...currentConf,
+      ...configs,
+      autoDetectDismissedProviders: allDismissed,
+    });
+  };
+
+  const handleDetectedDismiss = () => {
+    setShowDetectedDialog(false);
+    // Record all currently-offered providers as dismissed so they
+    // aren't re-offered next session. Newly available providers will
+    // still be shown because their IDs aren't in this list.
+    const newlyDismissed = detectedProviders.map(p => p.providerId);
+    const allDismissed = [...new Set([...dismissedProviderIds, ...newlyDismissed])];
+    const currentConf = pluginStore.get() || {};
+    pluginStore.update({
+      ...currentConf,
+      autoDetectDismissedProviders: allDismissed,
+    });
+  };
 
   // Run AKS cluster check once on mount so results are ready before the panel opens
   React.useEffect(() => {
@@ -309,6 +392,13 @@ function HeadlampAIPrompt() {
           </Button>
         </Paper>
       </Popper>
+
+      <DetectedProvidersDialog
+        open={showDetectedDialog}
+        detectedProviders={detectedProviders}
+        onConfirm={handleDetectedConfirm}
+        onDismiss={handleDetectedDismiss}
+      />
     </Box>
   );
 }
