@@ -49,7 +49,16 @@ Also, by default the Plugin Catalog only shows plugins marked as official in Art
 
 ## Step 3: Create an ArtifactHub package for the plugin
 
-ArtifactHub needs to detect that you have a Headlamp plugin in your repository, and read the data about it. For that, we need an ArtifactHub package file in the repo for each plugin we have. For that, create an `artifacthub-pkg.yml` file in the root of your repository  with the following content:
+ArtifactHub needs to detect that you have a Headlamp plugin in your repository, and read the data about it. For that, we need an ArtifactHub package file in the repo for each plugin version. Create a folder named after the version inside your plugin directory, and add an `artifacthub-pkg.yml` file and a `README.md` file inside it. For example, for version `0.1.0`, the structure should look like:
+
+```
+my-plugin/
+└── 0.1.0/
+    ├── artifacthub-pkg.yml
+    └── README.md
+```
+
+Create the `artifacthub-pkg.yml` file with the following content:
 
 ```yaml
 version: 0.1.0
@@ -65,14 +74,16 @@ annotations:
   headlamp/plugin/distro-compat: <Compatibility of your plugin>
 ```
 
-Replace the placeholders with appropriate values. For more information, refer to the [Artifact Hub documentation](https://artifacthub.io/docs/topics/annotations/headlamp/). A sample configuration can be found [here](https://github.com/headlamp-k8s/plugins/blob/main/opencost/artifacthub-pkg.yml).
+The `README.md` file should contain a description of your plugin. This content is displayed on the Artifact Hub package page.
+
+Replace the placeholders with appropriate values. For more information, refer to the [Artifact Hub documentation](https://artifacthub.io/docs/topics/annotations/headlamp/). A sample configuration can be found [here](https://github.com/headlamp-k8s/plugins/blob/main/opencost/0.1.3/artifacthub-pkg.yml).
 
 ## Step 4: Push Changes to GitHub
 
-Commit and push the `artifacthub-repo.yml` and `artifacthub-pkg.yml` files to your GitHub repository:
+Commit and push the `artifacthub-repo.yml` and the version folder with its `artifacthub-pkg.yml` and `README.md` files to your GitHub repository:
 
 ```sh
-git add artifacthub-repo.yml artifacthub-pkg.yml
+git add artifacthub-repo.yml my-plugin/0.1.0/
 git commit -m "Add Artifact Hub configuration"
 git push origin main
 ```

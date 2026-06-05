@@ -374,8 +374,11 @@ The flow looks like this:
 ```
 Your GitHub repository
     │
-    │  artifacthub-repo.yml   ← proves you own the repo
-    │  artifacthub-pkg.yml    ← describes the plugin
+    │  artifacthub-repo.yml          ← proves you own the repo
+    │  hello-headlamp/
+    │    └── 1.0.0/
+    │         ├── artifacthub-pkg.yml  ← describes the plugin version
+    │         └── README.md            ← plugin description for Artifact Hub
     │
     ▼
 Artifact Hub (artifacthub.io)
@@ -392,12 +395,13 @@ Headlamp Plugin Catalog
 User's Headlamp installation
 ```
 
-There are **two YAML files** you need to add to your repository:
+There are **two YAML files** (plus a README) you need to add to your repository:
 
 | File | Location | Purpose |
 |------|----------|---------|
 | `artifacthub-repo.yml` | Repository root | Declares ownership of the repository |
-| `artifacthub-pkg.yml` | Plugin folder root | Describes a single plugin package |
+| `artifacthub-pkg.yml` | Version folder inside plugin directory (e.g. `hello-headlamp/1.0.0/`) | Describes a single plugin version |
+| `README.md` | Same version folder as `artifacthub-pkg.yml` | Plugin description shown on Artifact Hub |
 
 ---
 
@@ -419,7 +423,16 @@ If your repository contains multiple plugins (one per folder), a single `artifac
 
 ## Adding the Artifact Hub Package File
 
-Create `artifacthub-pkg.yml` in the **root of your plugin folder** (next to `package.json`):
+Create a folder named after your plugin version inside your plugin directory, and add an `artifacthub-pkg.yml` file and a `README.md` file inside it. For version `1.0.0`, the structure looks like:
+
+```
+hello-headlamp/
+└── 1.0.0/
+    ├── artifacthub-pkg.yml
+    └── README.md
+```
+
+Create `artifacthub-pkg.yml` inside the version folder:
 
 ```yaml
 version: 1.0.0
@@ -436,8 +449,10 @@ annotations:
   headlamp/plugin/distro-compat: "in-cluster,web,docker-desktop,desktop"
 ```
 
+Create a `README.md` in the same version folder with a description of your plugin. This content is displayed on the Artifact Hub package page.
+
 :::tip Real-world example
-The [KEDA plugin's `artifacthub-pkg.yml`](https://github.com/headlamp-k8s/plugins/blob/main/keda/artifacthub-pkg.yml) is a good reference for a production-ready file.
+The [OpenCost plugin's `0.1.3` version folder](https://github.com/headlamp-k8s/plugins/tree/main/opencost/0.1.3) is a good reference for a production-ready setup.
 :::
 
 ### Field reference
@@ -488,7 +503,7 @@ Add both files to your repository, commit, and push:
 
 ```bash
 # From the repository root
-git add artifacthub-repo.yml hello-headlamp/artifacthub-pkg.yml
+git add artifacthub-repo.yml hello-headlamp/1.0.0/
 git commit -m "chore: add Artifact Hub metadata"
 git push origin main
 ```
@@ -496,7 +511,7 @@ git push origin main
 If your repository contains only one plugin (the structure used in this series, where the plugin folder is the repo root), both files live in the same directory:
 
 ```bash
-git add artifacthub-repo.yml artifacthub-pkg.yml
+git add artifacthub-repo.yml 1.0.0/
 git commit -m "chore: add Artifact Hub metadata"
 git push origin main
 ```
@@ -515,7 +530,7 @@ git push origin main
    - **URL:** Your GitHub repository URL (e.g. `https://github.com/YOUR_USERNAME/hello-headlamp`)
 5. Click **Add**.
 
-Artifact Hub will scan your repository within a few minutes. If it finds a valid `artifacthub-repo.yml` and `artifacthub-pkg.yml`, your plugin will be listed under the **Headlamp** category.
+Artifact Hub will scan your repository within a few minutes. If it finds a valid `artifacthub-repo.yml` and a version folder with `artifacthub-pkg.yml` and `README.md`, your plugin will be listed under the **Headlamp** category.
 
 :::info
 **Official vs community plugins:** By default, Headlamp's Plugin Catalog only shows plugins that are marked as official in Artifact Hub or are on Headlamp's allow-list. Community plugins are still on Artifact Hub and fully installable — users simply need to enable **"Show all plugins"** in Plugin Catalog settings. This is a safety measure, not a quality bar.
@@ -575,27 +590,35 @@ git push origin --tags       # pushes the tag created by `npm version`
 
 Then create a new GitHub release for the new tag and attach the new `.tar.gz`.
 
-### Update `artifacthub-pkg.yml`
+### Create a new version folder
 
-Update three fields:
+Create a new version folder (e.g., `1.0.1/`) and add an `artifacthub-pkg.yml` and `README.md` inside it:
 
 ```yaml
+# 1.0.1/artifacthub-pkg.yml
 version: 1.0.1                 # ← new version
+name: hello-headlamp
+displayName: Hello Headlamp
 createdAt: "2025-03-01T00:00:00Z"  # ← today's date
+description: My Headlamp plugin description.
 annotations:
   headlamp/plugin/archive-url: "https://github.com/YOUR_USERNAME/hello-headlamp/releases/download/v1.0.1/hello-headlamp-1.0.1.tar.gz"
   headlamp/plugin/archive-checksum: "SHA256:<new-checksum>"  # ← from npm run package output
+  headlamp/plugin/version-compat: ">=0.22"
+  headlamp/plugin/distro-compat: "in-cluster,web,docker-desktop,desktop"
 ```
+
+Copy or update the `README.md` in the new version folder as well.
 
 ### Commit and push
 
 ```bash
-git add package.json artifacthub-pkg.yml
+git add package.json 1.0.1/
 git commit -m "chore: release v1.0.1"
 git push origin main
 ```
 
-Artifact Hub will automatically pick up the new `artifacthub-pkg.yml` on its next scan and update the listing. Users who installed the previous version will see an update available in the Plugin Catalog.
+Artifact Hub will automatically pick up the new version folder on its next scan and update the listing. Users who installed the previous version will see an update available in the Plugin Catalog.
 
 ---
 
@@ -642,7 +665,7 @@ owners:
     email: your-email@example.com
 ```
 
-### `artifacthub-pkg.yml` (plugin root)
+### `artifacthub-pkg.yml` (inside version folder, e.g. `1.0.0/artifacthub-pkg.yml`)
 
 ```yaml
 version: 1.0.0
@@ -662,7 +685,7 @@ annotations:
 
 - [Artifact Hub — Headlamp annotations reference](https://artifacthub.io/docs/topics/annotations/headlamp/)
 - [Artifact Hub — Headlamp plugin repository format](https://artifacthub.io/docs/topics/repositories/headlamp-plugins)
-- [KEDA plugin `artifacthub-pkg.yml`](https://github.com/headlamp-k8s/plugins/blob/main/keda/artifacthub-pkg.yml) — real-world example
+- [OpenCost plugin version folder](https://github.com/headlamp-k8s/plugins/tree/main/opencost/0.1.3) — real-world example
 - [Headlamp Plugin Catalog README](https://github.com/headlamp-k8s/plugins/tree/main/plugin-catalog#readme)
 - [Existing Headlamp plugins on Artifact Hub](https://artifacthub.io/packages/search?kind=21)
 - [Plugin publishing guide](https://headlamp.dev/docs/latest/development/plugins/publishing/)
