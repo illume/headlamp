@@ -449,7 +449,7 @@ annotations:
   headlamp/plugin/distro-compat: "in-cluster,web,docker-desktop,desktop"
 ```
 
-Create a `README.md` in the same version folder with a description of your plugin. This content is displayed on the Artifact Hub package page.
+Create a `README.md` in the same version folder with a description of your plugin — what it does, any requirements, and how to configure it. This content is displayed on the Artifact Hub package page. You can reuse your main plugin README or write a tailored version.
 
 :::tip Real-world example
 The [OpenCost plugin's `0.1.3` version folder](https://github.com/headlamp-k8s/plugins/tree/main/opencost/0.1.3) is a good reference for a production-ready setup.

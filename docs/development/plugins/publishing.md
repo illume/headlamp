@@ -74,7 +74,7 @@ annotations:
   headlamp/plugin/distro-compat: <Compatibility of your plugin>
 ```
 
-The `README.md` file should contain a description of your plugin. This content is displayed on the Artifact Hub package page.
+The `README.md` file should contain a description of your plugin — what it does, any requirements, and how to configure it. This content is displayed on the Artifact Hub package page. You can reuse your main plugin README or write a tailored version.
 
 Replace the placeholders with appropriate values. For more information, refer to the [Artifact Hub documentation](https://artifacthub.io/docs/topics/annotations/headlamp/). A sample configuration can be found [here](https://github.com/headlamp-k8s/plugins/blob/main/opencost/0.1.3/artifacthub-pkg.yml).
 
