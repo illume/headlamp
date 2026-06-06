@@ -173,7 +173,7 @@ export function DeveloperSettings({
         onClick={() => setExpanded(!expanded)}
       >
         <Typography variant="h6">Developer Options</Typography>
-        <IconButton size="small" sx={{ ml: 1 }}>
+        <IconButton size="small" sx={{ ml: 1 }} aria-label={expanded ? 'Collapse developer options' : 'Expand developer options'}>
           {expanded ? '▲' : '▼'}
         </IconButton>
       </Box>

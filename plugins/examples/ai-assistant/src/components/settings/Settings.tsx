@@ -89,10 +89,10 @@ export default function Settings() {
         pluginStore.update({ ...current, configPopoverShown: false });
       }}
       aksDocUrl={AKS_AGENT_INSTALL_DOC_URL}
-      devOptions={(savedConfigs as any)?.devOptions ?? {}}
+      devOptions={savedConfigs?.devOptions ?? {}}
       onDevOptionsChange={(options: DeveloperOptionsConfig) => {
         const current = pluginStore.get() || {};
-        pluginStore.update({ ...current, devOptions: options } as any);
+        pluginStore.update({ ...current, devOptions: options });
       }}
     />
   );

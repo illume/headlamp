@@ -10,6 +10,7 @@ import React from 'react';
 import { useBetween } from 'use-between';
 import type { AksAgentPodInfo } from './agent/aksAgentManager';
 import type { MCPConfig } from '@headlamp-k8s/ai-ui/components/settings/MCPSettings';
+import type { DeveloperOptionsConfig } from '@headlamp-k8s/ai-ui/components/settings/DeveloperSettings';
 
 export const PLUGIN_NAME = '@headlamp-k8s/ai-assistant';
 export const getSettingsURL = () => `/settings/plugins/${encodeURIComponent(PLUGIN_NAME)}`;
@@ -154,6 +155,9 @@ interface PluginConfig extends SavedConfigurations {
   holmesNamespace?: string; // default: "default"
   holmesServiceName?: string; // default: "holmesgpt-holmes"
   holmesPort?: number; // default: 80
+
+  /** Developer options for mock/fake implementations. */
+  devOptions?: DeveloperOptionsConfig;
 }
 
 export const pluginStore = new ConfigStore<PluginConfig>(PLUGIN_NAME);
