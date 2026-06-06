@@ -20,6 +20,7 @@ import type {
   SkillZipExtractor,
 } from './SkillLoader';
 import { MAX_ZIP_EXTRACTED_BYTES, MAX_ZIP_FILE_COUNT } from './SkillLoader';
+import type { ParsedSkill } from './skillParser';
 
 /**
  * Browser-compatible HTTP client for fetching skill zip archives from GitHub.
@@ -190,7 +191,7 @@ export class BrowserSkillCache {
    * @param key - Source cache key.
    * @returns Parsed skill objects, or null if not cached or expired.
    */
-  async get(key: string): Promise<any[] | null> {
+  async get(key: string): Promise<ParsedSkill[] | null> {
     try {
       const db = await openSkillsDB();
       return new Promise((resolve, reject) => {
@@ -226,7 +227,7 @@ export class BrowserSkillCache {
    * @param key - Source cache key.
    * @param skills - Parsed skill objects to cache.
    */
-  async set(key: string, skills: any[]): Promise<void> {
+  async set(key: string, skills: ParsedSkill[]): Promise<void> {
     try {
       const db = await openSkillsDB();
       return new Promise((resolve, reject) => {

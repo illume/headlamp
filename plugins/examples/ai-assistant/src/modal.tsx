@@ -557,18 +557,22 @@ export default function AIPrompt(props: {
   // Creates a SkillManager with browser-compatible adapters (fetch + JSZip).
   // Works in both browser and desktop/CLI: browser uses fetch for GitHub repos,
   // desktop can also load from local filesystem directories.
+  const skillManagerRef = React.useRef<SkillManager | null>(null);
   React.useEffect(() => {
     if (!aiManager || !(aiManager instanceof LangChainManager)) return;
 
     const skillsConfig = getSkillsConfig(pluginSettings);
     if (!skillsConfig.sources || skillsConfig.sources.length === 0) return;
 
-    const skillManager = new SkillManager(
-      createNoopFileSystem(),
-      createFetchHttpClient(),
-      createJSZipExtractor()
-    );
-    (aiManager as LangChainManager).setSkillManager(skillManager, skillsConfig);
+    // Reuse existing SkillManager instance to preserve its in-memory cache
+    if (!skillManagerRef.current) {
+      skillManagerRef.current = new SkillManager(
+        createNoopFileSystem(),
+        createFetchHttpClient(),
+        createJSZipExtractor()
+      );
+    }
+    (aiManager as LangChainManager).setSkillManager(skillManagerRef.current, skillsConfig);
   }, [aiManager, pluginSettings]);
 
   React.useEffect(() => {
