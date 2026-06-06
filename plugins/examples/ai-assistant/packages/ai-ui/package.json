@@ -37,6 +37,7 @@
     "./components/settings/AIToolsSettings": "./src/components/settings/AIToolsSettings.tsx",
     "./components/settings/AutoDetectProvider": "./src/components/settings/AutoDetectProvider.tsx",
     "./components/settings/DetectedProvidersDialog": "./src/components/settings/DetectedProvidersDialog.tsx",
+    "./components/settings/DeveloperSettings": "./src/components/settings/DeveloperSettings.tsx",
     "./components/settings/SettingsPage": "./src/components/settings/SettingsPage.tsx",
     "./config/modelConfig": "./src/config/modelConfig.ts",
     "./contexts/PromptWidthContext": "./src/contexts/PromptWidthContext.tsx",

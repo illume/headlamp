@@ -40,6 +40,10 @@ import React from 'react';
 import { getDefaultConfig } from '../../config/modelConfig';
 import { AIToolsSettings, type ToolInfo } from './AIToolsSettings';
 import { AutoDetectProvider, useAutoDetect } from './AutoDetectProvider';
+import {
+  DeveloperSettings,
+  type DeveloperOptionsConfig,
+} from './DeveloperSettings';
 import { HolmesAgentSettings } from './HolmesAgentSettings';
 import { MCPSettings, type ConfigStore } from './MCPSettings';
 import ModelSelector from './ModelSelector';
@@ -114,6 +118,13 @@ export interface SettingsPageProps {
   /** Callback to reset the config popover state. */
   onResetPopover?: () => void;
 
+  // --- Developer Options ---
+
+  /** Current developer options (mock model, agent, fake MCP). */
+  devOptions?: DeveloperOptionsConfig;
+  /** Callback when developer options change. */
+  onDevOptionsChange?: (options: DeveloperOptionsConfig) => void;
+
   // --- AKS Agent ---
 
   /** URL to AKS Agent installation documentation. */
@@ -150,6 +161,8 @@ export function SettingsPage({
   onTestModeChange,
   hasShownConfigPopover,
   onResetPopover,
+  devOptions,
+  onDevOptionsChange,
   aksDocUrl,
 }: SettingsPageProps) {
   const [activeConfiguration, setActiveConfiguration] = React.useState<{
@@ -366,6 +379,19 @@ export function SettingsPage({
               Learn how to install the AKS Agent →
             </Link>
           </Box>
+        </>
+      )}
+
+      {/* Developer Options Section */}
+      {devOptions && onDevOptionsChange && (
+        <>
+          <Divider sx={{ my: 3 }} />
+          <DeveloperSettings
+            devOptions={devOptions}
+            onDevOptionsChange={onDevOptionsChange}
+            savedConfigs={savedConfigs}
+            onConfigsChange={onConfigsChange}
+          />
         </>
       )}
 

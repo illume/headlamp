@@ -1,4 +1,5 @@
 import type { CommandRunner } from '@headlamp-k8s/ai-common/providers/providerAutoDetect';
+import type { DeveloperOptionsConfig } from '@headlamp-k8s/ai-ui/components/settings/DeveloperSettings';
 import { SettingsPage } from '@headlamp-k8s/ai-ui/components/settings/SettingsPage';
 import { isTestModeCheck } from '@headlamp-k8s/ai-ui/testing/testMode';
 import { Headlamp } from '@kinvolk/headlamp-plugin/lib';
@@ -88,6 +89,11 @@ export default function Settings() {
         pluginStore.update({ ...current, configPopoverShown: false });
       }}
       aksDocUrl={AKS_AGENT_INSTALL_DOC_URL}
+      devOptions={(savedConfigs as any)?.devOptions ?? {}}
+      onDevOptionsChange={(options: DeveloperOptionsConfig) => {
+        const current = pluginStore.get() || {};
+        pluginStore.update({ ...current, devOptions: options } as any);
+      }}
     />
   );
 }
