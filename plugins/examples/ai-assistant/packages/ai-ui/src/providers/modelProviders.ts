@@ -7,6 +7,8 @@ export function markdownToPlainText(markdown: string): string {
     markdown
       // Remove headers
       .replace(/^#{1,6}\s+/gm, '')
+      // Remove fenced code blocks but keep their content
+      .replace(/```(?:[\w-]+)?\n?([\s\S]*?)```/g, '$1')
       // Remove bold/italic
       .replace(/\*\*(.*?)\*\*/g, '$1')
       .replace(/\*(.*?)\*/g, '$1')
@@ -18,8 +20,6 @@ export function markdownToPlainText(markdown: string): string {
       .replace(/`([^`]+)`/g, '$1')
       // Remove strikethrough
       .replace(/~~(.*?)~~/g, '$1')
-      // Clean up extra whitespace
-      .replace(/\s+/g, ' ')
       // Remove list markers
       .replace(/^\s*[-*+]\s+/gm, '')
       .replace(/^\s*\d+\.\s+/gm, '')
@@ -29,6 +29,8 @@ export function markdownToPlainText(markdown: string): string {
       .replace(/^-{3,}\s*$/gm, '')
       // Remove surrounding square brackets
       .replace(/^\[|\]$/g, '')
+      // Clean up extra whitespace
+      .replace(/\s+/g, ' ')
       .trim()
   );
 }
