@@ -641,8 +641,8 @@ export default class LangChainManager extends AIManager {
   }
 
   // Helper method to create system prompt with context
-  private createSystemPrompt(skillsPromptText?: string): string {
-    const effectiveSkillsText = skillsPromptText ?? this.currentSkillsPromptText;
+  private createSystemPrompt(): string {
+    const effectiveSkillsText = this.currentSkillsPromptText;
     const availableTools = this.toolManager.getToolNames();
     const hasKubernetesTool = availableTools.includes('kubernetes_api_request');
 

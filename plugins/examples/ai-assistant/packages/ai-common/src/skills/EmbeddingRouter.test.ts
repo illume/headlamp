@@ -48,6 +48,11 @@ function makeSkill(
  * embedded texts gets a dimension. The vector for a text has 1.0
  * for each word present and 0.0 for absent words. This gives
  * predictable cosine similarity scores based on word overlap.
+ *
+ * The two-pass approach (rawVectors then padVector) is necessary because
+ * vocabulary grows as new words are seen during embedDocuments(). After
+ * the first pass builds the final vocabulary, the second pass pads all
+ * vectors to the same length so cosine similarity works correctly.
  */
 function createMockEmbeddings(opts?: { failOnQuery?: boolean; failOnDocuments?: boolean }): Embeddings & { vocabulary: string[] } {
   const vocabulary: string[] = [];

@@ -258,34 +258,38 @@ describe('SkillManager', () => {
   });
 
   describe('setEmbeddingRouter', () => {
+    /** Creates a minimal mock embedding router for testing. */
+    function createMockRouter(opts?: { hasIndex?: boolean }) {
+      let indexCleared = false;
+      return {
+        router: {
+          hasIndex: () => opts?.hasIndex ?? false,
+          clearIndex: () => { indexCleared = true; },
+        } as any,
+        get indexCleared() { return indexCleared; },
+      };
+    }
+
     it('should accept and return an embedding router', () => {
       expect(manager.getEmbeddingRouter()).toBeNull();
 
-      // Create a minimal mock embedding router
-      const mockRouter = { hasIndex: () => false, clearIndex: () => {} } as any;
-      manager.setEmbeddingRouter(mockRouter);
-      expect(manager.getEmbeddingRouter()).toBe(mockRouter);
+      const { router } = createMockRouter();
+      manager.setEmbeddingRouter(router);
+      expect(manager.getEmbeddingRouter()).toBe(router);
     });
 
     it('should allow clearing the embedding router', () => {
-      const mockRouter = { hasIndex: () => false, clearIndex: () => {} } as any;
-      manager.setEmbeddingRouter(mockRouter);
+      const { router } = createMockRouter();
+      manager.setEmbeddingRouter(router);
       manager.setEmbeddingRouter(null);
       expect(manager.getEmbeddingRouter()).toBeNull();
     });
-  });
 
-  describe('invalidateCache with embedding router', () => {
-    it('should clear the embedding index on invalidation', async () => {
-      let indexCleared = false;
-      const mockRouter = {
-        hasIndex: () => true,
-        clearIndex: () => { indexCleared = true; },
-      } as any;
-
-      manager.setEmbeddingRouter(mockRouter);
+    it('should clear the embedding index on cache invalidation', async () => {
+      const mock = createMockRouter({ hasIndex: true });
+      manager.setEmbeddingRouter(mock.router);
       manager.invalidateCache();
-      expect(indexCleared).toBe(true);
+      expect(mock.indexCleared).toBe(true);
     });
   });
 });

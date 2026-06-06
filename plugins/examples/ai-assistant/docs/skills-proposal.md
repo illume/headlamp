@@ -812,10 +812,7 @@ Skills are routed **per-message** (not globally) so each query gets the most rel
 
 The embedding-based router is implemented in `EmbeddingRouter.ts` using LangChain's `Embeddings` abstraction:
 
-**Required packages** (not currently installed):
-```
-@langchain/community  — for vector store integrations
-```
+**Required packages:** The `EmbeddingRouter` uses `@langchain/core`'s `Embeddings` abstraction, which is already a dependency of `ai-common`. No additional packages are needed for the core embedding routing. The optional `@langchain/community` package would only be needed for advanced vector store integrations (e.g., HNSWLib, FAISS) if the in-memory approach becomes insufficient at scale.
 
 **Architecture:**
 
