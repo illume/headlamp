@@ -16,6 +16,7 @@
     "./components/assistant/TestModeInput": "./src/components/assistant/TestModeInput.tsx",
     "./components/assistant/ToolsDialog": "./src/components/assistant/ToolsDialog.tsx",
     "./components/chat/ContentRenderer": "./src/components/chat/ContentRenderer.tsx",
+    "./components/chat/TextStreamContainer": "./src/components/chat/TextStreamContainer.tsx",
     "./components/chat/MCPFormattedMessage": "./src/components/chat/MCPFormattedMessage.tsx",
     "./components/common/ApiConfirmationDialog": "./src/components/common/ApiConfirmationDialog.tsx",
     "./components/common/LogsButton": "./src/components/common/LogsButton.tsx",

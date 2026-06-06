@@ -7,7 +7,7 @@ import {
   HOLMES_SERVICE_NAME,
   HOLMES_SERVICE_NAMESPACE,
   HOLMES_SERVICE_PORT,
-} from '../../holmesClient';
+} from '@headlamp-k8s/ai-common/agent/holmesClient';
 import {
   AKS_AGENT_INSTALL_DOC_URL,
   getAllAvailableTools,

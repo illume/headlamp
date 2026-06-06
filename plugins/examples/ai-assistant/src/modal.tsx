@@ -1,4 +1,4 @@
-import { getHolmesProxyBaseUrl, HolmesAgent } from './holmesClient';
+import { getHolmesProxyBaseUrl, HolmesAgent } from '@headlamp-k8s/ai-common/agent/holmesClient';
 import AIManager, { Prompt } from '@headlamp-k8s/ai-common/ai/manager';
 import LangChainManager from '@headlamp-k8s/ai-common/langchain/LangChainManager';
 import { inlineToolApprovalManager } from '@headlamp-k8s/ai-common/approval/InlineToolApprovalManager';
