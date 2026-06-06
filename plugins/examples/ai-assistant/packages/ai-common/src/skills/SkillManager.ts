@@ -17,6 +17,8 @@
 import { SkillLoader, SkillSource, SkillFileSystem, SkillHttpClient, SkillZipExtractor } from './SkillLoader';
 import { SkillsConfig, isSkillEnabled } from './SkillConfigManager';
 import { ParsedSkill, formatSkillsForPrompt } from './skillParser';
+import { routeAndFormatSkills, SkillRouterConfig, DEFAULT_ROUTER_CONFIG } from './SkillRouter';
+import { EmbeddingRouter } from './EmbeddingRouter';
 
 /**
  * Coordinates skill loading, caching, filtering, and prompt injection.
@@ -39,6 +41,13 @@ export class SkillManager {
   private fs: SkillFileSystem;
   private httpClient?: SkillHttpClient;
   private zipExtractor?: SkillZipExtractor;
+
+  /**
+   * Optional embedding router for semantic skill selection.
+   * When set, {@link getRoutedSkillsPromptText} uses embedding similarity
+   * instead of keyword matching. Falls back to keyword routing on failure.
+   */
+  private embeddingRouter: EmbeddingRouter | null = null;
 
   /**
    * Creates a new SkillManager.
@@ -185,10 +194,75 @@ export class SkillManager {
     };
   }
 
+  /**
+   * Generates prompt text for skills routed to a specific user query.
+   *
+   * Uses embedding-based routing when an {@link EmbeddingRouter} is configured
+   * and indexed, otherwise falls back to keyword-based routing via
+   * {@link routeAndFormatSkills}. For small skill sets (≤ maxSkills),
+   * all enabled skills are included regardless of routing strategy.
+   *
+   * @param query - The user's query text.
+   * @param config - The current skills configuration.
+   * @param routerConfig - Optional router configuration overrides.
+   * @returns Formatted string with only the relevant skills, or empty string.
+   */
+  async getRoutedSkillsPromptText(
+    query: string,
+    config: SkillsConfig,
+    routerConfig: SkillRouterConfig = DEFAULT_ROUTER_CONFIG
+  ): Promise<string> {
+    const enabledSkills = this.getEnabledSkills(config);
+    if (enabledSkills.length === 0) return '';
+
+    // For small skill sets, skip routing and include everything
+    if (enabledSkills.length <= routerConfig.maxSkills) {
+      return formatSkillsForPrompt(enabledSkills, config.maxTotalSkillSizeBytes);
+    }
+
+    // Try embedding-based routing first
+    if (this.embeddingRouter && this.embeddingRouter.hasIndex()) {
+      try {
+        return await this.embeddingRouter.routeAndFormat(query, enabledSkills, routerConfig);
+      } catch (error) {
+        console.warn('SkillManager: embedding routing failed, falling back to keyword routing:', error);
+      }
+    }
+
+    // Fall back to keyword routing
+    return routeAndFormatSkills(query, enabledSkills, routerConfig);
+  }
+
+  /**
+   * Sets the embedding router for semantic skill selection.
+   *
+   * When set, {@link getRoutedSkillsPromptText} will use embedding similarity
+   * to select skills. The router should be initialized with an Embeddings
+   * instance matching the user's configured provider.
+   *
+   * Call this after constructing the manager and before processing queries.
+   * Pass `null` to disable embedding routing and revert to keyword-only.
+   *
+   * @param router - An initialized EmbeddingRouter, or null to disable.
+   */
+  setEmbeddingRouter(router: EmbeddingRouter | null): void {
+    this.embeddingRouter = router;
+  }
+
+  /**
+   * Returns the current embedding router, if one is configured.
+   */
+  getEmbeddingRouter(): EmbeddingRouter | null {
+    return this.embeddingRouter;
+  }
+
   /** Clears the skill cache, forcing a reload on the next call. */
   invalidateCache(): void {
     this.cachedSkills.clear();
     this.lastLoadTimestamp = 0;
+    if (this.embeddingRouter) {
+      this.embeddingRouter.clearIndex();
+    }
   }
 
   /**

@@ -43,6 +43,8 @@ import { apiErrorPromptTemplate, toolFailurePromptTemplate } from './PromptTempl
 import { KubernetesToolContext } from './tools/kubernetes/types';
 import { ToolManager } from './tools/ToolManager';
 import { RecommendedTool, ToolOrchestrator } from './tools/ToolOrchestrator';
+import { SkillManager } from '../skills/SkillManager';
+import { SkillsConfig, DEFAULT_SKILLS_CONFIG } from '../skills/SkillConfigManager';
 
 /** Coordinates model calls, tool execution, and chat history for the AI assistant. */
 export default class LangChainManager extends AIManager {
@@ -54,6 +56,12 @@ export default class LangChainManager extends AIManager {
   private promptTemplate: ChatPromptTemplate;
   private outputParser: StringOutputParser;
   private useDirectToolCalling: boolean = false;
+
+  // Skills system
+  private skillManager: SkillManager | null = null;
+  private skillsConfig: SkillsConfig = DEFAULT_SKILLS_CONFIG;
+  /** Skills prompt text for the current request (computed per-message, transient). */
+  private currentSkillsPromptText: string = '';
 
   // Response cache for common queries (in-memory)
   private responseCache: Map<string, { response: Prompt; timestamp: number }> = new Map();
@@ -78,6 +86,51 @@ export default class LangChainManager extends AIManager {
 
     // Set up event listeners for inline tool confirmations
     this.setupToolConfirmationListeners();
+  }
+
+  /**
+   * Configures the skill manager for prompt skill injection.
+   *
+   * When configured, skills are automatically routed per-query and
+   * injected into the system prompt. Uses embedding-based routing
+   * when an {@link EmbeddingRouter} is set on the manager, otherwise
+   * falls back to keyword-based routing.
+   *
+   * @param skillManager - An initialized SkillManager instance.
+   * @param skillsConfig - The user's skills configuration.
+   */
+  setSkillManager(skillManager: SkillManager, skillsConfig: SkillsConfig): void {
+    this.skillManager = skillManager;
+    this.skillsConfig = skillsConfig;
+  }
+
+  /**
+   * Updates the skills configuration without replacing the skill manager.
+   *
+   * @param skillsConfig - The updated skills configuration.
+   */
+  setSkillsConfig(skillsConfig: SkillsConfig): void {
+    this.skillsConfig = skillsConfig;
+  }
+
+  /**
+   * Computes the routed skills prompt text for a user query.
+   *
+   * Returns empty string if no skill manager is configured or no skills
+   * are available. Handles errors gracefully — skill routing failures
+   * never block the main LLM call.
+   */
+  private async getSkillsPromptForQuery(query: string): Promise<string> {
+    if (!this.skillManager) return '';
+
+    try {
+      // Ensure skills are loaded
+      await this.skillManager.loadAllSkills(this.skillsConfig);
+      return await this.skillManager.getRoutedSkillsPromptText(query, this.skillsConfig);
+    } catch (error) {
+      console.warn('LangChainManager: skills routing failed, proceeding without skills:', error);
+      return '';
+    }
   }
 
   // Set up event listeners for tool confirmation events
@@ -158,6 +211,9 @@ export default class LangChainManager extends AIManager {
 
     try {
       const modelToUse = this.boundModel || this.model;
+
+      // Route skills for this query (async, with fallback)
+      this.currentSkillsPromptText = await this.getSkillsPromptForQuery(message);
 
       // Prepare messages
       const messages = [
@@ -585,7 +641,8 @@ export default class LangChainManager extends AIManager {
   }
 
   // Helper method to create system prompt with context
-  private createSystemPrompt(): string {
+  private createSystemPrompt(skillsPromptText?: string): string {
+    const effectiveSkillsText = skillsPromptText ?? this.currentSkillsPromptText;
     const availableTools = this.toolManager.getToolNames();
     const hasKubernetesTool = availableTools.includes('kubernetes_api_request');
 
@@ -686,6 +743,11 @@ Examples of good MCP tool responses:
 - Monitoring query → "Current status: [key metrics and insights]"
 
 ALWAYS interpret results meaningfully - don't just show raw JSON or data dumps.`;
+    }
+
+    // Inject routed skills into the system prompt
+    if (effectiveSkillsText) {
+      systemPromptContent += effectiveSkillsText;
     }
 
     if (this.currentContext) {
@@ -854,6 +916,9 @@ The user is waiting for you to explain what the tools discovered. Provide a dire
     this.currentAbortController = new AbortController();
 
     try {
+      // Route skills for this query (async, with graceful fallback)
+      this.currentSkillsPromptText = await this.getSkillsPromptForQuery(message);
+
       // FIRST: Try to orchestrate multiple relevant tools before making LLM call
       // This enables multi-tool execution for comprehensive responses
       const recommendedTools = await this.orchestrateToolsForRequest(message);
