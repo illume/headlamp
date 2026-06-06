@@ -127,6 +127,9 @@ export function getProviderModelsForChat(
 
 /** Returns the label used to display a model name in the UI. */
 export function getModelDisplayName(model: string): string {
-  // You can customize this if you want more user-friendly names
+  // Strip "provider/" prefix from Copilot model IDs (e.g. "openai/gpt-4o" → "gpt-4o")
+  if (model.includes('/')) {
+    return model.split('/').pop()!;
+  }
   return model;
 }

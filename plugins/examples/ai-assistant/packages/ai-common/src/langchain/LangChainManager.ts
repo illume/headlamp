@@ -434,6 +434,23 @@ export default class LangChainManager extends AIManager {
             },
           });
         }
+        case 'copilot': {
+          if (!sanitizedConfig.apiKey) {
+            throw new Error('API key (GitHub token) is required for Copilot');
+          }
+          // Strip "provider/" prefix from Copilot model IDs (e.g. "openai/gpt-4o" → "gpt-4o")
+          const copilotModel = sanitizedConfig.model.includes('/')
+            ? sanitizedConfig.model.split('/').pop()!
+            : sanitizedConfig.model;
+          return new ChatOpenAI({
+            apiKey: sanitizedConfig.apiKey,
+            model: copilotModel,
+            verbose: true,
+            configuration: {
+              baseURL: 'https://api.githubcopilot.com',
+            },
+          });
+        }
         case 'local': {
           if (!sanitizedConfig.baseUrl) {
             throw new Error('Base URL is required for local models');

@@ -438,6 +438,13 @@ interface ModelSelectorProps {
   }) => void;
   /** Callback invoked when the user accepts provider terms of service. */
   onTermsAccept?: (updatedConfigs: SavedConfigurations) => void;
+  /**
+   * Callback invoked when auto-detection discovers providers.
+   * If provided, an "Auto Detect" button is shown next to "Add Provider".
+   */
+  onAutoDetect?: () => void;
+  /** Whether auto-detection is currently in progress. */
+  autoDetecting?: boolean;
   /** Component used to render dialog shells. Falls back to MUI Dialog. */
   DialogSlot?: React.ElementType;
 }
@@ -450,6 +457,8 @@ export default function ModelSelector({
   isConfigView = false,
   onChange,
   onTermsAccept,
+  onAutoDetect,
+  autoDetecting = false,
   DialogSlot = DefaultDialog,
 }: ModelSelectorProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -815,6 +824,23 @@ export default function ModelSelector({
           >
             Add Provider
           </Button>
+          {onAutoDetect && (
+            <Button
+              variant="outlined"
+              startIcon={
+                autoDetecting ? (
+                  <Icon icon="mdi:loading" width="20px" height="20px" className="spin" />
+                ) : (
+                  <Icon icon="mdi:magnify-scan" />
+                )
+              }
+              onClick={onAutoDetect}
+              disabled={autoDetecting}
+              sx={{ ml: 1 }}
+            >
+              {autoDetecting ? 'Detecting…' : 'Auto Detect'}
+            </Button>
+          )}
         </Box>
 
         {!savedConfigs?.providers?.length ? (

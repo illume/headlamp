@@ -59,6 +59,46 @@ export interface ModelProvider {
  */
 export const modelProviders: ModelProvider[] = [
   {
+    id: 'copilot',
+    name: 'GitHub Copilot',
+    icon: 'ai-providers:copilot',
+    description: 'Integration with GitHub Copilot via GitHub CLI authentication',
+    fields: [
+      {
+        name: 'apiKey',
+        label: 'GitHub Token',
+        type: 'text',
+        required: true,
+        placeholder: 'ghp_... or use Auto Detect',
+        description:
+          'GitHub personal access token. Use Auto Detect to authenticate via the gh CLI.',
+      },
+      {
+        name: 'model',
+        label: 'Model',
+        type: 'select',
+        required: true,
+        options: [
+          'gpt-5.4',
+          'gpt-5.2',
+          'gpt-5.1',
+          'gpt-4.1',
+          'gpt-4o',
+          'gpt-4o-mini',
+          'o4-mini',
+          'o3',
+          'o3-mini',
+          'o1',
+          'o1-mini',
+          'claude-sonnet-4',
+          'claude-3.5-sonnet',
+          'claude-3.5-haiku',
+        ],
+        default: 'gpt-4o',
+      },
+    ],
+  },
+  {
     id: 'openai',
     name: 'OpenAI',
     icon: 'ai-providers:openai',

@@ -51,6 +51,13 @@ import {
   getSavedConfigurations,
   StoredProviderConfig,
 } from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
+import {
+  GH_CLI_AUTH_SENTINEL,
+  AZ_CLI_AUTH_SENTINEL,
+  refreshGitHubToken,
+  refreshAzureOpenAIKey,
+  type CommandRunner,
+} from '@headlamp-k8s/ai-common/providers/providerAutoDetect';
 import { getEnabledToolIds } from '@headlamp-k8s/ai-common/managers/ToolConfigManager';
 import { usePromptWidth } from '@headlamp-k8s/ai-ui/contexts/PromptWidthContext';
 
@@ -64,6 +71,17 @@ export default function AIPrompt(props: {
   const history = useHistory();
   const location = useLocation();
   const rootRef = React.useRef(null);
+  // Command runner for CLI-based provider detection (wired to pluginRunCommand if available)
+  const commandRunnerRef = React.useRef<CommandRunner | null>(null);
+  React.useEffect(() => {
+    // Wire pluginRunCommand from Headlamp's Electron bridge if available
+    if (typeof (globalThis as any).pluginRunCommand === 'function') {
+      commandRunnerRef.current = async (command: string, args: string[]) => {
+        const result = await (globalThis as any).pluginRunCommand(command, args);
+        return { stdout: result?.stdout ?? '', exitCode: result?.exitCode ?? -1 };
+      };
+    }
+  }, []);
   const [promptVal, setPromptVal] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [apiError, setApiError] = React.useState(null);
@@ -476,24 +494,56 @@ export default function AIPrompt(props: {
   React.useEffect(() => {
     // Recreate the manager whenever pluginSettings change (including tool settings)
     // or when activeConfig/selectedModel/mcpConfig changes
-    if (activeConfig) {
+    if (!activeConfig) return;
+
+    let isCurrent = true;
+
+    async function initManager() {
       try {
         // Create config with selected model
         const configWithModel = {
-          ...activeConfig.config,
+          ...activeConfig!.config,
           model: selectedModel,
         };
+
+        // Refresh sentinel tokens before creating the model
+        if (configWithModel.apiKey === GH_CLI_AUTH_SENTINEL && commandRunnerRef.current) {
+          const freshToken = await refreshGitHubToken(commandRunnerRef.current);
+          if (freshToken) {
+            configWithModel.apiKey = freshToken;
+          }
+        }
+        if (configWithModel.apiKey === AZ_CLI_AUTH_SENTINEL && commandRunnerRef.current) {
+          const rg = configWithModel.azResourceGroup;
+          const acct = configWithModel.azAccountName;
+          if (rg && acct) {
+            const freshKey = await refreshAzureOpenAIKey(rg, acct, commandRunnerRef.current);
+            if (freshKey) {
+              configWithModel.apiKey = freshKey;
+            }
+          }
+        }
+
+        if (!isCurrent) return;
+
         const newManager = new LangChainManager(
-          activeConfig.providerId,
+          activeConfig!.providerId,
           configWithModel,
           enabledTools
         );
         setAiManager(newManager);
-        return;
       } catch (error) {
-        setApiError(`Failed to initialize AI model: ${error.message}`);
+        if (isCurrent) {
+          setApiError(`Failed to initialize AI model: ${error.message}`);
+        }
       }
     }
+
+    initManager();
+
+    return () => {
+      isCurrent = false;
+    };
   }, [enabledTools, activeConfig, selectedModel, mcpConfigKey]);
 
   React.useEffect(() => {

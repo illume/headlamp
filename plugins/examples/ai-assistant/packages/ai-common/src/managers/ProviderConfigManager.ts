@@ -43,6 +43,39 @@ export interface SavedConfigurations {
 }
 
 /**
+ * Returns true when two stored provider configs refer to the same
+ * logical provider account. Handles Azure CLI sentinel auth where
+ * configs use azAccountName instead of matching API keys directly.
+ */
+export function isSameStoredConfig(
+  a: StoredProviderConfig,
+  b: StoredProviderConfig
+): boolean {
+  if (a.providerId !== b.providerId) return false;
+
+  // Azure: match on account name (sentinel configs have no real key)
+  if (a.providerId === 'azure') {
+    if (a.config?.azAccountName && b.config?.azAccountName) {
+      return a.config.azAccountName === b.config.azAccountName;
+    }
+  }
+
+  // Match on API key
+  if (a.config?.apiKey && b.config?.apiKey && a.config.apiKey === b.config.apiKey) {
+    return true;
+  }
+
+  // Match on base URL + model
+  if (a.config?.baseUrl && b.config?.baseUrl && a.config.baseUrl === b.config.baseUrl) {
+    if (a.config?.model && b.config?.model && a.config.model === b.config.model) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+/**
  * Returns saved provider configurations from plugin data.
  */
 export function getSavedConfigurations(data: any): SavedConfigurations {
@@ -112,6 +145,16 @@ export function saveProviderConfig(
 
     // Must match provider ID
     if (p.providerId !== providerId) return false;
+
+    // Azure sentinel-aware matching: configs with azAccountName match on that
+    if (
+      p.providerId === 'azure' &&
+      p.config.azAccountName &&
+      config.azAccountName &&
+      p.config.azAccountName === config.azAccountName
+    ) {
+      return true;
+    }
 
     // If either config doesn't have API key or other identifying fields, they're not matching
     if ((!p.config.apiKey && config.apiKey) || (p.config.apiKey && !config.apiKey)) {
@@ -200,6 +243,16 @@ export function deleteProviderConfig(
   const providers = Array.isArray(safeConfigs?.providers)
     ? safeConfigs?.providers.filter(p => {
         if (p.providerId !== providerId) return true;
+
+        // Azure sentinel-aware matching: configs with azAccountName match on that
+        if (
+          p.providerId === 'azure' &&
+          p.config.azAccountName &&
+          config.azAccountName &&
+          p.config.azAccountName === config.azAccountName
+        ) {
+          return false;
+        }
 
         if (p.config.apiKey && config.apiKey) {
           return p.config.apiKey !== config.apiKey;

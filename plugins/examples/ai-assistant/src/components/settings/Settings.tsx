@@ -1,11 +1,19 @@
 import {
   getActiveConfig,
   SavedConfigurations,
+  saveProviderConfig,
 } from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
+import {
+  detectProviders,
+  dismissalKey,
+  type CommandRunner,
+  type DetectedProvider,
+} from '@headlamp-k8s/ai-common/providers/providerAutoDetect';
 import { getDefaultConfig } from '@headlamp-k8s/ai-ui/config/modelConfig';
 import { HolmesAgentSettings } from '@headlamp-k8s/ai-ui/components/settings/HolmesAgentSettings';
 import { MCPSettings } from '@headlamp-k8s/ai-ui/components/settings/MCPSettings';
 import ModelSelector from '@headlamp-k8s/ai-ui/components/settings/ModelSelector';
+import DetectedProvidersDialog from '@headlamp-k8s/ai-ui/components/settings/DetectedProvidersDialog';
 import { SkillSettings } from '@headlamp-k8s/ai-ui/components/settings/SkillSettings';
 import { isTestModeCheck } from '@headlamp-k8s/ai-ui/testing/testMode';
 import { Headlamp } from '@kinvolk/headlamp-plugin/lib';
@@ -62,6 +70,81 @@ export default function Settings() {
     }
     return { providerId: 'openai', config: getDefaultConfig('openai'), displayName: '' };
   });
+
+  // Auto-detect state
+  const [autoDetecting, setAutoDetecting] = React.useState(false);
+  const [detectedProviders, setDetectedProviders] = React.useState<DetectedProvider[]>([]);
+  const [showDetectedDialog, setShowDetectedDialog] = React.useState(false);
+
+  // Command runner for CLI-based provider detection
+  const commandRunnerRef = React.useRef<CommandRunner | null>(null);
+  React.useEffect(() => {
+    if (typeof (globalThis as any).pluginRunCommand === 'function') {
+      commandRunnerRef.current = async (command: string, args: string[]) => {
+        const result = await (globalThis as any).pluginRunCommand(command, args);
+        return { stdout: result?.stdout ?? '', exitCode: result?.exitCode ?? -1 };
+      };
+    }
+  }, []);
+
+  const handleAutoDetect = React.useCallback(async () => {
+    setAutoDetecting(true);
+    try {
+      const pluginSettings = pluginStore.get() || {};
+      const dismissed: string[] = pluginSettings.autoDetectDismissedProviders || [];
+      const existing = savedConfigs?.providers || [];
+      const detected = await detectProviders(existing, dismissed, commandRunnerRef.current);
+      if (detected.length > 0) {
+        setDetectedProviders(detected);
+        setShowDetectedDialog(true);
+      }
+    } catch (e) {
+      console.error('[Settings] auto-detect failed:', e);
+    } finally {
+      setAutoDetecting(false);
+    }
+  }, [savedConfigs]);
+
+  const handleAddDetectedProviders = React.useCallback(
+    (providers: DetectedProvider[]) => {
+      let configs = savedConfigs;
+      for (const provider of providers) {
+        configs = saveProviderConfig(
+          configs,
+          provider.providerId,
+          provider.config,
+          !configs?.providers?.length, // make default if no providers exist
+          provider.displayName
+        );
+      }
+      pluginStore.update(configs as any);
+
+      // Update active configuration to first added provider if none exists
+      if (!savedConfigs?.providers?.length && providers.length > 0) {
+        setActiveConfiguration({
+          providerId: providers[0].providerId,
+          config: { ...providers[0].config },
+          displayName: providers[0].displayName,
+        });
+      }
+      setShowDetectedDialog(false);
+      setDetectedProviders([]);
+    },
+    [savedConfigs]
+  );
+
+  const handleDismissDetectedProviders = React.useCallback(
+    (providers: DetectedProvider[]) => {
+      const currentConf = pluginStore.get() || {};
+      const dismissed: string[] = currentConf.autoDetectDismissedProviders || [];
+      const newDismissals = providers.map(p => dismissalKey(p));
+      const merged = [...new Set([...dismissed, ...newDismissals])];
+      pluginStore.update({ ...currentConf, autoDetectDismissedProviders: merged });
+      setShowDetectedDialog(false);
+      setDetectedProviders([]);
+    },
+    []
+  );
 
   const handleModelSelectorChange = (changes: {
     providerId: string;
@@ -198,6 +281,15 @@ export default function Settings() {
         onTermsAccept={updatedConfigs => {
           pluginStore.update(updatedConfigs as any);
         }}
+        onAutoDetect={handleAutoDetect}
+        autoDetecting={autoDetecting}
+      />
+      <DetectedProvidersDialog
+        open={showDetectedDialog}
+        onClose={() => setShowDetectedDialog(false)}
+        detectedProviders={detectedProviders}
+        onAddProviders={handleAddDetectedProviders}
+        onDismiss={handleDismissDetectedProviders}
       />
       {/* AI Tools Section */}
       <Divider sx={{ my: 3 }} />

@@ -19,6 +19,7 @@ import {
   deleteProviderConfig,
   getActiveConfig,
   getSavedConfigurations,
+  isSameStoredConfig,
   saveProviderConfig,
   saveTermsAcceptance,
 } from './ProviderConfigManager';
@@ -195,6 +196,108 @@ describe('ProviderConfigManager', () => {
         providers: [],
         termsAccepted: true,
       });
+    });
+  });
+
+  describe('isSameStoredConfig', () => {
+    it('matches configs with same provider and API key', () => {
+      const a = { providerId: 'openai', config: { apiKey: 'sk-123', model: 'gpt-4o' } };
+      const b = { providerId: 'openai', config: { apiKey: 'sk-123', model: 'gpt-4o' } };
+      expect(isSameStoredConfig(a, b)).toBe(true);
+    });
+
+    it('does not match configs with different provider IDs', () => {
+      const a = { providerId: 'openai', config: { apiKey: 'sk-123' } };
+      const b = { providerId: 'anthropic', config: { apiKey: 'sk-123' } };
+      expect(isSameStoredConfig(a, b)).toBe(false);
+    });
+
+    it('matches Azure configs by azAccountName', () => {
+      const a = { providerId: 'azure', config: { apiKey: '__AZ_CLI_AUTH__', azAccountName: 'myaccount' } };
+      const b = { providerId: 'azure', config: { apiKey: '__AZ_CLI_AUTH__', azAccountName: 'myaccount' } };
+      expect(isSameStoredConfig(a, b)).toBe(true);
+    });
+
+    it('does not match Azure configs with different azAccountName', () => {
+      const a = { providerId: 'azure', config: { apiKey: '__AZ_CLI_AUTH__', azAccountName: 'account1' } };
+      const b = { providerId: 'azure', config: { apiKey: '__AZ_CLI_AUTH__', azAccountName: 'account2' } };
+      expect(isSameStoredConfig(a, b)).toBe(false);
+    });
+
+    it('matches configs with same base URL and model', () => {
+      const a = { providerId: 'local', config: { baseUrl: 'http://localhost:11434', model: 'llama3' } };
+      const b = { providerId: 'local', config: { baseUrl: 'http://localhost:11434', model: 'llama3' } };
+      expect(isSameStoredConfig(a, b)).toBe(true);
+    });
+
+    it('does not match when no shared identifiers', () => {
+      const a = { providerId: 'openai', config: { model: 'gpt-4o' } };
+      const b = { providerId: 'openai', config: { model: 'gpt-4o-mini' } };
+      expect(isSameStoredConfig(a, b)).toBe(false);
+    });
+  });
+
+  describe('saveProviderConfig — Azure sentinel support', () => {
+    it('updates existing Azure config matched by azAccountName', () => {
+      const existing = {
+        providers: [
+          {
+            providerId: 'azure',
+            displayName: 'Azure (myaccount)',
+            config: { apiKey: '__AZ_CLI_AUTH__', azAccountName: 'myaccount', model: 'gpt-4' },
+          },
+        ],
+      };
+      const result = saveProviderConfig(
+        existing,
+        'azure',
+        { apiKey: '__AZ_CLI_AUTH__', azAccountName: 'myaccount', model: 'gpt-4o' }
+      );
+      expect(result.providers).toHaveLength(1);
+      expect(result.providers![0].config.model).toBe('gpt-4o');
+    });
+
+    it('adds new Azure config when azAccountName differs', () => {
+      const existing = {
+        providers: [
+          {
+            providerId: 'azure',
+            displayName: 'Azure (account1)',
+            config: { apiKey: '__AZ_CLI_AUTH__', azAccountName: 'account1', model: 'gpt-4' },
+          },
+        ],
+      };
+      const result = saveProviderConfig(
+        existing,
+        'azure',
+        { apiKey: '__AZ_CLI_AUTH__', azAccountName: 'account2', model: 'gpt-4o' }
+      );
+      expect(result.providers).toHaveLength(2);
+    });
+  });
+
+  describe('deleteProviderConfig — Azure sentinel support', () => {
+    it('deletes Azure config matched by azAccountName', () => {
+      const existing = {
+        providers: [
+          {
+            providerId: 'azure',
+            displayName: 'Azure (myaccount)',
+            config: { apiKey: '__AZ_CLI_AUTH__', azAccountName: 'myaccount', model: 'gpt-4' },
+          },
+          {
+            providerId: 'openai',
+            config: { apiKey: 'sk-123', model: 'gpt-4o' },
+          },
+        ],
+      };
+      const result = deleteProviderConfig(
+        existing,
+        'azure',
+        { apiKey: '__AZ_CLI_AUTH__', azAccountName: 'myaccount', model: 'gpt-4' }
+      );
+      expect(result.providers).toHaveLength(1);
+      expect(result.providers![0].providerId).toBe('openai');
     });
   });
 });
