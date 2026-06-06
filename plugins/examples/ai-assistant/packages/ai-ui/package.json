@@ -6,6 +6,7 @@
   "exports": {
     "./components/agent/AgentModeSelector": "./src/components/agent/AgentModeSelector.tsx",
     "./components/agent/AgentThinkingSteps": "./src/components/agent/AgentThinkingSteps.tsx",
+    "./components/appbar/AIAssistantToggle": "./src/components/appbar/AIAssistantToggle.tsx",
     "./components/assistant/AgentThinkingBlock": "./src/components/assistant/AgentThinkingBlock.tsx",
     "./components/assistant/AIChatContent": "./src/components/assistant/AIChatContent.tsx",
     "./components/assistant/AIAssistantHeader": "./src/components/assistant/AIAssistantHeader.tsx",
@@ -14,6 +15,7 @@
     "./components/assistant/PromptSuggestions": "./src/components/assistant/PromptSuggestions.tsx",
     "./components/assistant/TestModeInput": "./src/components/assistant/TestModeInput.tsx",
     "./components/assistant/ToolsDialog": "./src/components/assistant/ToolsDialog.tsx",
+    "./components/chat/ContentRenderer": "./src/components/chat/ContentRenderer.tsx",
     "./components/chat/MCPFormattedMessage": "./src/components/chat/MCPFormattedMessage.tsx",
     "./components/common/ApiConfirmationDialog": "./src/components/common/ApiConfirmationDialog.tsx",
     "./components/common/LogsButton": "./src/components/common/LogsButton.tsx",
