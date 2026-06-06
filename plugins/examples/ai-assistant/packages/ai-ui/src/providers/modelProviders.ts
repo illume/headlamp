@@ -129,7 +129,7 @@ export function getProviderModelsForChat(
 export function getModelDisplayName(model: string): string {
   // Strip "provider/" prefix from Copilot model IDs (e.g. "openai/gpt-4o" → "gpt-4o")
   if (model.includes('/')) {
-    return model.split('/').pop()!;
+    return model.split('/').pop() ?? model;
   }
   return model;
 }

@@ -494,9 +494,9 @@ export default function AIPrompt(props: {
   React.useEffect(() => {
     // Recreate the manager whenever pluginSettings change (including tool settings)
     // or when activeConfig/selectedModel/mcpConfig changes
-    if (!activeConfig) return;
-
     let isCurrent = true;
+
+    if (!activeConfig) return () => { isCurrent = false; };
 
     async function initManager() {
       try {

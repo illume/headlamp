@@ -427,7 +427,11 @@ async function getAzureOpenAIKey(
  * Normalise an Azure OpenAI endpoint URL for comparison.
  */
 function normaliseEndpoint(url: string): string {
-  return url.trim().toLowerCase().replace(/\/+$/, '');
+  let s = url.trim().toLowerCase();
+  while (s.endsWith('/')) {
+    s = s.slice(0, -1);
+  }
+  return s;
 }
 
 /**

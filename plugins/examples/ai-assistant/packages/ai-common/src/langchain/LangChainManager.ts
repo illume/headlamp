@@ -440,7 +440,7 @@ export default class LangChainManager extends AIManager {
           }
           // Strip "provider/" prefix from Copilot model IDs (e.g. "openai/gpt-4o" → "gpt-4o")
           const copilotModel = sanitizedConfig.model.includes('/')
-            ? sanitizedConfig.model.split('/').pop()!
+            ? sanitizedConfig.model.split('/').pop() ?? sanitizedConfig.model
             : sanitizedConfig.model;
           return new ChatOpenAI({
             apiKey: sanitizedConfig.apiKey,
