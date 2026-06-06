@@ -7,7 +7,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import AgentThinkingBlock from '@headlamp-k8s/ai-ui/components/assistant/AgentThinkingBlock';
 import InlineToolConfirmation from '@headlamp-k8s/ai-ui/components/common/InlineToolConfirmation';
 import type { AgentThinkingStep } from './agent/aksAgentManager';
-import AgentThinkingSteps from './components/agent/AgentThinkingSteps';
+import AgentThinkingSteps from '@headlamp-k8s/ai-ui/components/agent/AgentThinkingSteps';
 import ContentRenderer from './ContentRenderer';
 import EditorDialog from './editordialog';
 

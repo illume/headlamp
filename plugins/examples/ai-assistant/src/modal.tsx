@@ -15,11 +15,11 @@ import {
   destroyAgentSession,
   runAksAgent,
 } from './agent/aksAgentManager';
-import AIAssistantHeader from './components/assistant/AIAssistantHeader';
+import AIAssistantHeader from '@headlamp-k8s/ai-ui/components/assistant/AIAssistantHeader';
 import AIChatContent from './components/assistant/AIChatContent';
 import { AIInputSection } from './components/assistant/AllInputSection';
-import { ChatMode } from './components/agent/AgentModeSelector';
-import ApiConfirmationDialog from './components/common/ApiConfirmationDialog';
+import { ChatMode } from '@headlamp-k8s/ai-ui/components/agent/AgentModeSelector';
+import ApiConfirmationDialog from '@headlamp-k8s/ai-ui/components/common/ApiConfirmationDialog';
 import { PromptSuggestions } from '@headlamp-k8s/ai-ui/components/assistant/PromptSuggestions';
 import { getProviderById } from '@headlamp-k8s/ai-ui/config/modelConfig';
 import { isTestModeCheck } from '@headlamp-k8s/ai-ui/testing/testMode';
@@ -1607,6 +1607,7 @@ export default function AIPrompt(props: {
           isTestMode={isTestMode}
           disableSettingsButton={disableSettingsButton}
           onClose={() => setOpenPopup(false)}
+          onSettings={() => history.push(getSettingsURL())}
         />
 
         <Grid

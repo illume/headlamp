@@ -25,7 +25,7 @@ import {
 import { HolmesAgentSettings } from './HolmesAgentSettings';
 import { MCPSettings } from './MCPSettings';
 import ModelSelector from './ModelSelector';
-import { SkillSettings } from './SkillSettings';
+import { SkillSettings } from '@headlamp-k8s/ai-ui/components/settings/SkillSettings';
 
 /**
  * Plugin settings page for the AI Assistant.
@@ -228,7 +228,7 @@ export default function Settings() {
 
       {/* Skills Section */}
       <Divider sx={{ my: 3 }} />
-      <SkillSettings />
+      <SkillSettings configStore={pluginStore} />
 
       {/* Holmes Agent Section */}
       <Divider sx={{ my: 3 }} />
