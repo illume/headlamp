@@ -73,7 +73,7 @@ export default function SkillSourceEditorDialog({
   existingUrls,
   DialogSlot = DefaultDialog,
 }: SkillSourceEditorDialogProps) {
-  const isEditing = source?.url !== '';
+  const isEditing = source !== undefined && source.url !== '';
   const [type, setType] = useState<'local' | 'git'>(source?.type || 'local');
   const [url, setUrl] = useState(source?.url || '');
   const [ref, setRef] = useState(source?.ref || '');

@@ -192,7 +192,7 @@ export function SkillSettings({
     const loaded = getSkillsConfig(data);
     setConfig(loaded);
     setPendingConfig(loaded);
-  }, []);
+  }, [configStore]);
 
   // Detect well-known paths
   useEffect(() => {
