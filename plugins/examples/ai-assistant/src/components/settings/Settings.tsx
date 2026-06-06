@@ -25,6 +25,7 @@ import {
 import { HolmesAgentSettings } from './HolmesAgentSettings';
 import { MCPSettings } from './MCPSettings';
 import ModelSelector from './ModelSelector';
+import { SkillSettings } from './SkillSettings';
 
 /**
  * Plugin settings page for the AI Assistant.
@@ -224,6 +225,10 @@ export default function Settings() {
       {/* MCP Servers Section */}
       <Divider sx={{ my: 3 }} />
       <MCPSettings />
+
+      {/* Skills Section */}
+      <Divider sx={{ my: 3 }} />
+      <SkillSettings />
 
       {/* Holmes Agent Section */}
       <Divider sx={{ my: 3 }} />

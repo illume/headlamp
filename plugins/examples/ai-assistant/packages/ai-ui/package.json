@@ -28,6 +28,8 @@
     "./components/settings/MCPServerEditor": "./src/components/settings/MCPServerEditor.tsx",
     "./components/settings/MCPSettings": "./src/components/settings/MCPSettings.tsx",
     "./components/settings/ModelSelector": "./src/components/settings/ModelSelector.tsx",
+    "./components/settings/SkillSettings": "./src/components/settings/SkillSettings.tsx",
+    "./components/settings/SkillSourceEditorDialog": "./src/components/settings/SkillSourceEditorDialog.tsx",
     "./components/settings/TermsDialog": "./src/components/settings/TermsDialog.tsx",
     "./config/modelConfig": "./src/config/modelConfig.ts",
     "./contexts/PromptWidthContext": "./src/contexts/PromptWidthContext.tsx",
