@@ -734,6 +734,140 @@ These curated lists show the breadth of the skills ecosystem and are useful for 
 
 ---
 
+## Skill search, selection, and routing
+
+### The problem: skill count vs. context window
+
+When the number of installed skills grows beyond a handful, injecting all of them into every LLM prompt becomes impractical:
+
+- **Context window waste.** Each skill is 1–20 KB of Markdown. Ten skills can consume 50–100 KB — a significant fraction of the context window, leaving less room for conversation history, tool results, and the user's actual question.
+- **Relevance dilution.** LLMs perform worse when the system prompt contains large blocks of irrelevant instructions. A user asking about pod CrashLoopBackOff doesn't need the Helmfile deployment guide or the Kubeshark installation instructions competing for attention.
+- **Cost and latency.** More input tokens = higher API cost and slower time-to-first-token.
+
+The solution is to **route** — select only the skills relevant to the current query before injecting them into the prompt.
+
+### Industry approaches
+
+The industry has converged on three patterns for skill/tool selection, each with different tradeoffs:
+
+| Approach | How it works | Pros | Cons | Used by |
+|----------|-------------|------|------|---------|
+| **Keyword/TF matching** | Tokenize query and skill metadata, score by term overlap | Zero dependencies, fast, deterministic, works offline | Misses synonyms and semantic relationships ("pod crash" won't match "CrashLoopBackOff" unless the skill description contains both) | Current `SkillRouter` implementation |
+| **Embedding similarity** | Embed skill descriptions and query into vectors, rank by cosine similarity | Handles synonyms, paraphrasing, and multilingual queries; scales to thousands of skills | Requires an embedding model (API call or local model); adds latency; needs a vector store | [LangChain tool retriever](https://python.langchain.com/docs/modules/agents/tools/dynamic_selection/), [LangGraph dynamic tool calling](https://changelog.langchain.com/announcements/dynamic-tool-calling-in-langgraph-agents) |
+| **LLM-based routing** | Ask the LLM itself which skills are relevant before the main call | Highest accuracy; understands nuance and context | Adds an extra LLM call (cost + latency); recursive — the router needs its own prompt | [OpenAI function calling routing](https://platform.openai.com/docs/guides/function-calling), LangGraph router nodes |
+
+**Hybrid** approaches combine these: keyword pre-filter → embedding re-rank → LLM final selection. This is the recommended path as the skill count grows.
+
+### Best practices
+
+These best practices are drawn from LangChain documentation, the agentskills.io specification, and production agent systems:
+
+1. **Progressive loading (agentskills.io pattern).** The [agentskills.io specification](https://agentskills.io/specification) recommends that agents read only the skill `name` and `description` fields until a skill is triggered. Full content is loaded on demand. This is the most important pattern — it means routing can operate on metadata alone without reading multi-KB skill bodies.
+
+2. **Limit injected skills to 3–5 per query.** Research and production experience consistently show that LLMs perform best with a focused set of instructions. The [LangChain agents guide](https://docs.langchain.com/oss/python/langchain/agents) recommends limiting tools to the most relevant subset. Our `SkillRouterConfig.maxSkills` defaults to 5.
+
+3. **Write skill descriptions for routing, not for humans.** The `description` field in `SKILL.md` is the primary input to the router. It should contain the keywords and phrases a user would type — not marketing copy. Include trigger phrases, error messages, and tool names. The [GitHub Copilot skills guide](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/cloud-agent/add-skills) explicitly states: "The description is used to determine when to apply the skill."
+
+4. **Enforce a byte budget, not just a count limit.** Skills vary wildly in size (the kubeshark `network-rca` skill is 22 KB; the helmfile skill is 20 KB; a simple troubleshooting guide might be 2 KB). Counting skills alone can still blow the context window. Always enforce `maxTotalBytes` alongside `maxSkills`.
+
+5. **Fall back to "include all" for small skill sets.** When the total number of skills is ≤ `maxSkills`, skip routing entirely and include everything. Routing adds complexity and can miss relevant skills — it's only worth the tradeoff at scale.
+
+6. **Score on metadata, not content.** Tokenizing and matching against the full 20 KB skill body is expensive and noisy. Route on `name` + `description` + `tags` only. The content body is for the LLM, not the router.
+
+7. **Partial/substring matching helps for Kubernetes.** Kubernetes has many compound terms (`CrashLoopBackOff`, `ImagePullBackOff`, `NotReady`, `OOMKilled`). Users often type fragments ("crashloop", "oom"). The router should match substrings, not just exact tokens.
+
+### Current implementation: `SkillRouter`
+
+The current implementation (`ai-common/src/skills/SkillRouter.ts`) uses **keyword/TF matching** — the simplest approach that requires zero external dependencies:
+
+```
+User query → tokenize → score against each skill's (name + description + tags) → rank → take top N within byte budget
+```
+
+**What it does well:**
+- Zero dependencies — no embedding model, no vector store, no API calls.
+- Deterministic — same query always routes to the same skills.
+- Fast — sub-millisecond for typical skill counts (< 100).
+- Respects both count (`maxSkills`) and size (`maxTotalBytes`) budgets.
+- Handles compound terms via substring matching.
+
+**What it doesn't do well:**
+- No synonym understanding — "pod crash" won't match a skill that only says "CrashLoopBackOff" (unless the description contains both terms).
+- No semantic understanding — "my app keeps restarting" won't match "pod failure diagnosis" without overlapping keywords.
+- The O(n·m) partial matching loop in `computeRelevanceScore` is adequate for < 100 skills but would need optimization for thousands.
+- Partial matching is aggressive — short tokens like "install" substring-match many unrelated terms, inflating scores for irrelevant skills.
+
+### Integration gap
+
+The `SkillRouter` exists but is **not yet wired into the LLM pipeline**. Currently:
+
+1. `SkillManager.getSkillsPromptText(config)` returns **all** enabled skills formatted for prompt injection.
+2. `LangChainManager.createSystemPrompt()` does **not** call the skills system at all — no skills are injected into the system prompt yet.
+
+To complete the integration:
+
+1. Add a `getRoutedSkillsPromptText(query, config)` method to `SkillManager` that uses `SkillRouter` internally.
+2. Call it from `createSystemPrompt()` or (better) at message-handling time when the user query is available.
+3. Wire `routeAndFormatSkills()` into the prompt construction path.
+
+### Future: embedding-based routing with LangChain
+
+When the keyword router's limitations become a problem (likely at 20+ skills from diverse domains), upgrade to embedding-based routing using LangChain's existing infrastructure:
+
+**Required packages** (not currently installed):
+```
+@langchain/community  — for vector store integrations
+```
+
+**Architecture:**
+
+```
+                    ┌──────────────────────┐
+                    │   Skill descriptions │
+                    │   (name + desc + tags)│
+                    └──────────┬───────────┘
+                               │ embed once at load time
+                               ▼
+                    ┌──────────────────────┐
+                    │   In-memory vector   │
+                    │   store (MemoryVector │
+                    │   Store or HNSWLib)  │
+                    └──────────┬───────────┘
+                               │
+    User query ───embed───────►│ similarity search (top K)
+                               │
+                               ▼
+                    ┌──────────────────────┐
+                    │   Top K skills       │
+                    │   (sorted by cosine  │
+                    │   similarity)        │
+                    └──────────┬───────────┘
+                               │ format
+                               ▼
+                    ┌──────────────────────┐
+                    │   System prompt with │
+                    │   only relevant      │
+                    │   skills injected    │
+                    └──────────────────────┘
+```
+
+**Key design decisions for embedding routing:**
+
+- **Embed descriptions, not full content.** Same principle as keyword routing — the description is the routing signal. Embedding 20 KB of Markdown adds noise.
+- **Use the same model the user configured.** If they're using OpenAI, use `text-embedding-3-small`; if Ollama, use `nomic-embed-text`. Don't force a specific provider.
+- **Re-embed on skill reload, not on every query.** Skill descriptions change rarely (hourly cache TTL). Embed at load time, store in memory, query at runtime.
+- **Keep keyword routing as fallback.** If the embedding model is unavailable (offline, rate-limited, Ollama not running), fall back to `SkillRouter` keyword matching. Never fail to route.
+
+**References:**
+
+- [LangChain.js: Custom tools](https://js.langchain.com/docs/how_to/custom_tools/) — The tool abstraction Headlamp's `ToolBase` builds on.
+- [LangChain: Dynamic tool selection (Python)](https://python.langchain.com/docs/modules/agents/tools/dynamic_selection/) — The canonical pattern for embedding-based tool retrieval. The JS equivalent uses the same vector store + retriever pattern.
+- [LangGraph: Dynamic tool calling](https://changelog.langchain.com/announcements/dynamic-tool-calling-in-langgraph-agents) — LangGraph's approach to exposing different tools at each agent step. Relevant for Phase 2 (MCP skills) where different skills may expose different tool sets.
+- [agentskills.io specification](https://agentskills.io/specification) — Defines the progressive loading pattern where agents read only `name`/`description` until triggered. Our routing implementation follows this pattern.
+- [Agent Skills, Plugins and Marketplace: The Complete Guide](https://chris-ayers.com/posts/agent-skills-plugins-marketplace/) — Comprehensive overview of the skills ecosystem, including discovery and selection patterns.
+
+---
+
 ## Open questions
 
 1. **Should skills support private Git repos?** If yes, how are credentials managed? (Git credential helpers, K8s Secrets, OAuth tokens)
@@ -741,3 +875,5 @@ These curated lists show the breadth of the skills ecosystem and are useful for 
 3. **Skill dependencies** — can one skill depend on another? (Keep it simple: no dependencies for now)
 4. **Rate limiting on Git fetches** — how to avoid hitting GitHub API rate limits? (Cache aggressively, use conditional requests with ETags)
 5. **Skill-specific tool approval** — should skills be able to declare "this skill's tools are safe for auto-approval"? (No — approval is always user/admin controlled)
+6. **Embedding model for skill routing** — when upgrading from keyword to embedding-based routing, should we use the same model the user configured for chat, or a dedicated lightweight embedding model? (Use the same provider but a small embedding model — e.g., `text-embedding-3-small` for OpenAI, `nomic-embed-text` for Ollama)
+7. **Routing transparency** — should the UI show which skills were selected for a query and their scores? (Yes — useful for debugging and for skill authors to improve descriptions)

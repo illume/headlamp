@@ -25,6 +25,8 @@ import {
 } from './SkillRouter';
 import { ParsedSkill } from './skillParser';
 
+const encoder = new TextEncoder();
+
 /** Helper to create a minimal ParsedSkill for testing. */
 function makeSkill(
   name: string,
@@ -35,7 +37,7 @@ function makeSkill(
   return {
     metadata: { name, description, ...(tags ? { tags } : {}) },
     content,
-    contentSizeBytes: new TextEncoder().encode(content).length,
+    contentSizeBytes: encoder.encode(content).length,
     source: `test/${name}/SKILL.md`,
   };
 }
