@@ -68,21 +68,49 @@ export const WELL_KNOWN_SKILL_REPOS: readonly WellKnownRepoEntry[] = [
     label: 'Kubeshark',
     description: 'Network traffic analysis for Kubernetes',
     path: 'skills',
-    ref: 'main',
+    ref: '1926067bd928c2acfc875542d6ce4e418e7e95d8', // v72.3.83
   },
   {
     url: 'https://github.com/helmfile/helmfile',
     label: 'Helmfile',
     description: 'Declarative Helm chart deployment',
     path: 'skills',
-    ref: 'main',
+    ref: '33eadc993e0ee77de91914afd0ab00042c498232', // v1.5.2
   },
   {
     url: 'https://github.com/openshift/lightspeed-service',
     label: 'OpenShift Lightspeed',
     description: 'Kubernetes/OpenShift troubleshooting skills',
     path: 'skills',
-    ref: 'main',
+    ref: 'f600c71426d3fdcbcfd294045fa5f7555cfb9fa1', // main (no releases)
+  },
+  {
+    url: 'https://github.com/microsoft/azure-skills',
+    label: 'Azure Skills',
+    description: 'Azure service guidance (AKS, networking, etc.)',
+    path: 'skills',
+    ref: '02a614f6ee1f052826f834d65c61e430ad152c8e', // main (no releases)
+  },
+  {
+    url: 'https://github.com/fluxcd/agent-skills',
+    label: 'Flux Agent Skills',
+    description: 'GitOps knowledge, manifest generation, cluster debugging',
+    path: 'skills',
+    ref: 'df7cf2c5dbb64ded73913fea775f6a9fc4f7c209', // v0.0.3
+  },
+  {
+    url: 'https://github.com/MicrosoftDocs/Agent-Skills',
+    label: 'Azure Cloud Development',
+    description: 'Azure cloud development skills from Microsoft Docs',
+    path: 'skills',
+    ref: 'aab6d7889eadd5e90ff685c486a8ca1ee24c0f5f', // main (no releases)
+  },
+  {
+    url: 'https://github.com/kubernetes/website',
+    label: 'Kubernetes Docs',
+    description: 'Official Kubernetes documentation (subset)',
+    path: 'content/en/docs',
+    ref: '02ab95c97025ac048aa7979313b6800925dbbbd3', // snapshot-initial-v1.36
   },
 ] as const;
 

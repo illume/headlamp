@@ -110,7 +110,7 @@ SuggestedRepoEnabled.args = {
         {
           type: 'git',
           url: 'https://github.com/kubeshark/kubeshark',
-          ref: 'main',
+          ref: '1926067bd928c2acfc875542d6ce4e418e7e95d8',
           path: 'skills',
           enabled: true,
         } as SkillSourceEntry,
