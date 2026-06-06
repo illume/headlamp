@@ -671,7 +671,12 @@ async function main() {
   await mcpCleanup?.();
 }
 
-main().then(() => {
-  // Force exit to ensure MCP child processes don't keep the event loop alive
-  process.exit(0);
-});
+main()
+  .then(() => {
+    // Force exit to ensure MCP child processes don't keep the event loop alive
+    process.exit(0);
+  })
+  .catch(err => {
+    console.error(err);
+    process.exit(1);
+  });
