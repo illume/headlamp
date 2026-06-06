@@ -235,6 +235,18 @@ describe('ProviderConfigManager', () => {
       const b = { providerId: 'openai', config: { model: 'gpt-4o-mini' } };
       expect(isSameStoredConfig(a, b)).toBe(false);
     });
+
+    it('matches Copilot configs with same sentinel API key', () => {
+      const a = { providerId: 'copilot', config: { apiKey: '__GH_CLI_AUTH__', model: 'gpt-4o' } };
+      const b = { providerId: 'copilot', config: { apiKey: '__GH_CLI_AUTH__', model: 'gpt-4o' } };
+      expect(isSameStoredConfig(a, b)).toBe(true);
+    });
+
+    it('does not match Copilot and OpenAI with same sentinel key', () => {
+      const a = { providerId: 'copilot', config: { apiKey: '__GH_CLI_AUTH__', model: 'gpt-4o' } };
+      const b = { providerId: 'openai', config: { apiKey: '__GH_CLI_AUTH__', model: 'gpt-4o' } };
+      expect(isSameStoredConfig(a, b)).toBe(false);
+    });
   });
 
   describe('saveProviderConfig — Azure sentinel support', () => {
