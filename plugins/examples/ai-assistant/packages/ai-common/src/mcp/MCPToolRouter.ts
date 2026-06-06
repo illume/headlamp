@@ -98,11 +98,13 @@ export function computeRelevanceScore(queryTokens: string[], docTokens: Set<stri
   for (const token of queryTokens) {
     if (docTokens.has(token)) {
       matches++;
-    }
-    for (const docToken of docTokens) {
-      if (docToken !== token && (docToken.includes(token) || token.includes(docToken)) && docToken.length > 2) {
-        matches += 0.5;
-        break;
+    } else {
+      // Only check partial matches when there is no exact match
+      for (const docToken of docTokens) {
+        if ((docToken.includes(token) || token.includes(docToken)) && docToken.length > 2) {
+          matches += 0.5;
+          break;
+        }
       }
     }
   }
