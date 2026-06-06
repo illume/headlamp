@@ -174,6 +174,21 @@ The Holmes service details can be customized via `HolmesPluginConfig`:
 | `holmesServiceName` | `holmesgpt-holmes` | Name of the Holmes Kubernetes Service |
 | `holmesPort` | `80` | Service port number |
 
+### Settings UI Component
+
+The `HolmesAgentSettings` component (`@headlamp-k8s/ai-ui/components/settings/HolmesAgentSettings`) provides a settings panel for configuring Holmes connection parameters. It exposes three text fields (namespace, service name, port) with validation and defaults.
+
+| Prop | Type | Description |
+|---|---|---|
+| `config` | `any \| null` | Current plugin config object |
+| `onConfigChange` | `(patch) => void` | Callback when a field changes |
+| `SectionWrapper` | `React.ComponentType` | Optional layout wrapper (defaults to simple Box) |
+| `defaultNamespace` | `string` | Override default namespace (`default`) |
+| `defaultServiceName` | `string` | Override default service name (`holmesgpt-holmes`) |
+| `defaultPort` | `number` | Override default port (`80`) |
+
+Port values are validated to be integers in the range 1–65535. Empty or invalid inputs fall back to the default values.
+
 ### Injectable ClusterRequestFn
 
 The `ClusterRequestFn` interface allows platform-specific cluster request implementations to be injected:

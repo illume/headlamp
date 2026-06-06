@@ -34,7 +34,7 @@ import {
   getProviderById,
   getProviderFields,
   modelProviders,
-} from '../../config/modelConfig';
+} from '@headlamp-k8s/ai-common/config/modelConfig';
 import { DefaultDialog } from '../defaults/DefaultSlots';
 import TermsDialog from './TermsDialog';
 

@@ -15,7 +15,7 @@
  */
 
 import type { DetectedProvider } from '@headlamp-k8s/ai-common/providers/providerAutoDetect';
-import { getProviderById } from '../../config/modelConfig';
+import { getProviderById } from '@headlamp-k8s/ai-common/config/modelConfig';
 import { Icon } from '@iconify/react';
 import {
   Box,

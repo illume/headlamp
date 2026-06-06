@@ -4,6 +4,8 @@ import {
   registerUIPanel,
 } from '@kinvolk/headlamp-plugin/lib';
 import React from 'react';
+// Register provider icons for offline use
+import '@headlamp-k8s/ai-ui/icons/iconBundles';
 import HeadlampAIPrompt from './components/appbar/HeadlampAIPrompt';
 import HeadlampEventHandler from './components/appbar/HeadlampEventHandler';
 import AIPanelComponent from './components/panel/AIPanelComponent';

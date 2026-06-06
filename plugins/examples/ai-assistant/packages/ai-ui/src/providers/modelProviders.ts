@@ -1,5 +1,5 @@
 import { StoredProviderConfig } from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
-import { getProviderById } from '../config/modelConfig';
+import { getProviderById } from '@headlamp-k8s/ai-common/config/modelConfig';
 
 /** Converts lightweight markdown formatting into plain text for UI-friendly suggestion labels. */
 export function markdownToPlainText(markdown: string): string {

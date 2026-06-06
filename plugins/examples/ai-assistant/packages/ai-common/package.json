@@ -46,7 +46,8 @@
     "./skills/SkillManager": "./src/skills/SkillManager.ts",
     "./skills/SkillRouter": "./src/skills/SkillRouter.ts",
     "./skills/EmbeddingRouter": "./src/skills/EmbeddingRouter.ts",
-    "./providers/providerAutoDetect": "./src/providers/providerAutoDetect.ts"
+    "./providers/providerAutoDetect": "./src/providers/providerAutoDetect.ts",
+    "./context/contextGenerator": "./src/context/contextGenerator.ts"
   },
   "scripts": {
     "test": "vitest run --passWithNoTests"

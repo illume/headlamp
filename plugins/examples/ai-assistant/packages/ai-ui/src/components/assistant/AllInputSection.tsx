@@ -13,7 +13,7 @@ import {
 } from '@mui/material';
 import React from 'react';
 import { getModelDisplayName, getProviderModelsForChat } from '../../providers/modelProviders';
-import { getProviderById } from '../../config/modelConfig';
+import { getProviderById } from '@headlamp-k8s/ai-common/config/modelConfig';
 import type { ActionButtonSlotProps } from './AIAssistantHeader';
 import { DefaultActionButton } from '../defaults/DefaultSlots';
 import TestModeInput from './TestModeInput';

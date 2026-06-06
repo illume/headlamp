@@ -21,7 +21,7 @@ import { AIInputSection } from './components/assistant/AllInputSection';
 import { ChatMode } from '@headlamp-k8s/ai-ui/components/agent/AgentModeSelector';
 import ApiConfirmationDialog from '@headlamp-k8s/ai-ui/components/common/ApiConfirmationDialog';
 import { PromptSuggestions } from '@headlamp-k8s/ai-ui/components/assistant/PromptSuggestions';
-import { getProviderById } from '@headlamp-k8s/ai-ui/config/modelConfig';
+import { getProviderById } from '@headlamp-k8s/ai-common/config/modelConfig';
 import { isTestModeCheck } from '@headlamp-k8s/ai-ui/testing/testMode';
 import EditorDialog from './editordialog';
 import { useKubernetesToolUI } from './hooks/useKubernetesToolUI';

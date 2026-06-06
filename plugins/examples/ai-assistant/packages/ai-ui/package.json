@@ -39,7 +39,6 @@
     "./components/settings/DetectedProvidersDialog": "./src/components/settings/DetectedProvidersDialog.tsx",
     "./components/settings/DeveloperSettings": "./src/components/settings/DeveloperSettings.tsx",
     "./components/settings/SettingsPage": "./src/components/settings/SettingsPage.tsx",
-    "./config/modelConfig": "./src/config/modelConfig.ts",
     "./contexts/PromptWidthContext": "./src/contexts/PromptWidthContext.tsx",
     "./hooks/useProactiveDiagnosis": "./src/hooks/useProactiveDiagnosis.ts",
     "./hooks/useToolApproval": "./src/hooks/useToolApproval.ts",

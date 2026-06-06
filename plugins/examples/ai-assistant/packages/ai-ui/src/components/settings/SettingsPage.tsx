@@ -37,7 +37,7 @@ import {
   Typography,
 } from '@mui/material';
 import React from 'react';
-import { getDefaultConfig } from '../../config/modelConfig';
+import { getDefaultConfig } from '@headlamp-k8s/ai-common/config/modelConfig';
 import { AIToolsSettings, type ToolInfo } from './AIToolsSettings';
 import { AutoDetectProvider, useAutoDetect } from './AutoDetectProvider';
 import {
