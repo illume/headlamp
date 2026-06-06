@@ -75,7 +75,11 @@ export function isValidGitUrl(url: string): boolean {
       'gitlab.com',
       'bitbucket.org',
     ];
-    return allowedHosts.some(host => parsed.hostname === host || parsed.hostname.endsWith(`.${host}`));
+    // Exact match or legitimate subdomain (e.g. api.github.com).
+    // The dot prefix in `.${host}` prevents matching look-alikes like fakegithub.com.
+    return allowedHosts.some(host =>
+      parsed.hostname === host || parsed.hostname.endsWith(`.${host}`)
+    );
   } catch {
     return false;
   }
