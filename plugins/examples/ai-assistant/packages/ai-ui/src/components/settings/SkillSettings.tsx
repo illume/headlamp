@@ -61,6 +61,45 @@ export const WELL_KNOWN_SKILL_DIRS = [
   },
 ] as const;
 
+/** Well-known GitHub repositories that contain skill files. */
+export const WELL_KNOWN_SKILL_REPOS: readonly WellKnownRepoEntry[] = [
+  {
+    url: 'https://github.com/kubeshark/kubeshark',
+    label: 'Kubeshark',
+    description: 'Network traffic analysis for Kubernetes',
+    path: 'skills',
+    ref: 'main',
+  },
+  {
+    url: 'https://github.com/helmfile/helmfile',
+    label: 'Helmfile',
+    description: 'Declarative Helm chart deployment',
+    path: 'skills',
+    ref: 'main',
+  },
+  {
+    url: 'https://github.com/openshift/lightspeed-service',
+    label: 'OpenShift Lightspeed',
+    description: 'Kubernetes/OpenShift troubleshooting skills',
+    path: 'skills',
+    ref: 'main',
+  },
+] as const;
+
+/** A well-known GitHub repository that contains skill files. */
+export interface WellKnownRepoEntry {
+  /** HTTPS URL of the GitHub repository. */
+  url: string;
+  /** Human-readable label for the repository. */
+  label: string;
+  /** Short description of what skills the repo provides. */
+  description: string;
+  /** Subdirectory within the repo containing skills. */
+  path?: string;
+  /** Git ref (branch/tag/SHA) to use. */
+  ref?: string;
+}
+
 /** Configuration for a single skill source. */
 export interface SkillSourceEntry {
   /** Type of source: local filesystem or Git repository. */
@@ -284,6 +323,35 @@ export function SkillSettings({
     [displayConfig, projectRoot, updatePendingConfig]
   );
 
+  const handleToggleWellKnownRepo = useCallback(
+    (repo: WellKnownRepoEntry) => {
+      const existingIndex = displayConfig.sources.findIndex(
+        s => s.type === 'git' && s.url === repo.url
+      );
+
+      let newSources: SkillSourceEntry[];
+      if (existingIndex >= 0) {
+        newSources = displayConfig.sources.map((s, i) =>
+          i === existingIndex ? { ...s, enabled: !s.enabled } : s
+        );
+      } else {
+        // Add new source (disabled by default when first added from suggestions)
+        newSources = [
+          ...displayConfig.sources,
+          {
+            type: 'git' as const,
+            url: repo.url,
+            ref: repo.ref || 'main',
+            path: repo.path,
+            enabled: true,
+          },
+        ];
+      }
+      updatePendingConfig({ ...displayConfig, sources: newSources });
+    },
+    [displayConfig, updatePendingConfig]
+  );
+
   const handleToggleSource = useCallback(
     (index: number) => {
       const newSources = displayConfig.sources.map((s, i) =>
@@ -355,6 +423,10 @@ export function SkillSettings({
   const customLocalSources = localSources.filter(
     s => !wellKnownPaths.has(s.url) && !wellKnownRelativePaths.has(s.url)
   );
+
+  // Identify which git sources are well-known repos
+  const wellKnownRepoUrls = new Set(WELL_KNOWN_SKILL_REPOS.map(r => r.url));
+  const customGitSources = gitSources.filter(s => !wellKnownRepoUrls.has(s.url));
 
   return (
     <SectionWrapper title="Skills">
@@ -449,6 +521,65 @@ export function SkillSettings({
         </TableContainer>
       </Box>
 
+      {/* Suggested GitHub Repositories */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+          Suggested Skill Repositories
+        </Typography>
+        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+          Well-known open-source repositories containing Kubernetes skill files. Enable a repository
+          to download its skills via GitHub zip archive.
+        </Typography>
+        <TableContainer component={Paper} variant="outlined">
+          <Table size="small">
+            <TableHead>
+              <TableRow>
+                <TableCell>Repository</TableCell>
+                <TableCell>Description</TableCell>
+                <TableCell align="center">Enabled</TableCell>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {WELL_KNOWN_SKILL_REPOS.map(repo => {
+                const isEnabled = displayConfig.sources.some(
+                  s => s.type === 'git' && s.url === repo.url && s.enabled
+                );
+                return (
+                  <TableRow key={repo.url}>
+                    <TableCell>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {repo.label}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="textSecondary"
+                          sx={{ fontFamily: 'monospace' }}
+                        >
+                          {repo.url}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Typography variant="body2" color="textSecondary">
+                        {repo.description}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="center">
+                      <Switch
+                        checked={isEnabled}
+                        onChange={() => handleToggleWellKnownRepo(repo)}
+                        size="small"
+                      />
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      </Box>
+
       {/* Custom Filesystem Sources */}
       <Box sx={{ mb: 3 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
@@ -526,7 +657,7 @@ export function SkillSettings({
       <Box sx={{ mb: 3 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            GitHub Repository Sources
+            Custom GitHub Repository Sources
           </Typography>
           <Button
             variant="outlined"
@@ -538,9 +669,9 @@ export function SkillSettings({
           </Button>
         </Box>
         <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-          GitHub repositories to download skills from via zip archive.
+          Additional GitHub repositories to download skills from via zip archive.
         </Typography>
-        {gitSources.length > 0 ? (
+        {customGitSources.length > 0 ? (
           <TableContainer component={Paper} variant="outlined">
             <Table size="small">
               <TableHead>
@@ -553,7 +684,7 @@ export function SkillSettings({
                 </TableRow>
               </TableHead>
               <TableBody>
-                {gitSources.map(source => (
+                {customGitSources.map(source => (
                   <TableRow key={source.originalIndex}>
                     <TableCell>
                       <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
@@ -601,7 +732,7 @@ export function SkillSettings({
         ) : (
           <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
             <Typography variant="body2" color="textSecondary">
-              No GitHub repository sources configured.
+              No custom GitHub repository sources configured.
             </Typography>
           </Paper>
         )}

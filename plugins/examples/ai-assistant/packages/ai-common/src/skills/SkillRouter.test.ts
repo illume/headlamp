@@ -268,10 +268,10 @@ describe('SkillRouter', () => {
   });
 
   // ──────────────────────────────────────────────────────────────────────
-  // Real-world vendored skills routing
+  // Real-world Kubernetes skills routing
   // ──────────────────────────────────────────────────────────────────────
-  describe('routing with vendored real-world Kubernetes skills', () => {
-    const vendoredSkills: ParsedSkill[] = [
+  describe('routing with real-world Kubernetes skills', () => {
+    const repoSkills: ParsedSkill[] = [
       // kubeshark
       makeSkill(
         'install',
@@ -304,37 +304,37 @@ describe('SkillRouter', () => {
 
     it('selects install skill when asking about Kubeshark deployment', () => {
       const config = { ...DEFAULT_ROUTER_CONFIG, maxSkills: 2 };
-      const result = routeSkills('How do I install Kubeshark on my cluster?', vendoredSkills, config);
+      const result = routeSkills('How do I install Kubeshark on my cluster?', repoSkills, config);
       expect(result[0].metadata.name).toBe('install');
     });
 
     it('selects network-rca skill for traffic analysis queries', () => {
       const config = { ...DEFAULT_ROUTER_CONFIG, maxSkills: 2 };
-      const result = routeSkills('analyze network traffic snapshot PCAP', vendoredSkills, config);
+      const result = routeSkills('analyze network traffic snapshot PCAP', repoSkills, config);
       expect(result[0].metadata.name).toBe('network-rca');
     });
 
     it('selects helmfile skill for Helm chart queries', () => {
       const config = { ...DEFAULT_ROUTER_CONFIG, maxSkills: 2 };
-      const result = routeSkills('deploy helm charts with helmfile releases', vendoredSkills, config);
+      const result = routeSkills('deploy helm charts with helmfile releases', repoSkills, config);
       expect(result[0].metadata.name).toBe('helmfile');
     });
 
     it('selects node-not-ready skill for node issues', () => {
       const config = { ...DEFAULT_ROUTER_CONFIG, maxSkills: 2 };
-      const result = routeSkills('node NotReady kubelet down', vendoredSkills, config);
+      const result = routeSkills('node NotReady kubelet down', repoSkills, config);
       expect(result[0].metadata.name).toBe('node-not-ready');
     });
 
     it('selects pod-failure skill for CrashLoopBackOff queries', () => {
       const config = { ...DEFAULT_ROUTER_CONFIG, maxSkills: 2 };
-      const result = routeSkills('pod CrashLoopBackOff OOMKilled', vendoredSkills, config);
+      const result = routeSkills('pod CrashLoopBackOff OOMKilled', repoSkills, config);
       expect(result[0].metadata.name).toBe('pod-failure-diagnosis');
     });
 
     it('does not select all 5 skills for a specific query', () => {
       const config = { ...DEFAULT_ROUTER_CONFIG, maxSkills: 3, minScore: 0.2 };
-      const result = routeSkills('install kubeshark', vendoredSkills, config);
+      const result = routeSkills('install kubeshark', repoSkills, config);
       expect(result.length).toBeLessThanOrEqual(3);
       expect(result.length).toBeGreaterThan(0);
     });

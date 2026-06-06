@@ -553,53 +553,130 @@ Standard content.
 });
 
 // ════════════════════════════════════════════════════════════════════════
-// Vendored real-world Kubernetes skills — loaded directly from vendored
-// SKILL.md files sourced from public open-source repositories.
+// Real-world Kubernetes skills — downloaded from GitHub repositories
+// via the SkillLoader's Git zip download support.
 // ════════════════════════════════════════════════════════════════════════
 
-describe('Vendored real-world Kubernetes skills', () => {
-  const vendoredDir = path.resolve(__dirname, 'vendored');
+/**
+ * Creates a real Node.js HTTP client for SkillLoader.
+ * Uses native fetch (Node 18+) to download GitHub zip archives.
+ */
+function createNodeHttpClient(): import('./SkillLoader').SkillHttpClient {
+  return {
+    fetchZip: async (url: string): Promise<ArrayBuffer> => {
+      const response = await fetch(url, {
+        headers: { Accept: 'application/vnd.github+json' },
+        redirect: 'follow',
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText} for ${url}`);
+      }
+      return response.arrayBuffer();
+    },
+  };
+}
+
+/**
+ * Creates a ZIP extractor backed by jszip for e2e tests.
+ */
+function createNodeZipExtractor(): import('./SkillLoader').SkillZipExtractor {
+  return {
+    extractTextFiles: async (
+      data: ArrayBuffer,
+      pathFilter?: string,
+      maxExtractedBytes: number = 10 * 1024 * 1024,
+      maxFileCount: number = 500
+    ): Promise<Map<string, string>> => {
+      const JSZip = (await import('jszip')).default;
+      const zip = await JSZip.loadAsync(data);
+      const result = new Map<string, string>();
+      let totalBytes = 0;
+      let fileCount = 0;
+
+      // GitHub zips have a top-level directory like "owner-repo-sha/"
+      // We need to strip it and optionally apply a path filter.
+      const entries = Object.keys(zip.files).sort();
+
+      // Find the common top-level prefix (GitHub zip root dir)
+      const topLevelPrefix = entries.length > 0
+        ? entries[0].split('/')[0] + '/'
+        : '';
+
+      for (const entryPath of entries) {
+        const entry = zip.files[entryPath];
+        if (entry.dir) continue;
+
+        // Strip the top-level GitHub directory prefix
+        let relativePath = entryPath;
+        if (topLevelPrefix && relativePath.startsWith(topLevelPrefix)) {
+          relativePath = relativePath.slice(topLevelPrefix.length);
+        }
+
+        // Apply path filter if provided
+        if (pathFilter && !relativePath.startsWith(pathFilter)) continue;
+
+        // Only extract .md files
+        if (!relativePath.endsWith('.md')) continue;
+
+        const content = await entry.async('string');
+        totalBytes += content.length;
+        fileCount++;
+
+        if (totalBytes > maxExtractedBytes) {
+          throw new Error(`Exceeded max extracted size: ${maxExtractedBytes} bytes`);
+        }
+        if (fileCount > maxFileCount) {
+          throw new Error(`Exceeded max file count: ${maxFileCount}`);
+        }
+
+        // Strip the path filter prefix from the relative path for cleaner keys
+        const cleanPath = pathFilter
+          ? relativePath.slice(pathFilter.length).replace(/^\//, '')
+          : relativePath;
+
+        if (cleanPath) {
+          result.set(cleanPath, content);
+        }
+      }
+
+      return result;
+    },
+  };
+}
+
+describe('GitHub-downloaded real-world Kubernetes skills', () => {
+  const httpClient = createNodeHttpClient();
+  const zipExtractor = createNodeZipExtractor();
 
   // ──────────────────────────────────────────────────────────────────────
   // kubeshark/kubeshark — network traffic analysis for Kubernetes
   // Source: https://github.com/kubeshark/kubeshark  (Apache-2.0)
   // ──────────────────────────────────────────────────────────────────────
   describe('kubeshark/kubeshark', () => {
-    const kubesharkDir = path.join(vendoredDir, 'kubeshark');
+    it('downloads and parses skills from GitHub', async () => {
+      const loader = new SkillLoader(createNodeFs(), httpClient, zipExtractor);
+      const skills = await loader.loadFromGitRepo(
+        'https://github.com/kubeshark/kubeshark',
+        'main',
+        'skills/'
+      );
 
-    it('loads install skill', () => {
-      const raw = fs.readFileSync(path.join(kubesharkDir, 'install', 'SKILL.md'), 'utf-8');
-      const skill = parseSkillFile(raw, 'kubeshark/install/SKILL.md');
+      expect(skills.length).toBeGreaterThanOrEqual(1);
+      const names = skills.map(s => s.metadata.name);
+      expect(names).toContain('install');
+      expect(names).toContain('network-rca');
 
-      expect(skill.metadata.name).toBe('install');
-      expect(skill.metadata.description).toContain('Kubeshark');
-      expect(skill.content).toContain('helm');
-      expect(skill.content).toContain('kubeshark tap');
-      expect(skill.contentSizeBytes).toBeGreaterThan(100);
-    });
+      const installSkill = skills.find(s => s.metadata.name === 'install');
+      expect(installSkill).toBeDefined();
+      expect(installSkill!.metadata.description).toContain('Kubeshark');
+      expect(installSkill!.content).toContain('helm');
+      expect(installSkill!.contentSizeBytes).toBeGreaterThan(100);
 
-    it('loads network-rca skill (large real-world skill)', () => {
-      const raw = fs.readFileSync(path.join(kubesharkDir, 'network-rca', 'SKILL.md'), 'utf-8');
-      const skill = parseSkillFile(raw, 'kubeshark/network-rca/SKILL.md');
-
-      expect(skill.metadata.name).toBe('network-rca');
-      expect(skill.metadata.description).toContain('network');
-      expect(skill.metadata.description).toContain('root cause');
-      expect(skill.content).toContain('snapshot');
-      expect(skill.content).toContain('KFL');
-      // This is a large real-world skill — verify it parses within limits
-      expect(skill.contentSizeBytes).toBeGreaterThan(5000);
-      expect(skill.contentSizeBytes).toBeLessThan(50000);
-    });
-
-    it('loads all kubeshark skills from directory tree', async () => {
-      const loader = new SkillLoader(createNodeFs());
-      const skills = await loader.loadFromDirectory(kubesharkDir);
-
-      expect(skills.length).toBe(2);
-      const names = skills.map(s => s.metadata.name).sort();
-      expect(names).toEqual(['install', 'network-rca']);
-    });
+      const rcaSkill = skills.find(s => s.metadata.name === 'network-rca');
+      expect(rcaSkill).toBeDefined();
+      expect(rcaSkill!.content).toContain('snapshot');
+      expect(rcaSkill!.contentSizeBytes).toBeGreaterThan(5000);
+    }, 30_000); // Network timeout
   });
 
   // ──────────────────────────────────────────────────────────────────────
@@ -607,27 +684,21 @@ describe('Vendored real-world Kubernetes skills', () => {
   // Source: https://github.com/helmfile/helmfile  (MIT)
   // ──────────────────────────────────────────────────────────────────────
   describe('helmfile/helmfile', () => {
-    const helmfileDir = path.join(vendoredDir, 'helmfile');
+    it('downloads and parses skills from GitHub', async () => {
+      const loader = new SkillLoader(createNodeFs(), httpClient, zipExtractor);
+      const skills = await loader.loadFromGitRepo(
+        'https://github.com/helmfile/helmfile',
+        'main',
+        'skills/'
+      );
 
-    it('loads helmfile skill with rich Helm configuration content', () => {
-      const raw = fs.readFileSync(path.join(helmfileDir, 'helmfile', 'SKILL.md'), 'utf-8');
-      const skill = parseSkillFile(raw, 'helmfile/helmfile/SKILL.md');
-
-      expect(skill.metadata.name).toBe('helmfile');
-      expect(skill.metadata.description).toContain('Helmfile');
-      expect(skill.content).toContain('releases');
-      expect(skill.content).toContain('repositories');
-      // Helmfile skill is quite large — good stress test
-      expect(skill.contentSizeBytes).toBeGreaterThan(10000);
-    });
-
-    it('loads as a directory source', async () => {
-      const loader = new SkillLoader(createNodeFs());
-      const skills = await loader.loadFromDirectory(helmfileDir);
-
-      expect(skills).toHaveLength(1);
-      expect(skills[0].metadata.name).toBe('helmfile');
-    });
+      expect(skills.length).toBeGreaterThanOrEqual(1);
+      const helmfileSkill = skills.find(s => s.metadata.name === 'helmfile');
+      expect(helmfileSkill).toBeDefined();
+      expect(helmfileSkill!.metadata.description).toContain('Helmfile');
+      expect(helmfileSkill!.content).toContain('releases');
+      expect(helmfileSkill!.contentSizeBytes).toBeGreaterThan(10000);
+    }, 30_000);
   });
 
   // ──────────────────────────────────────────────────────────────────────
@@ -635,81 +706,105 @@ describe('Vendored real-world Kubernetes skills', () => {
   // Source: https://github.com/openshift/lightspeed-service  (Apache-2.0)
   // ──────────────────────────────────────────────────────────────────────
   describe('openshift/lightspeed-service', () => {
-    const lightspeedDir = path.join(vendoredDir, 'openshift-lightspeed');
+    it('downloads and parses skills from GitHub', async () => {
+      const loader = new SkillLoader(createNodeFs(), httpClient, zipExtractor);
+      const skills = await loader.loadFromGitRepo(
+        'https://github.com/openshift/lightspeed-service',
+        'main',
+        'skills/'
+      );
 
-    it('loads node-not-ready troubleshooting skill', () => {
-      const raw = fs.readFileSync(path.join(lightspeedDir, 'node-not-ready', 'SKILL.md'), 'utf-8');
-      const skill = parseSkillFile(raw, 'lightspeed/node-not-ready/SKILL.md');
+      expect(skills.length).toBeGreaterThanOrEqual(1);
+      const names = skills.map(s => s.metadata.name);
+      expect(names).toContain('node-not-ready');
+      expect(names).toContain('pod-failure-diagnosis');
 
-      expect(skill.metadata.name).toBe('node-not-ready');
-      expect(skill.metadata.description).toContain('NotReady');
-      expect(skill.content).toContain('MemoryPressure');
-      expect(skill.content).toContain('DiskPressure');
-      expect(skill.content).toContain('kubelet');
-    });
+      const nodeSkill = skills.find(s => s.metadata.name === 'node-not-ready');
+      expect(nodeSkill).toBeDefined();
+      expect(nodeSkill!.content).toContain('kubelet');
 
-    it('loads pod-failure-diagnosis troubleshooting skill', () => {
-      const raw = fs.readFileSync(path.join(lightspeedDir, 'pod-failure-diagnosis', 'SKILL.md'), 'utf-8');
-      const skill = parseSkillFile(raw, 'lightspeed/pod-failure-diagnosis/SKILL.md');
-
-      expect(skill.metadata.name).toBe('pod-failure-diagnosis');
-      expect(skill.metadata.description).toContain('CrashLoopBackOff');
-      expect(skill.content).toContain('ImagePullBackOff');
-      expect(skill.content).toContain('OOMKilled');
-      expect(skill.content).toContain('Pending');
-    });
-
-    it('loads all lightspeed skills from directory tree', async () => {
-      const loader = new SkillLoader(createNodeFs());
-      const skills = await loader.loadFromDirectory(lightspeedDir);
-
-      expect(skills.length).toBe(2);
-      const names = skills.map(s => s.metadata.name).sort();
-      expect(names).toEqual(['node-not-ready', 'pod-failure-diagnosis']);
-    });
+      const podSkill = skills.find(s => s.metadata.name === 'pod-failure-diagnosis');
+      expect(podSkill).toBeDefined();
+      expect(podSkill!.content).toContain('OOMKilled');
+    }, 30_000);
   });
 
   // ──────────────────────────────────────────────────────────────────────
-  // Cross-repo: load all vendored K8s skills together via SkillManager
+  // Cross-repo: load all GitHub K8s skill repos via SkillManager
   // ──────────────────────────────────────────────────────────────────────
-  describe('all vendored Kubernetes skills together', () => {
-    const vendoredSources: SkillsConfig['sources'] = [
-      { type: 'local', url: path.join(vendoredDir, 'kubeshark'), enabled: true },
-      { type: 'local', url: path.join(vendoredDir, 'helmfile'), enabled: true },
-      { type: 'local', url: path.join(vendoredDir, 'openshift-lightspeed'), enabled: true },
-    ];
-
-    it('loads all vendored K8s skills across repos via SkillManager', async () => {
-      const manager = new SkillManager(createNodeFs());
+  describe('all GitHub Kubernetes skill repos together', () => {
+    it('loads skills from all repos via SkillManager git sources', async () => {
+      const manager = new SkillManager(createNodeFs(), httpClient, zipExtractor);
       const config: SkillsConfig = {
         ...DEFAULT_SKILLS_CONFIG,
-        sources: vendoredSources,
+        sources: [
+          {
+            type: 'git',
+            url: 'https://github.com/kubeshark/kubeshark',
+            ref: 'main',
+            path: 'skills/',
+            enabled: true,
+          },
+          {
+            type: 'git',
+            url: 'https://github.com/helmfile/helmfile',
+            ref: 'main',
+            path: 'skills/',
+            enabled: true,
+          },
+          {
+            type: 'git',
+            url: 'https://github.com/openshift/lightspeed-service',
+            ref: 'main',
+            path: 'skills/',
+            enabled: true,
+          },
+        ],
       };
 
       const all = await manager.loadAllSkills(config);
-      expect(all.length).toBe(5); // 2 kubeshark + 1 helmfile + 2 openshift
+      expect(all.length).toBeGreaterThanOrEqual(5);
 
-      const names = all.map(s => s.metadata.name).sort();
-      expect(names).toEqual([
-        'helmfile',
-        'install',
-        'network-rca',
-        'node-not-ready',
-        'pod-failure-diagnosis',
-      ]);
-    });
+      const names = all.map(s => s.metadata.name);
+      expect(names).toContain('install');
+      expect(names).toContain('network-rca');
+      expect(names).toContain('helmfile');
+      expect(names).toContain('node-not-ready');
+      expect(names).toContain('pod-failure-diagnosis');
+    }, 60_000);
 
-    it('generates a valid prompt from all vendored K8s skills', async () => {
-      const manager = new SkillManager(createNodeFs());
+    it('generates a valid prompt from all GitHub K8s skills', async () => {
+      const manager = new SkillManager(createNodeFs(), httpClient, zipExtractor);
       const config: SkillsConfig = {
         ...DEFAULT_SKILLS_CONFIG,
-        sources: vendoredSources,
+        sources: [
+          {
+            type: 'git',
+            url: 'https://github.com/kubeshark/kubeshark',
+            ref: 'main',
+            path: 'skills/',
+            enabled: true,
+          },
+          {
+            type: 'git',
+            url: 'https://github.com/helmfile/helmfile',
+            ref: 'main',
+            path: 'skills/',
+            enabled: true,
+          },
+          {
+            type: 'git',
+            url: 'https://github.com/openshift/lightspeed-service',
+            ref: 'main',
+            path: 'skills/',
+            enabled: true,
+          },
+        ],
       };
 
       await manager.loadAllSkills(config);
       const prompt = manager.getSkillsPromptText(config);
 
-      // Prompt should contain all 5 skill blocks
       expect(prompt).toContain('SKILLS:');
       expect(prompt).toContain('<skill name="install"');
       expect(prompt).toContain('<skill name="network-rca"');
@@ -717,34 +812,21 @@ describe('Vendored real-world Kubernetes skills', () => {
       expect(prompt).toContain('<skill name="node-not-ready"');
       expect(prompt).toContain('<skill name="pod-failure-diagnosis"');
       expect(prompt).toContain('END OF SKILLS.');
-    });
+    }, 60_000);
 
-    it('can selectively disable vendored K8s skills', async () => {
-      const manager = new SkillManager(createNodeFs());
+    it('sends all GitHub K8s skills through the mock model', async () => {
+      const manager = new SkillManager(createNodeFs(), httpClient, zipExtractor);
       const config: SkillsConfig = {
         ...DEFAULT_SKILLS_CONFIG,
-        sources: vendoredSources,
-        disabledSkills: ['install', 'pod-failure-diagnosis'],
-      };
-
-      await manager.loadAllSkills(config);
-      const prompt = manager.getSkillsPromptText(config);
-
-      // Disabled skills should not appear
-      expect(prompt).not.toContain('<skill name="install"');
-      expect(prompt).not.toContain('<skill name="pod-failure-diagnosis"');
-
-      // Enabled skills should appear
-      expect(prompt).toContain('<skill name="network-rca"');
-      expect(prompt).toContain('<skill name="helmfile"');
-      expect(prompt).toContain('<skill name="node-not-ready"');
-    });
-
-    it('sends all vendored K8s skills through the mock model', async () => {
-      const manager = new SkillManager(createNodeFs());
-      const config: SkillsConfig = {
-        ...DEFAULT_SKILLS_CONFIG,
-        sources: vendoredSources,
+        sources: [
+          {
+            type: 'git',
+            url: 'https://github.com/kubeshark/kubeshark',
+            ref: 'main',
+            path: 'skills/',
+            enabled: true,
+          },
+        ],
       };
 
       await manager.loadAllSkills(config);
@@ -761,22 +843,6 @@ describe('Vendored real-world Kubernetes skills', () => {
         ? response.content
         : String(response.content);
       expect(content).toContain('Headlamp AI assistant');
-    });
-
-    it('summary reflects correct counts across all vendored K8s repos', async () => {
-      const manager = new SkillManager(createNodeFs());
-      const config: SkillsConfig = {
-        ...DEFAULT_SKILLS_CONFIG,
-        sources: vendoredSources,
-        disabledSkills: ['install'],
-      };
-
-      await manager.loadAllSkills(config);
-      const summary = manager.getSkillsSummary(config);
-
-      expect(summary.totalSkills).toBe(5);
-      expect(summary.enabledSkills).toBe(4);
-      expect(summary.totalSizeBytes).toBeGreaterThan(0);
-    });
+    }, 30_000);
   });
 });

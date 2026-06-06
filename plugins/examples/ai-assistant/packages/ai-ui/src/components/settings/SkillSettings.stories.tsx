@@ -98,3 +98,26 @@ WellKnownEnabled.args = {
   projectRoot: '/home/user/project',
   checkPathExists: async (p: string) => p.includes('.github/skills'),
 };
+
+/** With a suggested GitHub repository enabled. */
+export const SuggestedRepoEnabled: StoryFn<SkillSettingsProps> = args => (
+  <SkillSettings {...args} />
+);
+SuggestedRepoEnabled.args = {
+  configStore: createMockStore({
+    skills: {
+      sources: [
+        {
+          type: 'git',
+          url: 'https://github.com/kubeshark/kubeshark',
+          ref: 'main',
+          path: 'skills',
+          enabled: true,
+        } as SkillSourceEntry,
+      ],
+      disabledSkills: [],
+    },
+  }),
+  projectRoot: '/home/user/project',
+  checkPathExists: async () => false,
+};

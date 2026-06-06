@@ -21,6 +21,31 @@ const WELL_KNOWN_SKILL_DIRS = [
   { path: 'skills', label: 'Generic Skills', tool: 'Generic' },
 ] as const;
 
+// Re-define well-known repos to avoid importing the component.
+const WELL_KNOWN_SKILL_REPOS = [
+  {
+    url: 'https://github.com/kubeshark/kubeshark',
+    label: 'Kubeshark',
+    description: 'Network traffic analysis for Kubernetes',
+    path: 'skills',
+    ref: 'main',
+  },
+  {
+    url: 'https://github.com/helmfile/helmfile',
+    label: 'Helmfile',
+    description: 'Declarative Helm chart deployment',
+    path: 'skills',
+    ref: 'main',
+  },
+  {
+    url: 'https://github.com/openshift/lightspeed-service',
+    label: 'OpenShift Lightspeed',
+    description: 'Kubernetes/OpenShift troubleshooting skills',
+    path: 'skills',
+    ref: 'main',
+  },
+] as const;
+
 // -- Helper to create a mock config store --
 function createMockStore(initial: any = {}) {
   let data = { ...initial };
@@ -481,5 +506,81 @@ describe('Well-known path toggling', () => {
       i === existingIndex ? { ...s, enabled: !s.enabled } : s
     );
     expect(newSources[0].enabled).toBe(false);
+  });
+});
+
+describe('WELL_KNOWN_SKILL_REPOS', () => {
+  it('contains expected repositories', () => {
+    const urls = WELL_KNOWN_SKILL_REPOS.map(r => r.url);
+    expect(urls).toContain('https://github.com/kubeshark/kubeshark');
+    expect(urls).toContain('https://github.com/helmfile/helmfile');
+    expect(urls).toContain('https://github.com/openshift/lightspeed-service');
+  });
+
+  it('has labels and descriptions for each repo', () => {
+    for (const repo of WELL_KNOWN_SKILL_REPOS) {
+      expect(repo.label).toBeTruthy();
+      expect(repo.description).toBeTruthy();
+      expect(repo.url).toMatch(/^https:\/\/github\.com\//);
+    }
+  });
+
+  it('all repos have a skills path and ref', () => {
+    for (const repo of WELL_KNOWN_SKILL_REPOS) {
+      expect(repo.path).toBeTruthy();
+      expect(repo.ref).toBeTruthy();
+    }
+  });
+});
+
+describe('Well-known repo toggling', () => {
+  it('adds a new git source when toggling an unregistered well-known repo', () => {
+    const sources: SkillSourceEntry[] = [];
+    const repo = WELL_KNOWN_SKILL_REPOS[0];
+
+    const existingIndex = sources.findIndex(s => s.type === 'git' && s.url === repo.url);
+    expect(existingIndex).toBe(-1);
+
+    const newSources: SkillSourceEntry[] = [
+      ...sources,
+      {
+        type: 'git',
+        url: repo.url,
+        ref: repo.ref || 'main',
+        path: repo.path,
+        enabled: true,
+      },
+    ];
+    expect(newSources).toHaveLength(1);
+    expect(newSources[0].type).toBe('git');
+    expect(newSources[0].enabled).toBe(true);
+    expect(newSources[0].url).toBe(repo.url);
+  });
+
+  it('toggles an existing well-known repo source', () => {
+    const repo = WELL_KNOWN_SKILL_REPOS[0];
+    const sources: SkillSourceEntry[] = [
+      { type: 'git', url: repo.url, ref: 'main', path: 'skills', enabled: true },
+    ];
+
+    const existingIndex = sources.findIndex(s => s.type === 'git' && s.url === repo.url);
+    expect(existingIndex).toBe(0);
+
+    const newSources = sources.map((s, i) =>
+      i === existingIndex ? { ...s, enabled: !s.enabled } : s
+    );
+    expect(newSources[0].enabled).toBe(false);
+  });
+
+  it('separates well-known repos from custom git sources', () => {
+    const wellKnownRepoUrls = new Set(WELL_KNOWN_SKILL_REPOS.map(r => r.url));
+    const sources: SkillSourceEntry[] = [
+      { type: 'git', url: 'https://github.com/kubeshark/kubeshark', ref: 'main', enabled: true },
+      { type: 'git', url: 'https://github.com/custom/repo', ref: 'main', enabled: true },
+    ];
+
+    const customGitSources = sources.filter(s => !wellKnownRepoUrls.has(s.url));
+    expect(customGitSources).toHaveLength(1);
+    expect(customGitSources[0].url).toBe('https://github.com/custom/repo');
   });
 });
