@@ -335,7 +335,7 @@ export function SkillSettings({
           i === existingIndex ? { ...s, enabled: !s.enabled } : s
         );
       } else {
-        // Add new source (disabled by default when first added from suggestions)
+        // Add new source (enabled when toggled on from suggestions)
         newSources = [
           ...displayConfig.sources,
           {
