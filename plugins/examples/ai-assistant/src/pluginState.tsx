@@ -9,7 +9,7 @@ import type {
 import React from 'react';
 import { useBetween } from 'use-between';
 import type { AksAgentPodInfo } from './agent/aksAgentManager';
-import type { MCPConfig } from './components/settings/MCPSettings';
+import type { MCPConfig } from '@headlamp-k8s/ai-ui/components/settings/MCPSettings';
 
 export const PLUGIN_NAME = '@headlamp-k8s/ai-assistant';
 export const getSettingsURL = () => `/settings/plugins/${encodeURIComponent(PLUGIN_NAME)}`;

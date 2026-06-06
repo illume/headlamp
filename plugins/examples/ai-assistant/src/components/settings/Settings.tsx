@@ -3,7 +3,12 @@ import {
   SavedConfigurations,
 } from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
 import { getDefaultConfig } from '@headlamp-k8s/ai-ui/config/modelConfig';
+import { HolmesAgentSettings } from '@headlamp-k8s/ai-ui/components/settings/HolmesAgentSettings';
+import { MCPSettings } from '@headlamp-k8s/ai-ui/components/settings/MCPSettings';
+import ModelSelector from '@headlamp-k8s/ai-ui/components/settings/ModelSelector';
+import { SkillSettings } from '@headlamp-k8s/ai-ui/components/settings/SkillSettings';
 import { isTestModeCheck } from '@headlamp-k8s/ai-ui/testing/testMode';
+import { Headlamp } from '@kinvolk/headlamp-plugin/lib';
 import {
   Box,
   Button,
@@ -15,6 +20,11 @@ import {
 } from '@mui/material';
 import React from 'react';
 import {
+  HOLMES_SERVICE_NAME,
+  HOLMES_SERVICE_NAMESPACE,
+  HOLMES_SERVICE_PORT,
+} from '../../holmesClient';
+import {
   AKS_AGENT_INSTALL_DOC_URL,
   getAllAvailableTools,
   isToolEnabled,
@@ -22,10 +32,6 @@ import {
   toggleTool,
   usePluginConfig,
 } from '../../pluginState';
-import { HolmesAgentSettings } from './HolmesAgentSettings';
-import { MCPSettings } from './MCPSettings';
-import ModelSelector from './ModelSelector';
-import { SkillSettings } from '@headlamp-k8s/ai-ui/components/settings/SkillSettings';
 
 /**
  * Plugin settings page for the AI Assistant.
@@ -224,7 +230,7 @@ export default function Settings() {
 
       {/* MCP Servers Section */}
       <Divider sx={{ my: 3 }} />
-      <MCPSettings />
+      <MCPSettings isRunningAsApp={Headlamp.isRunningAsApp()} configStore={pluginStore} />
 
       {/* Skills Section */}
       <Divider sx={{ my: 3 }} />
@@ -232,7 +238,16 @@ export default function Settings() {
 
       {/* Holmes Agent Section */}
       <Divider sx={{ my: 3 }} />
-      <HolmesAgentSettings config={savedConfigs} />
+      <HolmesAgentSettings
+        config={savedConfigs}
+        onConfigChange={(patch: Record<string, any>) => {
+          const current = pluginStore.get() || {};
+          pluginStore.update({ ...current, ...patch });
+        }}
+        defaultNamespace={HOLMES_SERVICE_NAMESPACE}
+        defaultServiceName={HOLMES_SERVICE_NAME}
+        defaultPort={HOLMES_SERVICE_PORT}
+      />
 
       {/* AKS Agent Section */}
       <Divider sx={{ my: 3 }} />
