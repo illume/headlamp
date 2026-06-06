@@ -74,7 +74,7 @@ export function tokenize(text: string): string[] {
 
   const words = text
     .toLowerCase()
-    .replace(/[^a-z0-9\u00C0-\u024F\u4e00-\u9fff\u3400-\u4dbf-]/g, ' ')
+    .replace(/[^a-z0-9\u00C0-\u024F\u4e00-\u9fff\u3400-\u4dbf]/g, ' ')
     .split(/\s+/)
     .filter(w => w.length > 1 && !stopWords.has(w));
 

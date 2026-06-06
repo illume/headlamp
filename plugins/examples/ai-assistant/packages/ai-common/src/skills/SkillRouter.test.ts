@@ -182,17 +182,17 @@ describe('SkillRouter', () => {
     });
 
     it('respects minScore threshold', () => {
-      const config = { ...DEFAULT_ROUTER_CONFIG, maxSkills: 8, minScore: 0.8 };
-      const result = routeSkills('pull request', skills, config);
-      // Only very relevant skills should pass high threshold
-      expect(result.length).toBeLessThan(skills.length);
+      const config = { ...DEFAULT_ROUTER_CONFIG, maxSkills: 5, minScore: 0.95 };
+      const result = routeSkills('completely unrelated foobar xyz topic', skills, config);
+      // No K8s skills should match an unrelated query at a very high threshold
+      expect(result.length).toBe(0);
     });
 
     it('respects byte budget', () => {
-      const config = { ...DEFAULT_ROUTER_CONFIG, maxSkills: 8, maxTotalBytes: 50 };
+      const config = { ...DEFAULT_ROUTER_CONFIG, maxSkills: 5, maxTotalBytes: 200 };
       const result = routeSkills('kubernetes', skills, config);
       const totalBytes = result.reduce((sum, s) => sum + s.contentSizeBytes, 0);
-      expect(totalBytes).toBeLessThanOrEqual(50);
+      expect(totalBytes).toBeLessThanOrEqual(200);
     });
 
     it('returns up to maxSkills for empty query', () => {

@@ -1,21 +1,7 @@
 ---
 name: install
 user-invocable: true
-description: >
-  Kubeshark installation and deployment skill. Use this skill whenever the user wants
-  to install Kubeshark, deploy Kubeshark to a Kubernetes cluster, set up Kubeshark,
-  configure Kubeshark helm values, generate a Kubeshark config file, customize
-  Kubeshark deployment, troubleshoot Kubeshark installation, upgrade Kubeshark,
-  uninstall Kubeshark, or manage the Kubeshark Helm release. Also trigger when
-  the user mentions "kubeshark tap", "kubeshark clean", "helm install kubeshark",
-  "get kubeshark running", "set up traffic capture", "deploy kubeshark",
-  "kubeshark not starting", "kubeshark pods not ready", "configure namespaces",
-  "persistent storage", "cloud storage for snapshots", "kubeshark ingress",
-  "kubeshark auth", "kubeshark SAML", "kubeshark license", "kubeshark config",
-  "custom helm values", "kubeshark on EKS/GKE/AKS", "kubeshark on OpenShift",
-  "kubeshark on KinD/minikube/k3s", "air-gapped", "offline install",
-  or any request related to getting Kubeshark installed, configured, and running
-  in a Kubernetes cluster.
+description: Kubeshark installation and deployment skill. Use this skill whenever the user wants to install Kubeshark, deploy Kubeshark to a Kubernetes cluster, set up Kubeshark, configure Kubeshark helm values, generate a Kubeshark config file, customize Kubeshark deployment, troubleshoot Kubeshark installation, upgrade Kubeshark, uninstall Kubeshark, or manage the Kubeshark Helm release. Also trigger when the user mentions "kubeshark tap", "kubeshark clean", "helm install kubeshark", "get kubeshark running", "set up traffic capture", "deploy kubeshark", "kubeshark not starting", "kubeshark pods not ready", "configure namespaces", "persistent storage", "cloud storage for snapshots", "kubeshark ingress", "kubeshark auth", "kubeshark SAML", "kubeshark license", "kubeshark config", "custom helm values", "kubeshark on EKS/GKE/AKS", "kubeshark on OpenShift", "kubeshark on KinD/minikube/k3s", "air-gapped", "offline install", or any request related to getting Kubeshark installed, configured, and running in a Kubernetes cluster.
 ---
 
 # Kubeshark Installation & Deployment
