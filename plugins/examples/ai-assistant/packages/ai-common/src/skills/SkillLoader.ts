@@ -39,6 +39,13 @@ export interface SkillSource {
   path?: string;
   /** Whether this source is active. */
   enabled: boolean;
+  /**
+   * Expected SHA-256 hash of the downloaded skill content.
+   * Used to verify integrity of remote Git sources. If set, the loader will
+   * compute a hash of the extracted skill files and reject the source if it
+   * doesn't match.
+   */
+  sha256?: string;
 }
 
 /** Well-known directories that may contain skills in a project. */
@@ -116,6 +123,85 @@ export function buildGitHubZipUrl(repoUrl: string, ref: string = 'main'): string
 }
 
 /**
+ * Checks whether a Git ref looks like a full commit SHA (40 hex chars)
+ * or a tag-like ref (starts with `v` followed by a digit, or contains no `/`
+ * other than `refs/tags/`). Branch names like `main` or `develop` are mutable.
+ *
+ * @param ref - The Git ref string.
+ * @returns True if the ref appears to be a pinned (immutable) reference.
+ */
+export function isPinnedRef(ref: string): boolean {
+  // Full SHA-1 (40 hex chars) or SHA-256 (64 hex chars)
+  if (/^[0-9a-f]{40}$/.test(ref) || /^[0-9a-f]{64}$/.test(ref)) {
+    return true;
+  }
+  // Looks like a semver tag: v1.0.0, 1.2.3, etc.
+  if (/^v?\d+\.\d+/.test(ref)) {
+    return true;
+  }
+  return false;
+}
+
+/**
+ * Validates that a resolved path stays within the expected base directory.
+ * Prevents path traversal attacks (e.g., `../../etc/passwd`).
+ *
+ * @param basePath - The base directory that paths must stay within.
+ * @param targetPath - The resolved path to validate.
+ * @returns True if targetPath is within basePath.
+ */
+export function isPathWithinBase(basePath: string, targetPath: string): boolean {
+  // Normalize both paths to remove . and .. segments
+  const normalizedBase = normalizePath(basePath);
+  const normalizedTarget = normalizePath(targetPath);
+  return normalizedTarget.startsWith(normalizedBase + '/') || normalizedTarget === normalizedBase;
+}
+
+/**
+ * Normalizes a path by resolving `.` and `..` segments.
+ * Works with both forward slashes and OS-specific separators.
+ */
+function normalizePath(p: string): string {
+  const parts = p.split(/[/\\]/);
+  const resolved: string[] = [];
+  for (const part of parts) {
+    if (part === '..') {
+      resolved.pop();
+    } else if (part !== '.' && part !== '') {
+      resolved.push(part);
+    }
+  }
+  // Preserve leading slash for absolute paths
+  const prefix = p.startsWith('/') ? '/' : '';
+  return prefix + resolved.join('/');
+}
+
+/**
+ * Computes a SHA-256 hash of skill content for integrity verification.
+ * Hashes individual skill file contents (sorted by path) rather than the
+ * zip archive, since GitHub generates non-deterministic zip bytes.
+ *
+ * @param files - Map of file paths to their content.
+ * @returns Hex-encoded SHA-256 hash string.
+ */
+export async function computeContentHash(files: Map<string, string>): Promise<string> {
+  const sortedEntries = [...files.entries()].sort(([a], [b]) => a.localeCompare(b));
+  const combined = sortedEntries.map(([path, content]) => `${path}\0${content}`).join('\n');
+  const data = new TextEncoder().encode(combined);
+
+  // Use Web Crypto API (available in Node 15+, browsers, Electron)
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+/** Maximum total extracted size from a zip archive (10MB). */
+export const MAX_ZIP_EXTRACTED_BYTES = 10 * 1024 * 1024;
+
+/** Maximum number of files to extract from a zip archive. */
+export const MAX_ZIP_FILE_COUNT = 500;
+
+/**
  * Filesystem abstraction for loading skill files.
  *
  * This interface allows the SkillLoader to work in different environments
@@ -149,6 +235,8 @@ export interface SkillHttpClient {
  * ZIP extraction abstraction.
  *
  * Allows swapping in different ZIP implementations for different platforms.
+ * Implementations MUST enforce the provided size and file count limits to
+ * prevent zip bomb attacks.
  */
 export interface SkillZipExtractor {
   /**
@@ -156,9 +244,19 @@ export interface SkillZipExtractor {
    *
    * @param data - ZIP file content as ArrayBuffer.
    * @param pathFilter - Optional filter to only extract files under a specific path prefix.
+   * @param maxExtractedBytes - Maximum total extracted size in bytes. Implementations
+   *   must abort extraction if this limit is exceeded. Defaults to {@link MAX_ZIP_EXTRACTED_BYTES}.
+   * @param maxFileCount - Maximum number of files to extract. Implementations must abort
+   *   extraction if this limit is exceeded. Defaults to {@link MAX_ZIP_FILE_COUNT}.
    * @returns Map of relative file paths to their text content.
+   * @throws If extraction exceeds size or file count limits.
    */
-  extractTextFiles(data: ArrayBuffer, pathFilter?: string): Promise<Map<string, string>>;
+  extractTextFiles(
+    data: ArrayBuffer,
+    pathFilter?: string,
+    maxExtractedBytes?: number,
+    maxFileCount?: number
+  ): Promise<Map<string, string>>;
 }
 
 /**
@@ -211,8 +309,10 @@ export class SkillLoader {
     switch (source.type) {
       case 'local':
         return this.loadFromDirectory(source.url, source.path);
-      case 'git':
-        return this.loadFromGitRepo(source.url, source.ref, source.path);
+      case 'git': {
+        const result = await this.loadFromGitRepoWithIntegrity(source);
+        return result.skills;
+      }
       default:
         console.warn(`Unknown skill source type: ${(source as any).type}`);
         return [];
@@ -234,6 +334,12 @@ export class SkillLoader {
    */
   async loadFromDirectory(dirPath: string, subPath?: string): Promise<ParsedSkill[]> {
     const scanPath = subPath ? this.fs.joinPath(dirPath, subPath) : dirPath;
+
+    // Path traversal protection: ensure resolved path stays within base directory
+    if (subPath && !isPathWithinBase(dirPath, scanPath)) {
+      console.warn(`Skill source path traversal blocked: ${subPath} escapes ${dirPath}`);
+      return [];
+    }
 
     if (!(await this.fs.exists(scanPath))) {
       return [];
@@ -311,6 +417,123 @@ export class SkillLoader {
   /**
    * Downloads and extracts skills from a GitHub repository via zip archive.
    *
+   * Security controls:
+   * - Only HTTPS URLs to github.com are allowed (SSRF prevention).
+   * - Warns when using mutable branch refs instead of pinned SHAs/tags.
+   * - Enforces zip extraction size and file count limits (zip bomb prevention).
+   * - Validates zip entry paths to prevent path traversal.
+   * - Verifies SHA-256 content hash when `sha256` is set on the source.
+   * - Content size limits are enforced per skill.
+   * - The zip is extracted in memory — no files are written to disk.
+   *
+   * @param source - The skill source configuration. Uses `url`, `ref`, `path`, and `sha256`.
+   * @returns Object with parsed skills and the computed content hash.
+   * @throws If the URL is invalid, HTTP client is not configured, download fails,
+   *   or integrity verification fails.
+   */
+  async loadFromGitRepoWithIntegrity(
+    source: SkillSource
+  ): Promise<{ skills: ParsedSkill[]; contentHash: string }> {
+    const { url: repoUrl, ref = 'main', path: subPath, sha256: expectedHash } = source;
+
+    if (!this.httpClient || !this.zipExtractor) {
+      throw new Error(
+        'HTTP client and ZIP extractor are required for Git repository skill loading'
+      );
+    }
+
+    if (!isValidGitUrl(repoUrl)) {
+      throw new Error(
+        `Invalid or disallowed Git URL: ${repoUrl}. Only HTTPS URLs to github.com, gitlab.com, or bitbucket.org are allowed.`
+      );
+    }
+
+    if (!isPinnedRef(ref)) {
+      console.warn(
+        `Skill source '${repoUrl}' uses mutable ref '${ref}'. ` +
+          `Pin to a commit SHA or version tag for reproducible builds.`
+      );
+    }
+
+    const zipUrl = buildGitHubZipUrl(repoUrl, ref);
+
+    const zipData = await this.httpClient.fetchZip(zipUrl);
+    const files = await this.zipExtractor.extractTextFiles(
+      zipData,
+      subPath,
+      MAX_ZIP_EXTRACTED_BYTES,
+      MAX_ZIP_FILE_COUNT
+    );
+
+    // Filter out entries with path traversal sequences
+    const safeFiles = new Map<string, string>();
+    for (const [filePath, content] of files) {
+      if (filePath.includes('..')) {
+        console.warn(`Skipping zip entry with path traversal: ${filePath}`);
+        continue;
+      }
+      safeFiles.set(filePath, content);
+    }
+
+    // Compute content hash for integrity verification
+    const contentHash = await computeContentHash(safeFiles);
+
+    if (expectedHash && contentHash !== expectedHash) {
+      throw new Error(
+        `Skill source integrity check failed for ${repoUrl}@${ref}. ` +
+          `Expected SHA-256: ${expectedHash}, got: ${contentHash}. ` +
+          `The content may have been tampered with or the ref may have changed.`
+      );
+    }
+
+    const skills: ParsedSkill[] = [];
+    const sourcePrefix = `${repoUrl}@${ref}`;
+
+    for (const [filePath, content] of safeFiles) {
+      const fileName = filePath.split('/').pop() || filePath;
+
+      try {
+        if (fileName === 'SKILL.md') {
+          const skill = parseSkillFile(
+            content,
+            `${sourcePrefix}/${filePath}`,
+            this.maxSkillSizeBytes
+          );
+          skills.push(skill);
+        } else if (fileName.endsWith('.instructions.md')) {
+          const skill = parseCopilotInstructionsFile(
+            content,
+            fileName,
+            `${sourcePrefix}/${filePath}`
+          );
+          skills.push(skill);
+        } else if (
+          fileName.endsWith('.md') &&
+          fileName !== 'README.md' &&
+          fileName !== 'CONTRIBUTING.md'
+        ) {
+          try {
+            const skill = parseSkillFile(
+              content,
+              `${sourcePrefix}/${filePath}`,
+              this.maxSkillSizeBytes
+            );
+            skills.push(skill);
+          } catch {
+            // Not a valid skill file — skip
+          }
+        }
+      } catch (error) {
+        console.warn(`Error parsing skill from ${filePath}:`, error);
+      }
+    }
+
+    return { skills, contentHash };
+  }
+
+  /**
+   * Downloads and extracts skills from a GitHub repository via zip archive.
+   *
    * Security: Only HTTPS URLs to github.com are allowed. Content size limits
    * are enforced per skill. The zip is extracted in memory — no files are
    * written to disk.
@@ -320,6 +543,7 @@ export class SkillLoader {
    * @param subPath - Optional subdirectory within the repo to scan.
    * @returns Array of parsed skills from the repository.
    * @throws If the URL is invalid, HTTP client is not configured, or download fails.
+   * @deprecated Use {@link loadFromGitRepoWithIntegrity} for SHA verification support.
    */
   async loadFromGitRepo(
     repoUrl: string,

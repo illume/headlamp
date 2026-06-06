@@ -30,9 +30,14 @@ export class SkillManager {
   private loader: SkillLoader;
   private cachedSkills: Map<string, ParsedSkill[]> = new Map();
   private lastLoadTimestamp: number = 0;
+  private lastSourcesKey: string = '';
 
   /** Cache TTL in milliseconds (default: 1 hour). */
   private cacheTtlMs: number;
+
+  private fs: SkillFileSystem;
+  private httpClient?: SkillHttpClient;
+  private zipExtractor?: SkillZipExtractor;
 
   /**
    * Creates a new SkillManager.
@@ -48,14 +53,29 @@ export class SkillManager {
     zipExtractor?: SkillZipExtractor,
     cacheTtlMs: number = 60 * 60 * 1000
   ) {
+    this.fs = fs;
+    this.httpClient = httpClient;
+    this.zipExtractor = zipExtractor;
     this.loader = new SkillLoader(fs, httpClient, zipExtractor);
     this.cacheTtlMs = cacheTtlMs;
   }
 
   /**
+   * Builds a cache key from the current sources config to detect changes.
+   */
+  private buildSourcesKey(config: SkillsConfig): string {
+    return config.sources
+      .filter(s => s.enabled)
+      .map(s => `${s.type}:${s.url}:${s.ref || ''}:${s.path || ''}`)
+      .sort()
+      .join('|');
+  }
+
+  /**
    * Loads all skills from the configured sources.
    *
-   * Results are cached for {@link cacheTtlMs}. Call {@link invalidateCache}
+   * Results are cached for {@link cacheTtlMs}. The cache is automatically
+   * invalidated when sources change. Call {@link invalidateCache}
    * to force a reload.
    *
    * @param config - The current skills configuration.
@@ -63,12 +83,27 @@ export class SkillManager {
    */
   async loadAllSkills(config: SkillsConfig): Promise<ParsedSkill[]> {
     const now = Date.now();
+    const sourcesKey = this.buildSourcesKey(config);
+
+    // Invalidate cache if sources have changed
+    if (sourcesKey !== this.lastSourcesKey) {
+      this.cachedSkills.clear();
+      this.lastSourcesKey = sourcesKey;
+    }
 
     if (this.cachedSkills.size > 0 && now - this.lastLoadTimestamp < this.cacheTtlMs) {
       return this.getAllCachedSkills();
     }
 
     this.cachedSkills.clear();
+
+    // Rebuild loader with config-specified size limit
+    this.loader = new SkillLoader(
+      this.fs,
+      this.httpClient,
+      this.zipExtractor,
+      config.maxSkillSizeBytes
+    );
 
     for (const source of config.sources) {
       if (!source.enabled) continue;

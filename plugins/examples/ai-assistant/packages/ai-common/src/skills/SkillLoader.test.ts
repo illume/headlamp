@@ -14,13 +14,18 @@
  * limitations under the License.
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import {
   isValidGitUrl,
   buildGitHubZipUrl,
   SkillLoader,
   SkillFileSystem,
   WELL_KNOWN_SKILL_DIRS,
+  isPinnedRef,
+  isPathWithinBase,
+  computeContentHash,
+  MAX_ZIP_EXTRACTED_BYTES,
+  MAX_ZIP_FILE_COUNT,
 } from './SkillLoader';
 
 describe('isValidGitUrl', () => {
@@ -324,5 +329,276 @@ K8s content`
       expect(skills[0].metadata.name).toBe('k8s-skill');
       expect(skills[0].source).toContain('github.com/owner/repo@main');
     });
+  });
+
+  describe('path traversal protection', () => {
+    it('should block subPath with path traversal', async () => {
+      const fs = createMockFs({
+        '/root': 'DIR',
+        '/etc/passwd': 'secret',
+      });
+
+      const loader = new SkillLoader(fs);
+      const skills = await loader.loadFromDirectory('/root', '../../etc');
+      expect(skills).toEqual([]);
+    });
+
+    it('should allow valid subPath', async () => {
+      const fs = createMockFs({
+        '/root/sub': 'DIR',
+        '/root/sub/SKILL.md': `---
+name: valid
+description: Valid skill
+---
+Content`,
+      });
+
+      const loader = new SkillLoader(fs);
+      const skills = await loader.loadFromDirectory('/root', 'sub');
+      expect(skills).toHaveLength(1);
+    });
+  });
+
+  describe('loadFromGitRepoWithIntegrity', () => {
+    it('should warn on mutable branch ref', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const fs = createMockFs({});
+      const mockHttp = { fetchZip: async () => new ArrayBuffer(0) };
+      const mockZip = {
+        extractTextFiles: async () => new Map<string, string>(),
+      };
+
+      const loader = new SkillLoader(fs, mockHttp, mockZip);
+      await loader.loadFromGitRepoWithIntegrity({
+        type: 'git',
+        url: 'https://github.com/owner/repo',
+        ref: 'main',
+        enabled: true,
+      });
+
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('mutable ref')
+      );
+      warnSpy.mockRestore();
+    });
+
+    it('should not warn on pinned SHA ref', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const fs = createMockFs({});
+      const mockHttp = { fetchZip: async () => new ArrayBuffer(0) };
+      const mockZip = {
+        extractTextFiles: async () => new Map<string, string>(),
+      };
+
+      const loader = new SkillLoader(fs, mockHttp, mockZip);
+      await loader.loadFromGitRepoWithIntegrity({
+        type: 'git',
+        url: 'https://github.com/owner/repo',
+        ref: 'abc1234567890abc1234567890abc1234567890a',
+        enabled: true,
+      });
+
+      expect(warnSpy).not.toHaveBeenCalledWith(
+        expect.stringContaining('mutable ref')
+      );
+      warnSpy.mockRestore();
+    });
+
+    it('should skip zip entries with path traversal', async () => {
+      const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const fs = createMockFs({});
+      const mockHttp = { fetchZip: async () => new ArrayBuffer(0) };
+      const mockZip = {
+        extractTextFiles: async () => {
+          const files = new Map<string, string>();
+          files.set(
+            'repo-main/skills/SKILL.md',
+            `---\nname: good\ndescription: Good\n---\nContent`
+          );
+          files.set(
+            'repo-main/../../../etc/passwd',
+            'root:x:0:0:root:/root:/bin/bash'
+          );
+          return files;
+        },
+      };
+
+      const loader = new SkillLoader(fs, mockHttp, mockZip);
+      const result = await loader.loadFromGitRepoWithIntegrity({
+        type: 'git',
+        url: 'https://github.com/owner/repo',
+        ref: 'v1.0.0',
+        enabled: true,
+      });
+
+      expect(result.skills).toHaveLength(1);
+      expect(result.skills[0].metadata.name).toBe('good');
+      expect(warnSpy).toHaveBeenCalledWith(
+        expect.stringContaining('path traversal')
+      );
+      warnSpy.mockRestore();
+    });
+
+    it('should reject source when SHA-256 does not match', async () => {
+      const fs = createMockFs({});
+      const mockHttp = { fetchZip: async () => new ArrayBuffer(0) };
+      const mockZip = {
+        extractTextFiles: async () => {
+          const files = new Map<string, string>();
+          files.set(
+            'repo-main/SKILL.md',
+            `---\nname: test\ndescription: Test\n---\nContent`
+          );
+          return files;
+        },
+      };
+
+      const loader = new SkillLoader(fs, mockHttp, mockZip);
+      await expect(
+        loader.loadFromGitRepoWithIntegrity({
+          type: 'git',
+          url: 'https://github.com/owner/repo',
+          ref: 'v1.0.0',
+          enabled: true,
+          sha256: 'badhash0000000000000000000000000000000000000000000000000000000000',
+        })
+      ).rejects.toThrow('integrity check failed');
+    });
+
+    it('should pass when SHA-256 matches', async () => {
+      const fs = createMockFs({});
+      const mockHttp = { fetchZip: async () => new ArrayBuffer(0) };
+      const skillContent = `---\nname: test\ndescription: Test\n---\nContent`;
+      const mockZip = {
+        extractTextFiles: async () => {
+          const files = new Map<string, string>();
+          files.set('repo-main/SKILL.md', skillContent);
+          return files;
+        },
+      };
+
+      // Compute the expected hash first
+      const expectedFiles = new Map<string, string>();
+      expectedFiles.set('repo-main/SKILL.md', skillContent);
+      const expectedHash = await computeContentHash(expectedFiles);
+
+      const loader = new SkillLoader(fs, mockHttp, mockZip);
+      const result = await loader.loadFromGitRepoWithIntegrity({
+        type: 'git',
+        url: 'https://github.com/owner/repo',
+        ref: 'v1.0.0',
+        enabled: true,
+        sha256: expectedHash,
+      });
+
+      expect(result.skills).toHaveLength(1);
+      expect(result.contentHash).toBe(expectedHash);
+    });
+
+    it('should return contentHash for pinning', async () => {
+      const fs = createMockFs({});
+      const mockHttp = { fetchZip: async () => new ArrayBuffer(0) };
+      const mockZip = {
+        extractTextFiles: async () => {
+          const files = new Map<string, string>();
+          files.set(
+            'repo-main/SKILL.md',
+            `---\nname: test\ndescription: Test\n---\nContent`
+          );
+          return files;
+        },
+      };
+
+      const loader = new SkillLoader(fs, mockHttp, mockZip);
+      const result = await loader.loadFromGitRepoWithIntegrity({
+        type: 'git',
+        url: 'https://github.com/owner/repo',
+        ref: 'v1.0.0',
+        enabled: true,
+      });
+
+      expect(result.contentHash).toMatch(/^[0-9a-f]{64}$/);
+    });
+  });
+});
+
+describe('isPinnedRef', () => {
+  it('should recognize full SHA-1 hashes', () => {
+    expect(isPinnedRef('abc1234567890abc1234567890abc1234567890a')).toBe(true);
+  });
+
+  it('should recognize semver tags', () => {
+    expect(isPinnedRef('v1.0.0')).toBe(true);
+    expect(isPinnedRef('1.2.3')).toBe(true);
+    expect(isPinnedRef('v2.0')).toBe(true);
+  });
+
+  it('should reject branch names', () => {
+    expect(isPinnedRef('main')).toBe(false);
+    expect(isPinnedRef('develop')).toBe(false);
+    expect(isPinnedRef('feature/my-branch')).toBe(false);
+  });
+});
+
+describe('isPathWithinBase', () => {
+  it('should allow paths within base', () => {
+    expect(isPathWithinBase('/root', '/root/sub')).toBe(true);
+    expect(isPathWithinBase('/root', '/root/sub/deep')).toBe(true);
+  });
+
+  it('should reject paths outside base', () => {
+    expect(isPathWithinBase('/root', '/etc/passwd')).toBe(false);
+    expect(isPathWithinBase('/root', '/root/../etc/passwd')).toBe(false);
+  });
+
+  it('should handle exact match', () => {
+    expect(isPathWithinBase('/root', '/root')).toBe(true);
+  });
+
+  it('should prevent prefix spoofing', () => {
+    expect(isPathWithinBase('/root', '/root-evil/file')).toBe(false);
+  });
+});
+
+describe('computeContentHash', () => {
+  it('should produce consistent hashes for the same content', async () => {
+    const files = new Map<string, string>();
+    files.set('a.md', 'hello');
+    files.set('b.md', 'world');
+
+    const hash1 = await computeContentHash(files);
+    const hash2 = await computeContentHash(files);
+    expect(hash1).toBe(hash2);
+  });
+
+  it('should produce different hashes for different content', async () => {
+    const files1 = new Map<string, string>();
+    files1.set('a.md', 'hello');
+
+    const files2 = new Map<string, string>();
+    files2.set('a.md', 'world');
+
+    const hash1 = await computeContentHash(files1);
+    const hash2 = await computeContentHash(files2);
+    expect(hash1).not.toBe(hash2);
+  });
+
+  it('should produce hex-encoded SHA-256', async () => {
+    const files = new Map<string, string>();
+    files.set('test.md', 'content');
+    const hash = await computeContentHash(files);
+    expect(hash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('should sort files by path for deterministic hashing', async () => {
+    const files1 = new Map<string, string>();
+    files1.set('b.md', 'beta');
+    files1.set('a.md', 'alpha');
+
+    const files2 = new Map<string, string>();
+    files2.set('a.md', 'alpha');
+    files2.set('b.md', 'beta');
+
+    expect(await computeContentHash(files1)).toBe(await computeContentHash(files2));
   });
 });
