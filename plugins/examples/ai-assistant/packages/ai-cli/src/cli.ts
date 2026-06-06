@@ -280,9 +280,10 @@ function configFromEnv(): CLIConfig | null {
 async function initMCPTools(
   model: BaseChatModel,
   mcpConfig: CLIConfig['mcp']
-): Promise<BaseChatModel> {
+): Promise<{ model: BaseChatModel; cleanup: () => Promise<void> }> {
+  const noop = async () => {};
   if (!mcpConfig?.enabled || !mcpConfig.servers?.length) {
-    return model;
+    return { model, cleanup: noop };
   }
 
   const mcpServers: Record<string, any> = {};
@@ -298,16 +299,27 @@ async function initMCPTools(
   }
 
   if (Object.keys(mcpServers).length === 0) {
-    return model;
+    return { model, cleanup: noop };
   }
 
   const client = new MultiServerMCPClient({ mcpServers });
   const tools = client.getTools();
   if (!tools || (await tools).length === 0) {
-    return model;
+    await client.close();
+    return { model, cleanup: noop };
   }
 
-  return model.bindTools(await tools) as BaseChatModel;
+  const boundModel = model.bindTools(await tools) as BaseChatModel;
+  return {
+    model: boundModel,
+    cleanup: async () => {
+      try {
+        await client.close();
+      } catch {
+        // ignore close errors
+      }
+    },
+  };
 }
 
 /**
@@ -613,9 +625,12 @@ async function main() {
   }
 
   // Initialize MCP tools if configured
+  let mcpCleanup: (() => Promise<void>) | undefined;
   if (config.mcp) {
     try {
-      model = await initMCPTools(model, config.mcp);
+      const mcp = await initMCPTools(model, config.mcp);
+      model = mcp.model;
+      mcpCleanup = mcp.cleanup;
     } catch (error: any) {
       console.error(`Warning: Failed to initialize MCP tools: ${error.message}`);
     }
@@ -624,6 +639,7 @@ async function main() {
   // Interactive mode
   if (parsed.interactive) {
     await interactiveMode(model, systemPrompt);
+    await mcpCleanup?.();
     return;
   }
 
@@ -639,6 +655,7 @@ async function main() {
         'Provide a query as an argument, pipe from stdin, or use --interactive mode.\n' +
         'Run with --help for usage information.'
     );
+    await mcpCleanup?.();
     process.exit(1);
   }
 
@@ -647,8 +664,14 @@ async function main() {
     console.log(response);
   } catch (error: any) {
     console.error(`Error: ${error.message}`);
+    await mcpCleanup?.();
     process.exit(1);
   }
+
+  await mcpCleanup?.();
 }
 
-main();
+main().then(() => {
+  // Force exit to ensure MCP child processes don't keep the event loop alive
+  process.exit(0);
+});
