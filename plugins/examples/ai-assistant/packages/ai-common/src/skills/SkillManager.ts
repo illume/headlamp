@@ -31,6 +31,7 @@ export class SkillManager {
   private cachedSkills: Map<string, ParsedSkill[]> = new Map();
   private lastLoadTimestamp: number = 0;
   private lastSourcesKey: string = '';
+  private lastMaxSkillSizeBytes: number = 0;
 
   /** Cache TTL in milliseconds (default: 1 hour). */
   private cacheTtlMs: number;
@@ -97,13 +98,16 @@ export class SkillManager {
 
     this.cachedSkills.clear();
 
-    // Rebuild loader with config-specified size limit
-    this.loader = new SkillLoader(
-      this.fs,
-      this.httpClient,
-      this.zipExtractor,
-      config.maxSkillSizeBytes
-    );
+    // Rebuild loader only when the configured size limit changes
+    if (config.maxSkillSizeBytes !== this.lastMaxSkillSizeBytes) {
+      this.loader = new SkillLoader(
+        this.fs,
+        this.httpClient,
+        this.zipExtractor,
+        config.maxSkillSizeBytes
+      );
+      this.lastMaxSkillSizeBytes = config.maxSkillSizeBytes;
+    }
 
     for (const source of config.sources) {
       if (!source.enabled) continue;

@@ -131,8 +131,13 @@ export function buildGitHubZipUrl(repoUrl: string, ref: string = 'main'): string
  * @returns True if the ref appears to be a pinned (immutable) reference.
  */
 export function isPinnedRef(ref: string): boolean {
-  // Full SHA-1 (40 hex chars) or SHA-256 (64 hex chars)
-  if (/^[0-9a-f]{40}$/.test(ref) || /^[0-9a-f]{64}$/.test(ref)) {
+  // Full SHA-1 (40 hex chars) — standard Git commit hash
+  if (/^[0-9a-f]{40}$/.test(ref)) {
+    return true;
+  }
+  // Full SHA-256 (64 hex chars) — future Git hash format (not yet used by GitHub,
+  // included for forward compatibility with Git's SHA-256 transition)
+  if (/^[0-9a-f]{64}$/.test(ref)) {
     return true;
   }
   // Looks like a semver tag: v1.0.0, 1.2.3, etc.
@@ -160,13 +165,17 @@ export function isPathWithinBase(basePath: string, targetPath: string): boolean 
 /**
  * Normalizes a path by resolving `.` and `..` segments.
  * Works with both forward slashes and OS-specific separators.
+ * Prevents traversal beyond the root by ignoring `..` when at root level.
  */
 function normalizePath(p: string): string {
   const parts = p.split(/[/\\]/);
   const resolved: string[] = [];
   for (const part of parts) {
     if (part === '..') {
-      resolved.pop();
+      if (resolved.length > 0) {
+        resolved.pop();
+      }
+      // If resolved is empty, ignore the '..' to prevent escaping root
     } else if (part !== '.' && part !== '') {
       resolved.push(part);
     }
@@ -181,12 +190,18 @@ function normalizePath(p: string): string {
  * Hashes individual skill file contents (sorted by path) rather than the
  * zip archive, since GitHub generates non-deterministic zip bytes.
  *
+ * Uses length-prefixed encoding to prevent delimiter confusion:
+ * each entry is encoded as `pathLength:path:contentLength:content`.
+ *
  * @param files - Map of file paths to their content.
  * @returns Hex-encoded SHA-256 hash string.
  */
 export async function computeContentHash(files: Map<string, string>): Promise<string> {
   const sortedEntries = [...files.entries()].sort(([a], [b]) => a.localeCompare(b));
-  const combined = sortedEntries.map(([path, content]) => `${path}\0${content}`).join('\n');
+  const parts = sortedEntries.map(([path, content]) =>
+    `${path.length}:${path}:${content.length}:${content}`
+  );
+  const combined = parts.join('');
   const data = new TextEncoder().encode(combined);
 
   // Use Web Crypto API (available in Node 15+, browsers, Electron)
@@ -465,10 +480,11 @@ export class SkillLoader {
       MAX_ZIP_FILE_COUNT
     );
 
-    // Filter out entries with path traversal sequences
+    // Filter out entries with path traversal sequences (check path segments, not substrings)
     const safeFiles = new Map<string, string>();
     for (const [filePath, content] of files) {
-      if (filePath.includes('..')) {
+      const segments = filePath.split('/');
+      if (segments.some(seg => seg === '..')) {
         console.warn(`Skipping zip entry with path traversal: ${filePath}`);
         continue;
       }

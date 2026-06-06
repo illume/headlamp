@@ -404,7 +404,7 @@ Content`,
       warnSpy.mockRestore();
     });
 
-    it('should skip zip entries with path traversal', async () => {
+    it('should skip zip entries with path traversal segments', async () => {
       const warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
       const fs = createMockFs({});
       const mockHttp = { fetchZip: async () => new ArrayBuffer(0) };
@@ -437,6 +437,32 @@ Content`,
         expect.stringContaining('path traversal')
       );
       warnSpy.mockRestore();
+    });
+
+    it('should allow filenames containing ".." as a substring', async () => {
+      const fs = createMockFs({});
+      const mockHttp = { fetchZip: async () => new ArrayBuffer(0) };
+      const mockZip = {
+        extractTextFiles: async () => {
+          const files = new Map<string, string>();
+          files.set(
+            'repo-main/file..name.md',
+            `---\nname: dotdot\ndescription: Has dots\n---\nContent`
+          );
+          return files;
+        },
+      };
+
+      const loader = new SkillLoader(fs, mockHttp, mockZip);
+      const result = await loader.loadFromGitRepoWithIntegrity({
+        type: 'git',
+        url: 'https://github.com/owner/repo',
+        ref: 'v1.0.0',
+        enabled: true,
+      });
+
+      expect(result.skills).toHaveLength(1);
+      expect(result.skills[0].metadata.name).toBe('dotdot');
     });
 
     it('should reject source when SHA-256 does not match', async () => {
