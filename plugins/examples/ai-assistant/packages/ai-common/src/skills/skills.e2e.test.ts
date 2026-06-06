@@ -551,3 +551,250 @@ Standard content.
     expect(names).toContain('extra');
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════
+// Vendored real-world skills — loaded directly from vendored SKILL.md files
+// sourced from public open-source repositories.
+// ════════════════════════════════════════════════════════════════════════
+
+describe('Vendored real-world skills', () => {
+  const vendoredDir = path.resolve(__dirname, 'vendored');
+
+  // ──────────────────────────────────────────────────────────────────────
+  // tldraw/tldraw — multi-skill repo with nested SKILL.md per skill
+  // Source: https://github.com/tldraw/tldraw  (Apache-2.0)
+  // ──────────────────────────────────────────────────────────────────────
+  describe('tldraw/tldraw', () => {
+    const tldrawDir = path.join(vendoredDir, 'tldraw');
+
+    it('loads pr skill', () => {
+      const raw = fs.readFileSync(path.join(tldrawDir, 'pr', 'SKILL.md'), 'utf-8');
+      const skill = parseSkillFile(raw, 'tldraw/pr/SKILL.md');
+
+      expect(skill.metadata.name).toBe('pr');
+      expect(skill.metadata.description).toContain('pull request');
+      expect(skill.content).toContain('Workflow');
+      expect(skill.content).toContain('gh pr create');
+      expect(skill.contentSizeBytes).toBeGreaterThan(100);
+    });
+
+    it('loads write-unit-tests skill', () => {
+      const raw = fs.readFileSync(path.join(tldrawDir, 'write-unit-tests', 'SKILL.md'), 'utf-8');
+      const skill = parseSkillFile(raw, 'tldraw/write-unit-tests/SKILL.md');
+
+      expect(skill.metadata.name).toBe('write-unit-tests');
+      expect(skill.metadata.description).toContain('Vitest');
+      expect(skill.content).toContain('TestEditor');
+    });
+
+    it('loads issue skill', () => {
+      const raw = fs.readFileSync(path.join(tldrawDir, 'issue', 'SKILL.md'), 'utf-8');
+      const skill = parseSkillFile(raw, 'tldraw/issue/SKILL.md');
+
+      expect(skill.metadata.name).toBe('issue');
+      expect(skill.metadata.description).toContain('GitHub issue');
+      expect(skill.content).toContain('gh issue create');
+    });
+
+    it('loads all tldraw skills from directory tree', async () => {
+      const loader = new SkillLoader(createNodeFs());
+      const skills = await loader.loadFromDirectory(tldrawDir);
+
+      expect(skills.length).toBe(3);
+      const names = skills.map(s => s.metadata.name).sort();
+      expect(names).toEqual(['issue', 'pr', 'write-unit-tests']);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────
+  // upstash/ratelimit-js — single SKILL.md with code examples
+  // Source: https://github.com/upstash/ratelimit-js  (MIT)
+  // ──────────────────────────────────────────────────────────────────────
+  describe('upstash/ratelimit-js', () => {
+    const upstashDir = path.join(vendoredDir, 'upstash-ratelimit');
+
+    it('loads the ratelimit skill with code blocks', () => {
+      const raw = fs.readFileSync(path.join(upstashDir, 'SKILL.md'), 'utf-8');
+      const skill = parseSkillFile(raw, 'upstash/SKILL.md');
+
+      expect(skill.metadata.name).toBe('upstash-ratelimit-ts');
+      expect(skill.metadata.description).toContain('Rate Limit');
+      expect(skill.content).toContain('@upstash/ratelimit');
+      expect(skill.content).toContain('slidingWindow');
+    });
+
+    it('loads as a directory source', async () => {
+      const loader = new SkillLoader(createNodeFs());
+      const skills = await loader.loadFromDirectory(upstashDir);
+
+      expect(skills).toHaveLength(1);
+      expect(skills[0].metadata.name).toBe('upstash-ratelimit-ts');
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────
+  // alibaba/arthas — nested skills with Unicode (Chinese) content
+  // Source: https://github.com/alibaba/arthas  (Apache-2.0)
+  // ──────────────────────────────────────────────────────────────────────
+  describe('alibaba/arthas', () => {
+    const arthasDir = path.join(vendoredDir, 'arthas');
+
+    it('loads the root arthas skill with Chinese content', () => {
+      const raw = fs.readFileSync(path.join(arthasDir, 'SKILL.md'), 'utf-8');
+      const skill = parseSkillFile(raw, 'arthas/SKILL.md');
+
+      expect(skill.metadata.name).toBe('arthas');
+      expect(skill.metadata.description).toContain('arthas');
+      // Verify Unicode content is preserved
+      expect(skill.content).toContain('诊断');
+      expect(skill.content).toContain('CPU');
+      expect(skill.contentSizeBytes).toBeGreaterThan(0);
+    });
+
+    it('loads the nested cpu-high sub-skill', () => {
+      const raw = fs.readFileSync(path.join(arthasDir, 'cpu-high', 'SKILL.md'), 'utf-8');
+      const skill = parseSkillFile(raw, 'arthas/cpu-high/SKILL.md');
+
+      expect(skill.metadata.name).toBe('arthas-cpu-high');
+      expect(skill.content).toContain('dashboard');
+      expect(skill.content).toContain('thread');
+    });
+
+    it('loads all arthas skills from directory tree', async () => {
+      const loader = new SkillLoader(createNodeFs());
+      const skills = await loader.loadFromDirectory(arthasDir);
+
+      expect(skills.length).toBe(2);
+      const names = skills.map(s => s.metadata.name).sort();
+      expect(names).toEqual(['arthas', 'arthas-cpu-high']);
+    });
+  });
+
+  // ──────────────────────────────────────────────────────────────────────
+  // Cross-repo: load all vendored skills together via SkillManager
+  // ──────────────────────────────────────────────────────────────────────
+  describe('all vendored skills together', () => {
+    it('loads all vendored skills across repos via SkillManager', async () => {
+      const manager = new SkillManager(createNodeFs());
+      const config: SkillsConfig = {
+        ...DEFAULT_SKILLS_CONFIG,
+        sources: [
+          { type: 'local', url: path.join(vendoredDir, 'tldraw'), enabled: true },
+          { type: 'local', url: path.join(vendoredDir, 'upstash-ratelimit'), enabled: true },
+          { type: 'local', url: path.join(vendoredDir, 'arthas'), enabled: true },
+        ],
+      };
+
+      const all = await manager.loadAllSkills(config);
+      expect(all.length).toBe(6); // 3 tldraw + 1 upstash + 2 arthas
+
+      const names = all.map(s => s.metadata.name).sort();
+      expect(names).toEqual([
+        'arthas',
+        'arthas-cpu-high',
+        'issue',
+        'pr',
+        'upstash-ratelimit-ts',
+        'write-unit-tests',
+      ]);
+    });
+
+    it('generates a valid prompt from all vendored skills', async () => {
+      const manager = new SkillManager(createNodeFs());
+      const config: SkillsConfig = {
+        ...DEFAULT_SKILLS_CONFIG,
+        sources: [
+          { type: 'local', url: path.join(vendoredDir, 'tldraw'), enabled: true },
+          { type: 'local', url: path.join(vendoredDir, 'upstash-ratelimit'), enabled: true },
+          { type: 'local', url: path.join(vendoredDir, 'arthas'), enabled: true },
+        ],
+      };
+
+      await manager.loadAllSkills(config);
+      const prompt = manager.getSkillsPromptText(config);
+
+      // Prompt should contain all 6 skill blocks
+      expect(prompt).toContain('SKILLS:');
+      expect(prompt).toContain('<skill name="pr"');
+      expect(prompt).toContain('<skill name="write-unit-tests"');
+      expect(prompt).toContain('<skill name="issue"');
+      expect(prompt).toContain('<skill name="upstash-ratelimit-ts"');
+      expect(prompt).toContain('<skill name="arthas"');
+      expect(prompt).toContain('<skill name="arthas-cpu-high"');
+      expect(prompt).toContain('END OF SKILLS.');
+    });
+
+    it('can selectively disable vendored skills', async () => {
+      const manager = new SkillManager(createNodeFs());
+      const config: SkillsConfig = {
+        ...DEFAULT_SKILLS_CONFIG,
+        sources: [
+          { type: 'local', url: path.join(vendoredDir, 'tldraw'), enabled: true },
+          { type: 'local', url: path.join(vendoredDir, 'upstash-ratelimit'), enabled: true },
+          { type: 'local', url: path.join(vendoredDir, 'arthas'), enabled: true },
+        ],
+        disabledSkills: ['pr', 'arthas-cpu-high'],
+      };
+
+      await manager.loadAllSkills(config);
+      const prompt = manager.getSkillsPromptText(config);
+
+      // Disabled skills should not appear
+      expect(prompt).not.toContain('<skill name="pr"');
+      expect(prompt).not.toContain('<skill name="arthas-cpu-high"');
+
+      // Enabled skills should appear
+      expect(prompt).toContain('<skill name="issue"');
+      expect(prompt).toContain('<skill name="write-unit-tests"');
+      expect(prompt).toContain('<skill name="upstash-ratelimit-ts"');
+      expect(prompt).toContain('<skill name="arthas"');
+    });
+
+    it('sends all vendored skills through the mock model', async () => {
+      const manager = new SkillManager(createNodeFs());
+      const config: SkillsConfig = {
+        ...DEFAULT_SKILLS_CONFIG,
+        sources: [
+          { type: 'local', url: path.join(vendoredDir, 'tldraw'), enabled: true },
+          { type: 'local', url: path.join(vendoredDir, 'upstash-ratelimit'), enabled: true },
+          { type: 'local', url: path.join(vendoredDir, 'arthas'), enabled: true },
+        ],
+      };
+
+      await manager.loadAllSkills(config);
+      const skillsPrompt = manager.getSkillsPromptText(config);
+      const systemPrompt = `You are a Kubernetes assistant.\n${skillsPrompt}`;
+
+      const model = createMockTestingModel();
+      const response = await model.invoke([
+        new SystemMessage(systemPrompt),
+        new HumanMessage('Hello'),
+      ]);
+
+      const content = typeof response.content === 'string'
+        ? response.content
+        : String(response.content);
+      expect(content).toContain('Headlamp AI assistant');
+    });
+
+    it('summary reflects correct counts across all vendored repos', async () => {
+      const manager = new SkillManager(createNodeFs());
+      const config: SkillsConfig = {
+        ...DEFAULT_SKILLS_CONFIG,
+        sources: [
+          { type: 'local', url: path.join(vendoredDir, 'tldraw'), enabled: true },
+          { type: 'local', url: path.join(vendoredDir, 'upstash-ratelimit'), enabled: true },
+          { type: 'local', url: path.join(vendoredDir, 'arthas'), enabled: true },
+        ],
+        disabledSkills: ['pr'],
+      };
+
+      await manager.loadAllSkills(config);
+      const summary = manager.getSkillsSummary(config);
+
+      expect(summary.totalSkills).toBe(6);
+      expect(summary.enabledSkills).toBe(5);
+      expect(summary.totalSizeBytes).toBeGreaterThan(0);
+    });
+  });
+});
