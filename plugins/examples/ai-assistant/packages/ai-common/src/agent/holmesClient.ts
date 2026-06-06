@@ -54,7 +54,7 @@ function normalizeConfigString(value: string | undefined, fallback: string): str
 }
 
 function normalizeConfigPort(value: number | undefined, fallback: number): number {
-  return Number.isInteger(value) && value! >= 1 && value! <= 65535 ? value! : fallback;
+  return value !== undefined && Number.isInteger(value) && value >= 1 && value <= 65535 ? value : fallback;
 }
 
 function getHolmesServiceConfig(config?: HolmesPluginConfig): {
