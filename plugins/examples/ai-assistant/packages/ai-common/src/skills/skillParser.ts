@@ -46,6 +46,11 @@ export interface SkillMetadata {
     /** Arguments for stdio transport command. */
     args?: string[];
   };
+  /**
+   * Glob patterns restricting when this skill applies
+   * (from GitHub Copilot `.instructions.md` `applyTo` field).
+   */
+  applyTo?: string[];
 }
 
 /**
@@ -108,8 +113,12 @@ export function parseFrontMatter(raw: string): [Record<string, any>, string] {
 /**
  * Minimal YAML parser for front-matter fields.
  *
- * Handles flat key-value pairs, inline arrays `[a, b, c]`, block arrays
- * (lines starting with `- `), and nested objects (one level deep).
+ * Supports:
+ * - Flat `key: value` pairs (strings, numbers, booleans)
+ * - Inline arrays `[a, b, c]`
+ * - Block arrays (`- item` lines indented under a key)
+ * - One level of nested objects (indented `key: value` under a parent key)
+ *
  * Deliberately limited to avoid pulling in a full YAML library.
  *
  * @param lines - Lines of YAML text (without the `---` delimiters).
@@ -117,148 +126,77 @@ export function parseFrontMatter(raw: string): [Record<string, any>, string] {
  */
 export function parseSimpleYaml(lines: string[]): Record<string, any> {
   const result: Record<string, any> = {};
-  let currentKey: string | null = null;
-  let currentArray: string[] | null = null;
-  let currentObject: Record<string, any> | null = null;
-  let objectKey: string | null = null;
+
+  // parentKey tracks the last top-level key that had an empty value
+  // (meaning its children follow on indented lines).
+  let parentKey: string | null = null;
+  let nested: Record<string, any> | null = null;
+  let blockArray: any[] | null = null;
+
+  function flushParent() {
+    if (parentKey === null) return;
+    if (blockArray !== null) {
+      result[parentKey] = blockArray;
+    } else if (nested !== null && Object.keys(nested).length > 0) {
+      result[parentKey] = nested;
+    }
+    parentKey = null;
+    nested = null;
+    blockArray = null;
+  }
 
   for (const line of lines) {
-    // Skip empty lines and comments
-    if (line.trim() === '' || line.trim().startsWith('#')) {
-      continue;
-    }
+    if (line.trim() === '' || line.trim().startsWith('#')) continue;
 
     const indent = line.length - line.trimStart().length;
+    const trimmed = line.trim();
 
-    // Nested object value (indented key: value under a parent key)
-    if (indent >= 2 && objectKey && currentObject !== null) {
-      const trimmed = line.trim();
-
-      // Array item — could be a top-level block array or nested object array
+    // ── Indented line: belongs to the current parentKey ──
+    if (indent >= 2 && parentKey !== null) {
       if (trimmed.startsWith('- ')) {
-        const val = trimmed.slice(2).trim();
-
-        // If no nested key has been set yet, this is a top-level block array
-        // (e.g. tags:\n  - item1\n  - item2)
-        if (currentKey === null || currentKey === objectKey) {
-          // Convert from nested object to top-level array
-          objectKey = null;
-          currentObject = null;
-          if (currentArray === null) {
-            currentArray = [];
-          }
-          currentArray.push(unquote(val));
-          result[currentKey!] = currentArray;
-          continue;
-        }
-
-        // Otherwise it's an array under a nested object key
-        if (currentArray === null) {
-          currentArray = [];
-        }
-        currentArray.push(unquote(val));
-        currentObject[currentKey] = currentArray;
-        continue;
-      }
-
-      const colonIdx = trimmed.indexOf(':');
-      if (colonIdx > 0) {
-        // Flush any pending array
-        if (currentArray !== null && currentKey) {
-          currentObject[currentKey] = currentArray;
-          currentArray = null;
-        }
-
-        const key = trimmed.slice(0, colonIdx).trim();
-        const value = trimmed.slice(colonIdx + 1).trim();
-        currentKey = key;
-
-        if (value === '') {
-          currentArray = [];
-        } else {
-          currentObject[key] = parseValue(value);
-          currentKey = key;
-        }
-      }
-      continue;
-    }
-
-    // Top-level array item (indented, starts with -)
-    if (indent >= 2 && currentKey && line.trim().startsWith('- ')) {
-      const val = line.trim().slice(2).trim();
-      if (currentArray === null) {
-        currentArray = [];
-      }
-      currentArray.push(unquote(val));
-      result[currentKey] = currentArray;
-      continue;
-    }
-
-    // Flush pending nested object
-    if (objectKey && currentObject !== null) {
-      if (currentArray !== null && currentKey) {
-        currentObject[currentKey] = currentArray;
-        currentArray = null;
-      }
-      result[objectKey] = currentObject;
-      objectKey = null;
-      currentObject = null;
-    }
-
-    // Flush pending array
-    if (currentArray !== null && currentKey) {
-      result[currentKey] = currentArray;
-      currentArray = null;
-    }
-
-    // Top-level key: value
-    const trimmedLine = line.trim();
-    const colonIdx = trimmedLine.indexOf(':');
-    if (colonIdx > 0) {
-      const key = trimmedLine.slice(0, colonIdx).trim();
-      const value = trimmedLine.slice(colonIdx + 1).trim();
-
-      currentKey = key;
-
-      if (value === '') {
-        // Could be start of nested object or array — peek ahead handled by indent check
-        objectKey = key;
-        currentObject = {};
-        currentArray = null;
-        continue;
-      }
-
-      // Inline array: [a, b, c]
-      if (value.startsWith('[') && value.endsWith(']')) {
-        const items = value
-          .slice(1, -1)
-          .split(',')
-          .map(s => unquote(s.trim()))
-          .filter(s => s.length > 0);
-        result[key] = items;
-        objectKey = null;
-        currentObject = null;
+        // Block array item
+        if (blockArray === null) blockArray = [];
+        blockArray.push(unquote(trimmed.slice(2).trim()));
       } else {
-        result[key] = parseValue(value);
-        objectKey = null;
-        currentObject = null;
+        // Nested key: value
+        const colonIdx = trimmed.indexOf(':');
+        if (colonIdx > 0) {
+          if (nested === null) nested = {};
+          const key = trimmed.slice(0, colonIdx).trim();
+          const value = trimmed.slice(colonIdx + 1).trim();
+          nested[key] = value === '' ? '' : parseValue(value);
+        }
       }
+      continue;
+    }
+
+    // ── Top-level line ──
+    flushParent();
+
+    const colonIdx = trimmed.indexOf(':');
+    if (colonIdx <= 0) continue;
+
+    const key = trimmed.slice(0, colonIdx).trim();
+    const value = trimmed.slice(colonIdx + 1).trim();
+
+    if (value === '') {
+      // Empty value → children follow on indented lines
+      parentKey = key;
+      nested = {};
+      blockArray = null;
+    } else if (value.startsWith('[') && value.endsWith(']')) {
+      // Inline array: [a, b, c]
+      result[key] = value
+        .slice(1, -1)
+        .split(',')
+        .map(s => unquote(s.trim()))
+        .filter(s => s.length > 0);
+    } else {
+      result[key] = parseValue(value);
     }
   }
 
-  // Flush remaining nested object
-  if (objectKey && currentObject !== null) {
-    if (currentArray !== null && currentKey) {
-      currentObject[currentKey] = currentArray;
-    }
-    result[objectKey] = currentObject;
-  }
-
-  // Flush remaining array
-  if (currentArray !== null && currentKey && objectKey === null) {
-    result[currentKey] = currentArray;
-  }
-
+  flushParent();
   return result;
 }
 
@@ -333,6 +271,12 @@ export function parseSkillFile(
     metadata.tags = frontMatter.tags.map(String);
   }
 
+  if (frontMatter.applyTo) {
+    metadata.applyTo = Array.isArray(frontMatter.applyTo)
+      ? frontMatter.applyTo.map(String)
+      : [String(frontMatter.applyTo)];
+  }
+
   if (frontMatter.mcp && typeof frontMatter.mcp === 'object') {
     metadata.mcp = {
       transport: frontMatter.mcp.transport === 'stdio' ? 'stdio' : 'http',
@@ -381,12 +325,21 @@ export function parseCopilotInstructionsFile(
 
   const contentSizeBytes = new TextEncoder().encode(content || raw).length;
 
-  return {
-    metadata: {
+  const metadata: SkillMetadata = {
       name: String(name),
       description: String(description),
       tags: frontMatter.tags ? frontMatter.tags.map(String) : ['copilot', 'instructions'],
-    },
+    };
+
+  // Capture applyTo globs from Copilot instructions front-matter
+  if (frontMatter.applyTo) {
+    metadata.applyTo = Array.isArray(frontMatter.applyTo)
+      ? frontMatter.applyTo.map(String)
+      : [String(frontMatter.applyTo)];
+  }
+
+  return {
+    metadata,
     content: content || raw,
     contentSizeBytes,
     source,

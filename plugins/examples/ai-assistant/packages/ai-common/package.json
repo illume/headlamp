@@ -36,7 +36,11 @@
     "./approval/ToolApprovalManager": "./src/approval/ToolApprovalManager.ts",
     "./managers/ProviderConfigManager": "./src/managers/ProviderConfigManager.ts",
     "./managers/ToolConfigManager": "./src/managers/ToolConfigManager.ts",
-    "./prompts/promptLinks": "./src/prompts/promptLinks.ts"
+    "./prompts/promptLinks": "./src/prompts/promptLinks.ts",
+    "./skills/skillParser": "./src/skills/skillParser.ts",
+    "./skills/SkillLoader": "./src/skills/SkillLoader.ts",
+    "./skills/SkillConfigManager": "./src/skills/SkillConfigManager.ts",
+    "./skills/SkillManager": "./src/skills/SkillManager.ts"
   },
   "scripts": {
     "test": "vitest run --passWithNoTests"

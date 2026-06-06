@@ -27,7 +27,11 @@ import {
 export interface SkillSource {
   /** Type of source: local directory or Git repository. */
   type: 'local' | 'git';
-  /** Path for local sources or HTTPS URL for Git repositories. */
+  /**
+   * Location of the skill source.
+   * - For `local` sources: absolute filesystem path to a directory.
+   * - For `git` sources: HTTPS URL to a Git repository.
+   */
   url: string;
   /** Git ref (tag, branch, or SHA) to fetch. Only used for Git sources. */
   ref?: string;

@@ -116,11 +116,17 @@ export function addSkillSource(config: SkillsConfig, source: SkillSource): Skill
 export function removeSkillSource(
   config: SkillsConfig,
   url: string,
-  path?: string
+  sourcePath?: string
 ): SkillsConfig {
   return {
     ...config,
-    sources: config.sources.filter(s => !(s.url === url && s.path === (path || s.path))),
+    sources: config.sources.filter(s => {
+      if (s.url !== url) return true;
+      // When sourcePath is provided, only remove the source with that exact path.
+      if (sourcePath !== undefined) return s.path !== sourcePath;
+      // When no sourcePath given, remove all sources with this URL.
+      return false;
+    }),
   };
 }
 
