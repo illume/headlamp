@@ -18,6 +18,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { SkillManager } from './SkillManager';
 import { SkillsConfig, DEFAULT_SKILLS_CONFIG } from './SkillConfigManager';
 import { SkillFileSystem } from './SkillLoader';
+import { DEFAULT_ROUTER_CONFIG } from './SkillRouter';
 
 /** Creates a mock filesystem for testing. */
 function createMockFs(files: Record<string, string | 'DIR'>): SkillFileSystem {
@@ -191,6 +192,100 @@ describe('SkillManager', () => {
       const skills = await mgr.loadFromWellKnownDirs('/project');
       expect(skills).toHaveLength(1);
       expect(skills[0].metadata.name).toBe('skill-one');
+    });
+  });
+
+  describe('getRoutedSkillsPromptText', () => {
+    it('should return empty string when no skills loaded', async () => {
+      const text = await manager.getRoutedSkillsPromptText('anything', config);
+      expect(text).toBe('');
+    });
+
+    it('should return all skills when count is within maxSkills', async () => {
+      await manager.loadAllSkills(config);
+      // 2 skills, default maxSkills is 5 — should include all
+      const text = await manager.getRoutedSkillsPromptText('anything', config);
+      expect(text).toContain('skill-one');
+      expect(text).toContain('skill-two');
+    });
+
+    it('should use keyword routing for many skills', async () => {
+      // Create config with many skills so routing is triggered
+      const manySkillsFs = createMockFs({
+        '/s1': 'DIR',
+        '/s1/SKILL.md': '---\nname: alpha\ndescription: Alpha install guide\ntags: [install]\n---\nAlpha content',
+        '/s2': 'DIR',
+        '/s2/SKILL.md': '---\nname: beta\ndescription: Beta network analysis\ntags: [network]\n---\nBeta content',
+        '/s3': 'DIR',
+        '/s3/SKILL.md': '---\nname: gamma\ndescription: Gamma security audit\ntags: [security]\n---\nGamma content',
+        '/s4': 'DIR',
+        '/s4/SKILL.md': '---\nname: delta\ndescription: Delta deployment guide\ntags: [deployment]\n---\nDelta content',
+        '/s5': 'DIR',
+        '/s5/SKILL.md': '---\nname: epsilon\ndescription: Epsilon troubleshooting\ntags: [troubleshooting]\n---\nEpsilon content',
+        '/s6': 'DIR',
+        '/s6/SKILL.md': '---\nname: zeta\ndescription: Zeta monitoring setup\ntags: [monitoring]\n---\nZeta content',
+      });
+
+      const mgr = new SkillManager(manySkillsFs);
+      const manyConfig: SkillsConfig = {
+        ...DEFAULT_SKILLS_CONFIG,
+        sources: [
+          { type: 'local', url: '/s1', enabled: true },
+          { type: 'local', url: '/s2', enabled: true },
+          { type: 'local', url: '/s3', enabled: true },
+          { type: 'local', url: '/s4', enabled: true },
+          { type: 'local', url: '/s5', enabled: true },
+          { type: 'local', url: '/s6', enabled: true },
+        ],
+      };
+
+      await mgr.loadAllSkills(manyConfig);
+
+      // Route with maxSkills=2 to force selection
+      const routerConfig = { ...DEFAULT_ROUTER_CONFIG, maxSkills: 2 };
+      const text = await mgr.getRoutedSkillsPromptText('install guide', manyConfig, routerConfig);
+      expect(text).toContain('SKILLS:');
+      expect(text).toContain('alpha'); // "install" keyword should match
+    });
+
+    it('should exclude disabled skills from routing', async () => {
+      await manager.loadAllSkills(config);
+      config.disabledSkills = ['skill-one'];
+      const text = await manager.getRoutedSkillsPromptText('anything', config);
+      expect(text).not.toContain('skill-one');
+      expect(text).toContain('skill-two');
+    });
+  });
+
+  describe('setEmbeddingRouter', () => {
+    it('should accept and return an embedding router', () => {
+      expect(manager.getEmbeddingRouter()).toBeNull();
+
+      // Create a minimal mock embedding router
+      const mockRouter = { hasIndex: () => false, clearIndex: () => {} } as any;
+      manager.setEmbeddingRouter(mockRouter);
+      expect(manager.getEmbeddingRouter()).toBe(mockRouter);
+    });
+
+    it('should allow clearing the embedding router', () => {
+      const mockRouter = { hasIndex: () => false, clearIndex: () => {} } as any;
+      manager.setEmbeddingRouter(mockRouter);
+      manager.setEmbeddingRouter(null);
+      expect(manager.getEmbeddingRouter()).toBeNull();
+    });
+  });
+
+  describe('invalidateCache with embedding router', () => {
+    it('should clear the embedding index on invalidation', async () => {
+      let indexCleared = false;
+      const mockRouter = {
+        hasIndex: () => true,
+        clearIndex: () => { indexCleared = true; },
+      } as any;
+
+      manager.setEmbeddingRouter(mockRouter);
+      manager.invalidateCache();
+      expect(indexCleared).toBe(true);
     });
   });
 });

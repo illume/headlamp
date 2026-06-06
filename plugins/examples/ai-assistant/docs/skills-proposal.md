@@ -797,22 +797,20 @@ User query → tokenize → score against each skill's (name + description + tag
 - The O(n·m) partial matching loop in `computeRelevanceScore` is adequate for < 100 skills but would need optimization for thousands.
 - Partial matching is aggressive — short tokens like "install" substring-match many unrelated terms, inflating scores for irrelevant skills.
 
-### Integration gap
+### Integration (completed)
 
-The `SkillRouter` exists but is **not yet wired into the LLM pipeline**. Currently:
+The skills system is fully wired into the LLM pipeline:
 
-1. `SkillManager.getSkillsPromptText(config)` returns **all** enabled skills formatted for prompt injection.
-2. `LangChainManager.createSystemPrompt()` does **not** call the skills system at all — no skills are injected into the system prompt yet.
+1. **`SkillManager.getRoutedSkillsPromptText(query, config, routerConfig?)`** — Async method that loads enabled skills, routes them for the query using the configured strategy (embedding or keyword), and returns formatted prompt text.
+2. **`LangChainManager.setSkillManager(skillManager, skillsConfig)`** — Configures skills on the LLM manager. Once set, both `userSend()` and `userSendStream()` automatically compute routed skills per-message and inject them into the system prompt.
+3. **`EmbeddingRouter`** — Embedding-based router using LangChain's `Embeddings` abstraction. Uses cosine similarity on skill metadata vectors. Falls back to keyword routing (`SkillRouter`) on failure.
+4. **`SkillManager.setEmbeddingRouter(router)`** — Strategy pattern: pass an `EmbeddingRouter` for semantic routing, or `null` to use keyword-only routing.
 
-To complete the integration:
+Skills are routed **per-message** (not globally) so each query gets the most relevant skills injected. Errors in skill loading or routing never block the main LLM call.
 
-1. Add a `getRoutedSkillsPromptText(query, config)` method to `SkillManager` that uses `SkillRouter` internally.
-2. Call it from `createSystemPrompt()` or (better) at message-handling time when the user query is available.
-3. Wire `routeAndFormatSkills()` into the prompt construction path.
+### Embedding-based routing with LangChain (implemented)
 
-### Future: embedding-based routing with LangChain
-
-When the keyword router's limitations become a problem (likely at 20+ skills from diverse domains), upgrade to embedding-based routing using LangChain's existing infrastructure:
+The embedding-based router is implemented in `EmbeddingRouter.ts` using LangChain's `Embeddings` abstraction:
 
 **Required packages** (not currently installed):
 ```
