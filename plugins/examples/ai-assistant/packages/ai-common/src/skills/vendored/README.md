@@ -4,13 +4,15 @@ These are real SKILL.md files copied from public open-source repositories,
 used as e2e test fixtures to verify that the skill loader handles
 real-world skill formats correctly.
 
+All vendored repos are Kubernetes-related to match Headlamp's domain.
+
 ## Sources
 
-| Directory            | Source Repository                              | License   | Vendored From Commit |
-| -------------------- | ---------------------------------------------- | --------- | -------------------- |
-| `tldraw/`            | [tldraw/tldraw](https://github.com/tldraw/tldraw) | Apache-2.0 | `2ef85109f888` |
-| `upstash-ratelimit/` | [upstash/ratelimit-js](https://github.com/upstash/ratelimit-js) | MIT | `589cc3e234bc` |
-| `arthas/`            | [alibaba/arthas](https://github.com/alibaba/arthas) | Apache-2.0 | `6bc2284ec3f9` |
+| Directory                | Source Repository                                                          | License    | Vendored From Commit |
+| ------------------------ | -------------------------------------------------------------------------- | ---------- | -------------------- |
+| `kubeshark/`             | [kubeshark/kubeshark](https://github.com/kubeshark/kubeshark)              | Apache-2.0 | `9396e64b9b48`       |
+| `helmfile/`              | [helmfile/helmfile](https://github.com/helmfile/helmfile)                  | MIT        | `41d815aa5b3f`       |
+| `openshift-lightspeed/`  | [openshift/lightspeed-service](https://github.com/openshift/lightspeed-service) | Apache-2.0 | `051de6bb294b`  |
 
 ## Why vendor?
 

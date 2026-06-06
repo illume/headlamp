@@ -553,212 +553,198 @@ Standard content.
 });
 
 // ════════════════════════════════════════════════════════════════════════
-// Vendored real-world skills — loaded directly from vendored SKILL.md files
-// sourced from public open-source repositories.
+// Vendored real-world Kubernetes skills — loaded directly from vendored
+// SKILL.md files sourced from public open-source repositories.
 // ════════════════════════════════════════════════════════════════════════
 
-describe('Vendored real-world skills', () => {
+describe('Vendored real-world Kubernetes skills', () => {
   const vendoredDir = path.resolve(__dirname, 'vendored');
 
   // ──────────────────────────────────────────────────────────────────────
-  // tldraw/tldraw — multi-skill repo with nested SKILL.md per skill
-  // Source: https://github.com/tldraw/tldraw  (Apache-2.0)
+  // kubeshark/kubeshark — network traffic analysis for Kubernetes
+  // Source: https://github.com/kubeshark/kubeshark  (Apache-2.0)
   // ──────────────────────────────────────────────────────────────────────
-  describe('tldraw/tldraw', () => {
-    const tldrawDir = path.join(vendoredDir, 'tldraw');
+  describe('kubeshark/kubeshark', () => {
+    const kubesharkDir = path.join(vendoredDir, 'kubeshark');
 
-    it('loads pr skill', () => {
-      const raw = fs.readFileSync(path.join(tldrawDir, 'pr', 'SKILL.md'), 'utf-8');
-      const skill = parseSkillFile(raw, 'tldraw/pr/SKILL.md');
+    it('loads install skill', () => {
+      const raw = fs.readFileSync(path.join(kubesharkDir, 'install', 'SKILL.md'), 'utf-8');
+      const skill = parseSkillFile(raw, 'kubeshark/install/SKILL.md');
 
-      expect(skill.metadata.name).toBe('pr');
-      expect(skill.metadata.description).toContain('pull request');
-      expect(skill.content).toContain('Workflow');
-      expect(skill.content).toContain('gh pr create');
+      expect(skill.metadata.name).toBe('install');
+      expect(skill.metadata.description).toContain('Kubeshark');
+      expect(skill.content).toContain('helm');
+      expect(skill.content).toContain('kubeshark tap');
       expect(skill.contentSizeBytes).toBeGreaterThan(100);
     });
 
-    it('loads write-unit-tests skill', () => {
-      const raw = fs.readFileSync(path.join(tldrawDir, 'write-unit-tests', 'SKILL.md'), 'utf-8');
-      const skill = parseSkillFile(raw, 'tldraw/write-unit-tests/SKILL.md');
+    it('loads network-rca skill (large real-world skill)', () => {
+      const raw = fs.readFileSync(path.join(kubesharkDir, 'network-rca', 'SKILL.md'), 'utf-8');
+      const skill = parseSkillFile(raw, 'kubeshark/network-rca/SKILL.md');
 
-      expect(skill.metadata.name).toBe('write-unit-tests');
-      expect(skill.metadata.description).toContain('Vitest');
-      expect(skill.content).toContain('TestEditor');
+      expect(skill.metadata.name).toBe('network-rca');
+      expect(skill.metadata.description).toContain('network');
+      expect(skill.metadata.description).toContain('root cause');
+      expect(skill.content).toContain('snapshot');
+      expect(skill.content).toContain('KFL');
+      // This is a large real-world skill — verify it parses within limits
+      expect(skill.contentSizeBytes).toBeGreaterThan(5000);
+      expect(skill.contentSizeBytes).toBeLessThan(50000);
     });
 
-    it('loads issue skill', () => {
-      const raw = fs.readFileSync(path.join(tldrawDir, 'issue', 'SKILL.md'), 'utf-8');
-      const skill = parseSkillFile(raw, 'tldraw/issue/SKILL.md');
-
-      expect(skill.metadata.name).toBe('issue');
-      expect(skill.metadata.description).toContain('GitHub issue');
-      expect(skill.content).toContain('gh issue create');
-    });
-
-    it('loads all tldraw skills from directory tree', async () => {
+    it('loads all kubeshark skills from directory tree', async () => {
       const loader = new SkillLoader(createNodeFs());
-      const skills = await loader.loadFromDirectory(tldrawDir);
+      const skills = await loader.loadFromDirectory(kubesharkDir);
 
-      expect(skills.length).toBe(3);
+      expect(skills.length).toBe(2);
       const names = skills.map(s => s.metadata.name).sort();
-      expect(names).toEqual(['issue', 'pr', 'write-unit-tests']);
+      expect(names).toEqual(['install', 'network-rca']);
     });
   });
 
   // ──────────────────────────────────────────────────────────────────────
-  // upstash/ratelimit-js — single SKILL.md with code examples
-  // Source: https://github.com/upstash/ratelimit-js  (MIT)
+  // helmfile/helmfile — declarative Helm chart deployment
+  // Source: https://github.com/helmfile/helmfile  (MIT)
   // ──────────────────────────────────────────────────────────────────────
-  describe('upstash/ratelimit-js', () => {
-    const upstashDir = path.join(vendoredDir, 'upstash-ratelimit');
+  describe('helmfile/helmfile', () => {
+    const helmfileDir = path.join(vendoredDir, 'helmfile');
 
-    it('loads the ratelimit skill with code blocks', () => {
-      const raw = fs.readFileSync(path.join(upstashDir, 'SKILL.md'), 'utf-8');
-      const skill = parseSkillFile(raw, 'upstash/SKILL.md');
+    it('loads helmfile skill with rich Helm configuration content', () => {
+      const raw = fs.readFileSync(path.join(helmfileDir, 'helmfile', 'SKILL.md'), 'utf-8');
+      const skill = parseSkillFile(raw, 'helmfile/helmfile/SKILL.md');
 
-      expect(skill.metadata.name).toBe('upstash-ratelimit-ts');
-      expect(skill.metadata.description).toContain('Rate Limit');
-      expect(skill.content).toContain('@upstash/ratelimit');
-      expect(skill.content).toContain('slidingWindow');
+      expect(skill.metadata.name).toBe('helmfile');
+      expect(skill.metadata.description).toContain('Helmfile');
+      expect(skill.content).toContain('releases');
+      expect(skill.content).toContain('repositories');
+      // Helmfile skill is quite large — good stress test
+      expect(skill.contentSizeBytes).toBeGreaterThan(10000);
     });
 
     it('loads as a directory source', async () => {
       const loader = new SkillLoader(createNodeFs());
-      const skills = await loader.loadFromDirectory(upstashDir);
+      const skills = await loader.loadFromDirectory(helmfileDir);
 
       expect(skills).toHaveLength(1);
-      expect(skills[0].metadata.name).toBe('upstash-ratelimit-ts');
+      expect(skills[0].metadata.name).toBe('helmfile');
     });
   });
 
   // ──────────────────────────────────────────────────────────────────────
-  // alibaba/arthas — nested skills with Unicode (Chinese) content
-  // Source: https://github.com/alibaba/arthas  (Apache-2.0)
+  // openshift/lightspeed-service — K8s/OpenShift troubleshooting skills
+  // Source: https://github.com/openshift/lightspeed-service  (Apache-2.0)
   // ──────────────────────────────────────────────────────────────────────
-  describe('alibaba/arthas', () => {
-    const arthasDir = path.join(vendoredDir, 'arthas');
+  describe('openshift/lightspeed-service', () => {
+    const lightspeedDir = path.join(vendoredDir, 'openshift-lightspeed');
 
-    it('loads the root arthas skill with Chinese content', () => {
-      const raw = fs.readFileSync(path.join(arthasDir, 'SKILL.md'), 'utf-8');
-      const skill = parseSkillFile(raw, 'arthas/SKILL.md');
+    it('loads node-not-ready troubleshooting skill', () => {
+      const raw = fs.readFileSync(path.join(lightspeedDir, 'node-not-ready', 'SKILL.md'), 'utf-8');
+      const skill = parseSkillFile(raw, 'lightspeed/node-not-ready/SKILL.md');
 
-      expect(skill.metadata.name).toBe('arthas');
-      expect(skill.metadata.description).toContain('arthas');
-      // Verify Unicode content is preserved
-      expect(skill.content).toContain('诊断');
-      expect(skill.content).toContain('CPU');
-      expect(skill.contentSizeBytes).toBeGreaterThan(0);
+      expect(skill.metadata.name).toBe('node-not-ready');
+      expect(skill.metadata.description).toContain('NotReady');
+      expect(skill.content).toContain('MemoryPressure');
+      expect(skill.content).toContain('DiskPressure');
+      expect(skill.content).toContain('kubelet');
     });
 
-    it('loads the nested cpu-high sub-skill', () => {
-      const raw = fs.readFileSync(path.join(arthasDir, 'cpu-high', 'SKILL.md'), 'utf-8');
-      const skill = parseSkillFile(raw, 'arthas/cpu-high/SKILL.md');
+    it('loads pod-failure-diagnosis troubleshooting skill', () => {
+      const raw = fs.readFileSync(path.join(lightspeedDir, 'pod-failure-diagnosis', 'SKILL.md'), 'utf-8');
+      const skill = parseSkillFile(raw, 'lightspeed/pod-failure-diagnosis/SKILL.md');
 
-      expect(skill.metadata.name).toBe('arthas-cpu-high');
-      expect(skill.content).toContain('dashboard');
-      expect(skill.content).toContain('thread');
+      expect(skill.metadata.name).toBe('pod-failure-diagnosis');
+      expect(skill.metadata.description).toContain('CrashLoopBackOff');
+      expect(skill.content).toContain('ImagePullBackOff');
+      expect(skill.content).toContain('OOMKilled');
+      expect(skill.content).toContain('Pending');
     });
 
-    it('loads all arthas skills from directory tree', async () => {
+    it('loads all lightspeed skills from directory tree', async () => {
       const loader = new SkillLoader(createNodeFs());
-      const skills = await loader.loadFromDirectory(arthasDir);
+      const skills = await loader.loadFromDirectory(lightspeedDir);
 
       expect(skills.length).toBe(2);
       const names = skills.map(s => s.metadata.name).sort();
-      expect(names).toEqual(['arthas', 'arthas-cpu-high']);
+      expect(names).toEqual(['node-not-ready', 'pod-failure-diagnosis']);
     });
   });
 
   // ──────────────────────────────────────────────────────────────────────
-  // Cross-repo: load all vendored skills together via SkillManager
+  // Cross-repo: load all vendored K8s skills together via SkillManager
   // ──────────────────────────────────────────────────────────────────────
-  describe('all vendored skills together', () => {
-    it('loads all vendored skills across repos via SkillManager', async () => {
+  describe('all vendored Kubernetes skills together', () => {
+    const vendoredSources: SkillsConfig['sources'] = [
+      { type: 'local', url: path.join(vendoredDir, 'kubeshark'), enabled: true },
+      { type: 'local', url: path.join(vendoredDir, 'helmfile'), enabled: true },
+      { type: 'local', url: path.join(vendoredDir, 'openshift-lightspeed'), enabled: true },
+    ];
+
+    it('loads all vendored K8s skills across repos via SkillManager', async () => {
       const manager = new SkillManager(createNodeFs());
       const config: SkillsConfig = {
         ...DEFAULT_SKILLS_CONFIG,
-        sources: [
-          { type: 'local', url: path.join(vendoredDir, 'tldraw'), enabled: true },
-          { type: 'local', url: path.join(vendoredDir, 'upstash-ratelimit'), enabled: true },
-          { type: 'local', url: path.join(vendoredDir, 'arthas'), enabled: true },
-        ],
+        sources: vendoredSources,
       };
 
       const all = await manager.loadAllSkills(config);
-      expect(all.length).toBe(6); // 3 tldraw + 1 upstash + 2 arthas
+      expect(all.length).toBe(5); // 2 kubeshark + 1 helmfile + 2 openshift
 
       const names = all.map(s => s.metadata.name).sort();
       expect(names).toEqual([
-        'arthas',
-        'arthas-cpu-high',
-        'issue',
-        'pr',
-        'upstash-ratelimit-ts',
-        'write-unit-tests',
+        'helmfile',
+        'install',
+        'network-rca',
+        'node-not-ready',
+        'pod-failure-diagnosis',
       ]);
     });
 
-    it('generates a valid prompt from all vendored skills', async () => {
+    it('generates a valid prompt from all vendored K8s skills', async () => {
       const manager = new SkillManager(createNodeFs());
       const config: SkillsConfig = {
         ...DEFAULT_SKILLS_CONFIG,
-        sources: [
-          { type: 'local', url: path.join(vendoredDir, 'tldraw'), enabled: true },
-          { type: 'local', url: path.join(vendoredDir, 'upstash-ratelimit'), enabled: true },
-          { type: 'local', url: path.join(vendoredDir, 'arthas'), enabled: true },
-        ],
+        sources: vendoredSources,
       };
 
       await manager.loadAllSkills(config);
       const prompt = manager.getSkillsPromptText(config);
 
-      // Prompt should contain all 6 skill blocks
+      // Prompt should contain all 5 skill blocks
       expect(prompt).toContain('SKILLS:');
-      expect(prompt).toContain('<skill name="pr"');
-      expect(prompt).toContain('<skill name="write-unit-tests"');
-      expect(prompt).toContain('<skill name="issue"');
-      expect(prompt).toContain('<skill name="upstash-ratelimit-ts"');
-      expect(prompt).toContain('<skill name="arthas"');
-      expect(prompt).toContain('<skill name="arthas-cpu-high"');
+      expect(prompt).toContain('<skill name="install"');
+      expect(prompt).toContain('<skill name="network-rca"');
+      expect(prompt).toContain('<skill name="helmfile"');
+      expect(prompt).toContain('<skill name="node-not-ready"');
+      expect(prompt).toContain('<skill name="pod-failure-diagnosis"');
       expect(prompt).toContain('END OF SKILLS.');
     });
 
-    it('can selectively disable vendored skills', async () => {
+    it('can selectively disable vendored K8s skills', async () => {
       const manager = new SkillManager(createNodeFs());
       const config: SkillsConfig = {
         ...DEFAULT_SKILLS_CONFIG,
-        sources: [
-          { type: 'local', url: path.join(vendoredDir, 'tldraw'), enabled: true },
-          { type: 'local', url: path.join(vendoredDir, 'upstash-ratelimit'), enabled: true },
-          { type: 'local', url: path.join(vendoredDir, 'arthas'), enabled: true },
-        ],
-        disabledSkills: ['pr', 'arthas-cpu-high'],
+        sources: vendoredSources,
+        disabledSkills: ['install', 'pod-failure-diagnosis'],
       };
 
       await manager.loadAllSkills(config);
       const prompt = manager.getSkillsPromptText(config);
 
       // Disabled skills should not appear
-      expect(prompt).not.toContain('<skill name="pr"');
-      expect(prompt).not.toContain('<skill name="arthas-cpu-high"');
+      expect(prompt).not.toContain('<skill name="install"');
+      expect(prompt).not.toContain('<skill name="pod-failure-diagnosis"');
 
       // Enabled skills should appear
-      expect(prompt).toContain('<skill name="issue"');
-      expect(prompt).toContain('<skill name="write-unit-tests"');
-      expect(prompt).toContain('<skill name="upstash-ratelimit-ts"');
-      expect(prompt).toContain('<skill name="arthas"');
+      expect(prompt).toContain('<skill name="network-rca"');
+      expect(prompt).toContain('<skill name="helmfile"');
+      expect(prompt).toContain('<skill name="node-not-ready"');
     });
 
-    it('sends all vendored skills through the mock model', async () => {
+    it('sends all vendored K8s skills through the mock model', async () => {
       const manager = new SkillManager(createNodeFs());
       const config: SkillsConfig = {
         ...DEFAULT_SKILLS_CONFIG,
-        sources: [
-          { type: 'local', url: path.join(vendoredDir, 'tldraw'), enabled: true },
-          { type: 'local', url: path.join(vendoredDir, 'upstash-ratelimit'), enabled: true },
-          { type: 'local', url: path.join(vendoredDir, 'arthas'), enabled: true },
-        ],
+        sources: vendoredSources,
       };
 
       await manager.loadAllSkills(config);
@@ -777,23 +763,19 @@ describe('Vendored real-world skills', () => {
       expect(content).toContain('Headlamp AI assistant');
     });
 
-    it('summary reflects correct counts across all vendored repos', async () => {
+    it('summary reflects correct counts across all vendored K8s repos', async () => {
       const manager = new SkillManager(createNodeFs());
       const config: SkillsConfig = {
         ...DEFAULT_SKILLS_CONFIG,
-        sources: [
-          { type: 'local', url: path.join(vendoredDir, 'tldraw'), enabled: true },
-          { type: 'local', url: path.join(vendoredDir, 'upstash-ratelimit'), enabled: true },
-          { type: 'local', url: path.join(vendoredDir, 'arthas'), enabled: true },
-        ],
-        disabledSkills: ['pr'],
+        sources: vendoredSources,
+        disabledSkills: ['install'],
       };
 
       await manager.loadAllSkills(config);
       const summary = manager.getSkillsSummary(config);
 
-      expect(summary.totalSkills).toBe(6);
-      expect(summary.enabledSkills).toBe(5);
+      expect(summary.totalSkills).toBe(5);
+      expect(summary.enabledSkills).toBe(4);
       expect(summary.totalSizeBytes).toBeGreaterThan(0);
     });
   });
