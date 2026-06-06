@@ -35,7 +35,7 @@ interface EmbeddedMCPTool {
 /**
  * Computes the cosine similarity between two vectors.
  *
- * Returns a value in [−1, 1]. For normalised embeddings the range
+ * Returns a value in [−1, 1]. For normalized embeddings the range
  * is typically [0, 1].
  */
 export function cosineSimilarity(a: number[], b: number[]): number {

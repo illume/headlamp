@@ -127,9 +127,10 @@ export function buildToolSearchText(tool: MCPToolInfo): string {
 
   // Include schema property names as additional keywords
   if (tool.inputSchema && typeof tool.inputSchema === 'object') {
-    const properties = (tool.inputSchema as any).properties;
+    const schema = tool.inputSchema as Record<string, unknown>;
+    const properties = schema.properties;
     if (properties && typeof properties === 'object') {
-      parts.push(Object.keys(properties).join(' '));
+      parts.push(Object.keys(properties as Record<string, unknown>).join(' '));
     }
   }
 
