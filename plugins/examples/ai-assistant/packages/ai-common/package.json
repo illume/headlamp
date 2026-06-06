@@ -46,6 +46,7 @@
     "./skills/SkillManager": "./src/skills/SkillManager.ts",
     "./skills/SkillRouter": "./src/skills/SkillRouter.ts",
     "./skills/EmbeddingRouter": "./src/skills/EmbeddingRouter.ts",
+    "./skills/BrowserSkillAdapters": "./src/skills/BrowserSkillAdapters.ts",
     "./providers/providerAutoDetect": "./src/providers/providerAutoDetect.ts",
     "./context/contextGenerator": "./src/context/contextGenerator.ts"
   },
@@ -66,10 +67,10 @@
     "@modelcontextprotocol/sdk": "^1.17.5",
     "langchain": "^1.2.19",
     "sanitize-html": "^2.17.0",
+    "jszip": "^3.10.1",
     "zod": "^4.1.12"
   },
   "devDependencies": {
-    "jszip": "^3.10.1",
     "vitest": "^3.2.4"
   }
 }

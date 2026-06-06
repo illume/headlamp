@@ -2,6 +2,13 @@ import { getHolmesProxyBaseUrl, HolmesAgent } from '@headlamp-k8s/ai-common/agen
 import AIManager, { Prompt } from '@headlamp-k8s/ai-common/ai/manager';
 import LangChainManager from '@headlamp-k8s/ai-common/langchain/LangChainManager';
 import { inlineToolApprovalManager } from '@headlamp-k8s/ai-common/approval/InlineToolApprovalManager';
+import { SkillManager } from '@headlamp-k8s/ai-common/skills/SkillManager';
+import { getSkillsConfig } from '@headlamp-k8s/ai-common/skills/SkillConfigManager';
+import {
+  createFetchHttpClient,
+  createJSZipExtractor,
+  createNoopFileSystem,
+} from '@headlamp-k8s/ai-common/skills/BrowserSkillAdapters';
 import { Icon } from '@iconify/react';
 import { useClustersConf, useSelectedClusters } from '@kinvolk/headlamp-plugin/lib/k8s';
 import { getCluster, getClusterGroup } from '@kinvolk/headlamp-plugin/lib/Utils';
@@ -545,6 +552,24 @@ export default function AIPrompt(props: {
       isCurrent = false;
     };
   }, [enabledTools, activeConfig, selectedModel, mcpConfigKey]);
+
+  // ─── Wire up SkillManager for prompt skill injection ──────────────────────
+  // Creates a SkillManager with browser-compatible adapters (fetch + JSZip).
+  // Works in both browser and desktop/CLI: browser uses fetch for GitHub repos,
+  // desktop can also load from local filesystem directories.
+  React.useEffect(() => {
+    if (!aiManager || !(aiManager instanceof LangChainManager)) return;
+
+    const skillsConfig = getSkillsConfig(pluginSettings);
+    if (!skillsConfig.sources || skillsConfig.sources.length === 0) return;
+
+    const skillManager = new SkillManager(
+      createNoopFileSystem(),
+      createFetchHttpClient(),
+      createJSZipExtractor()
+    );
+    (aiManager as LangChainManager).setSkillManager(skillManager, skillsConfig);
+  }, [aiManager, pluginSettings]);
 
   React.useEffect(() => {
     // Only set if different
