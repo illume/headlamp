@@ -1,5 +1,6 @@
 import { StoredProviderConfig } from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import {
   Box,
   Button,
@@ -234,7 +235,9 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
         >
           <CircularProgress size={16} sx={{ color: 'inherit' }} />
           <Typography variant="body2">
-            Proactive diagnosis in progress — please wait for it to complete before chatting.
+            {t(
+              'Proactive diagnosis in progress — please wait for it to complete before chatting.'
+            )}
           </Typography>
         </Box>
       )}
@@ -247,10 +250,10 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
         value={promptVal}
         label={
           isTestMode
-            ? 'Type user message (Test Mode)'
+            ? t('Type user message (Test Mode)')
             : isAgentMode
-            ? 'Ask Holmes (Agent Mode)'
-            : 'Ask AI'
+            ? t('Ask Holmes (Agent Mode)')
+            : t('Ask AI')
         }
         multiline
         fullWidth
@@ -277,7 +280,7 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
       >
         <Grid item sx={{ display: 'flex', alignItems: 'center' }}>
           <ActionButtonSlot
-            description="Clear History"
+            description={t('Clear History')}
             icon="mdi:broom"
             onClick={onClearHistory}
           />
@@ -376,7 +379,7 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
                               variant="caption"
                               sx={{ ml: 1, color: 'primary.main' }}
                             >
-                              (Default)
+                              {t('(Default)')}
                             </Typography>
                           )}
                       </MenuItem>
@@ -391,7 +394,7 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
           {!isTestMode && !isAgentMode && (
             <Box ml={1}>
               <ActionButtonSlot
-                description="Manage Tools"
+                description={t('Manage Tools')}
                 icon="mdi:tools"
                 onClick={() => setShowToolsDialog(true)}
               />
@@ -408,7 +411,7 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
               onClick={onStop}
               size="small"
             >
-              Stop
+              {t('Stop')}
             </Button>
           ) : (
             <Button
@@ -418,7 +421,7 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
               size="small"
               disabled={loading || isDiagnosisRunning || !promptVal}
             >
-              Send
+              {t('Send')}
             </Button>
           )}
         </Grid>
