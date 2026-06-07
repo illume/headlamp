@@ -8,7 +8,7 @@ Minimal proof of concept for the same-port consent popup security model describe
 ## Quick start
 
 ```bash
-cd plugins/examples/ai-assistant/docs/proposals/consent-poc
+cd docs/proposals/consent-poc
 node server.cjs
 # Open http://localhost:4466
 ```
@@ -64,7 +64,7 @@ runs across **Chromium, Firefox, and WebKit** — 53 tests per browser
 (**159 total**).
 
 ```bash
-cd plugins/examples/ai-assistant/docs/proposals/consent-poc
+cd docs/proposals/consent-poc
 npm install
 npm run test:install   # downloads chromium + firefox + webkit
 npm test

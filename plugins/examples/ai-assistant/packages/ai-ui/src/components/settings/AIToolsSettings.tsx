@@ -9,7 +9,7 @@
 import { Box, FormControlLabel, Switch, Typography } from '@mui/material';
 import React from 'react';
 import { DefaultSectionWrapper } from '../defaults/DefaultSlots';
-import { useTranslation } from '../../contexts/TranslationContext';
+import { useTranslation } from 'react-i18next';
 
 /** Describes a single AI tool that can be enabled or disabled. */
 export interface ToolInfo {

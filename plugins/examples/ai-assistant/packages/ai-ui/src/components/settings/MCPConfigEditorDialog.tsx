@@ -14,7 +14,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { DefaultDialog } from '../defaults/DefaultSlots';
-import { useTranslation } from '../../contexts/TranslationContext';
+import { useTranslation } from 'react-i18next';
 
 /** Configuration for a single MCP server process. */
 export interface MCPServer {

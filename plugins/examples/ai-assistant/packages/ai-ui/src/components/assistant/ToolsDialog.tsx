@@ -1,7 +1,7 @@
 import { ElectronMCPClient } from '@headlamp-k8s/ai-common/ai/mcp/electron-client';
 import { AVAILABLE_TOOLS } from '@headlamp-k8s/ai-common/langchain/tools/registry';
 import { Icon } from '@iconify/react';
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
+import { useTranslation } from 'react-i18next';
 import {
   Accordion,
   AccordionDetails,

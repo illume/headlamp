@@ -21,7 +21,7 @@ import {
 } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import React from 'react';
-import { useTranslation } from '../../contexts/TranslationContext';
+import { useTranslation } from 'react-i18next';
 
 /** Configuration state for developer options, persisted in the plugin config store. */
 export interface DeveloperOptionsConfig {

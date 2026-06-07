@@ -48,7 +48,7 @@ import { HolmesAgentSettings } from './HolmesAgentSettings';
 import { MCPSettings, type ConfigStore } from './MCPSettings';
 import ModelSelector from './ModelSelector';
 import { SkillSettings } from './SkillSettings';
-import { useTranslation } from '../../contexts/TranslationContext';
+import { useTranslation } from 'react-i18next';
 
 /** Props for the {@link SettingsPage} component. */
 export interface SettingsPageProps {

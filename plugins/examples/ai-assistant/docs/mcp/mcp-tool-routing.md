@@ -70,7 +70,7 @@ const relevant = routeMCPTools(userQuery, toolInfos, { maxTools: 8, minScore: 0.
 ## Tests
 
 ```bash
-cd plugins/examples/ai-assistant/packages/ai-common
+packages/ai-common
 npx vitest run src/mcp/MCPToolRouter.test.ts src/mcp/MCPEmbeddingRouter.test.ts
 ```
 

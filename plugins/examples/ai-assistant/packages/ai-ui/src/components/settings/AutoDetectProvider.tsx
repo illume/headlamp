@@ -21,7 +21,7 @@ import {
 } from '@headlamp-k8s/ai-common/providers/providerAutoDetect';
 import React from 'react';
 import DetectedProvidersDialog from './DetectedProvidersDialog';
-import { useTranslation } from '../../contexts/TranslationContext';
+import { useTranslation } from 'react-i18next';
 
 /** Props for the {@link AutoDetectProvider} component. */
 export interface AutoDetectProviderProps {

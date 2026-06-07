@@ -4,7 +4,7 @@ import {
   type UserContext,
 } from '@headlamp-k8s/ai-common/components/mcpOutput/MCPArgumentProcessor';
 import { Icon } from '@iconify/react';
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
+import { useTranslation } from 'react-i18next';
 import {
   Alert,
   Box,

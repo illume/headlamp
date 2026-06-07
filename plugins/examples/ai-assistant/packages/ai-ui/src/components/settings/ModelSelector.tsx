@@ -37,7 +37,7 @@ import {
 } from '@headlamp-k8s/ai-common/config/modelConfig';
 import { DefaultDialog } from '../defaults/DefaultSlots';
 import TermsDialog from './TermsDialog';
-import { useTranslation } from '../../contexts/TranslationContext';
+import { useTranslation } from 'react-i18next';
 
 /** Props for the ProviderSelectionDialog that lets users pick an AI provider. */
 interface ProviderSelectionDialogProps {

@@ -6,7 +6,7 @@
  */
 
 import { Icon } from '@iconify/react';
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
+import { useTranslation } from 'react-i18next';
 import Editor from '@monaco-editor/react';
 import {
   Box,

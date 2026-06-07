@@ -19,7 +19,7 @@ import React, { useEffect, useState } from 'react';
 import { DefaultDialog, DefaultSectionWrapper } from '../defaults/DefaultSlots';
 import MCPConfigEditorDialog from './MCPConfigEditorDialog';
 import MCPServerEditor from './MCPServerEditor';
-import { useTranslation } from '../../contexts/TranslationContext';
+import { useTranslation } from 'react-i18next';
 
 /** Configuration for a single MCP server process. */
 export interface MCPServer {

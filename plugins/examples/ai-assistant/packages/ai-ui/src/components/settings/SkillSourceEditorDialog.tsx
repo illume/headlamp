@@ -23,7 +23,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import { DefaultDialog } from '../defaults/DefaultSlots';
 import type { SkillSourceEntry } from './SkillSettings';
-import { useTranslation } from '../../contexts/TranslationContext';
+import { useTranslation } from 'react-i18next';
 
 /** Props for the SkillSourceEditorDialog component. */
 export interface SkillSourceEditorDialogProps {

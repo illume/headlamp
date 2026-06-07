@@ -169,7 +169,7 @@ Excluded from normal unit-test runs; requires the e2e Vitest config.
 ### Running
 
 ```bash
-cd plugins/examples/ai-assistant/packages/ai-common
+packages/ai-common
 npx vitest run --config vitest.e2e.config.ts                          # all e2e
 npx vitest run --config vitest.e2e.config.ts src/mcp/mcp.e2e.test.ts  # MCP only
 ```
@@ -217,7 +217,8 @@ cd backend && go build -o headlamp-server ./cmd
 cd frontend && npm install && npm run build
 
 # Build plugin
-cd plugins/examples/ai-assistant && npm install && npx @kinvolk/headlamp-plugin build
+# From the ai-assistant root:
+ npm install && npx @kinvolk/headlamp-plugin build
 
 # Copy plugin
 mkdir -p /tmp/headlamp-plugins/ai-assistant
@@ -253,7 +254,7 @@ HEADLAMP_BACKEND_TOKEN=headlamp ./backend/headlamp-server \
 
 ```bash
 # MCP e2e tests (14 tests)
-cd plugins/examples/ai-assistant/packages/ai-common
+packages/ai-common
 npx vitest run --config vitest.e2e.config.ts src/mcp/mcp.e2e.test.ts
 
 # Mock testing model tests (34 tests)

@@ -1,7 +1,7 @@
 import { getProviderById } from '@headlamp-k8s/ai-common/config/modelConfig';
 import { StoredProviderConfig } from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
 import { Icon } from '@iconify/react';
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Button,

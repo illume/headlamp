@@ -41,7 +41,6 @@
     "./components/settings/SettingsPage": "./src/components/settings/SettingsPage.tsx",
     "./components/panel/AIPanelComponent": "./src/components/panel/AIPanelComponent.tsx",
     "./contexts/PromptWidthContext": "./src/contexts/PromptWidthContext.tsx",
-    "./contexts/TranslationContext": "./src/contexts/TranslationContext.tsx",
     "./hooks/useProactiveDiagnosis": "./src/hooks/useProactiveDiagnosis.ts",
     "./hooks/useToolApproval": "./src/hooks/useToolApproval.ts",
     "./diagnosis/ProactiveDiagnosisManager": "./src/diagnosis/ProactiveDiagnosisManager.ts",
@@ -54,11 +53,14 @@
     "./parsing/urlParsing": "./src/parsing/urlParsing.ts",
     "./parsing/yamlParser": "./src/parsing/yamlParser.ts",
     "./mcp/electron-client": "./src/mcp/electron-client.ts",
-    "./types/electron": "./src/types/electron.d.ts"
+    "./types/electron": "./src/types/electron.d.ts",
+    "./testing/i18nTestSetup": "./src/testing/i18nTestSetup.ts"
   },
   "license": "Apache-2.0",
   "dependencies": {
-    "@headlamp-k8s/ai-common": "file:../ai-common"
+    "@headlamp-k8s/ai-common": "file:../ai-common",
+    "i18next": "^23.15.1",
+    "react-i18next": "^15.0.2"
   },
   "peerDependencies": {
     "@iconify/react": "^4.0.0",

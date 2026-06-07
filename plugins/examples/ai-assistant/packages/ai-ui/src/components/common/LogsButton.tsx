@@ -7,7 +7,7 @@
  */
 
 import { Icon } from '@iconify/react';
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
+import { useTranslation } from 'react-i18next';
 import { Box, Button, Paper, Typography } from '@mui/material';
 import React, { useState } from 'react';
 import { buildLogTitle } from '../../formatting/logFormatting';

@@ -33,7 +33,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { DefaultDialog, DefaultSectionWrapper } from '../defaults/DefaultSlots';
 import type { ConfigStore } from './MCPSettings';
 import SkillSourceEditorDialog from './SkillSourceEditorDialog';
-import { useTranslation } from '../../contexts/TranslationContext';
+import { useTranslation } from 'react-i18next';
 
 /** Well-known directories that may contain skills in a project. */
 export const WELL_KNOWN_SKILL_DIRS = [

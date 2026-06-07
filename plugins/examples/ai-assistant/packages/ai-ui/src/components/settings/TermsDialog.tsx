@@ -15,7 +15,7 @@ import {
   Typography,
 } from '@mui/material';
 import { useState } from 'react';
-import { useTranslation } from '../../contexts/TranslationContext';
+import { useTranslation } from 'react-i18next';
 
 /** Props for {@link TermsDialog}. */
 interface TermsDialogProps {

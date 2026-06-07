@@ -1,4 +1,4 @@
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
+import { useTranslation } from 'react-i18next';
 import { Box, Typography } from '@mui/material';
 import React, { useEffect, useRef } from 'react';
 import YAML from 'yaml';

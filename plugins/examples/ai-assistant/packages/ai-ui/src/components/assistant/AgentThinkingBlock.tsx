@@ -2,7 +2,7 @@ import { Icon } from '@iconify/react';
 import { Box, CircularProgress, Collapse, LinearProgress, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import React, { useState } from 'react';
-import { useTranslation } from '../../contexts/TranslationContext';
+import { useTranslation } from 'react-i18next';
 
 /** Represents one intermediate step emitted during agent reasoning. */
 export interface ThinkingStep {

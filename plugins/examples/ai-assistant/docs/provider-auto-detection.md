@@ -45,6 +45,6 @@ Dismissed providers are tracked by key (`copilot`, `local`, `azure:<accountName>
 - `ai-ui/src/components/settings/AutoDetectProvider.test.ts` — UI orchestration
 
 ```bash
-cd plugins/examples/ai-assistant/packages/ai-common
+packages/ai-common
 npx vitest run src/providers/providerAutoDetect.test.ts
 ```

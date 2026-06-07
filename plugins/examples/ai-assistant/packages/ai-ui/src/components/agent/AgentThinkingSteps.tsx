@@ -1,6 +1,6 @@
 import type { AgentThinkingStep } from '@headlamp-k8s/ai-common/agent/aksAgentThinking';
 import { Icon } from '@iconify/react';
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
+import { useTranslation } from 'react-i18next';
 import { Box, CircularProgress, Collapse, keyframes, Typography, useTheme } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import React, { useEffect, useMemo, useRef, useState } from 'react';

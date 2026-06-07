@@ -30,7 +30,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { DefaultDialog } from '../defaults/DefaultSlots';
-import { useTranslation } from '../../contexts/TranslationContext';
+import { useTranslation } from 'react-i18next';
 
 /** Props for the DetectedProvidersDialog. */
 export interface DetectedProvidersDialogProps {

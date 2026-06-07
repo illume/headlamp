@@ -1,7 +1,7 @@
 import { Box, TextField, Typography } from '@mui/material';
 import React from 'react';
 import { DefaultSectionWrapper } from '../defaults/DefaultSlots';
-import { useTranslation } from '../../contexts/TranslationContext';
+import { useTranslation } from 'react-i18next';
 
 /** Default Holmes service namespace. */
 export const DEFAULT_HOLMES_NAMESPACE = 'default';

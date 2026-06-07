@@ -1,7 +1,7 @@
 import { Prompt } from '@headlamp-k8s/ai-common/ai/manager';
 import { Alert, Box, Button } from '@mui/material';
 import React from 'react';
-import { useTranslation } from '../../contexts/TranslationContext';
+import { useTranslation } from 'react-i18next';
 
 /** Props for the AIChatContent component that renders the chat message history. */
 export interface AIChatContentProps {

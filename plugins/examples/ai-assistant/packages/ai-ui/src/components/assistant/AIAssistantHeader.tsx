@@ -1,4 +1,4 @@
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
+import { useTranslation } from 'react-i18next';
 import { Box, Chip, Typography } from '@mui/material';
 import React from 'react';
 import { DefaultActionButton } from '../defaults/DefaultSlots';

@@ -22,7 +22,7 @@ import {
   useTheme,
 } from '@mui/material';
 import React from 'react';
-import { useTranslation } from '../../contexts/TranslationContext';
+import { useTranslation } from 'react-i18next';
 
 /** Props for the {@link AIAssistantToggle} component. */
 export interface AIAssistantToggleProps {
