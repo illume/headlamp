@@ -18,8 +18,10 @@ import { ChatAnthropic } from '@langchain/anthropic';
 import { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import {
   AIMessage,
+  AIMessageChunk,
   BaseMessage,
   ChatMessage,
+  concat,
   HumanMessage,
   SystemMessage,
 } from '@langchain/core/messages';
@@ -40,7 +42,7 @@ import { MCPArgumentProcessor, UserContext } from '../components/mcpOutput/MCPAr
 import { isBuiltInTool } from '../managers/ToolConfigManager';
 import { createMockTestingModel } from '../mock-testing-model/MockTestingModel';
 import { GH_CLI_AUTH_SENTINEL } from '../providers/providerAutoDetect';
-import { DEFAULT_SKILLS_CONFIG,SkillsConfig } from '../skills/SkillConfigManager';
+import { DEFAULT_SKILLS_CONFIG, SkillsConfig } from '../skills/SkillConfigManager';
 import { SkillManager } from '../skills/SkillManager';
 import { apiErrorPromptTemplate, toolFailurePromptTemplate } from './PromptTemplates';
 import { KubernetesToolContext } from './tools/kubernetes/types';
@@ -337,7 +339,7 @@ export default class LangChainManager extends AIManager {
       });
 
       let fullContent = '';
-      let toolCalls: any[] = [];
+      let accumulatedChunk: AIMessageChunk | undefined;
 
       for await (const chunk of stream) {
         const content = this.extractTextContent(chunk.content);
@@ -346,11 +348,18 @@ export default class LangChainManager extends AIManager {
           yield content;
         }
 
-        // Collect tool calls if present (for providers that stream them)
-        if (chunk.tool_calls && chunk.tool_calls.length > 0) {
-          toolCalls = chunk.tool_calls;
-        }
+        // Accumulate all chunks so we can read complete tool_calls at the end.
+        // chunk.tool_calls during streaming contains only partial data
+        // (tool_call_chunks); concat() merges them into complete tool_calls.
+        accumulatedChunk = accumulatedChunk
+          ? (concat(accumulatedChunk, chunk) as AIMessageChunk)
+          : chunk;
       }
+
+      // Read tool calls from the fully-accumulated message.
+      // This correctly handles providers (e.g. Claude via Copilot) that send
+      // tool calls as separate streaming chunks rather than in the first chunk.
+      const toolCalls = accumulatedChunk?.tool_calls ?? [];
 
       this.currentAbortController = null;
 
