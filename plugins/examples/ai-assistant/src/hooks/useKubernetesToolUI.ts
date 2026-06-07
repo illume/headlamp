@@ -7,6 +7,15 @@ import { useMemo, useState } from 'react';
 type TranslationFunction = (key: string, options?: Record<string, unknown>) => string;
 import { handleActualApiRequest } from '../api/clusterActions';
 
+/**
+ * React hook that manages the UI state and callbacks for Kubernetes API tool
+ * operations. Provides state for showing confirmation dialogs, tracking
+ * request/response status, and wrapping API calls with history updates.
+ *
+ * @param updateHistory - Optional callback invoked after API success or failure to refresh chat history.
+ * @param t - Optional translation function for i18n support.
+ * @returns An object containing the current UI state and callback functions.
+ */
 export function useKubernetesToolUI(
   updateHistory?: () => void,
   t?: TranslationFunction
