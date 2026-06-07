@@ -34,17 +34,126 @@ import { AzureChatOpenAI, ChatOpenAI } from '@langchain/openai';
 import sanitizeHtml from 'sanitize-html';
 import AIManager, { Prompt } from '../ai/manager';
 import { basePrompt } from '../ai/prompts';
-import { MCPArgumentProcessor, UserContext } from '../components/mcpOutput/MCPArgumentProcessor';
-import { createMockTestingModel } from '../mock-testing-model/MockTestingModel';
 import { inlineToolApprovalManager } from '../approval/InlineToolApprovalManager';
 import { ToolCall } from '../approval/ToolApprovalManager';
+import { MCPArgumentProcessor, UserContext } from '../components/mcpOutput/MCPArgumentProcessor';
 import { isBuiltInTool } from '../managers/ToolConfigManager';
+import { createMockTestingModel } from '../mock-testing-model/MockTestingModel';
+import { GH_CLI_AUTH_SENTINEL } from '../providers/providerAutoDetect';
+import { DEFAULT_SKILLS_CONFIG,SkillsConfig } from '../skills/SkillConfigManager';
+import { SkillManager } from '../skills/SkillManager';
 import { apiErrorPromptTemplate, toolFailurePromptTemplate } from './PromptTemplates';
 import { KubernetesToolContext } from './tools/kubernetes/types';
 import { ToolManager } from './tools/ToolManager';
 import { RecommendedTool, ToolOrchestrator } from './tools/ToolOrchestrator';
-import { SkillManager } from '../skills/SkillManager';
-import { SkillsConfig, DEFAULT_SKILLS_CONFIG } from '../skills/SkillConfigManager';
+
+/**
+ * Create a LangChain BaseChatModel from a provider ID and configuration.
+ *
+ * This is the single source of truth for provider → model mapping, shared by
+ * the Headlamp ai-assistant plugin (via LangChainManager) and the headlamp-ai CLI.
+ *
+ * The caller is responsible for resolving sentinel API keys (e.g. GH_CLI_AUTH_SENTINEL)
+ * to real tokens before calling this function.
+ */
+export function createLangChainModel(
+  providerId: string,
+  config: Record<string, any>
+): BaseChatModel {
+  const s = (v: unknown): string => (typeof v === 'string' ? v.trim() : '');
+  const c = {
+    ...config,
+    apiKey: s(config.apiKey),
+    endpoint: s(config.endpoint),
+    baseUrl: s(config.baseUrl),
+    deploymentName: s(config.deploymentName),
+    model: s(config.model),
+  };
+
+  try {
+    switch (providerId) {
+      case 'openai':
+        if (!c.apiKey) throw new Error('API key is required for OpenAI');
+        return new ChatOpenAI({ apiKey: c.apiKey, model: c.model, verbose: true });
+      case 'azure':
+        if (!c.apiKey || !c.endpoint || !c.deploymentName)
+          throw new Error('Incomplete Azure OpenAI configuration');
+        return new AzureChatOpenAI({
+          azureOpenAIEndpoint: c.endpoint.replace(/\/+$/, '').replace(/\/openai\/.*$/, ''),
+          azureOpenAIApiKey: c.apiKey,
+          azureOpenAIApiDeploymentName: c.deploymentName,
+          azureOpenAIApiVersion: '2025-04-01-preview',
+          model: c.model,
+          verbose: true,
+        });
+      case 'anthropic':
+        if (!c.apiKey) throw new Error('API key is required for Anthropic');
+        return new ChatAnthropic({ apiKey: c.apiKey, model: c.model, verbose: true });
+      case 'mistral':
+        if (!c.apiKey) throw new Error('API key is required for Mistral AI');
+        return new ChatMistralAI({ apiKey: c.apiKey, model: c.model, verbose: true });
+      case 'gemini':
+        if (!c.apiKey) throw new Error('API key is required for Google Gemini');
+        return new ChatGoogleGenerativeAI({ apiKey: c.apiKey, model: c.model, verbose: true });
+      case 'deepseek':
+        if (!c.apiKey) throw new Error('API key is required for DeepSeek');
+        return new ChatDeepSeek({ apiKey: c.apiKey, model: c.model, verbose: true });
+      case 'vllm': {
+        if (!c.baseUrl) throw new Error('Base URL is required for vLLM');
+        if (!c.model) throw new Error('Model is required for vLLM');
+        let url = c.baseUrl.replace(/\/+$/, '');
+        if (!url.endsWith('/v1')) url = `${url}/v1`;
+        return new ChatOpenAI({
+          apiKey: c.apiKey || 'sk-noop',
+          model: c.model,
+          verbose: true,
+          configuration: { baseURL: url },
+        });
+      }
+      case 'copilot': {
+        if (!c.apiKey) throw new Error('GitHub token is required for GitHub Copilot');
+        if (c.apiKey === GH_CLI_AUTH_SENTINEL)
+          throw new Error(
+            'Copilot token must be resolved before creating the model. ' +
+              'Replace GH_CLI_AUTH_SENTINEL with the real token from `gh auth token`.'
+          );
+        // Strip optional "provider/" prefix (e.g. "openai/gpt-4o" → "gpt-4o")
+        const model = c.model.includes('/') ? c.model.split('/').pop()! : c.model;
+        return new ChatOpenAI({
+          apiKey: c.apiKey,
+          model,
+          verbose: true,
+          configuration: { baseURL: 'https://api.githubcopilot.com' },
+        });
+      }
+      case 'local': {
+        if (!c.baseUrl) throw new Error('Base URL is required for local models');
+        const headers: Record<string, string> = c.apiKey
+          ? { Authorization: `Bearer ${c.apiKey}` }
+          : {};
+        return new ChatOllama({
+          baseUrl: c.baseUrl,
+          model: c.model,
+          verbose: true,
+          headers: Object.keys(headers).length ? headers : undefined,
+        });
+      }
+      case 'mock-testing-model':
+        return createMockTestingModel({
+          fixturesDir: (config.fixturesDir as string) || undefined,
+          sequenceName: (config.sequenceName as string) || undefined,
+        });
+      default:
+        throw new Error(
+          `Unsupported provider: ${providerId}. ` +
+            `Supported: openai, azure, anthropic, mistral, gemini, deepseek, vllm, copilot, local, mock-testing-model`
+        );
+    }
+  } catch (err) {
+    console.error(`[createLangChainModel] Error creating model for ${providerId}:`, err);
+    throw err;
+  }
+}
 
 /** Coordinates model calls, tool execution, and chat history for the AI assistant. */
 export default class LangChainManager extends AIManager {
@@ -333,151 +442,14 @@ export default class LangChainManager extends AIManager {
   }
 
   private createModel(providerId: string, config: Record<string, any>): BaseChatModel {
-    const sanitizeString = (value: unknown): string =>
-      typeof value === 'string' ? value.trim() : '';
-    const sanitizedConfig = {
-      ...config,
-      apiKey: sanitizeString(config.apiKey),
-      endpoint: sanitizeString(config.endpoint),
-      baseUrl: sanitizeString(config.baseUrl),
-      deploymentName: sanitizeString(config.deploymentName),
-      model: sanitizeString(config.model),
-    };
-
-    try {
-      switch (providerId) {
-        case 'openai':
-          if (!sanitizedConfig.apiKey) {
-            throw new Error('API key is required for OpenAI');
-          }
-          return new ChatOpenAI({
-            apiKey: sanitizedConfig.apiKey,
-            model: sanitizedConfig.model,
-            verbose: true,
-          });
-        case 'azure':
-          if (
-            !sanitizedConfig.apiKey ||
-            !sanitizedConfig.endpoint ||
-            !sanitizedConfig.deploymentName
-          ) {
-            throw new Error('Incomplete Azure OpenAI configuration');
-          }
-          return new AzureChatOpenAI({
-            // Extract only the base URL (protocol + host), stripping any path
-            // e.g. "https://xxx.openai.azure.com/openai/v1/chat/completions" → "https://xxx.openai.azure.com"
-            azureOpenAIEndpoint: this.extractAzureBaseUrl(sanitizedConfig.endpoint),
-            azureOpenAIApiKey: sanitizedConfig.apiKey,
-            azureOpenAIApiDeploymentName: sanitizedConfig.deploymentName,
-            azureOpenAIApiVersion: '2025-04-01-preview',
-            model: sanitizedConfig.model,
-            verbose: true,
-          });
-        case 'anthropic':
-          if (!sanitizedConfig.apiKey) {
-            throw new Error('API key is required for Anthropic');
-          }
-          return new ChatAnthropic({
-            apiKey: sanitizedConfig.apiKey,
-            model: sanitizedConfig.model,
-            verbose: true,
-          });
-        case 'mistral':
-          if (!sanitizedConfig.apiKey) {
-            throw new Error('API key is required for Mistral AI');
-          }
-          return new ChatMistralAI({
-            apiKey: sanitizedConfig.apiKey,
-            model: sanitizedConfig.model,
-            verbose: true,
-          });
-        case 'gemini': {
-          if (!sanitizedConfig.apiKey) {
-            throw new Error('API key is required for Google Gemini');
-          }
-          return new ChatGoogleGenerativeAI({
-            apiKey: sanitizedConfig.apiKey,
-            model: sanitizedConfig.model,
-            verbose: true,
-          });
-        }
-        case 'deepseek': {
-          if (!sanitizedConfig.apiKey) {
-            throw new Error('API key is required for DeepSeek');
-          }
-          return new ChatDeepSeek({
-            apiKey: sanitizedConfig.apiKey,
-            model: sanitizedConfig.model,
-            verbose: true,
-          });
-        }
-        case 'vllm': {
-          if (!sanitizedConfig.baseUrl) {
-            throw new Error('Base URL is required for vLLM');
-          }
-          if (!sanitizedConfig.model) {
-            throw new Error('Model is required for vLLM');
-          }
-          return new ChatOpenAI({
-            apiKey: sanitizedConfig.apiKey || 'sk-noop',
-            model: sanitizedConfig.model,
-            verbose: true,
-            configuration: {
-              baseURL: (() => {
-                // Strip trailing slashes and ensure /v1 suffix
-                let url = sanitizedConfig.baseUrl;
-                while (url.endsWith('/')) {
-                  url = url.slice(0, -1);
-                }
-                return url.endsWith('/v1') ? url : `${url}/v1`;
-              })(),
-            },
-          });
-        }
-        case 'copilot': {
-          if (!sanitizedConfig.apiKey) {
-            throw new Error('API key (GitHub token) is required for Copilot');
-          }
-          // Strip "provider/" prefix from Copilot model IDs (e.g. "openai/gpt-4o" → "gpt-4o")
-          const copilotModel = sanitizedConfig.model.includes('/')
-            ? sanitizedConfig.model.split('/').pop() ?? sanitizedConfig.model
-            : sanitizedConfig.model;
-          return new ChatOpenAI({
-            apiKey: sanitizedConfig.apiKey,
-            model: copilotModel,
-            verbose: true,
-            configuration: {
-              baseURL: 'https://api.githubcopilot.com',
-            },
-          });
-        }
-        case 'local': {
-          if (!sanitizedConfig.baseUrl) {
-            throw new Error('Base URL is required for local models');
-          }
-          const headers: Record<string, string> = {};
-          if (sanitizedConfig.apiKey) {
-            headers['Authorization'] = `Bearer ${sanitizedConfig.apiKey}`;
-          }
-          return new ChatOllama({
-            baseUrl: sanitizedConfig.baseUrl,
-            model: sanitizedConfig.model,
-            verbose: true,
-            headers: Object.keys(headers).length ? headers : undefined,
-          });
-        }
-        case 'mock-testing-model':
-          return createMockTestingModel({
-            fixturesDir: (config.fixturesDir as string) || undefined,
-            sequenceName: (config.sequenceName as string) || undefined,
-          });
-        default:
-          throw new Error(`Unsupported provider: ${providerId}`);
-      }
-    } catch (error) {
-      console.error(`Error creating model for provider ${providerId}:`, error);
-      throw error;
+    // Delegate to the shared standalone function; handle Azure endpoint extraction here
+    // since that requires the private extractAzureBaseUrl method.
+    if (providerId === 'azure') {
+      const s = (v: unknown) => (typeof v === 'string' ? v.trim() : '');
+      const endpoint = this.extractAzureBaseUrl(s(config.endpoint));
+      return createLangChainModel(providerId, { ...config, endpoint });
     }
+    return createLangChainModel(providerId, config);
   }
 
   /** Configures available tools, binds them to the model, and sets Kubernetes context. */
