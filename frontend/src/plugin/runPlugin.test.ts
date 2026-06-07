@@ -491,6 +491,11 @@ describe('identifyPackages', () => {
     });
   });
 
+  test('should identify ai-assistant package with scoped name in development mode', () => {
+    const result = identifyPackages('plugins/ai-assistant', '@headlamp-k8s/ai-assistant', true);
+    expect(result).toEqual({ '@headlamp-k8s/minikube': false, 'ai-assistant': true });
+  });
+
   test('should not identify ai-assistant package if path does not match', () => {
     const result = identifyPackages('plugins/other_plugin', '@headlamp-k8s/ai-assistant', false);
     expect(result).toEqual({
