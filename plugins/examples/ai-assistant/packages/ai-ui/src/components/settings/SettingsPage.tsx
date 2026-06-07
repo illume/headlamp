@@ -343,6 +343,7 @@ export function SettingsPage({
         configStore={configStore}
         checkPathExists={checkPathExists}
         projectRoot={projectRoot}
+        isRunningAsApp={isRunningAsApp}
       />
 
       {/* Holmes Agent Section */}

@@ -186,6 +186,12 @@ export interface SkillSettingsProps {
    * Well-known paths are resolved relative to this directory.
    */
   projectRoot?: string;
+  /**
+   * Whether the app is running in desktop/Electron mode.
+   * When false (browser mode), file-based skill settings (detected directories
+   * and custom filesystem sources) are hidden since local paths are not accessible.
+   */
+  isRunningAsApp?: boolean;
   /** Optional wrapper component for layout (e.g. SectionBox). */
   SectionWrapper?: React.ComponentType<{ title: string; children: React.ReactNode }>;
   /** Component used to render dialog shells. Falls back to MUI Dialog. */
@@ -238,6 +244,7 @@ export function SkillSettings({
   configStore,
   checkPathExists,
   projectRoot,
+  isRunningAsApp = false,
   SectionWrapper = DefaultSectionWrapper,
   DialogSlot = DefaultDialog,
   onConfigChange,
@@ -467,7 +474,8 @@ export function SkillSettings({
         </Typography>
       </Box>
 
-      {/* Well-Known Paths Section */}
+      {/* Well-Known Paths Section — only shown in app mode (local paths not accessible in browser) */}
+      {isRunningAsApp && (
       <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
           {t('Detected Skill Directories')}
@@ -550,6 +558,7 @@ export function SkillSettings({
           </Table>
         </TableContainer>
       </Box>
+      )}
 
       {/* Suggested GitHub Repositories */}
       <Box sx={{ mb: 3 }}>
@@ -610,7 +619,8 @@ export function SkillSettings({
         </TableContainer>
       </Box>
 
-      {/* Custom {t('Filesystem Sources')} */}
+      {/* Custom Filesystem Sources — only shown in app mode */}
+      {isRunningAsApp && (
       <Box sx={{ mb: 3 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
@@ -682,6 +692,7 @@ export function SkillSettings({
           </Paper>
         )}
       </Box>
+      )}
 
       {/* GitHub Repository Sources */}
       <Box sx={{ mb: 3 }}>
