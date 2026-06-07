@@ -72,7 +72,7 @@ export default function AIPrompt(props: {
   openPopup: boolean;
   setOpenPopup: (...args) => void;
   pluginSettings: any;
-  width: string;
+  width?: string;
 }) {
   const { openPopup, setOpenPopup, pluginSettings, width } = props;
   const history = useHistory();
@@ -114,7 +114,9 @@ export default function AIPrompt(props: {
   const [agentThinkingSteps, setAgentThinkingSteps] = React.useState<AgentThinkingStep[]>([]);
 
   useEffect(() => {
-    prompWidthContext.setPromptWidth(width);
+    if (width) {
+      prompWidthContext.setPromptWidth(width);
+    }
   }, [width]);
 
   // React to AKS agent clusters detected by index.tsx and stored in global state.
