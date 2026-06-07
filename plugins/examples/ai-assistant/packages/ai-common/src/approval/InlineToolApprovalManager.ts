@@ -318,5 +318,5 @@ export class InlineToolApprovalManager extends EventEmitter {
   }
 }
 
-// Export singleton instance
+/** Shared inline tool approval manager instance. */
 export const inlineToolApprovalManager = InlineToolApprovalManager.getInstance();

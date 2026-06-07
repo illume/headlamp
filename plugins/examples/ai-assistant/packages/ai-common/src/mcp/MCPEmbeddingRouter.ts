@@ -70,6 +70,9 @@ export class MCPEmbeddingRouter {
   private embeddedTools: EmbeddedMCPTool[] = [];
   private isIndexed: boolean = false;
 
+  /**
+   * Creates a router backed by the provided embeddings model.
+   */
   constructor(embeddings: Embeddings) {
     this.embeddings = embeddings;
   }

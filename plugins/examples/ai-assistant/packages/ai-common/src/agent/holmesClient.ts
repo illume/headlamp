@@ -16,10 +16,13 @@
 
 import { HttpAgent } from '@ag-ui/client';
 
-/** Plugin configuration type for Holmes service settings */
+/** Plugin configuration type for Holmes service settings. */
 export interface HolmesPluginConfig {
+  /** Override for the Holmes service namespace. */
   holmesNamespace?: string;
+  /** Override for the Holmes Kubernetes Service name. */
   holmesServiceName?: string;
+  /** Override for the Holmes service port. */
   holmesPort?: number;
 }
 
@@ -40,23 +43,25 @@ export type ClusterRequestFn = (
  */
 export const DEFAULT_AGUI_URL = 'http://localhost:5050';
 
-/**
- * Holmes Kubernetes Service details.
- * Must match the Service resource deployed by the Holmes Helm chart.
- */
+/** Default Holmes Kubernetes Service name. */
 export const HOLMES_SERVICE_NAME = 'holmesgpt-holmes';
+/** Default port exposed by the Holmes Kubernetes Service. */
 export const HOLMES_SERVICE_PORT = 80;
+/** Default namespace that contains the Holmes Kubernetes Service. */
 export const HOLMES_SERVICE_NAMESPACE = 'default';
 
+/** Normalizes an optional string config value and falls back when it is blank. */
 function normalizeConfigString(value: string | undefined, fallback: string): string {
   const normalized = value?.trim();
   return normalized || fallback;
 }
 
+/** Normalizes an optional port config value and falls back when it is invalid. */
 function normalizeConfigPort(value: number | undefined, fallback: number): number {
   return value !== undefined && Number.isInteger(value) && value >= 1 && value <= 65535 ? value : fallback;
 }
 
+/** Resolves Holmes service settings by applying defaults to optional plugin config. */
 function getHolmesServiceConfig(config?: HolmesPluginConfig): {
   namespace: string;
   serviceName: string;
@@ -201,6 +206,7 @@ export class HolmesAgent {
   private toolArgsBuffers: Map<string, string> = new Map();
   private toolNames: Map<string, string> = new Map();
 
+  /** Creates a Holmes agent client for the provided ag-ui base URL. */
   constructor(baseUrl: string = DEFAULT_AGUI_URL) {
     this.baseUrl = baseUrl;
     this.threadId = `thread-${Date.now()}`;

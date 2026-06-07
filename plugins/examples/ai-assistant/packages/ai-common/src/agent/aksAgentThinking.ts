@@ -25,6 +25,7 @@ import { verboseLog } from './debugLog';
 
 /** A single thinking step shown to the user while the agent is working. */
 export interface AgentThinkingStep {
+  /** Monotonic identifier for the thinking step. */
   id: number;
   /** User-friendly description */
   label: string;

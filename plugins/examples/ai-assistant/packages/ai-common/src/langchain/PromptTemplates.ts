@@ -27,6 +27,7 @@ import {
 
 /** Base system prompt used across Kubernetes assistant interactions. */
 // @ts-ignore - Complex inferred type cannot be named in declaration
+/** Base system prompt used across Kubernetes assistant interactions. */
 export const baseSystemPromptTemplate: any = SystemMessagePromptTemplate.fromTemplate(`
 You are an AI assistant specialized in Kubernetes management through a web dashboard.
 You help users manage their Kubernetes clusters using web UI actions and API tools.

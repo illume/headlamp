@@ -31,7 +31,9 @@ const VAR_CLOSE = '>>';
  * placeholders for template matching and substitution.
  */
 export interface FixtureEntry {
+  /** Prompt template to match against user input. */
   prompt: string;
+  /** Response template returned when the prompt matches. */
   response: string;
 }
 

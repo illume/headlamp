@@ -65,7 +65,9 @@ config = yaml.safe_load(data)
 
 /** Represents a single exchange (question + answer) from the conversation history. */
 export interface ConversationEntry {
+  /** Origin of the conversation entry. */
   role: 'user' | 'assistant';
+  /** Message text for this turn. */
   content: string;
 }
 

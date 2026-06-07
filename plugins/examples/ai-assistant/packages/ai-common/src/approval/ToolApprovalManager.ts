@@ -216,5 +216,5 @@ export class ToolApprovalManager extends EventEmitter {
   }
 }
 
-// Export singleton instance
+/** Shared tool approval manager instance. */
 export const toolApprovalManager = ToolApprovalManager.getInstance();

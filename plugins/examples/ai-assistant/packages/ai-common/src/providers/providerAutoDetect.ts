@@ -30,7 +30,9 @@ import { StoredProviderConfig } from '../managers/ProviderConfigManager';
 
 /** Result of running a CLI command. */
 export interface CommandRunResult {
+  /** Standard output captured from the command. */
   stdout: string;
+  /** Process exit code returned by the command. */
   exitCode: number;
 }
 
@@ -55,10 +57,15 @@ export interface DetectedProvider {
 
 /** Model entry returned by the Copilot model catalog. */
 export interface CopilotModelEntry {
+  /** Unique model identifier from the Copilot catalog. */
   id: string;
+  /** Human-readable model name. */
   name: string;
+  /** Version string reported by the catalog. */
   version: string;
+  /** Optional capability metadata for filtering model types. */
   capabilities?: {
+    /** Model capability type, such as `chat`. */
     type?: string;
   };
 }

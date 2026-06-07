@@ -65,6 +65,7 @@ RESPONSES:
 - End with 3 follow-up suggestions: "SUGGESTIONS: [q1] | [q2] | [q3]"
 - Keep suggestions under 60 chars, plain text, no numbers`;
 
+/** Exports the prompt set consumed by AI manager implementations. */
 const prompts = {
   basePrompt,
 };

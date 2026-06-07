@@ -24,6 +24,7 @@
 
 import type { FixtureEntry, FixtureSequence } from './MockTestingModel';
 
+/** Built-in prompt and response fixtures used by the mock testing model. */
 export const GENERAL_FIXTURES: FixtureEntry[] = [
   {
     prompt: 'Hello',
@@ -77,6 +78,7 @@ export const GENERAL_FIXTURES: FixtureEntry[] = [
   },
 ];
 
+/** Built-in scripted conversation for the cluster exploration demo. */
 export const DEMO_CLUSTER_EXPLORATION: FixtureSequence = {
   name: 'cluster-exploration-demo',
   description:

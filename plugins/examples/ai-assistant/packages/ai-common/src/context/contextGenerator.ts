@@ -26,10 +26,15 @@
 
 /** Minimal K8s event warning structure used for context generation. */
 export interface ClusterWarningEvent {
+  /** Warning message text emitted by Kubernetes. */
   message?: string;
+  /** Resource referenced by the warning event, when available. */
   involvedObject?: {
+    /** Kind of the resource involved in the warning. */
     kind?: string;
+    /** Name of the resource involved in the warning. */
     name?: string;
+    /** Namespace of the involved resource, if one exists. */
     namespace?: string;
   };
 }
@@ -42,11 +47,17 @@ export type ClusterWarnings = Record<
 
 /** Event payload structure for context generation (platform-agnostic). */
 export interface ContextEventPayload {
+  /** Event type or view identifier. */
   type?: string;
+  /** Human-readable title for the current view. */
   title?: string;
+  /** Resource list items shown in the current view. */
   items?: any[];
+  /** Primary resource currently in focus. */
   resource?: any;
+  /** Additional resources available in the current context. */
   resources?: any[];
+  /** Resource kind shared by the resources collection. */
   resourceKind?: string;
 }
 
@@ -76,6 +87,10 @@ export function minimizeResourceList(resources: any[]): any[] {
   return resources.map(minimizeResourceData).filter(Boolean);
 }
 
+/**
+ * Builds a human-readable context summary from the current view and cluster state.
+ * @returns A multiline description the assistant can use as prompt context.
+ */
 export function generateContextDescription(
   event: ContextEventPayload | null,
   currentCluster?: string,
@@ -283,6 +298,10 @@ export function generateContextDescription(
   return contextParts.join('\n');
 }
 
+/**
+ * Creates a short summary string for a Kubernetes resource.
+ * @returns A comma-separated summary of the resource state.
+ */
 export function generateResourceSummary(resource: any): string {
   if (!resource) return '';
 
