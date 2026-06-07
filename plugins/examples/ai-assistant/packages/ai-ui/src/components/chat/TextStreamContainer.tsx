@@ -21,6 +21,7 @@ import AgentThinkingBlock from '../assistant/AgentThinkingBlock';
 import InlineToolConfirmation from '../common/InlineToolConfirmation';
 import AgentThinkingSteps from '../agent/AgentThinkingSteps';
 import { DefaultContentRenderer, DefaultEditorDialog } from '../defaults/DefaultSlots';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for the EditorDialog slot component. */
 export interface EditorDialogSlotProps {
@@ -102,6 +103,7 @@ const TextStreamContainer = React.memo(function TextStreamContainer({
   ContentRendererSlot = DefaultContentRenderer,
   EditorDialogSlot = DefaultEditorDialogAdapter,
 }: TextStreamContainerProps) {
+  const { t } = useTranslation();
   const [showEditor, setShowEditor] = useState(false);
   const [editorContent, setEditorContent] = useState('');
   const [editorTitle, setEditorTitle] = useState('');
@@ -506,7 +508,7 @@ const TextStreamContainer = React.memo(function TextStreamContainer({
             return (
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', my: 2 }}>
                 <CircularProgress size={24} sx={{ mr: 1 }} />
-                <Typography>Processing your request...</Typography>
+                <Typography>{t('Processing your request...')}</Typography>
               </Box>
             );
           })()}
@@ -531,7 +533,7 @@ const TextStreamContainer = React.memo(function TextStreamContainer({
             right: 16,
             zIndex: 2,
           }}
-          aria-label="scroll to bottom"
+          aria-label={t('scroll to bottom')}
         >
           <Icon icon="mdi:chevron-down" width="20px" />
         </Fab>

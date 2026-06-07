@@ -1,8 +1,16 @@
-import { KubernetesToolUICallbacks, KubernetesToolUIState } from '@headlamp-k8s/ai-common/langchain/tools/kubernetes/types';
+import {
+  KubernetesToolUICallbacks,
+  KubernetesToolUIState,
+} from '@headlamp-k8s/ai-common/langchain/tools/kubernetes/types';
 import { useMemo, useState } from 'react';
+
+type TranslationFunction = (key: string, options?: Record<string, unknown>) => string;
 import { handleActualApiRequest } from '../api/clusterActions';
 
-export function useKubernetesToolUI(updateHistory?: () => void): {
+export function useKubernetesToolUI(
+  updateHistory?: () => void,
+  t?: TranslationFunction
+): {
   state: KubernetesToolUIState;
   callbacks: KubernetesToolUICallbacks;
 } {
@@ -68,10 +76,11 @@ export function useKubernetesToolUI(updateHistory?: () => void): {
         resourceInfo,
         targetCluster,
         wrappedOnFailure,
-        wrappedOnSuccess
+        wrappedOnSuccess,
+        t
       );
     };
-  }, [updateHistory]);
+  }, [t, updateHistory]);
 
   const callbacks: KubernetesToolUICallbacks = useMemo(
     () => ({

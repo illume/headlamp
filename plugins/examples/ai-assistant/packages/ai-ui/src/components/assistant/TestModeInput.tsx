@@ -18,6 +18,7 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useState } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for {@link TestModeInput}. */
 interface TestModeInputProps {
@@ -33,6 +34,7 @@ interface TestModeInputProps {
 
 /** Provides quick sample responses and a dialog for injecting custom test messages. */
 const TestModeInput: React.FC<TestModeInputProps> = ({ onAddTestResponse, isTestMode }) => {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [testContent, setTestContent] = useState('');
   const [responseType, setResponseType] = useState<'assistant' | 'user'>('assistant');
@@ -360,7 +362,7 @@ All deployments are currently active in your cluster.`,
   return (
     <Box>
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
-        <Tooltip title="Add Test Response">
+        <Tooltip title={t('Add Test Response')}>
           <IconButton
             onClick={() => setOpen(true)}
             color="primary"
@@ -371,7 +373,7 @@ All deployments are currently active in your cluster.`,
           </IconButton>
         </Tooltip>
         <Typography variant="caption" color="text.secondary">
-          Test Mode Active - Add custom responses
+          {t('Test Mode Active - Add custom responses')}
         </Typography>
       </Box>
 
@@ -391,18 +393,18 @@ All deployments are currently active in your cluster.`,
       </Box>
 
       <Dialog open={open} onClose={() => setOpen(false)} maxWidth="md" fullWidth>
-        <DialogTitle>Add Test Response</DialogTitle>
+        <DialogTitle>{t('Add Test Response')}</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 1 }}>
             <FormControl fullWidth>
-              <InputLabel>Response Type</InputLabel>
+              <InputLabel>{t('Response Type')}</InputLabel>
               <Select
                 value={responseType}
-                label="Response Type"
+                label={t('Response Type')}
                 onChange={e => setResponseType(e.target.value as 'assistant' | 'user')}
               >
-                <MenuItem value="assistant">AI Assistant Response</MenuItem>
-                <MenuItem value="user">User Message</MenuItem>
+                <MenuItem value="assistant">{t('AI Assistant Response')}</MenuItem>
+                <MenuItem value="user">{t('User Message')}</MenuItem>
               </Select>
             </FormControl>
 
@@ -411,18 +413,18 @@ All deployments are currently active in your cluster.`,
                 control={
                   <Switch checked={hasError} onChange={e => setHasError(e.target.checked)} />
                 }
-                label="Simulate Error Response"
+                label={t('Simulate Error Response')}
               />
             )}
 
             <TextField
-              label="Response Content"
+              label={t('Response Content')}
               multiline
               rows={12}
               fullWidth
               value={testContent}
               onChange={e => setTestContent(e.target.value)}
-              placeholder="Enter your test response here. You can use markdown, YAML code blocks, or JSON objects for tool confirmations."
+              placeholder={t('Enter your test response here. You can use markdown, YAML code blocks, or JSON objects for tool confirmations.')}
               variant="outlined"
             />
 
@@ -434,9 +436,9 @@ All deployments are currently active in your cluster.`,
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setOpen(false)}>Cancel</Button>
+          <Button onClick={() => setOpen(false)}>{t('Cancel')}</Button>
           <Button onClick={handleSubmit} variant="contained" disabled={!testContent.trim()}>
-            Add Response
+            {t('Add Response')}
           </Button>
         </DialogActions>
       </Dialog>

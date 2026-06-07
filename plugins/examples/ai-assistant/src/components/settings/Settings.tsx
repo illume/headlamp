@@ -5,11 +5,6 @@ import { isTestModeCheck } from '@headlamp-k8s/ai-ui/testing/testMode';
 import { Headlamp } from '@kinvolk/headlamp-plugin/lib';
 import React from 'react';
 import {
-  HOLMES_SERVICE_NAME,
-  HOLMES_SERVICE_NAMESPACE,
-  HOLMES_SERVICE_PORT,
-} from '@headlamp-k8s/ai-common/agent/holmesClient';
-import {
   AKS_AGENT_INSTALL_DOC_URL,
   getAllAvailableTools,
   isToolEnabled,
@@ -51,9 +46,7 @@ export default function Settings() {
       onConfigsChange={configs => pluginStore.update(configs as any)}
       onTermsAccept={configs => pluginStore.update(configs as any)}
       commandRunner={commandRunnerRef.current}
-      dismissedProviders={
-        (pluginStore.get() as any)?.autoDetectDismissedProviders || []
-      }
+      dismissedProviders={(pluginStore.get() as any)?.autoDetectDismissedProviders || []}
       onDismissProviders={keys => {
         const current = pluginStore.get() || {};
         pluginStore.update({ ...current, autoDetectDismissedProviders: keys } as any);

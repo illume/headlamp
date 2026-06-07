@@ -1,6 +1,7 @@
 import { Box, TextField, Typography } from '@mui/material';
 import React from 'react';
 import { DefaultSectionWrapper } from '../defaults/DefaultSlots';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Default Holmes service namespace. */
 export const DEFAULT_HOLMES_NAMESPACE = 'default';
@@ -41,6 +42,7 @@ export function HolmesAgentSettings({
   defaultServiceName = DEFAULT_HOLMES_SERVICE_NAME,
   defaultPort = DEFAULT_HOLMES_PORT,
 }: HolmesAgentSettingsProps) {
+  const { t } = useTranslation();
   const holmesNamespace = normalizeTextSetting(config?.holmesNamespace, defaultNamespace);
   const holmesServiceName = normalizeTextSetting(config?.holmesServiceName, defaultServiceName);
   const holmesPort = normalizePortSetting(config?.holmesPort, defaultPort);
@@ -72,7 +74,7 @@ export function HolmesAgentSettings({
   };
 
   return (
-    <SectionWrapper title="Holmes Agent">
+    <SectionWrapper title={t('Holmes Agent')}>
       <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
         Configure how the plugin reaches the HolmesGPT service through the Kubernetes API service
         proxy.
@@ -80,7 +82,7 @@ export function HolmesAgentSettings({
 
       <Box display="flex" flexDirection="column" gap={2} sx={{ ml: 1, maxWidth: 480 }}>
         <TextField
-          label="Namespace"
+          label={t('Namespace')}
           value={holmesNamespace}
           helperText='Namespace where HolmesGPT is deployed (default: "default")'
           onChange={handleNamespaceChange}
@@ -88,7 +90,7 @@ export function HolmesAgentSettings({
         />
 
         <TextField
-          label="Service name"
+          label={t('Service name')}
           value={holmesServiceName}
           helperText='Kubernetes Service name for HolmesGPT (default: "holmesgpt-holmes")'
           onChange={handleServiceNameChange}
@@ -96,7 +98,7 @@ export function HolmesAgentSettings({
         />
 
         <TextField
-          label="Port"
+          label={t('Port')}
           type="number"
           value={holmesPort}
           helperText="Service port (default: 80)"

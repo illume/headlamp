@@ -2,6 +2,7 @@ import { Icon } from '@iconify/react';
 import { Box, CircularProgress, Collapse, LinearProgress, Typography } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import React, { useState } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Represents one intermediate step emitted during agent reasoning. */
 export interface ThinkingStep {
@@ -25,6 +26,7 @@ interface AgentThinkingBlockProps {
 
 /** Displays a collapsible summary of agent reasoning steps while a run is active or completed. */
 export default function AgentThinkingBlock({ steps, isActive }: AgentThinkingBlockProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const theme = useTheme();
 
@@ -32,8 +34,8 @@ export default function AgentThinkingBlock({ steps, isActive }: AgentThinkingBlo
 
   const latestStep = steps[steps.length - 1];
   const summaryLabel = isActive
-    ? getSummaryFromStep(latestStep)
-    : `Used ${steps.length} step${steps.length !== 1 ? 's' : ''}`;
+    ? getSummaryFromStep(latestStep, t)
+    : t('Used {{count}} step{{suffix}}', { count: steps.length, suffix: steps.length !== 1 ? 's' : '' });
 
   return (
     <Box
@@ -98,7 +100,7 @@ export default function AgentThinkingBlock({ steps, isActive }: AgentThinkingBlo
             flex: 1,
           }}
         >
-          {isActive ? 'Thinking…' : 'Thought process'}
+          {isActive ? t('Thinking…') : t('Thought process')}
         </Typography>
 
         <Typography
@@ -171,17 +173,20 @@ export default function AgentThinkingBlock({ steps, isActive }: AgentThinkingBlo
   );
 }
 
-function getSummaryFromStep(step: ThinkingStep): string {
+function getSummaryFromStep(
+  step: ThinkingStep,
+  t: (key: string, options?: Record<string, unknown>) => string
+): string {
   if (step.type === 'tool-start') {
     const match = step.content.match(/:\s*(.+)/);
-    return match ? `${match[1].trim()}…` : 'Calling tool…';
+    return match ? `${match[1].trim()}…` : t('Calling tool…');
   }
   if (step.type === 'tool-result') {
     const match = step.content.match(/Tool\s+(\S+)/);
-    return match ? `${match[1]} done` : 'Tool done';
+    return match ? `${match[1]} done` : t('Tool done');
   }
   if (step.type === 'todo-update') {
-    return 'Updating plan…';
+    return t('Updating plan…');
   }
-  return 'Thinking…';
+  return t('Thinking…');
 }

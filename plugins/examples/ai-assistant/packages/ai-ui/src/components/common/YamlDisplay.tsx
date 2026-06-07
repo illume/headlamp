@@ -7,6 +7,7 @@ import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { parseKubernetesYAML } from '../../parsing/yamlParser';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for {@link YamlDisplay}. */
 interface YamlDisplayProps {
@@ -21,6 +22,8 @@ interface YamlDisplayProps {
 /** Renders Kubernetes YAML in a read-only editor with parsed resource metadata and an open-in-editor action. */
 const YamlDisplay: React.FC<YamlDisplayProps> = React.memo(
   ({ yaml, title, onOpenInEditor }) => {
+    const { t } = useTranslation();
+    void t;
     const [resourceType, setResourceType] = useState<string>('Resource');
     const [resourceName, setResourceName] = useState<string>('');
     const [processedYaml, setProcessedYaml] = useState<string>(yaml);

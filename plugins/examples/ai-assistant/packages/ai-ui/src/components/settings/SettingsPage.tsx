@@ -48,6 +48,7 @@ import { HolmesAgentSettings } from './HolmesAgentSettings';
 import { MCPSettings, type ConfigStore } from './MCPSettings';
 import ModelSelector from './ModelSelector';
 import { SkillSettings } from './SkillSettings';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for the {@link SettingsPage} component. */
 export interface SettingsPageProps {
@@ -165,6 +166,7 @@ export function SettingsPage({
   onDevOptionsChange,
   aksDocUrl,
 }: SettingsPageProps) {
+  const { t } = useTranslation();
   const [activeConfiguration, setActiveConfiguration] = React.useState<{
     providerId: string;
     config: Record<string, any>;
@@ -232,9 +234,9 @@ export function SettingsPage({
               }
               label={
                 <Box>
-                  <Typography variant="body1">Preview Features</Typography>
+                  <Typography variant="body1">{t('Preview Features')}</Typography>
                   <Typography variant="caption" color="text.secondary">
-                    Enable preview features including the AI assistant button in the app bar
+                    {t('Enable preview features including the AI assistant button in the app bar')}
                   </Typography>
                 </Box>
               }
@@ -260,7 +262,7 @@ export function SettingsPage({
               }
               label={
                 <Box>
-                  <Typography variant="body1">Test Mode</Typography>
+                  <Typography variant="body1">{t('Test Mode')}</Typography>
                   <Typography variant="caption" color="text.secondary">
                     Enable test mode to manually input AI responses and see how they render in the
                     chat window
@@ -274,7 +276,7 @@ export function SettingsPage({
             <Box sx={{ mb: 3, ml: 2 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <Box>
-                  <Typography variant="body1">Configuration Popover</Typography>
+                  <Typography variant="body1">{t('Configuration Popover')}</Typography>
                   <Typography variant="caption" color="text.secondary">
                     {hasShownConfigPopover
                       ? 'The configuration popover has been shown and dismissed'

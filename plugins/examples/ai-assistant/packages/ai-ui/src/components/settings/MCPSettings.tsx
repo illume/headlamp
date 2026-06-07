@@ -19,6 +19,7 @@ import React, { useEffect, useState } from 'react';
 import { DefaultDialog, DefaultSectionWrapper } from '../defaults/DefaultSlots';
 import MCPConfigEditorDialog from './MCPConfigEditorDialog';
 import MCPServerEditor from './MCPServerEditor';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Configuration for a single MCP server process. */
 export interface MCPServer {
@@ -73,6 +74,7 @@ export function MCPSettings({
   SectionWrapper = DefaultSectionWrapper,
   DialogSlot = DefaultDialog,
 }: MCPSettingsProps) {
+  const { t } = useTranslation();
   const [jsonEditorOpen, setJsonEditorOpen] = useState(false);
   const [serverEditorOpen, setServerEditorOpen] = useState(false);
   const [editingServer, setEditingServer] = useState<MCPServer | undefined>(undefined);
@@ -267,9 +269,9 @@ export function MCPSettings({
 
   if (!isRunningAsApp) {
     return (
-      <SectionWrapper title="MCP Servers">
+      <SectionWrapper title={t('MCP Servers')}>
         <Typography variant="body2" color="textSecondary">
-          MCP server configuration is only available in the desktop app.
+          {t('MCP server configuration is only available in the desktop app.')}
         </Typography>
       </SectionWrapper>
     );
@@ -278,7 +280,7 @@ export function MCPSettings({
   const displayConfig = pendingConfig || mcpConfig;
 
   return (
-    <SectionWrapper title="MCP Servers">
+    <SectionWrapper title={t('MCP Servers')}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
           Model Context Protocol (MCP) allows AI assistants to connect to external tools and data
@@ -287,7 +289,7 @@ export function MCPSettings({
 
         <FormControlLabel
           control={<Switch checked={mcpConfig.enabled} onChange={handleToggleEnabled} />}
-          label="Enable MCP Servers"
+          label={t('Enable MCP Servers')}
         />
       </Box>
 
@@ -296,21 +298,21 @@ export function MCPSettings({
           {/* Configuration Header */}
           <Box sx={{ mb: 3 }}>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-              <Typography variant="h6">Configured Servers</Typography>
+              <Typography variant="h6">{t('Configured Servers')}</Typography>
               <Box display="flex" alignItems="center" gap={1}>
                 <Button
                   variant="outlined"
                   onClick={() => setJsonEditorOpen(true)}
                   startIcon={<Icon icon="mdi:code-json" />}
                 >
-                  Edit as JSON
+                  {t('Edit as JSON')}
                 </Button>
                 <Button
                   variant="contained"
                   onClick={() => handleOpenServerEditor()}
                   startIcon={<Icon icon="mdi:plus" />}
                 >
-                  Add MCP Server
+                  {t('Add MCP Server')}
                 </Button>
               </Box>
             </Box>
@@ -355,10 +357,10 @@ export function MCPSettings({
               <Table size="small">
                 <TableHead>
                   <TableRow>
-                    <TableCell>Name</TableCell>
-                    <TableCell align="center">Enabled</TableCell>
-                    <TableCell align="center">Auto Approve</TableCell>
-                    <TableCell align="right">Actions</TableCell>
+                    <TableCell>{t('Name')}</TableCell>
+                    <TableCell align="center">{t('Enabled')}</TableCell>
+                    <TableCell align="center">{t('Auto Approve')}</TableCell>
+                    <TableCell align="right">{t('Actions')}</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -384,12 +386,12 @@ export function MCPSettings({
                         />
                       </TableCell>
                       <TableCell align="right">
-                        <Tooltip title="Edit">
+                        <Tooltip title={t('Edit')}>
                           <IconButton size="small" onClick={() => handleOpenServerEditor(server)}>
                             <Icon icon="mdi:pencil" />
                           </IconButton>
                         </Tooltip>
-                        <Tooltip title="Delete">
+                        <Tooltip title={t('Delete')}>
                           <IconButton
                             size="small"
                             onClick={() => handleDeleteServer(server.name)}
@@ -407,7 +409,7 @@ export function MCPSettings({
           ) : (
             <Paper variant="outlined" sx={{ p: 3, textAlign: 'center' }}>
               <Typography variant="body2" color="textSecondary">
-                No MCP servers configured. Click "Add Server" to get started.
+                {t('No MCP servers configured. Click "Add Server" to get started.')}
               </Typography>
             </Paper>
           )}

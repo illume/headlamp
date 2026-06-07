@@ -3,6 +3,7 @@ import { Icon } from '@iconify/react';
 import { Alert, Box, Paper, Typography } from '@mui/material';
 import React, { useCallback } from 'react';
 import MCPOutputDisplay from '../mcpOutput/MCPOutputDisplay';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for {@link MCPFormattedMessage}. */
 interface MCPFormattedMessageProps {
@@ -32,6 +33,8 @@ const MCPFormattedMessage: React.FC<MCPFormattedMessageProps> = ({
   isAssistant = true,
   onRetryTool,
 }) => {
+  const { t } = useTranslation();
+  void t;
   // Try to parse the content as formatted MCP output
   const parseContent = (): ParsedMCPContent | null => {
     try {
@@ -247,6 +250,8 @@ export const withMCPFormatting = <P extends object>(
   Component: React.ComponentType<P & { content: string }>
 ) => {
   return (props: P & { content: string }) => {
+  const { t } = useTranslation();
+  void t;
     const mcpFormatted = <MCPFormattedMessage content={props.content} />;
 
     // If content is formatted MCP output, show formatted version

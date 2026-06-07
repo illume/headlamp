@@ -1,6 +1,7 @@
 import { Box } from '@mui/material';
 import React from 'react';
 import { PromptWidthProvider } from '../../contexts/PromptWidthContext';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for the AIPanelComponent. */
 export interface AIPanelComponentProps {
@@ -27,6 +28,8 @@ export interface AIPanelComponentProps {
  */
 const AIPanelComponent = React.memo(
   ({ isOpen, clusterNotifier, hasValidConfig, children }: AIPanelComponentProps) => {
+    const { t } = useTranslation();
+    void t;
     const [width, setWidth] = React.useState('35vw');
     const [isResizing, setIsResizing] = React.useState(false);
 

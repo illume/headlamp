@@ -29,6 +29,7 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Describes a tool call awaiting inline approval. */
 interface ToolCall {
@@ -66,6 +67,7 @@ const InlineToolConfirmation: React.FC<InlineToolConfirmationProps> = ({
   loading = false,
   userContext,
 }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [selectedToolIds] = useState<string[]>(toolCalls.map(tool => tool.id));
   const [expandedTools, setExpandedTools] = useState<Set<string>>(new Set()); // Track which tools are expanded
@@ -362,8 +364,8 @@ const InlineToolConfirmation: React.FC<InlineToolConfirmationProps> = ({
             <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
               {fieldName}
             </Typography>
-            {isRequired && <Chip label="Required" size="small" color="error" variant="outlined" />}
-            {!isRequired && <Chip label="Optional" size="small" variant="outlined" />}
+            {isRequired && <Chip label={t('Required')} size="small" color="error" variant="outlined" />}
+            {!isRequired && <Chip label={t('Optional')} size="small" variant="outlined" />}
 
             {/* Show intelligent fill indicator */}
             {processedArgs.intelligentFills[fieldName] && (
@@ -376,7 +378,7 @@ const InlineToolConfirmation: React.FC<InlineToolConfirmationProps> = ({
                 placement="top"
               >
                 <Chip
-                  label="AI-filled"
+                  label={t('AI-filled')}
                   size="small"
                   color="success"
                   variant="outlined"
@@ -403,11 +405,11 @@ const InlineToolConfirmation: React.FC<InlineToolConfirmationProps> = ({
               icon={<Icon icon="mdi:lightbulb" style={{ fontSize: 16 }} />}
             >
               <Typography variant="caption">
-                <strong>AI Analysis:</strong> {processedArgs.intelligentFills[fieldName].reason}
+                <strong>{t('AI Analysis:')}</strong> {processedArgs.intelligentFills[fieldName].reason}
                 {processedArgs.intelligentFills[fieldName].confidence < 0.8 && (
                   <>
                     {' '}
-                    • <em>Please verify this value</em>
+                    • <em>{t('Please verify this value')}</em>
                   </>
                 )}
               </Typography>
@@ -546,7 +548,7 @@ const InlineToolConfirmation: React.FC<InlineToolConfirmationProps> = ({
                   {tool.name}
                 </Typography>
                 {tool.type === 'mcp' && (
-                  <Chip label="MCP" size="small" color="info" variant="outlined" />
+                  <Chip label={t('MCP')} size="small" color="info" variant="outlined" />
                 )}
                 {tool.description && (
                   <Typography variant="caption" color="text.secondary" sx={{ maxWidth: 200 }}>

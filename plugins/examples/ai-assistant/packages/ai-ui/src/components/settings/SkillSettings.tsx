@@ -33,6 +33,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { DefaultDialog, DefaultSectionWrapper } from '../defaults/DefaultSlots';
 import type { ConfigStore } from './MCPSettings';
 import SkillSourceEditorDialog from './SkillSourceEditorDialog';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Well-known directories that may contain skills in a project. */
 export const WELL_KNOWN_SKILL_DIRS = [
@@ -241,6 +242,7 @@ export function SkillSettings({
   DialogSlot = DefaultDialog,
   onConfigChange,
 }: SkillSettingsProps) {
+  const { t } = useTranslation();
   const [config, setConfig] = useState<SkillsConfig>(() => {
     const data = configStore.get();
     return getSkillsConfig(data);
@@ -444,10 +446,10 @@ export function SkillSettings({
     .filter(s => s.type === 'git');
 
   // Identify which local sources are well-known
-  const wellKnownPaths = new Set(
+  const wellKnownPaths = new Set<string>(
     WELL_KNOWN_SKILL_DIRS.map(d => (projectRoot ? `${projectRoot}/${d.path}` : d.path))
   );
-  const wellKnownRelativePaths = new Set(WELL_KNOWN_SKILL_DIRS.map(d => d.path));
+  const wellKnownRelativePaths = new Set<string>(WELL_KNOWN_SKILL_DIRS.map(d => d.path));
   const customLocalSources = localSources.filter(
     s => !wellKnownPaths.has(s.url) && !wellKnownRelativePaths.has(s.url)
   );
@@ -457,7 +459,7 @@ export function SkillSettings({
   const customGitSources = gitSources.filter(s => !wellKnownRepoUrls.has(s.url));
 
   return (
-    <SectionWrapper title="Skills">
+    <SectionWrapper title={t('Skills')}>
       <Box sx={{ mb: 3 }}>
         <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
           Skills are markdown files that provide domain-specific knowledge to the AI assistant.
@@ -468,7 +470,7 @@ export function SkillSettings({
       {/* Well-Known Paths Section */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
-          Detected Skill Directories
+          {t('Detected Skill Directories')}
         </Typography>
         <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
           Well-known skill directories from Claude, GitHub Copilot, and other tools. Detected
@@ -478,10 +480,10 @@ export function SkillSettings({
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Directory</TableCell>
-                <TableCell>Tool</TableCell>
-                <TableCell align="center">Status</TableCell>
-                <TableCell align="center">Enabled</TableCell>
+                <TableCell>{t('Directory')}</TableCell>
+                <TableCell>{t('Tool')}</TableCell>
+                <TableCell align="center">{t('Status')}</TableCell>
+                <TableCell align="center">{t('Enabled')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -490,7 +492,7 @@ export function SkillSettings({
                   <TableCell>
                     <Box>
                       <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {status.label}
+                        {t(status.label)}
                       </Typography>
                       <Typography variant="caption" color="textSecondary" sx={{ fontFamily: 'monospace' }}>
                         {status.path}
@@ -498,25 +500,25 @@ export function SkillSettings({
                     </Box>
                   </TableCell>
                   <TableCell>
-                    <Chip label={status.tool} size="small" variant="outlined" />
+                    <Chip label={t(status.tool)} size="small" variant="outlined" />
                   </TableCell>
                   <TableCell align="center">
                     {checkPathExists ? (
                       status.detected ? (
-                        <Tooltip title="Directory found">
+                        <Tooltip title={t('Directory found')}>
                           <Chip
                             icon={<Icon icon="mdi:check-circle" />}
-                            label="Detected"
+                            label={t('Detected')}
                             size="small"
                             color="success"
                             variant="outlined"
                           />
                         </Tooltip>
                       ) : (
-                        <Tooltip title="Directory not found">
+                        <Tooltip title={t('Directory not found')}>
                           <Chip
                             icon={<Icon icon="mdi:close-circle" />}
-                            label="Not found"
+                            label={t('Not found')}
                             size="small"
                             color="default"
                             variant="outlined"
@@ -524,10 +526,10 @@ export function SkillSettings({
                         </Tooltip>
                       )
                     ) : (
-                      <Tooltip title="Path detection unavailable">
+                      <Tooltip title={t('Path detection unavailable')}>
                         <Chip
                           icon={<Icon icon="mdi:help-circle" />}
-                          label="Unknown"
+                          label={t('Unknown')}
                           size="small"
                           color="default"
                           variant="outlined"
@@ -552,7 +554,7 @@ export function SkillSettings({
       {/* Suggested GitHub Repositories */}
       <Box sx={{ mb: 3 }}>
         <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
-          Suggested Skill Repositories
+          {t('Suggested Skill Repositories')}
         </Typography>
         <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
           Well-known open-source repositories containing Kubernetes skill files. Enable a repository
@@ -562,9 +564,9 @@ export function SkillSettings({
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Repository</TableCell>
-                <TableCell>Description</TableCell>
-                <TableCell align="center">Enabled</TableCell>
+                <TableCell>{t('Repository')}</TableCell>
+                <TableCell>{t('Description')}</TableCell>
+                <TableCell align="center">{t('Enabled')}</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -577,7 +579,7 @@ export function SkillSettings({
                     <TableCell>
                       <Box>
                         <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                          {repo.label}
+                          {t(repo.label)}
                         </Typography>
                         <Typography
                           variant="caption"
@@ -590,7 +592,7 @@ export function SkillSettings({
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" color="textSecondary">
-                        {repo.description}
+                        {t(repo.description)}
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
@@ -608,11 +610,11 @@ export function SkillSettings({
         </TableContainer>
       </Box>
 
-      {/* Custom Filesystem Sources */}
+      {/* Custom {t('Filesystem Sources')} */}
       <Box sx={{ mb: 3 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            Filesystem Sources
+            {t('Filesystem Sources')}
           </Typography>
           <Button
             variant="outlined"
@@ -620,20 +622,20 @@ export function SkillSettings({
             onClick={() => handleOpenEditor({ type: 'local', url: '', enabled: true })}
             startIcon={<Icon icon="mdi:folder-plus" />}
           >
-            Add Path
+            {t('Add Path')}
           </Button>
         </Box>
         <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-          Custom filesystem directories to scan for skill files.
+          {t('Custom filesystem directories to scan for skill files.')}
         </Typography>
         {customLocalSources.length > 0 ? (
           <TableContainer component={Paper} variant="outlined">
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Path</TableCell>
-                  <TableCell align="center">Enabled</TableCell>
-                  <TableCell align="right">Actions</TableCell>
+                  <TableCell>{t('Path')}</TableCell>
+                  <TableCell align="center">{t('Enabled')}</TableCell>
+                  <TableCell align="right">{t('Actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -652,12 +654,12 @@ export function SkillSettings({
                       />
                     </TableCell>
                     <TableCell align="right">
-                      <Tooltip title="Edit">
+                      <Tooltip title={t('Edit')}>
                         <IconButton size="small" onClick={() => handleOpenEditor(source)}>
                           <Icon icon="mdi:pencil" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Delete">
+                      <Tooltip title={t('Delete')}>
                         <IconButton
                           size="small"
                           onClick={() => handleDeleteSource(source.originalIndex)}
@@ -675,7 +677,7 @@ export function SkillSettings({
         ) : (
           <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
             <Typography variant="body2" color="textSecondary">
-              No custom filesystem sources configured.
+              {t('No custom filesystem sources configured.')}
             </Typography>
           </Paper>
         )}
@@ -685,7 +687,7 @@ export function SkillSettings({
       <Box sx={{ mb: 3 }}>
         <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
           <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            Custom GitHub Repository Sources
+            {t('Custom GitHub Repository Sources')}
           </Typography>
           <Button
             variant="outlined"
@@ -693,22 +695,22 @@ export function SkillSettings({
             onClick={() => handleOpenEditor({ type: 'git', url: '', enabled: true })}
             startIcon={<Icon icon="mdi:github" />}
           >
-            Add Repository
+            {t('Add Repository')}
           </Button>
         </Box>
         <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-          Additional GitHub repositories to download skills from via zip archive.
+          {t('Additional GitHub repositories to download skills from via zip archive.')}
         </Typography>
         {customGitSources.length > 0 ? (
           <TableContainer component={Paper} variant="outlined">
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Repository</TableCell>
-                  <TableCell>Ref</TableCell>
-                  <TableCell>Path</TableCell>
-                  <TableCell align="center">Enabled</TableCell>
-                  <TableCell align="right">Actions</TableCell>
+                  <TableCell>{t('Repository')}</TableCell>
+                  <TableCell>{t('Ref')}</TableCell>
+                  <TableCell>{t('Path')}</TableCell>
+                  <TableCell align="center">{t('Enabled')}</TableCell>
+                  <TableCell align="right">{t('Actions')}</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -721,7 +723,7 @@ export function SkillSettings({
                     </TableCell>
                     <TableCell>
                       <Typography variant="body2" color="textSecondary">
-                        {source.ref || 'main'}
+                        {source.ref || t('main')}
                       </Typography>
                     </TableCell>
                     <TableCell>
@@ -737,12 +739,12 @@ export function SkillSettings({
                       />
                     </TableCell>
                     <TableCell align="right">
-                      <Tooltip title="Edit">
+                      <Tooltip title={t('Edit')}>
                         <IconButton size="small" onClick={() => handleOpenEditor(source)}>
                           <Icon icon="mdi:pencil" />
                         </IconButton>
                       </Tooltip>
-                      <Tooltip title="Delete">
+                      <Tooltip title={t('Delete')}>
                         <IconButton
                           size="small"
                           onClick={() => handleDeleteSource(source.originalIndex)}

@@ -1,7 +1,7 @@
 /**
  * LogsButton — inline button that opens a {@link LogsDialog} for a resource.
  *
- * Renders a compact paper card with a "View in Editor" button. Clicking the
+ * Renders a compact paper card with a "{t('View in Editor')}" button. Clicking the
  * button opens the full log viewer dialog. This component has no
  * headlamp-plugin dependency and can be used in any React + MUI context.
  */
@@ -12,6 +12,7 @@ import React, { useState } from 'react';
 import { buildLogTitle } from '../../formatting/logFormatting';
 import { DefaultDialog } from '../defaults/DefaultSlots';
 import LogsDialog from './LogsDialog';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for the LogsButton component that shows a button to open a logs dialog. */
 export interface LogsButtonProps {
@@ -30,7 +31,7 @@ export interface LogsButtonProps {
 }
 
 /**
- * Inline card with a "View in Editor" button. Opens a {@link LogsDialog}
+ * Inline card with a "{t('View in Editor')}" button. Opens a {@link LogsDialog}
  * showing the log content for a Kubernetes resource.
  */
 const LogsButton: React.FC<LogsButtonProps> = ({
@@ -41,6 +42,7 @@ const LogsButton: React.FC<LogsButtonProps> = ({
   containerName,
   DialogSlot = DefaultDialog,
 }) => {
+  const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const title = buildLogTitle(resourceType, resourceName, containerName, namespace);
@@ -71,7 +73,7 @@ const LogsButton: React.FC<LogsButtonProps> = ({
             onClick={() => setDialogOpen(true)}
             size="small"
           >
-            View in Editor
+            {t('View in Editor')}
           </Button>
         </Box>
       </Paper>

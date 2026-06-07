@@ -23,6 +23,7 @@ import {
 import React, { useEffect, useState } from 'react';
 import { DefaultDialog } from '../defaults/DefaultSlots';
 import type { SkillSourceEntry } from './SkillSettings';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for the SkillSourceEditorDialog component. */
 export interface SkillSourceEditorDialogProps {
@@ -73,6 +74,7 @@ export default function SkillSourceEditorDialog({
   existingUrls,
   DialogSlot = DefaultDialog,
 }: SkillSourceEditorDialogProps) {
+  const { t } = useTranslation();
   const isEditing = source !== undefined && source.url !== '';
   const [type, setType] = useState<'local' | 'git'>(source?.type || 'local');
   const [url, setUrl] = useState(source?.url || '');
@@ -96,13 +98,13 @@ export default function SkillSourceEditorDialog({
 
   const validateUrl = (value: string): string => {
     if (!value.trim()) {
-      return type === 'local' ? 'Path is required' : 'URL is required';
+      return type === 'local' ? t('Path is required') : t('URL is required');
     }
     if (type === 'git' && !isValidGitUrl(value)) {
-      return 'Must be an HTTPS URL to github.com, gitlab.com, or bitbucket.org';
+      return t('Must be an HTTPS URL to github.com, gitlab.com, or bitbucket.org');
     }
     if (!isEditing && existingUrls.includes(value)) {
-      return 'This source already exists';
+      return t('This source already exists');
     }
     return '';
   };
@@ -128,7 +130,7 @@ export default function SkillSourceEditorDialog({
 
   return (
     <DialogSlot open={open} onClose={onClose} maxWidth="sm" fullWidth>
-      <DialogTitle>{isEditing ? 'Edit Skill Source' : 'Add Skill Source'}</DialogTitle>
+      <DialogTitle>{isEditing ? t('Edit Skill Source') : t('Add Skill Source')}</DialogTitle>
       <DialogContent>
         <Box sx={{ mt: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
           {/* Source type selector */}
@@ -151,7 +153,7 @@ export default function SkillSourceEditorDialog({
                 label={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <Icon icon="mdi:folder" />
-                    <span>Filesystem</span>
+                    <span>{t('Filesystem')}</span>
                   </Box>
                 }
               />
@@ -161,7 +163,7 @@ export default function SkillSourceEditorDialog({
                 label={
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                     <Icon icon="mdi:github" />
-                    <span>GitHub Repository</span>
+                    <span>{t('GitHub Repository')}</span>
                   </Box>
                 }
               />
@@ -170,7 +172,7 @@ export default function SkillSourceEditorDialog({
 
           {/* URL / Path field */}
           <TextField
-            label={type === 'local' ? 'Directory Path' : 'Repository URL'}
+            label={type === 'local' ? t('Directory Path') : t('Repository URL')}
             value={url}
             onChange={e => {
               setUrl(e.target.value);
@@ -196,29 +198,29 @@ export default function SkillSourceEditorDialog({
           {type === 'git' && (
             <>
               <TextField
-                label="Ref (branch, tag, or SHA)"
+                label={t('Ref (branch, tag, or SHA)')}
                 value={ref}
                 onChange={e => setRef(e.target.value)}
-                placeholder="main"
-                helperText="Leave empty for default branch (main). Use a tag or SHA for pinned versions."
+                placeholder={t('main')}
+                helperText={t('Leave empty for default branch (main). Use a tag or SHA for pinned versions.')}
                 fullWidth
                 size="small"
               />
               <TextField
-                label="Subdirectory"
+                label={t('Subdirectory')}
                 value={path}
                 onChange={e => setPath(e.target.value)}
-                placeholder="skills/"
-                helperText="Optional subdirectory within the repository to scan"
+                placeholder={t('skills/')}
+                helperText={t('Optional subdirectory within the repository to scan')}
                 fullWidth
                 size="small"
               />
               <TextField
-                label="SHA-256 Integrity Hash"
+                label={t('SHA-256 Integrity Hash')}
                 value={sha256}
                 onChange={e => setSha256(e.target.value)}
-                placeholder="Optional"
-                helperText="Expected hash of downloaded content for integrity verification"
+                placeholder={t('Optional')}
+                helperText={t('Expected hash of downloaded content for integrity verification')}
                 fullWidth
                 size="small"
               />
@@ -230,14 +232,14 @@ export default function SkillSourceEditorDialog({
             control={
               <Switch checked={enabled} onChange={e => setEnabled(e.target.checked)} size="small" />
             }
-            label="Enabled"
+            label={t('Enabled')}
           />
         </Box>
       </DialogContent>
       <DialogActions>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={onClose}>{t('Cancel')}</Button>
         <Button onClick={handleSave} variant="contained" color="primary">
-          {isEditing ? 'Save' : 'Add'}
+          {isEditing ? t('Save') : t('Add')}
         </Button>
       </DialogActions>
     </DialogSlot>

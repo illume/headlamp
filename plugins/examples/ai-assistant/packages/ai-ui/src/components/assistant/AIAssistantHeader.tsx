@@ -1,6 +1,7 @@
 import { Box, Chip, Typography } from '@mui/material';
 import React from 'react';
 import { DefaultActionButton } from '../defaults/DefaultSlots';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props accepted by the ActionButton slot component. */
 export interface ActionButtonSlotProps {
@@ -35,6 +36,7 @@ export default function AIAssistantHeader({
   onSettings,
   ActionButtonSlot = DefaultActionButton,
 }: AIAssistantHeaderProps) {
+  const { t } = useTranslation();
   return (
     <Box
       sx={{
@@ -48,10 +50,10 @@ export default function AIAssistantHeader({
     >
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <Typography variant="h6">
-          AI Assistant (alpha)
+          {t('AI Assistant (preview)')}
           {isTestMode && (
             <Chip
-              label="TEST MODE"
+              label={t('TEST MODE')}
               color="warning"
               size="small"
               sx={{ ml: 1, fontSize: '0.7rem' }}
@@ -61,13 +63,13 @@ export default function AIAssistantHeader({
       </Box>
       <Box sx={{ display: 'flex', alignItems: 'center' }}>
         <ActionButtonSlot
-          description="Settings"
+          description={t('Settings')}
           icon="mdi:settings"
           onClick={onSettings}
           iconButtonProps={{ disabled: disableSettingsButton, size: 'small' }}
         />
         <ActionButtonSlot
-          description="Close"
+          description={t('Close')}
           icon="mdi:close"
           onClick={onClose}
           iconButtonProps={{ size: 'small' }}

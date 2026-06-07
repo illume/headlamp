@@ -1,18 +1,29 @@
 import { getHolmesProxyBaseUrl, HolmesAgent } from '@headlamp-k8s/ai-common/agent/holmesClient';
 import AIManager, { Prompt } from '@headlamp-k8s/ai-common/ai/manager';
-import LangChainManager from '@headlamp-k8s/ai-common/langchain/LangChainManager';
 import { inlineToolApprovalManager } from '@headlamp-k8s/ai-common/approval/InlineToolApprovalManager';
-import { SkillManager } from '@headlamp-k8s/ai-common/skills/SkillManager';
-import { getSkillsConfig } from '@headlamp-k8s/ai-common/skills/SkillConfigManager';
+import { getProviderById } from '@headlamp-k8s/ai-common/config/modelConfig';
+import LangChainManager from '@headlamp-k8s/ai-common/langchain/LangChainManager';
 import {
   createFetchHttpClient,
   createJSZipExtractor,
   createNoopFileSystem,
 } from '@headlamp-k8s/ai-common/skills/BrowserSkillAdapters';
+import { getSkillsConfig } from '@headlamp-k8s/ai-common/skills/SkillConfigManager';
+import { SkillManager } from '@headlamp-k8s/ai-common/skills/SkillManager';
+import { ChatMode } from '@headlamp-k8s/ai-ui/components/agent/AgentModeSelector';
+import AIAssistantHeader from '@headlamp-k8s/ai-ui/components/assistant/AIAssistantHeader';
+import { PromptSuggestions } from '@headlamp-k8s/ai-ui/components/assistant/PromptSuggestions';
+import ApiConfirmationDialog from '@headlamp-k8s/ai-ui/components/common/ApiConfirmationDialog';
+import {
+  getProviderModels,
+  parseSuggestionsFromResponse,
+} from '@headlamp-k8s/ai-ui/providers/modelProviders';
+import { isTestModeCheck } from '@headlamp-k8s/ai-ui/testing/testMode';
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { useClustersConf, useSelectedClusters } from '@kinvolk/headlamp-plugin/lib/k8s';
 import { getCluster, getClusterGroup } from '@kinvolk/headlamp-plugin/lib/Utils';
-import { Box, Button, CircularProgress, Grid, Typography } from '@mui/material';
+import { Box, Button, Grid, Typography } from '@mui/material';
 import { isEqual } from 'lodash';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
@@ -22,22 +33,15 @@ import {
   destroyAgentSession,
   runAksAgent,
 } from './agent/aksAgentManager';
-import AIAssistantHeader from '@headlamp-k8s/ai-ui/components/assistant/AIAssistantHeader';
 import AIChatContent from './components/assistant/AIChatContent';
 import { AIInputSection } from './components/assistant/AllInputSection';
-import { ChatMode } from '@headlamp-k8s/ai-ui/components/agent/AgentModeSelector';
-import ApiConfirmationDialog from '@headlamp-k8s/ai-ui/components/common/ApiConfirmationDialog';
-import { PromptSuggestions } from '@headlamp-k8s/ai-ui/components/assistant/PromptSuggestions';
-import { getProviderById } from '@headlamp-k8s/ai-common/config/modelConfig';
-import { isTestModeCheck } from '@headlamp-k8s/ai-ui/testing/testMode';
+import { generateContextDescription } from './context/contextGenerator';
 import EditorDialog from './editordialog';
 import { useKubernetesToolUI } from './hooks/useKubernetesToolUI';
-import { getSettingsURL, useGlobalState } from './pluginState';
-import { generateContextDescription } from './context/contextGenerator';
 import {
   /* [PROACTIVE_DIAGNOSIS_DISABLED] fetchWarningEventsForClusters, */ fetchClusterWarnings,
 } from './kubernetes/EventFetcher';
-import { getProviderModels, parseSuggestionsFromResponse } from '@headlamp-k8s/ai-ui/providers/modelProviders';
+import { getSettingsURL, useGlobalState } from './pluginState';
 // [PROACTIVE_DIAGNOSIS_DISABLED]
 // import {
 //   DiagnosisStepCallback,
@@ -58,14 +62,14 @@ import {
   getSavedConfigurations,
   StoredProviderConfig,
 } from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
-import {
-  GH_CLI_AUTH_SENTINEL,
-  AZ_CLI_AUTH_SENTINEL,
-  refreshGitHubToken,
-  refreshAzureOpenAIKey,
-  type CommandRunner,
-} from '@headlamp-k8s/ai-common/providers/providerAutoDetect';
 import { getEnabledToolIds } from '@headlamp-k8s/ai-common/managers/ToolConfigManager';
+import {
+  AZ_CLI_AUTH_SENTINEL,
+  type CommandRunner,
+  GH_CLI_AUTH_SENTINEL,
+  refreshAzureOpenAIKey,
+  refreshGitHubToken,
+} from '@headlamp-k8s/ai-common/providers/providerAutoDetect';
 import { usePromptWidth } from '@headlamp-k8s/ai-ui/contexts/PromptWidthContext';
 
 export default function AIPrompt(props: {
@@ -103,6 +107,7 @@ export default function AIPrompt(props: {
   const clusters = useClustersConf() || {};
   const dynamicPrompts = useDynamicPrompts();
   const prompWidthContext = usePromptWidth();
+  const { t } = useTranslation();
 
   // Agent mode state — aksAgentClusters and hasCheckedForAgents live in global state
   // so the check that runs in index.tsx is shared here without re-running
@@ -320,11 +325,11 @@ export default function AIPrompt(props: {
         !finalTitle.toLowerCase().startsWith('view') &&
         !finalTitle.toLowerCase().startsWith('sample')
       ) {
-        finalTitle = `View ${title}`;
+        finalTitle = t('View {{title}}', { title });
       } else if (actualDelete) {
-        finalTitle = `Delete ${type}`;
+        finalTitle = t('Delete {{kind}}', { kind: type });
       } else if (!isSampleYaml && !actualDelete) {
-        finalTitle = `Apply ${type}`;
+        finalTitle = t('Apply {{resourceType}}', { resourceType: type });
       }
 
       setEditorContent(yaml);
@@ -333,7 +338,7 @@ export default function AIPrompt(props: {
       setIsDelete(actualDelete);
       setShowEditor(true);
     },
-    []
+    [t]
   );
 
   // Initialize active configuration from plugin settings
@@ -409,7 +414,9 @@ export default function AIPrompt(props: {
             setPromptHistory([
               {
                 role: 'system',
-                content: `Previous provider was removed. Switched to ${providerName}.`,
+                content: t('Previous provider was removed. Switched to {{providerName}}.', {
+                  providerName,
+                }),
               },
             ]);
           }, 100);
@@ -473,7 +480,10 @@ export default function AIPrompt(props: {
             ...prev,
             {
               role: 'system',
-              content: `Switched to ${providerName}${resolvedModel ? ' / ' + resolvedModel : ''}.`,
+              content: t('Switched to {{providerName}}{{modelSuffix}}.', {
+                providerName,
+                modelSuffix: resolvedModel ? ` / ${resolvedModel}` : '',
+              }),
             },
           ]);
         }, 100);
@@ -484,7 +494,10 @@ export default function AIPrompt(props: {
           ...prev,
           {
             role: 'system',
-            content: `Using ${providerName}${resolvedModel ? ' / ' + resolvedModel : ''}.`,
+            content: t('Using {{providerName}}{{modelSuffix}}.', {
+              providerName,
+              modelSuffix: resolvedModel ? ` / ${resolvedModel}` : '',
+            }),
           },
         ]);
       }
@@ -505,12 +518,15 @@ export default function AIPrompt(props: {
     // or when activeConfig/selectedModel/mcpConfig changes
     let isCurrent = true;
 
-    if (!activeConfig) return () => { isCurrent = false; };
+    if (!activeConfig)
+      return () => {
+        isCurrent = false;
+      };
 
     async function initManager() {
       try {
         // Create config with selected model
-        const configWithModel = {
+        const configWithModel: any = {
           ...activeConfig!.config,
           model: selectedModel,
         };
@@ -670,8 +686,10 @@ export default function AIPrompt(props: {
   }, [aiManager?.history]);
 
   // Use the Kubernetes tool UI hook (must be after updateHistory is defined)
-  const { state: kubernetesUI, callbacks: kubernetesCallbacks } =
-    useKubernetesToolUI(updateHistory);
+  const { state: kubernetesUI, callbacks: kubernetesCallbacks } = useKubernetesToolUI(
+    updateHistory,
+    t
+  );
 
   // Set up event listeners for tool confirmation events
   React.useEffect(() => {
@@ -727,26 +745,29 @@ export default function AIPrompt(props: {
       }
 
       // Extract error details
-      const errorMessage = error?.message || error?.error || 'Unknown error occurred';
+      const errorMessage = error?.message || error?.error || t('Unknown error occurred');
       const statusCode = error?.status || error?.statusCode;
 
       // Build error content
-      let errorContent = `Resource ${operation} failed: ${errorMessage}`;
+      let errorContent = t('Resource {{operation}} failed: {{errorMessage}}', {
+        operation: t(operation),
+        errorMessage,
+      });
 
       if (resourceInfo) {
-        errorContent += `\n\nResource Details: ${JSON.stringify(
+        errorContent += `\n\n${t('Resource Details:')} ${JSON.stringify(
           {
             kind: resourceInfo.kind,
             name: resourceInfo.name,
             namespace: resourceInfo.namespace,
-            status: 'Failed',
+            status: t('Failed'),
             ...(statusCode && { statusCode }),
           },
           null,
           2
         )}`;
       } else if (statusCode) {
-        errorContent += `\n\nStatus Code: ${statusCode}`;
+        errorContent += `\n\n${t('Status Code: {{statusCode}}', { statusCode })}`;
       }
 
       const toolPrompt: Prompt = {
@@ -762,7 +783,7 @@ export default function AIPrompt(props: {
         updateHistory();
       }
     },
-    [aiManager, updateHistory]
+    [aiManager, t, updateHistory]
   );
 
   // Function to handle test mode responses
@@ -809,7 +830,7 @@ export default function AIPrompt(props: {
         ...prev,
         {
           role: 'assistant',
-          content: 'No cluster with AKS agent selected. Please select a cluster first.',
+          content: t('No cluster with AKS agent selected. Please select a cluster first.'),
           error: true,
         },
       ]);
@@ -822,7 +843,10 @@ export default function AIPrompt(props: {
         ...prev,
         {
           role: 'assistant',
-          content: `No AKS agent pod found on cluster "${selectedAgentCluster}". Make sure the AKS agent is installed and running.`,
+          content: t(
+            'No AKS agent pod found on cluster "{{cluster}}". Make sure the AKS agent is installed and running.',
+            { cluster: selectedAgentCluster }
+          ),
           error: true,
         },
       ]);
@@ -851,7 +875,9 @@ export default function AIPrompt(props: {
         ...prev,
         {
           role: 'assistant',
-          content: `Error communicating with AKS agent: ${error?.message || 'Unknown error'}`,
+          content: t('Error communicating with AKS agent: {{message}}', {
+            message: error?.message || t('Unknown error'),
+          }),
           error: true,
         },
       ]);
@@ -904,7 +930,9 @@ export default function AIPrompt(props: {
         // Add the error as an assistant message in the history
         const errorPrompt: Prompt = {
           role: 'assistant',
-          content: `Error: ${error.message || 'An unknown error occurred'}`,
+          content: t('Error: {{message}}', {
+            message: error.message || t('An unknown error occurred'),
+          }),
           error: true,
         };
 
@@ -984,214 +1012,219 @@ export default function AIPrompt(props: {
     return false;
   };
 
-  const handleToggleAgentMode = React.useCallback(async (enabled: boolean) => {
-    if (enabled) {
-      setAgentModeStatus('found');
-      setIsAgentMode(true);
+  const handleToggleAgentMode = React.useCallback(
+    async (enabled: boolean) => {
+      if (enabled) {
+        setAgentModeStatus('found');
+        setIsAgentMode(true);
 
-      // Create the HolmesAgent routing through K8s service proxy
-      const cluster = getCluster();
-      if (!cluster) {
-        console.error('[AgentMode] No cluster available');
-        return;
-      }
-      const agent = new HolmesAgent(getHolmesProxyBaseUrl(cluster, pluginSettings));
-      agent.subscribe({
-        onEvent: ({ event }) => {
-          console.log('[AgentMode] onEvent:', event.type, event);
-        },
-        onRunInitialized: () => {
-          console.log('[AgentMode] onRunInitialized');
-        },
-        onRunFailed: ({ error }) => {
-          console.error('[AgentMode] onRunFailed:', error);
-        },
-        onRunFinalized: () => {
-          console.log('[AgentMode] onRunFinalized');
-        },
-        onRunStartedEvent: () => {
-          console.log('[AgentMode] onRunStartedEvent');
-          setLoading(true);
-          // Create the placeholder assistant message with thinking steps
-          const placeholderId = `agent-response-${Date.now()}`;
-          agentMessageIdRef.current = placeholderId;
-          setPromptHistory(prev => [
-            ...prev,
-            {
-              role: 'assistant',
-              content: '',
-              agentThinkingSteps: [],
-              agentThinkingDone: false,
-            },
-          ]);
-        },
-        onRunFinishedEvent: () => {
-          console.log('[AgentMode] onRunFinishedEvent');
-          setLoading(false);
-          // Mark thinking as done and sanitize the final displayed content
-          setPromptHistory(prev => {
-            const updated = [...prev];
-            for (let i = updated.length - 1; i >= 0; i--) {
-              if (
-                updated[i].role === 'assistant' &&
-                updated[i].agentThinkingSteps !== undefined &&
-                !updated[i].agentThinkingDone
-              ) {
-                const cleanContent = sanitizeAgentContent(updated[i].content || '');
-                updated[i] = {
-                  ...updated[i],
-                  content: cleanContent,
-                  agentThinkingDone: true,
-                };
-                break;
-              }
-            }
-            return updated;
-          });
-          agentMessageIdRef.current = null;
-          agentTextBufferRef.current = '';
-          agentCurrentMsgIdRef.current = '';
-        },
-        onRunErrorEvent: ({ event }) => {
-          console.error('[AgentMode] onRunErrorEvent:', event);
-          setLoading(false);
-          setPromptHistory(prev => [
-            ...prev,
-            {
-              role: 'assistant',
-              content: `Agent error: ${event.message}`,
-              error: true,
-            },
-          ]);
-          agentMessageIdRef.current = null;
-        },
-        onTextMessageStartEvent: ({ event }) => {
-          console.log('[AgentMode] onTextMessageStartEvent:', event.messageId);
-          agentTextBufferRef.current = '';
-          agentCurrentMsgIdRef.current = event.messageId;
-        },
-        onTextMessageContentEvent: ({ event }) => {
-          console.log('[AgentMode] onTextMessageContentEvent:', { delta: event.delta });
-          agentTextBufferRef.current += event.delta || '';
-        },
-        onTextMessageEndEvent: () => {
-          console.log('[AgentMode] onTextMessageEndEvent');
-          const fullText = agentTextBufferRef.current;
-          const msgId = agentCurrentMsgIdRef.current;
-          const stepType = classifyAgentText(fullText);
-          const isToolMessage = stepType === 'tool-result' || stepType === 'tool-start';
-
-          // Update the placeholder assistant message:
-          // - Tool-result / tool-start messages go ONLY into agentThinkingSteps
-          //   (they must never overwrite the displayed content).
-          // - Other messages replace content (final answer is the last non-tool one).
-          setPromptHistory(prev => {
-            const updated = [...prev];
-            for (let i = updated.length - 1; i >= 0; i--) {
-              if (
-                updated[i].role === 'assistant' &&
-                updated[i].agentThinkingSteps !== undefined &&
-                !updated[i].agentThinkingDone
-              ) {
-                const existingSteps = updated[i].agentThinkingSteps || [];
-                const prevContent = updated[i].content || '';
-                const newSteps = [...existingSteps];
-
-                // For non-tool messages, move previous content into thinking
-                // steps (if it hasn't already been added).
-                if (!isToolMessage && prevContent.trim()) {
-                  const prevType = classifyAgentText(prevContent);
-                  const alreadyInSteps = newSteps.some(step => step.content === prevContent);
-                  if (!alreadyInSteps) {
-                    newSteps.push({
-                      id: `step-prev-${i}-${newSteps.length}`,
-                      content: prevContent,
-                      type: prevType,
-                      timestamp: Date.now(),
-                    });
-                  }
+        // Create the HolmesAgent routing through K8s service proxy
+        const cluster = getCluster();
+        if (!cluster) {
+          console.error('[AgentMode] No cluster available');
+          return;
+        }
+        const agent = new HolmesAgent(getHolmesProxyBaseUrl(cluster, pluginSettings));
+        agent.subscribe({
+          onEvent: ({ event }) => {
+            console.log('[AgentMode] onEvent:', event.type, event);
+          },
+          onRunInitialized: () => {
+            console.log('[AgentMode] onRunInitialized');
+          },
+          onRunFailed: ({ error }) => {
+            console.error('[AgentMode] onRunFailed:', error);
+          },
+          onRunFinalized: () => {
+            console.log('[AgentMode] onRunFinalized');
+          },
+          onRunStartedEvent: () => {
+            console.log('[AgentMode] onRunStartedEvent');
+            setLoading(true);
+            // Create the placeholder assistant message with thinking steps
+            const placeholderId = `agent-response-${Date.now()}`;
+            agentMessageIdRef.current = placeholderId;
+            setPromptHistory(prev => [
+              ...prev,
+              {
+                role: 'assistant',
+                content: '',
+                agentThinkingSteps: [],
+                agentThinkingDone: false,
+              },
+            ]);
+          },
+          onRunFinishedEvent: () => {
+            console.log('[AgentMode] onRunFinishedEvent');
+            setLoading(false);
+            // Mark thinking as done and sanitize the final displayed content
+            setPromptHistory(prev => {
+              const updated = [...prev];
+              for (let i = updated.length - 1; i >= 0; i--) {
+                if (
+                  updated[i].role === 'assistant' &&
+                  updated[i].agentThinkingSteps !== undefined &&
+                  !updated[i].agentThinkingDone
+                ) {
+                  const cleanContent = sanitizeAgentContent(updated[i].content || '');
+                  updated[i] = {
+                    ...updated[i],
+                    content: cleanContent,
+                    agentThinkingDone: true,
+                  };
+                  break;
                 }
-
-                // Always record the message as a thinking step
-                newSteps.push({
-                  id: `step-${msgId}`,
-                  content: fullText,
-                  type: stepType,
-                  timestamp: Date.now(),
-                });
-
-                // Only update displayed content for non-tool messages
-                const newContent = isToolMessage ? updated[i].content : fullText;
-
-                updated[i] = {
-                  ...updated[i],
-                  content: newContent,
-                  agentThinkingSteps: newSteps,
-                };
-                break;
               }
-            }
-            return updated;
-          });
+              return updated;
+            });
+            agentMessageIdRef.current = null;
+            agentTextBufferRef.current = '';
+            agentCurrentMsgIdRef.current = '';
+          },
+          onRunErrorEvent: ({ event }) => {
+            console.error('[AgentMode] onRunErrorEvent:', event);
+            setLoading(false);
+            setPromptHistory(prev => [
+              ...prev,
+              {
+                role: 'assistant',
+                content: t('Agent error: {{message}}', { message: event.message }),
+                error: true,
+              },
+            ]);
+            agentMessageIdRef.current = null;
+          },
+          onTextMessageStartEvent: ({ event }) => {
+            console.log('[AgentMode] onTextMessageStartEvent:', event.messageId);
+            agentTextBufferRef.current = '';
+            agentCurrentMsgIdRef.current = event.messageId;
+          },
+          onTextMessageContentEvent: ({ event }) => {
+            console.log('[AgentMode] onTextMessageContentEvent:', { delta: event.delta });
+            agentTextBufferRef.current += event.delta || '';
+          },
+          onTextMessageEndEvent: () => {
+            console.log('[AgentMode] onTextMessageEndEvent');
+            const fullText = agentTextBufferRef.current;
+            const msgId = agentCurrentMsgIdRef.current;
+            const stepType = classifyAgentText(fullText);
+            const isToolMessage = stepType === 'tool-result' || stepType === 'tool-start';
 
-          agentTextBufferRef.current = '';
-          agentCurrentMsgIdRef.current = '';
-        },
-        onToolCallStartEvent: ({ event }) => {
-          console.log('[AgentMode] onToolCallStartEvent:', event.toolCallName);
-          // Add tool call as a thinking step
-          setPromptHistory(prev => {
-            const updated = [...prev];
-            for (let i = updated.length - 1; i >= 0; i--) {
-              if (
-                updated[i].role === 'assistant' &&
-                updated[i].agentThinkingSteps !== undefined &&
-                !updated[i].agentThinkingDone
-              ) {
-                const steps = [...(updated[i].agentThinkingSteps || [])];
-                steps.push({
-                  id: `tool-${event.toolCallId || event.toolCallName}-${Date.now()}`,
-                  content: `Calling tool: ${event.toolCallName}`,
-                  type: 'tool-start',
-                  timestamp: Date.now(),
-                });
-                updated[i] = { ...updated[i], agentThinkingSteps: steps };
-                break;
-              }
-            }
-            return updated;
-          });
-        },
-        onToolCallEndEvent: ({ toolCallName }) => {
-          console.log('[AgentMode] onToolCallEndEvent:', toolCallName);
-          // Add tool result as a thinking step
-          setPromptHistory(prev => {
-            const updated = [...prev];
-            for (let i = updated.length - 1; i >= 0; i--) {
-              if (
-                updated[i].role === 'assistant' &&
-                updated[i].agentThinkingSteps !== undefined &&
-                !updated[i].agentThinkingDone
-              ) {
-                const steps = [...(updated[i].agentThinkingSteps || [])];
-                steps.push({
-                  id: `tool-end-${toolCallName}-${Date.now()}`,
-                  content: `Tool ${toolCallName} completed`,
-                  type: 'tool-result',
-                  timestamp: Date.now(),
-                });
-                updated[i] = { ...updated[i], agentThinkingSteps: steps };
-                break;
-              }
-            }
-            return updated;
-          });
-        },
-      });
-      holmesAgentRef.current = agent;
+            // Update the placeholder assistant message:
+            // - Tool-result / tool-start messages go ONLY into agentThinkingSteps
+            //   (they must never overwrite the displayed content).
+            // - Other messages replace content (final answer is the last non-tool one).
+            setPromptHistory(prev => {
+              const updated = [...prev];
+              for (let i = updated.length - 1; i >= 0; i--) {
+                if (
+                  updated[i].role === 'assistant' &&
+                  updated[i].agentThinkingSteps !== undefined &&
+                  !updated[i].agentThinkingDone
+                ) {
+                  const existingSteps = updated[i].agentThinkingSteps || [];
+                  const prevContent = updated[i].content || '';
+                  const newSteps = [...existingSteps];
 
-      // [PROACTIVE_DIAGNOSIS_DISABLED] — agent diagnosis setup
-      /*
+                  // For non-tool messages, move previous content into thinking
+                  // steps (if it hasn't already been added).
+                  if (!isToolMessage && prevContent.trim()) {
+                    const prevType = classifyAgentText(prevContent);
+                    const alreadyInSteps = newSteps.some(step => step.content === prevContent);
+                    if (!alreadyInSteps) {
+                      newSteps.push({
+                        id: `step-prev-${i}-${newSteps.length}`,
+                        content: prevContent,
+                        type: prevType,
+                        timestamp: Date.now(),
+                      });
+                    }
+                  }
+
+                  // Always record the message as a thinking step
+                  newSteps.push({
+                    id: `step-${msgId}`,
+                    content: fullText,
+                    type: stepType,
+                    timestamp: Date.now(),
+                  });
+
+                  // Only update displayed content for non-tool messages
+                  const newContent = isToolMessage ? updated[i].content : fullText;
+
+                  updated[i] = {
+                    ...updated[i],
+                    content: newContent,
+                    agentThinkingSteps: newSteps,
+                  };
+                  break;
+                }
+              }
+              return updated;
+            });
+
+            agentTextBufferRef.current = '';
+            agentCurrentMsgIdRef.current = '';
+          },
+          onToolCallStartEvent: ({ event }) => {
+            console.log('[AgentMode] onToolCallStartEvent:', event.toolCallName);
+            // Add tool call as a thinking step
+            setPromptHistory(prev => {
+              const updated = [...prev];
+              for (let i = updated.length - 1; i >= 0; i--) {
+                if (
+                  updated[i].role === 'assistant' &&
+                  updated[i].agentThinkingSteps !== undefined &&
+                  !updated[i].agentThinkingDone
+                ) {
+                  const steps = [...(updated[i].agentThinkingSteps || [])];
+                  steps.push({
+                    id: `tool-${event.toolCallId || event.toolCallName}-${Date.now()}`,
+                    content: t('Calling tool: {{toolCallName}}', {
+                      toolCallName: event.toolCallName,
+                    }),
+                    type: 'tool-start',
+                    timestamp: Date.now(),
+                  });
+                  updated[i] = { ...updated[i], agentThinkingSteps: steps };
+                  break;
+                }
+              }
+              return updated;
+            });
+          },
+          onToolCallEndEvent: ({ toolCallName }) => {
+            console.log('[AgentMode] onToolCallEndEvent:', toolCallName);
+            // Add tool result as a thinking step
+            setPromptHistory(prev => {
+              const updated = [...prev];
+              for (let i = updated.length - 1; i >= 0; i--) {
+                if (
+                  updated[i].role === 'assistant' &&
+                  updated[i].agentThinkingSteps !== undefined &&
+                  !updated[i].agentThinkingDone
+                ) {
+                  const steps = [...(updated[i].agentThinkingSteps || [])];
+                  steps.push({
+                    id: `tool-end-${toolCallName}-${Date.now()}`,
+                    content: t('Tool {{toolCallName}} completed', {
+                      toolCallName,
+                    }),
+                    type: 'tool-result',
+                    timestamp: Date.now(),
+                  });
+                  updated[i] = { ...updated[i], agentThinkingSteps: steps };
+                  break;
+                }
+              }
+              return updated;
+            });
+          },
+        });
+        holmesAgentRef.current = agent;
+
+        // [PROACTIVE_DIAGNOSIS_DISABLED] — agent diagnosis setup
+        /*
         // ─── Set up proactive diagnosis via dedicated HolmesAgent ──────
         // One HolmesAgent instance, reused sequentially for all diagnoses.
         // Between each diagnosis we resetThread() to get a fresh conversation.
@@ -1289,28 +1322,35 @@ export default function AIPrompt(props: {
         // ─── End proactive diagnosis agent setup ────────────────────
         */
 
-      setPromptHistory(prev => [
-        ...prev,
-        {
-          role: 'system',
-          content: `Agent mode active. Connected to Holmes ag-ui server at ${agent.connectionLabel}.`,
-        },
-      ]);
-    } else {
-      setIsAgentMode(false);
-      setAgentModeStatus('idle');
-      holmesAgentRef.current = null;
-      // [PROACTIVE_DIAGNOSIS_DISABLED] — Clean up proactive diagnosis
-      // diagnoseFnRef.current = null;
-      // diagnosisAgentRef.current = null;
-      // proactiveDiagnosisManager.setDiagnoseFn(null);
-      // setDiagnoseFnReady(false);
-      setPromptHistory(prev => [
-        ...prev,
-        { role: 'system', content: 'Switched back to AI Chat mode.' },
-      ]);
-    }
-  }, []);
+        setPromptHistory(prev => [
+          ...prev,
+          {
+            role: 'system',
+            content: t(
+              'Agent mode active. Connected to Holmes ag-ui server at {{connectionLabel}}.',
+              {
+                connectionLabel: agent.connectionLabel,
+              }
+            ),
+          },
+        ]);
+      } else {
+        setIsAgentMode(false);
+        setAgentModeStatus('idle');
+        holmesAgentRef.current = null;
+        // [PROACTIVE_DIAGNOSIS_DISABLED] — Clean up proactive diagnosis
+        // diagnoseFnRef.current = null;
+        // diagnosisAgentRef.current = null;
+        // proactiveDiagnosisManager.setDiagnoseFn(null);
+        // setDiagnoseFnReady(false);
+        setPromptHistory(prev => [
+          ...prev,
+          { role: 'system', content: t('Switched back to AI Chat mode.') },
+        ]);
+      }
+    },
+    [pluginSettings, t]
+  );
 
   // Auto-initialize agent mode on first mount (agent is default mode)
   React.useEffect(() => {
@@ -1351,7 +1391,9 @@ export default function AIPrompt(props: {
           ...prev,
           {
             role: 'assistant',
-            content: `Error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+            content: t('Error: {{message}}', {
+              message: error instanceof Error ? error.message : t('Unknown error'),
+            }),
             error: true,
           },
         ]);
@@ -1359,7 +1401,7 @@ export default function AIPrompt(props: {
         setLoading(false);
       }
     },
-    [setOpenPopup]
+    [setOpenPopup, t]
   );
 
   // Function to handle tool retry
@@ -1405,9 +1447,9 @@ export default function AIPrompt(props: {
           role: 'tool',
           content: JSON.stringify({
             error: true,
-            message: `Failed to retry tool: ${
-              error instanceof Error ? error.message : 'Unknown error'
-            }`,
+            message: t('Failed to retry tool: {{message}}', {
+              message: error instanceof Error ? error.message : t('Unknown error'),
+            }),
             toolName,
           }),
           toolCallId: `retry-error-${Date.now()}`,
@@ -1419,7 +1461,7 @@ export default function AIPrompt(props: {
         updateHistory();
       }
     },
-    [aiManager, updateHistory]
+    [aiManager, t, updateHistory]
   );
 
   // Function to stop the current request
@@ -1580,10 +1622,12 @@ export default function AIPrompt(props: {
   const getGreetingMessage = React.useMemo(() => {
     return {
       role: 'assistant' as const,
-      content: `Hello! I'm your AI Assistant, ready to help you with Kubernetes operations. How can I assist you today?`,
+      content: t(
+        "Hello! I'm your AI Assistant, ready to help you with Kubernetes operations. How can I assist you today?"
+      ),
       isDisplayOnly: true, // Mark this as display-only so it doesn't get sent to LLM
     };
-  }, []);
+  }, [t]);
 
   // If panel is not open, don't render
   if (!openPopup) return null;
@@ -1637,11 +1681,13 @@ export default function AIPrompt(props: {
         }}
       >
         <Typography variant="h6" gutterBottom>
-          AI Assistant Setup Required
+          {t('AI Assistant Setup Required')}
         </Typography>
         <Typography variant="body1" color="text.secondary" paragraph>
-          To use the AI Assistant, please configure your AI provider credentials in the settings
-          page. Or switch to Holmes Agent mode.
+          {t(
+            'To use the AI Assistant, please configure your AI provider credentials in the settings page.'
+          )}{' '}
+          {t('Or switch to Holmes Agent mode.')}
         </Typography>
         <Box sx={{ display: 'flex', gap: 2 }}>
           <Button
@@ -1652,7 +1698,7 @@ export default function AIPrompt(props: {
               setOpenPopup(false);
             }}
           >
-            Go to Settings
+            {t('Go to Settings')}
           </Button>
           <Button
             variant="outlined"
@@ -1661,7 +1707,7 @@ export default function AIPrompt(props: {
               handleToggleAgentMode(true);
             }}
           >
-            Use Holmes Agent
+            {t('Use Holmes Agent')}
           </Button>
         </Box>
       </Box>

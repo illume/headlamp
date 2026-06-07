@@ -21,6 +21,7 @@ import {
   Typography,
 } from '@mui/material';
 import React, { useState } from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Describes a tool call awaiting approval in the dialog. */
 interface ToolCall {
@@ -61,6 +62,7 @@ const ToolApprovalDialog: React.FC<ToolApprovalDialogProps> = ({
   onClose,
   loading = false,
 }) => {
+  const { t } = useTranslation();
   const [selectedToolIds, setSelectedToolIds] = useState<string[]>(toolCalls.map(tool => tool.id));
   const [rememberChoice, setRememberChoice] = useState(false);
 
@@ -162,7 +164,7 @@ const ToolApprovalDialog: React.FC<ToolApprovalDialogProps> = ({
               </Box>
               {tool.type === 'mcp' && (
                 <Chip
-                  label="MCP Tool"
+                  label={t('MCP Tool')}
                   size="small"
                   color="info"
                   variant="outlined"
@@ -172,7 +174,7 @@ const ToolApprovalDialog: React.FC<ToolApprovalDialogProps> = ({
             </AccordionSummary>
             <AccordionDetails>
               <Typography variant="body2" gutterBottom color="text.secondary">
-                Arguments to be passed:
+                {t('Arguments to be passed:')}
               </Typography>
               <List dense>{formatArguments(tool.arguments)}</List>
             </AccordionDetails>
@@ -201,10 +203,10 @@ const ToolApprovalDialog: React.FC<ToolApprovalDialogProps> = ({
       >
         <Box sx={{ display: 'flex', alignItems: 'center' }}>
           <Icon icon="mdi:security" style={{ marginRight: 8 }} />
-          Tool Execution Approval Required
+          {t('Tool Execution Approval Required')}
         </Box>
         {!loading && (
-          <IconButton aria-label="Close dialog" onClick={onClose} size="small">
+          <IconButton aria-label={t('Close dialog')} onClick={onClose} size="small">
             <Icon icon="mdi:close" />
           </IconButton>
         )}

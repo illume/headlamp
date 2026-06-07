@@ -12,6 +12,7 @@ import {
   Typography,
 } from '@mui/material';
 import React from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 const DEFAULT_INSTALL_DOC_URL =
   'https://learn.microsoft.com/en-us/azure/aks/agentic-cli-for-aks-install';
@@ -37,6 +38,7 @@ export const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
   isCheckingClusters,
   installDocUrl = DEFAULT_INSTALL_DOC_URL,
 }) => {
+  const { t } = useTranslation();
   const handleTabChange = (_: React.SyntheticEvent, newValue: ChatMode) => {
     onModeChange(newValue);
   };
@@ -54,13 +56,13 @@ export const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
       >
         <Tab
           value="chat"
-          label="Chat"
+          label={t('Chat')}
           icon={<Icon icon="mdi:chat-outline" width="14px" />}
           iconPosition="start"
         />
         <Tab
           value="agent"
-          label="Agent Mode"
+          label={t('Agent Mode')}
           icon={<Icon icon="mdi:robot-outline" width="14px" />}
           iconPosition="start"
         />
@@ -81,7 +83,7 @@ export const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
             <Icon icon="mdi:kubernetes" width="16px" />
             <Typography variant="caption" fontWeight="bold">
-              AKS Agent
+              {t('AKS Agent')}
             </Typography>
           </Box>
 
@@ -93,15 +95,15 @@ export const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
               <CircularProgress size={12} />
               <Typography variant="caption" color="text.secondary">
-                Checking clusters...
+                {t('Checking clusters...')}
               </Typography>
             </Box>
           ) : aksAgentClusters.length === 0 ? (
-            <Tooltip title="No clusters with AKS agent installed were found. Make sure the AKS agent is deployed on at least one connected cluster.">
+            <Tooltip title={t('No clusters with AKS agent installed were found. Make sure the AKS agent is deployed on at least one connected cluster.')}>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
                 <Icon icon="mdi:alert-circle-outline" width="14px" style={{ color: 'orange' }} />
                 <Typography variant="caption" color="text.secondary">
-                  No clusters with AKS agent found
+                  {t('No clusters with AKS agent found')}
                 </Typography>
                 <MuiLink
                   href={installDocUrl}
@@ -110,7 +112,7 @@ export const AgentModeSelector: React.FC<AgentModeSelectorProps> = ({
                   variant="caption"
                   sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}
                 >
-                  Learn how to enable
+                  {t('Learn how to enable')}
                   <Icon icon="mdi:open-in-new" width="12px" aria-hidden="true" focusable="false" />
                 </MuiLink>
               </Box>

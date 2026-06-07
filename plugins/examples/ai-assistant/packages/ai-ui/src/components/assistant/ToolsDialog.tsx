@@ -24,6 +24,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { DefaultDialog } from '../defaults/DefaultSlots';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Describes an MCP tool available for use in the assistant. */
 interface MCPTool {
@@ -58,6 +59,7 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
   onToolsChange,
   DialogSlot = DefaultDialog,
 }) => {
+  const { t } = useTranslation();
   const [localEnabledTools, setLocalEnabledTools] = useState<string[]>(enabledTools);
   const [allKnownMcpTools, setAllKnownMcpTools] = useState<MCPTool[]>([]); // Track all tools ever seen
   const [mcpToolsConfig, setMcpToolsConfig] = useState<any>({});
@@ -319,7 +321,7 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
         {/* Search Bar */}
         <TextField
           fullWidth
-          placeholder="Search MCP tools..."
+          placeholder={t('Search MCP tools...')}
           value={searchQuery}
           onChange={e => setSearchQuery(e.target.value)}
           size="small"
@@ -395,7 +397,7 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
                           primary={
                             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                               <Typography variant="body1">{tool.name}</Typography>
-                              <Chip label="MCP" size="small" color="info" variant="outlined" />
+                              <Chip label={t('MCP')} size="small" color="info" variant="outlined" />
                             </Box>
                           }
                           secondary={tool.description}
@@ -516,8 +518,8 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
       <DialogTitle>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Icon icon="mdi:tools" style={{ fontSize: 24 }} />
-          <Typography variant="h6">Manage Tools</Typography>
-          <Chip label={`${localEnabledTools.length} enabled`} size="small" color="primary" />
+          <Typography variant="h6">{t('Manage Tools')}</Typography>
+          <Chip label={t('{{count}} enabled', { count: localEnabledTools.length })} size="small" color="primary" />
         </Box>
       </DialogTitle>
 
@@ -532,8 +534,8 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
           <>
             {renderToolList(
               kubernetesTools,
-              'Kubernetes Tools',
-              'Tools for interacting with Kubernetes clusters'
+              t('Kubernetes Tools'),
+              t('Tools for interacting with Kubernetes clusters')
             )}
             <Divider sx={{ my: 3 }} />
           </>
@@ -543,8 +545,8 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
         {otherTools.length > 0 &&
           renderToolList(
             otherTools,
-            'System Tools',
-            'General purpose tools for various operations'
+            t('System Tools'),
+            t('General purpose tools for various operations')
           )}
 
         {/* MCP Tools */}
@@ -554,9 +556,9 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
       </DialogContent>
 
       <DialogActions>
-        <Button onClick={handleCancel}>Cancel</Button>
+        <Button onClick={handleCancel}>{t('Cancel')}</Button>
         <Button onClick={handleSave} variant="contained">
-          Save Changes
+          {t('Save Changes')}
         </Button>
       </DialogActions>
     </DialogSlot>

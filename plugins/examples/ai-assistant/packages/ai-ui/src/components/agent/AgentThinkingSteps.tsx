@@ -3,6 +3,7 @@ import { Box, CircularProgress, Collapse, keyframes, Typography, useTheme } from
 import { alpha } from '@mui/material/styles';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { AgentThinkingStep } from '@headlamp-k8s/ai-common/agent/aksAgentThinking';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 // ── Animations ───────────────────────────────────────────────────────────────
 
@@ -40,6 +41,7 @@ interface AgentThinkingStepsProps {
 
 const AgentThinkingSteps: React.FC<AgentThinkingStepsProps> = React.memo(
   ({ steps, isRunning = true }) => {
+    const { t } = useTranslation();
     const theme = useTheme();
     const successColor = theme.palette.success.main;
     const [collapsedPhases, setCollapsedPhases] = useState<Set<Phase>>(new Set());
@@ -49,18 +51,18 @@ const AgentThinkingSteps: React.FC<AgentThinkingStepsProps> = React.memo(
       () => ({
         init: {
           icon: 'mdi:cog-outline',
-          activeLabel: 'Initializing',
-          doneLabel: 'Initialized',
+          activeLabel: t('Initializing'),
+          doneLabel: t('Initialized'),
         },
         planning: {
           icon: 'mdi:clipboard-list-outline',
-          activeLabel: 'Tasks',
-          doneLabel: 'All tasks complete',
+          activeLabel: t('Tasks'),
+          doneLabel: t('All tasks complete'),
         },
         executing: {
           icon: 'mdi:play-circle-outline',
-          activeLabel: 'Executing',
-          doneLabel: 'Execution complete',
+          activeLabel: t('Executing'),
+          doneLabel: t('Execution complete'),
         },
       }),
       []
@@ -320,7 +322,7 @@ const AgentThinkingSteps: React.FC<AgentThinkingStepsProps> = React.memo(
               variant="caption"
               sx={{ fontWeight: 700, letterSpacing: 0.3, fontSize: '0.75rem' }}
             >
-              {isRunning ? 'Agent working…' : 'Done'}
+              {isRunning ? t('Agent working…') : t('Done')}
             </Typography>
             {isRunning && <CircularProgress size={12} thickness={5} aria-hidden />}
           </Box>

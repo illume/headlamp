@@ -2,6 +2,7 @@ import { Box, Typography } from '@mui/material';
 import React, { useEffect, useRef } from 'react';
 import YAML from 'yaml';
 import { DefaultConfirmDialog, DefaultEditorDialog } from '../defaults/DefaultSlots';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 // Helper function to clean YAML content by removing the |- prefix if present
 function cleanYamlContent(content: string): string {
@@ -47,6 +48,7 @@ export default function ApiConfirmationDialog({
   ConfirmDialogSlot = DefaultConfirmDialog,
   EditorDialogSlot = DefaultEditorDialog,
 }: ApiConfirmationDialogProps) {
+  const { t } = useTranslation();
   const [editedBody, setEditedBody] = React.useState('');
   const [resourceInfo, setResourceInfo] = React.useState<{
     kind: string;
@@ -212,17 +214,17 @@ export default function ApiConfirmationDialog({
                 }}
               >
                 <Typography variant="subtitle2" component="div" sx={{ mb: 1 }}>
-                  Resource details:
+                  {t('Resource details:')}
                 </Typography>
                 <Typography variant="body2" component="div" sx={{ ml: 2 }}>
-                  <strong>Type:</strong> {resourceInfo.kind}
+                  <strong>{t('Type:')}</strong> {resourceInfo.kind}
                 </Typography>
                 <Typography variant="body2" component="div" sx={{ ml: 2 }}>
-                  <strong>Name:</strong> {resourceInfo.name}
+                  <strong>{t('Name:')}</strong> {resourceInfo.name}
                 </Typography>
                 {resourceInfo.namespace && (
                   <Typography variant="body2" component="div" sx={{ ml: 2 }}>
-                    <strong>Namespace:</strong> {resourceInfo.namespace}
+                    <strong>{t('Namespace:')}</strong> {resourceInfo.namespace}
                   </Typography>
                 )}
               </Box>

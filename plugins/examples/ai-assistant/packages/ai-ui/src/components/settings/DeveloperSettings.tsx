@@ -21,6 +21,7 @@ import {
 } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import React from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Configuration state for developer options, persisted in the plugin config store. */
 export interface DeveloperOptionsConfig {
@@ -134,6 +135,7 @@ export function DeveloperSettings({
   savedConfigs,
   onConfigsChange,
 }: DeveloperSettingsProps) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = React.useState(
     () =>
       devOptions.enableMockModel === true ||
@@ -172,8 +174,8 @@ export function DeveloperSettings({
         }}
         onClick={() => setExpanded(!expanded)}
       >
-        <Typography variant="h6">Developer Options</Typography>
-        <IconButton size="small" sx={{ ml: 1 }} aria-label={expanded ? 'Collapse developer options' : 'Expand developer options'}>
+        <Typography variant="h6">{t('Developer Options')}</Typography>
+        <IconButton size="small" sx={{ ml: 1 }} aria-label={expanded ? t('Collapse developer options') : t('Expand developer options')}>
           {expanded ? '▲' : '▼'}
         </IconButton>
       </Box>
@@ -198,7 +200,7 @@ export function DeveloperSettings({
             }
             label={
               <Box>
-                <Typography variant="body1">Mock Testing Model</Typography>
+                <Typography variant="body1">{t('Mock Testing Model')}</Typography>
                 <Typography variant="caption" color="text.secondary">
                   A canned-response model for automated tests and demos — no API key or network
                   required. When enabled, adds it as a provider and sets it as the default.
@@ -221,7 +223,7 @@ export function DeveloperSettings({
             }
             label={
               <Box>
-                <Typography variant="body1">Mock Testing Agent</Typography>
+                <Typography variant="body1">{t('Mock Testing Agent')}</Typography>
                 <Typography variant="caption" color="text.secondary">
                   A scripted agent with built-in sessions for pod troubleshooting and cluster
                   exploration. Simulates thinking steps and tool calls without a real agent
@@ -245,7 +247,7 @@ export function DeveloperSettings({
             }
             label={
               <Box>
-                <Typography variant="body1">Fake MCP Server</Typography>
+                <Typography variant="body1">{t('Fake MCP Server')}</Typography>
                 <Typography variant="caption" color="text.secondary">
                   Registers a fake MCP server with greet and add tools. Requires the desktop app
                   (stdio transport). Useful for testing MCP tool execution without real servers.

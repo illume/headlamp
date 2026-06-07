@@ -20,6 +20,7 @@ import {
 } from '@mui/material';
 import React from 'react';
 import type { ActionButtonSlotProps } from '../assistant/AIAssistantHeader';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /**
  * Default dialog implementation using MUI Dialog.
@@ -71,6 +72,7 @@ export function DefaultConfirmDialog({
   description: React.ReactNode;
   confirmLabel?: string;
 }) {
+  const { t } = useTranslation();
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>{title}</DialogTitle>
@@ -82,9 +84,9 @@ export function DefaultConfirmDialog({
         )}
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>Cancel</Button>
+        <Button onClick={handleClose}>{t('Cancel')}</Button>
         <Button onClick={onConfirm} color="primary" variant="contained">
-          {confirmLabel || 'Confirm'}
+          {confirmLabel || t('Confirm')}
         </Button>
       </DialogActions>
     </Dialog>
@@ -114,6 +116,7 @@ export function DefaultEditorDialog({
   onSave: (content: string) => void;
   title?: string;
 }) {
+  const { t } = useTranslation();
   const [value, setValue] = React.useState(item);
   React.useEffect(() => {
     setValue(item);
@@ -147,10 +150,10 @@ export function DefaultEditorDialog({
             onClose();
           }}
         >
-          Cancel
+          {t('Cancel')}
         </Button>
         <Button onClick={() => onSave(value)} color="primary" variant="contained">
-          {saveLabel || 'Save'}
+          {saveLabel || t('Save')}
         </Button>
       </DialogActions>
     </Dialog>

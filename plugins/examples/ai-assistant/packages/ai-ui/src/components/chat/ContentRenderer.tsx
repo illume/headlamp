@@ -19,6 +19,7 @@ import MCPFormattedMessage from '../chat/MCPFormattedMessage';
 import YamlDisplay from '../common/YamlDisplay';
 import LogsButton from '../common/LogsButton';
 import { parseKubernetesYAML } from '../../parsing/yamlParser';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Result of a parse attempt, indicating success or failure with optional data. */
 interface ParseResult<T> {

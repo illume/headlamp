@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { DefaultDialog } from '../defaults/DefaultSlots';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Configuration for a single MCP server process. */
 export interface MCPServer {
@@ -53,6 +54,7 @@ export default function MCPServerEditor({
   existingServerNames,
   DialogSlot = DefaultDialog,
 }: MCPServerEditorProps) {
+  const { t } = useTranslation();
   const [name, setName] = useState('');
   const [command, setCommand] = useState('');
   const [args, setArgs] = useState('');
@@ -108,23 +110,23 @@ export default function MCPServerEditor({
 
   const validateServer = (): string | null => {
     if (!name.trim()) {
-      return 'Server name is required';
+      return t('Server name is required');
     }
 
     if (!command.trim()) {
-      return 'Command is required';
+      return t('Command is required');
     }
 
     // Check for duplicate names (excluding current server if editing)
     const namesToCheck = existingServerNames.filter(n => !isEditing || n !== server?.name);
     if (namesToCheck.map(n => n.toLowerCase()).includes(name.toLowerCase())) {
-      return 'A server with this name already exists';
+      return t('A server with this name already exists');
     }
 
     // Validate env variables
     for (const envVar of env) {
       if (!envVar.key.trim()) {
-        return 'Environment variable keys cannot be empty';
+        return t('Environment variable keys cannot be empty');
       }
     }
 
@@ -165,7 +167,7 @@ export default function MCPServerEditor({
     <DialogSlot open={open} maxWidth="md" fullWidth onClose={onClose}>
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6">{isEditing ? 'Edit Server' : 'Add MCP Server'}</Typography>
+          <Typography variant="h6">{isEditing ? t('Edit Server') : t('Add MCP Server')}</Typography>
           {!isEditing && (
             <Button
               size="small"
@@ -189,74 +191,75 @@ export default function MCPServerEditor({
         <Box display="flex" flexDirection="column" gap={2}>
           <Box display="flex" gap={2} alignItems="flex-start">
             <TextField
-              label="Server Name"
+              label={t('Server Name')}
               value={name}
               onChange={e => setName(e.target.value)}
               fullWidth
               required
-              helperText="Unique identifier for this MCP server"
+              helperText={t('Unique identifier for this MCP server')}
             />
             <FormControlLabel
               control={<Switch checked={enabled} onChange={e => setEnabled(e.target.checked)} />}
-              label="Enabled"
+              label={t('Enabled')}
               sx={{ mt: 1, minWidth: '120px' }}
             />
           </Box>
 
           <TextField
-            label="Command"
+            label={t('Command')}
             value={command}
             onChange={e => setCommand(e.target.value)}
             fullWidth
             required
-            helperText="Executable command (e.g., 'docker', 'npx', 'python')"
+            helperText={t("Executable command (e.g., 'docker', 'npx', 'python')")}
           />
 
           <TextField
-            label="Arguments"
+            label={t('Arguments')}
             value={args}
             onChange={e => setArgs(e.target.value)}
             fullWidth
-            helperText="Command-line arguments separated by spaces. Use HEADLAMP_CURRENT_CLUSTER as a placeholder for the current cluster context."
+            helperText={t('Command-line arguments separated by spaces. Use HEADLAMP_CURRENT_CLUSTER as a placeholder for the current cluster context.')}
           />
 
-          {/* Environment Variables */}
+          {/* {t('Environment Variables')} */}
           <Box>
             <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
               <Box>
-                <Typography variant="subtitle2">Environment Variables</Typography>
+                <Typography variant="subtitle2">{t('Environment Variables')}</Typography>
                 <Typography variant="caption" color="textSecondary">
-                  Use <code>HEADLAMP_CURRENT_CLUSTER</code> as a placeholder for the current cluster
-                  context
+                  {t('Use')}{' '}
+                  <code>HEADLAMP_CURRENT_CLUSTER</code>{' '}
+                  {t('as a placeholder for the current cluster context')}
                 </Typography>
               </Box>
               <Button size="small" onClick={handleAddEnvVar} startIcon={<Icon icon="mdi:plus" />}>
-                Add Variable
+                {t('Add Variable')}
               </Button>
             </Box>
 
             {env.length === 0 ? (
               <Typography variant="body2" color="textSecondary" sx={{ fontStyle: 'italic' }}>
-                No environment variables configured
+                {t('No environment variables configured')}
               </Typography>
             ) : (
               <Box display="flex" flexDirection="column" gap={1}>
                 {env.map((envVar, index) => (
                   <Box key={index} display="flex" gap={1} alignItems="center">
                     <TextField
-                      label="Key"
+                      label={t('Key')}
                       value={envVar.key}
                       onChange={e => handleEnvVarChange(index, 'key', e.target.value)}
                       size="small"
                       sx={{ flex: 1 }}
                     />
                     <TextField
-                      label="Value"
+                      label={t('Value')}
                       value={envVar.value}
                       onChange={e => handleEnvVarChange(index, 'value', e.target.value)}
                       size="small"
                       sx={{ flex: 2 }}
-                      placeholder="e.g., HEADLAMP_CURRENT_CLUSTER"
+                      placeholder={t('e.g., HEADLAMP_CURRENT_CLUSTER')}
                     />
                     <IconButton
                       size="small"

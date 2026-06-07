@@ -18,6 +18,7 @@ import {
 import React from 'react';
 import { getLogLanguage, getFormattedLogs } from '../../formatting/logFormatting';
 import { DefaultDialog } from '../defaults/DefaultSlots';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for the LogsDialog component that displays log content in a modal. */
 export interface LogsDialogProps {
@@ -45,6 +46,7 @@ export interface LogsDialogProps {
  * - Full-width layout with a minimap for large log outputs.
  */
 const LogsDialog: React.FC<LogsDialogProps> = ({ open, onClose, logs, title, resourceName, DialogSlot = DefaultDialog }) => {
+  const { t } = useTranslation();
   const copyToClipboard = async () => {
     try {
       const formatted = getFormattedLogs(logs);

@@ -36,6 +36,7 @@ import {
   splitDiagnosisContent,
 } from '../../diagnosis/diagnosisHelpers';
 import { DefaultContentRenderer } from '../defaults/DefaultSlots';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for the ProactiveDiagnosisSection component that displays diagnosis results. */
 export interface ProactiveDiagnosisSectionProps {
@@ -341,6 +342,7 @@ function DiagnosisResultBlock({
   onYamlAction?: (yaml: string, title: string, resourceType: string, isDelete: boolean) => void;
   ContentRendererSlot: React.ComponentType<any>;
 }) {
+  const { t } = useTranslation();
   const theme = useTheme();
 
   // Wrap onYamlAction to match the onYamlDetected signature expected by ContentRenderer
@@ -359,7 +361,7 @@ function DiagnosisResultBlock({
         <CollapsibleSection
           icon="mdi:alert-circle-outline"
           iconColor={theme.palette.error.main}
-          title="Diagnosis failed"
+          title={t('Diagnosis failed')}
           subtitle={new Date(diagnosis.diagnosedAt).toLocaleTimeString()}
           defaultExpanded
         >
@@ -385,7 +387,7 @@ function DiagnosisResultBlock({
         <CollapsibleSection
           icon="mdi:brain"
           iconColor={theme.palette.info.main}
-          title="Thought process"
+          title={t('Thought process')}
           subtitle={`${(thinking.match(/🔧/g) || []).length} tool call${
             (thinking.match(/🔧/g) || []).length !== 1 ? 's' : ''
           }`}
@@ -413,7 +415,7 @@ function DiagnosisResultBlock({
         <CollapsibleSection
           icon="mdi:check-circle-outline"
           iconColor={theme.palette.success.main}
-          title="Diagnosis"
+          title={t('Diagnosis')}
           subtitle={new Date(diagnosis.diagnosedAt).toLocaleTimeString()}
           defaultExpanded
         >
@@ -465,7 +467,7 @@ function DiagnosisResultBlock({
         <CollapsibleSection
           icon="mdi:check-circle-outline"
           iconColor={theme.palette.success.main}
-          title="Diagnosis"
+          title={t('Diagnosis')}
           subtitle={new Date(diagnosis.diagnosedAt).toLocaleTimeString()}
           defaultExpanded
         >

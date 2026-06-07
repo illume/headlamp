@@ -9,6 +9,7 @@
 import { Box, FormControlLabel, Switch, Typography } from '@mui/material';
 import React from 'react';
 import { DefaultSectionWrapper } from '../defaults/DefaultSlots';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Describes a single AI tool that can be enabled or disabled. */
 export interface ToolInfo {
@@ -44,8 +45,9 @@ export function AIToolsSettings({
   onToolToggle,
   SectionWrapper = DefaultSectionWrapper,
 }: AIToolsSettingsProps) {
+  const { t } = useTranslation();
   return (
-    <SectionWrapper title="AI Tools">
+    <SectionWrapper title={t('AI Tools')}>
       <Box>
         {tools.map(tool => (
           <Box key={tool.id} sx={{ display: 'flex', alignItems: 'center', mb: 2, ml: 2 }}>

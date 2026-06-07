@@ -1,5 +1,6 @@
-import { checkHolmesAgentHealth } from '../../holmesClient';
 import { getSavedConfigurations } from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
+import AIAssistantToggle from '@headlamp-k8s/ai-ui/components/appbar/AIAssistantToggle';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { getCluster } from '@kinvolk/headlamp-plugin/lib/Utils';
 import React from 'react';
 import { useHistory } from 'react-router-dom';
@@ -8,8 +9,8 @@ import {
   checkAksAgentInstalled,
   getClustersFromHeadlampConfig,
 } from '../../agent/aksAgentManager';
+import { checkHolmesAgentHealth } from '../../holmesClient';
 import { getSettingsURL, pluginStore, useGlobalState, usePluginConfig } from '../../pluginState';
-import AIAssistantToggle from '@headlamp-k8s/ai-ui/components/appbar/AIAssistantToggle';
 
 /**
  * App-bar button for the AI Assistant.
@@ -22,6 +23,7 @@ import AIAssistantToggle from '@headlamp-k8s/ai-ui/components/appbar/AIAssistant
 export default function HeadlampAIPrompt() {
   const pluginState = useGlobalState();
   const savedConfigs = usePluginConfig();
+  const { t } = useTranslation();
   const history = useHistory();
   const [showPopover, setShowPopover] = React.useState(false);
 
@@ -141,6 +143,7 @@ export default function HeadlampAIPrompt() {
       onDismissPrompt={handleClosePopover}
       onConfigure={handleConfigureClick}
       icon="ai-assistant:logo"
+      tooltipTitle={t('AI Assistant')}
     />
   );
 }

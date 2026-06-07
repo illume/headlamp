@@ -22,6 +22,7 @@ import {
   useTheme,
 } from '@mui/material';
 import React from 'react';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for the {@link AIAssistantToggle} component. */
 export interface AIAssistantToggleProps {
@@ -57,17 +58,19 @@ export default function AIAssistantToggle({
   icon = 'mdi:assistant',
   tooltipTitle = 'AI Assistant',
 }: AIAssistantToggleProps) {
+  const { t } = useTranslation();
   const [popoverAnchor, setPopoverAnchor] = React.useState<HTMLElement | null>(null);
   const theme = useTheme();
+  const effectiveTooltipTitle = tooltipTitle || t('AI Assistant');
 
   return (
     <Box sx={{ display: 'flex', alignItems: 'center' }}>
-      <Tooltip title={tooltipTitle}>
+      <Tooltip title={effectiveTooltipTitle}>
         <ToggleButton
           ref={el => {
             setPopoverAnchor(el);
           }}
-          aria-label={tooltipTitle}
+          aria-label={effectiveTooltipTitle}
           onClick={onToggle}
           selected={isOpen}
           size="small"
@@ -95,7 +98,7 @@ export default function AIAssistantToggle({
       >
         <Paper
           role="dialog"
-          aria-label="Configure AI Assistant"
+          aria-label={t('Configure AI Assistant')}
           elevation={8}
           sx={{
             p: 2,
@@ -113,18 +116,17 @@ export default function AIAssistantToggle({
             }}
           >
             <Typography component="h2" variant="subtitle1" sx={{ fontWeight: 'bold' }}>
-              Configure AI Assistant
+              {t('Configure AI Assistant')}
             </Typography>
             <IconButton size="small" onClick={onDismissPrompt} sx={{ ml: 1, mt: -0.5 }}>
               <Icon icon="mdi:close" />
             </IconButton>
           </Box>
           <Typography variant="body2" sx={{ mb: 2, color: 'text.secondary' }}>
-            To use the AI Assistant, you need to configure at least one AI model provider in the
-            settings.
+            {t('To use the AI Assistant, you need to configure at least one AI model provider in the settings.')}
           </Typography>
           <Button variant="contained" size="small" onClick={onConfigure} fullWidth>
-            Open Settings
+            {t('Open Settings')}
           </Button>
         </Paper>
       </Popper>

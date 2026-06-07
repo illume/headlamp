@@ -21,6 +21,7 @@ import {
 } from '@headlamp-k8s/ai-common/providers/providerAutoDetect';
 import React from 'react';
 import DetectedProvidersDialog from './DetectedProvidersDialog';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for the {@link AutoDetectProvider} component. */
 export interface AutoDetectProviderProps {
@@ -180,6 +181,8 @@ export function AutoDetectProvider({
   handleDismissDetectedProviders: (providers: DetectedProvider[]) => void;
   DialogSlot?: React.ElementType;
 }) {
+  const { t } = useTranslation();
+  void t;
   return (
     <DetectedProvidersDialog
       open={showDetectedDialog}

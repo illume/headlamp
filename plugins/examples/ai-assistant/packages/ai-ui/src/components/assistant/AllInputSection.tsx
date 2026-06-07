@@ -17,6 +17,7 @@ import { getProviderById } from '@headlamp-k8s/ai-common/config/modelConfig';
 import type { ActionButtonSlotProps } from './AIAssistantHeader';
 import { DefaultActionButton } from '../defaults/DefaultSlots';
 import TestModeInput from './TestModeInput';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 export type { ActionButtonSlotProps } from './AIAssistantHeader';
 
@@ -142,6 +143,7 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
   ToolsDialogSlot,
   ActionButtonSlot = DefaultActionButton,
 }) => {
+  const { t } = useTranslation();
   const [showToolsDialog, setShowToolsDialog] = React.useState(false);
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey && !e.nativeEvent.isComposing) {
@@ -302,7 +304,7 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
                       style={{ marginRight: 6 }}
                     />
                     <Typography variant="body2">
-                      {selected === 'agent' ? 'Holmes Agent' : 'Chat'}
+                      {selected === 'agent' ? t('Holmes Agent') : t('Chat')}
                     </Typography>
                   </Box>
                 )}
@@ -310,13 +312,13 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
                 <MenuItem value="chat">
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Icon icon="mdi:chat" width="16px" height="16px" />
-                    <Typography variant="body2">Chat</Typography>
+                    <Typography variant="body2">{t('Chat')}</Typography>
                   </Box>
                 </MenuItem>
                 <MenuItem value="agent">
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                     <Icon icon="mdi:robot" width="16px" height="16px" />
-                    <Typography variant="body2">Holmes Agent</Typography>
+                    <Typography variant="body2">{t('Holmes Agent')}</Typography>
                   </Box>
                 </MenuItem>
               </Select>

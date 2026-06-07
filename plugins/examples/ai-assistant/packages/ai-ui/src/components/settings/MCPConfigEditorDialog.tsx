@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
 import { DefaultDialog } from '../defaults/DefaultSlots';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Configuration for a single MCP server process. */
 export interface MCPServer {
@@ -58,6 +59,7 @@ export default function MCPConfigEditorDialog({
   onSave,
   DialogSlot = DefaultDialog,
 }: MCPConfigEditorDialogProps) {
+  const { t } = useTranslation();
   const [content, setContent] = useState('');
   const [validationError, setValidationError] = useState('');
   const [tabValue, setTabValue] = useState(0);
@@ -135,7 +137,7 @@ export default function MCPConfigEditorDialog({
       onSave(parsedConfig);
       onClose();
     } catch (error) {
-      setValidationError(error instanceof Error ? error.message : 'Invalid JSON configuration');
+      setValidationError(error instanceof Error ? error.message : t('Invalid JSON configuration'));
     }
   };
 
@@ -190,7 +192,7 @@ export default function MCPConfigEditorDialog({
     <DialogSlot open={open} maxWidth="lg" fullWidth onClose={onClose}>
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6">Edit MCP Configuration</Typography>
+          <Typography variant="h6">{t('Edit MCP Configuration')}</Typography>
           <Box>
             <Button
               size="small"
@@ -198,7 +200,7 @@ export default function MCPConfigEditorDialog({
               onClick={handleLoadExample}
               startIcon={<Icon icon="mdi:file-document" />}
             >
-              Load Example
+              {t('Load Example')}
             </Button>
             <Button
               size="small"
@@ -214,8 +216,8 @@ export default function MCPConfigEditorDialog({
 
       <DialogContent>
         <Tabs value={tabValue} onChange={handleTabChange} sx={{ mb: 2 }}>
-          <Tab label="Configuration Editor" />
-          <Tab label="Schema Documentation" />
+          <Tab label={t('Configuration Editor')} />
+          <Tab label={t('Schema Documentation')} />
         </Tabs>
 
         {tabValue === 0 && (
@@ -255,7 +257,7 @@ export default function MCPConfigEditorDialog({
           <Box>
             <Paper sx={{ p: 3, bgcolor: 'grey.50' }}>
               <Typography variant="h6" gutterBottom>
-                Configuration Schema
+                {t('Configuration Schema')}
               </Typography>
 
               <Box sx={{ mb: 3 }}>
@@ -281,46 +283,44 @@ export default function MCPConfigEditorDialog({
 
               <Box sx={{ mt: 3 }}>
                 <Typography variant="subtitle2" gutterBottom>
-                  Field Descriptions:
+                  {t('Field Descriptions:')}
                 </Typography>
                 <Box component="ul" sx={{ pl: 2 }}>
                   <li>
                     <Typography variant="body2">
-                      <strong>enabled</strong>: Master switch to enable/disable all MCP servers
+                      <strong>enabled</strong>: {t('Master switch to enable/disable all MCP servers')}
                     </Typography>
                   </li>
                   <li>
                     <Typography variant="body2">
-                      <strong>servers</strong>: Array of MCP server configurations
+                      <strong>servers</strong>: {t('Array of MCP server configurations')}
                     </Typography>
                   </li>
                   <li>
                     <Typography variant="body2">
-                      <strong>name</strong>: Unique identifier for the server
+                      <strong>name</strong>: {t('Unique identifier for the server')}
                     </Typography>
                   </li>
                   <li>
                     <Typography variant="body2">
-                      <strong>command</strong>: The executable to run (e.g., "docker", "npx",
-                      "python")
+                      <strong>command</strong>: {t('The executable to run (e.g., "docker", "npx", "python")')}
                     </Typography>
                   </li>
                   <li>
                     <Typography variant="body2">
-                      <strong>args</strong>: Command-line arguments passed to the executable. You
-                      can use <code>HEADLAMP_CURRENT_CLUSTER</code> as a placeholder that will be
-                      replaced with the current cluster context at runtime.
+                      <strong>args</strong>: {t('Command-line arguments passed to the executable. You can use')}{' '}
+                      <code>HEADLAMP_CURRENT_CLUSTER</code>{' '}
+                      {t('as a placeholder that will be replaced with the current cluster context at runtime.')}
                     </Typography>
                   </li>
                   <li>
                     <Typography variant="body2">
-                      <strong>env</strong>: Optional environment variables for the server process
+                      <strong>env</strong>: {t('Optional environment variables for the server process')}
                     </Typography>
                   </li>
                   <li>
                     <Typography variant="body2">
-                      <strong>enabled</strong>: Toggle individual server on/off without removing
-                      configuration
+                      <strong>enabled</strong>: {t('Toggle individual server on/off without removing configuration')}
                     </Typography>
                   </li>
                 </Box>
@@ -332,10 +332,10 @@ export default function MCPConfigEditorDialog({
 
       <DialogActions>
         <Button variant="outlined" onClick={onClose}>
-          Cancel
+          {t('Cancel')}
         </Button>
         <Button variant="contained" color="primary" onClick={handleSave} disabled={tabValue === 1}>
-          Save Configuration
+          {t('Save Configuration')}
         </Button>
       </DialogActions>
     </DialogSlot>

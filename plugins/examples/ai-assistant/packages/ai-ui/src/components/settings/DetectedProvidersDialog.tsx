@@ -30,6 +30,7 @@ import {
 } from '@mui/material';
 import { useState } from 'react';
 import { DefaultDialog } from '../defaults/DefaultSlots';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for the DetectedProvidersDialog. */
 export interface DetectedProvidersDialogProps {
@@ -41,7 +42,7 @@ export interface DetectedProvidersDialogProps {
   detectedProviders: DetectedProvider[];
   /** Callback when the user adds selected providers. */
   onAddProviders: (providers: DetectedProvider[]) => void;
-  /** Callback when the user dismisses providers (clicks "Not Now"). */
+  /** Callback when the user dismisses providers (clicks "{t('Not Now')}"). */
   onDismiss?: (providers: DetectedProvider[]) => void;
   /** Component used to render the dialog shell. Falls back to MUI Dialog. */
   DialogSlot?: React.ElementType;
@@ -59,6 +60,7 @@ export default function DetectedProvidersDialog({
   onDismiss,
   DialogSlot = DefaultDialog,
 }: DetectedProvidersDialogProps) {
+  const { t } = useTranslation();
   const [selected, setSelected] = useState<Set<number>>(
     () => new Set(detectedProviders.map((_, i) => i))
   );
@@ -87,11 +89,10 @@ export default function DetectedProvidersDialog({
 
   return (
     <DialogSlot open={open} onClose={onClose} maxWidth="sm">
-      <DialogTitle>Detected AI Providers</DialogTitle>
+      <DialogTitle>{t('Detected AI Providers')}</DialogTitle>
       <DialogContent>
         <DialogContentText sx={{ mb: 2 }}>
-          The following AI providers were automatically detected on your system.
-          Select which ones you would like to add.
+          {t('The following AI providers were automatically detected on your system. Select which ones you would like to add.')}
         </DialogContentText>
         {detectedProviders.map((provider, index) => {
           const providerInfo = getProviderById(provider.providerId);
@@ -111,7 +112,7 @@ export default function DetectedProvidersDialog({
                   <Box>
                     <Typography variant="body1">{provider.displayName}</Typography>
                     <Typography variant="caption" color="text.secondary">
-                      Source: {provider.source}
+                      {t('Source: {{source}}', { source: provider.source })}
                     </Typography>
                   </Box>
                 </Box>
@@ -123,14 +124,14 @@ export default function DetectedProvidersDialog({
       </DialogContent>
       <DialogActions>
         <Button onClick={handleDismiss} color="inherit">
-          Not Now
+          {t('Not Now')}
         </Button>
         <Button
           onClick={handleAdd}
           variant="contained"
           disabled={selected.size === 0}
         >
-          Add Selected ({selected.size})
+          {t('Add Selected ({{count}})', { count: selected.size })}
         </Button>
       </DialogActions>
     </DialogSlot>

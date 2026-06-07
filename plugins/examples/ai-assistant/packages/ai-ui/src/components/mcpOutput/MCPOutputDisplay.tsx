@@ -28,6 +28,7 @@ import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkGfm from 'remark-gfm';
+import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for {@link MCPOutputDisplay}. */
 interface MCPOutputDisplayProps {
@@ -111,6 +112,7 @@ const MarkdownRenderer: React.FC<{ data: any; width: string; syntaxTheme: any }>
   width,
   syntaxTheme,
 }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [showFullContent, setShowFullContent] = useState(false);
 
@@ -386,6 +388,7 @@ const MCPOutputDisplay: React.FC<MCPOutputDisplayProps> = ({
   onExport,
   compact = false,
 }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const { promptWidth } = usePromptWidth();
   const [expanded, setExpanded] = useState(!compact);
@@ -497,10 +500,10 @@ const MCPOutputDisplay: React.FC<MCPOutputDisplayProps> = ({
                 />
                 {output.metadata && (
                   <Tooltip
-                    title={`${output.metadata.dataPoints} data points • ${output.metadata.processingTime}ms`}
+                    title={t('{{count}} data points • {{time}}ms', { count: output.metadata.dataPoints, time: output.metadata.processingTime })}
                   >
                     <Chip
-                      label={`${output.metadata.dataPoints} items`}
+                      label={t('{{count}} items', { count: output.metadata.dataPoints })}
                       size="small"
                       variant="outlined"
                     />
@@ -512,7 +515,7 @@ const MCPOutputDisplay: React.FC<MCPOutputDisplayProps> = ({
             action={
               <Box sx={{ display: 'flex', gap: 1 }}>
                 {onExport && (
-                  <Tooltip title="Export data">
+                  <Tooltip title={t('Export data')}>
                     <IconButton
                       size="small"
                       onClick={() => setShowExportMenu(!showExportMenu)}
@@ -522,7 +525,7 @@ const MCPOutputDisplay: React.FC<MCPOutputDisplayProps> = ({
                     </IconButton>
                   </Tooltip>
                 )}
-                <Tooltip title="Show raw data">
+                <Tooltip title={t('Show raw data')}>
                   <IconButton
                     size="small"
                     onClick={() => setShowRawData(!showRawData)}
@@ -725,6 +728,7 @@ const MCPOutputDisplay: React.FC<MCPOutputDisplayProps> = ({
 
 // Table Display Component
 const TableDisplay: React.FC<{ data: any; width: string }> = ({ data, width }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
   const [sortBy, setSortBy] = useState(data.sortBy || null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -883,6 +887,7 @@ const TableDisplay: React.FC<{ data: any; width: string }> = ({ data, width }) =
 
 // Metrics Display Component
 const MetricsDisplay: React.FC<{ data: any; width: string }> = ({ data, width }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
 
   const getStatusColor = (status: string) => {
@@ -1076,6 +1081,7 @@ const MetricsDisplay: React.FC<{ data: any; width: string }> = ({ data, width })
 
 // List Display Component
 const ListDisplay: React.FC<{ data: any; width: string }> = ({ data, width }) => {
+  const { t } = useTranslation();
   const theme = useTheme();
 
   const getStatusColor = (status: string) => {
