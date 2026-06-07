@@ -26,6 +26,7 @@ import {
 import { alpha, useTheme } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
 import type { DiagnosisResult, DiagnosisThinkingStep } from '../../diagnosis/ProactiveDiagnosisManager';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import {
   getStatusIcon,
   getStatusLabel,
@@ -36,7 +37,6 @@ import {
   splitDiagnosisContent,
 } from '../../diagnosis/diagnosisHelpers';
 import { DefaultContentRenderer } from '../defaults/DefaultSlots';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for the ProactiveDiagnosisSection component that displays diagnosis results. */
 export interface ProactiveDiagnosisSectionProps {
@@ -65,6 +65,7 @@ function DiagnosisThinkingBlock({
   steps: DiagnosisThinkingStep[];
   isActive: boolean;
 }) {
+  const { t } = useTranslation();
   const [expanded, setExpanded] = useState(false);
   const stepsEndRef = useRef<HTMLDivElement>(null);
   const theme = useTheme();
@@ -80,8 +81,8 @@ function DiagnosisThinkingBlock({
   const summaryLabel = isActive
     ? latestStep
       ? getStepSummary(latestStep)
-      : 'Analyzing event…'
-    : `${steps.length} step${steps.length !== 1 ? 's' : ''}`;
+      : t('Analyzing event…')
+    : t(steps.length !== 1 ? '{{count}} steps' : '{{count}} step', { count: steps.length });
 
   return (
     <Box
@@ -143,7 +144,7 @@ function DiagnosisThinkingBlock({
             flex: 1,
           }}
         >
-          {isActive ? 'Thinking…' : 'Thought process'}
+          {isActive ? t('Thinking…') : t('Thought process')}
         </Typography>
         <Typography variant="caption" sx={{ color: 'text.secondary', flexShrink: 0, ml: 'auto' }}>
           {summaryLabel}
@@ -168,10 +169,18 @@ function DiagnosisThinkingBlock({
         >
           {steps.length === 0 ? (
             <Typography variant="caption" color="text.secondary">
-              {`Diagnosing ${event.objectKind}/${event.objectName}` +
-                (event.objectNamespace ? ` in ${event.objectNamespace}` : '') +
-                `\nReason: ${event.reason}` +
-                `\nMessage: ${event.message}`}
+              {t(
+                'Diagnosing {{objectKind}}/{{objectName}}{{namespaceText}}\nReason: {{reason}}\nMessage: {{message}}',
+                {
+                  objectKind: event.objectKind,
+                  objectName: event.objectName,
+                  namespaceText: event.objectNamespace
+                    ? t(' in {{namespace}}', { namespace: event.objectNamespace })
+                    : '',
+                  reason: event.reason,
+                  message: event.message,
+                }
+              )}
             </Typography>
           ) : (
             steps.map((step, idx) => (
@@ -499,6 +508,7 @@ export default function ProactiveDiagnosisSection({
   onYamlAction,
   ContentRendererSlot = DefaultContentRenderer,
 }: ProactiveDiagnosisSectionProps) {
+  const { t } = useTranslation();
   const theme = useTheme();
   const itemRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
@@ -537,11 +547,14 @@ export default function ProactiveDiagnosisSection({
       >
         <Icon icon="mdi:shield-search" width={20} color={theme.palette.primary.main} />
         <Typography variant="subtitle2" sx={{ fontWeight: 600, color: 'primary.main' }}>
-          Proactive Diagnosis
+          {t('Proactive Diagnosis')}
         </Typography>
         {isCycleRunning && <CircularProgress size={14} sx={{ ml: 0.5 }} />}
         <Chip
-          label={`${completedCount}/${diagnoses.length} event${diagnoses.length !== 1 ? 's' : ''}`}
+          label={t(
+            diagnoses.length !== 1 ? '{{completed}}/{{total}} events' : '{{completed}}/{{total}} event',
+            { completed: completedCount, total: diagnoses.length }
+          )}
           size="small"
           variant="outlined"
           sx={{ ml: 'auto', fontSize: '0.7rem', height: 20 }}
@@ -629,7 +642,7 @@ export default function ProactiveDiagnosisSection({
       {diagnoses.length > 0 && (
         <Divider sx={{ mt: 2, mb: 1 }}>
           <Typography variant="caption" color="text.secondary">
-            Chat
+            {t('Chat')}
           </Typography>
         </Divider>
       )}

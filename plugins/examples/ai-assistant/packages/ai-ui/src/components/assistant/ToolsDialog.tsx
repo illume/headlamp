@@ -22,9 +22,9 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React, { useEffect, useState } from 'react';
 import { DefaultDialog } from '../defaults/DefaultSlots';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Describes an MCP tool available for use in the assistant. */
 interface MCPTool {

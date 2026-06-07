@@ -1,7 +1,7 @@
 import { Box, Chip, Typography } from '@mui/material';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React from 'react';
 import { DefaultActionButton } from '../defaults/DefaultSlots';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props accepted by the ActionButton slot component. */
 export interface ActionButtonSlotProps {

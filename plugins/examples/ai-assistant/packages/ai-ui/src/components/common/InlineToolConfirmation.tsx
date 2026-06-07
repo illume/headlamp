@@ -28,8 +28,8 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Describes a tool call awaiting inline approval. */
 interface ToolCall {

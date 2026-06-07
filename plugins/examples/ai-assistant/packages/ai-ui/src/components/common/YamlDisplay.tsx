@@ -1,4 +1,5 @@
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import Editor from '@monaco-editor/react';
 import { Button } from '@mui/material';
 import { useTheme } from '@mui/material';
@@ -7,7 +8,6 @@ import Paper from '@mui/material/Paper';
 import Typography from '@mui/material/Typography';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { parseKubernetesYAML } from '../../parsing/yamlParser';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for {@link YamlDisplay}. */
 interface YamlDisplayProps {
@@ -23,7 +23,6 @@ interface YamlDisplayProps {
 const YamlDisplay: React.FC<YamlDisplayProps> = React.memo(
   ({ yaml, title, onOpenInEditor }) => {
     const { t } = useTranslation();
-    void t;
     const [resourceType, setResourceType] = useState<string>('Resource');
     const [resourceName, setResourceName] = useState<string>('');
     const [processedYaml, setProcessedYaml] = useState<string>(yaml);

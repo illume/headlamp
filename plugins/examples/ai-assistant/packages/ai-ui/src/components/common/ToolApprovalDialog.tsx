@@ -20,8 +20,8 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React, { useState } from 'react';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Describes a tool call awaiting approval in the dialog. */
 interface ToolCall {

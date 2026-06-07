@@ -17,8 +17,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React, { useState } from 'react';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for {@link TestModeInput}. */
 interface TestModeInputProps {

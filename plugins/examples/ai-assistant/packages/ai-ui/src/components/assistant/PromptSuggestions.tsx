@@ -1,7 +1,7 @@
 import { Icon } from '@iconify/react';
 import { Box, Chip, Typography } from '@mui/material';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React from 'react';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for {@link PromptSuggestions}. */
 interface PromptSuggestionsProps {

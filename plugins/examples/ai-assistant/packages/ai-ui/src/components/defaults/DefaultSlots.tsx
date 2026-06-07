@@ -18,9 +18,9 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React from 'react';
 import type { ActionButtonSlotProps } from '../assistant/AIAssistantHeader';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 /**
  * Default dialog implementation using MUI Dialog.

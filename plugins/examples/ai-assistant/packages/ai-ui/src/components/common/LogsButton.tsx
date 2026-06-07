@@ -1,18 +1,18 @@
 /**
  * LogsButton — inline button that opens a {@link LogsDialog} for a resource.
  *
- * Renders a compact paper card with a "{t('View in Editor')}" button. Clicking the
+ * Renders a compact paper card with a "View in Editor" button. Clicking the
  * button opens the full log viewer dialog. This component has no
  * headlamp-plugin dependency and can be used in any React + MUI context.
  */
 
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { Box, Button, Paper, Typography } from '@mui/material';
 import React, { useState } from 'react';
 import { buildLogTitle } from '../../formatting/logFormatting';
 import { DefaultDialog } from '../defaults/DefaultSlots';
 import LogsDialog from './LogsDialog';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for the LogsButton component that shows a button to open a logs dialog. */
 export interface LogsButtonProps {

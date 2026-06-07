@@ -24,11 +24,11 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import remarkGfm from 'remark-gfm';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for {@link MCPOutputDisplay}. */
 interface MCPOutputDisplayProps {

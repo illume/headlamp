@@ -16,12 +16,12 @@ import { Icon } from '@iconify/react';
 import { Alert, Box, CircularProgress, Fab, Typography } from '@mui/material';
 import { useTheme } from '@mui/material';
 import { alpha } from '@mui/material/styles';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import AgentThinkingBlock from '../assistant/AgentThinkingBlock';
 import InlineToolConfirmation from '../common/InlineToolConfirmation';
 import AgentThinkingSteps from '../agent/AgentThinkingSteps';
 import { DefaultContentRenderer, DefaultEditorDialog } from '../defaults/DefaultSlots';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for the EditorDialog slot component. */
 export interface EditorDialogSlotProps {
@@ -387,7 +387,7 @@ const TextStreamContainer = React.memo(function TextStreamContainer({
           }}
         >
           <Typography variant="caption" sx={{ display: 'block', mb: 0.5, fontWeight: 'bold' }}>
-            {prompt.role === 'user' ? 'You' : 'AI Assistant'}
+            {prompt.role === 'user' ? t('You') : t('AI Assistant')}
           </Typography>
           <Box
             sx={{
@@ -424,7 +424,7 @@ const TextStreamContainer = React.memo(function TextStreamContainer({
                     {displayContent}
                     {isContentFilterError && (
                       <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
-                        Tip: Focus your question specifically on Kubernetes administration tasks.
+                        {t('Tip: Focus your question specifically on Kubernetes administration tasks.')}
                       </Typography>
                     )}
                   </Alert>
@@ -486,8 +486,9 @@ const TextStreamContainer = React.memo(function TextStreamContainer({
         {contentFilterErrors && (
           <Alert severity="info" sx={{ mb: 2, overflowWrap: 'anywhere' }}>
             <Typography variant="body2">
-              Some requests have been blocked by content filters. Please ensure your questions focus
-              only on Kubernetes tasks.
+              {t(
+                'Some requests have been blocked by content filters. Please ensure your questions focus only on Kubernetes tasks.'
+              )}
             </Typography>
           </Alert>
         )}

@@ -4,7 +4,6 @@ import { alpha } from '@mui/material/styles';
 import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { AgentThinkingStep } from '@headlamp-k8s/ai-common/agent/aksAgentThinking';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 // ── Animations ───────────────────────────────────────────────────────────────
 

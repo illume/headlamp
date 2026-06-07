@@ -6,6 +6,7 @@
  */
 
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import Editor from '@monaco-editor/react';
 import {
   Box,
@@ -18,7 +19,6 @@ import {
 import React from 'react';
 import { getLogLanguage, getFormattedLogs } from '../../formatting/logFormatting';
 import { DefaultDialog } from '../defaults/DefaultSlots';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for the LogsDialog component that displays log content in a modal. */
 export interface LogsDialogProps {

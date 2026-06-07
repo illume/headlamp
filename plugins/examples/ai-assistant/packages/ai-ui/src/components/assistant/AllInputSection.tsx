@@ -18,7 +18,6 @@ import { getProviderById } from '@headlamp-k8s/ai-common/config/modelConfig';
 import type { ActionButtonSlotProps } from './AIAssistantHeader';
 import { DefaultActionButton } from '../defaults/DefaultSlots';
 import TestModeInput from './TestModeInput';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 export type { ActionButtonSlotProps } from './AIAssistantHeader';
 

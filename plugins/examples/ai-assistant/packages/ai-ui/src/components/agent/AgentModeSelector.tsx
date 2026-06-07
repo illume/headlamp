@@ -11,8 +11,8 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React from 'react';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 const DEFAULT_INSTALL_DOC_URL =
   'https://learn.microsoft.com/en-us/azure/aks/agentic-cli-for-aks-install';
