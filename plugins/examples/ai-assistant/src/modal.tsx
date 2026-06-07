@@ -36,7 +36,10 @@ import {
 } from '@headlamp-k8s/ai-ui/providers/modelProviders';
 import { isTestModeCheck } from '@headlamp-k8s/ai-ui/testing/testMode';
 import { Icon } from '@iconify/react';
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
+import { runCommand, useTranslation } from '@kinvolk/headlamp-plugin/lib';
+
+// pluginRunCommand is injected as a scope variable by Headlamp's plugin runner.
+declare const pluginRunCommand: typeof runCommand;
 import { useClustersConf, useSelectedClusters } from '@kinvolk/headlamp-plugin/lib/k8s';
 import { getCluster, getClusterGroup } from '@kinvolk/headlamp-plugin/lib/Utils';
 import { Box, Button, Grid, Typography } from '@mui/material';
@@ -102,12 +105,15 @@ export default function AIPrompt(props: {
   // Command runner for CLI-based provider detection (wired to pluginRunCommand if available)
   const commandRunnerRef = React.useRef<CommandRunner | null>(null);
   React.useEffect(() => {
-    // Wire pluginRunCommand from Headlamp's Electron bridge if available
-    if (typeof (globalThis as any).pluginRunCommand === 'function') {
-      commandRunnerRef.current = async (command: string, args: string[]) => {
-        const result = await (globalThis as any).pluginRunCommand(command, args);
-        return { stdout: result?.stdout ?? '', exitCode: result?.exitCode ?? -1 };
-      };
+    if (typeof pluginRunCommand !== 'undefined') {
+      commandRunnerRef.current = (command: string, args: string[]) =>
+        new Promise<{ stdout: string; exitCode: number }>(resolve => {
+          // @ts-ignore
+          const proc = pluginRunCommand(command as any, args, {});
+          let out = '';
+          proc.stdout.on('data', (d: any) => (out += String(d)));
+          proc.on('exit', (code: number | null) => resolve({ stdout: out, exitCode: code ?? -1 }));
+        });
     }
   }, []);
   const [promptVal, setPromptVal] = React.useState('');

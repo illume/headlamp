@@ -18,8 +18,13 @@ import type { CommandRunner } from '@headlamp-k8s/ai-common/providers/providerAu
 import type { DeveloperOptionsConfig } from '@headlamp-k8s/ai-ui/components/settings/DeveloperSettings';
 import { SettingsPage } from '@headlamp-k8s/ai-ui/components/settings/SettingsPage';
 import { isTestModeCheck } from '@headlamp-k8s/ai-ui/testing/testMode';
-import { Headlamp } from '@kinvolk/headlamp-plugin/lib';
+import { Headlamp, runCommand } from '@kinvolk/headlamp-plugin/lib';
 import React from 'react';
+
+// pluginRunCommand is injected as a scope variable by Headlamp's plugin runner.
+// Using declare const (same pattern as aksAgentManager.ts) lets TypeScript
+// reference it without an explicit definition.
+declare const pluginRunCommand: typeof runCommand;
 import {
   HOLMES_SERVICE_NAME,
   HOLMES_SERVICE_NAMESPACE,
@@ -50,10 +55,17 @@ export default function Settings() {
   // Command runner for CLI-based provider detection
   const [commandRunner, setCommandRunner] = React.useState<CommandRunner | null>(null);
   React.useEffect(() => {
-    if (typeof (globalThis as any).pluginRunCommand === 'function') {
+    if (typeof pluginRunCommand !== 'undefined') {
       setCommandRunner(() => async (command: string, args: string[]) => {
-        const result = await (globalThis as any).pluginRunCommand(command, args);
-        return { stdout: result?.stdout ?? '', exitCode: result?.exitCode ?? -1 };
+        // pluginRunCommand returns an EventEmitter-like object; convert to
+        // the { stdout, exitCode } shape that CommandRunner expects.
+        return new Promise<{ stdout: string; exitCode: number }>(resolve => {
+          // @ts-ignore — 'gh' and 'az' are narrower than the declared type
+          const proc = pluginRunCommand(command as any, args, {});
+          let out = '';
+          proc.stdout.on('data', (d: any) => (out += String(d)));
+          proc.on('exit', (code: number | null) => resolve({ stdout: out, exitCode: code ?? -1 }));
+        });
       });
     }
   }, []);
