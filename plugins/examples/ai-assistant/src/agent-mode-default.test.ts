@@ -23,7 +23,7 @@
  *   2. Holmes agent health check returns true.
  */
 
-import { beforeEach,describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 // ---------------------------------------------------------------------------
 // Inline the decision logic that lives in the modal.tsx useEffect so we can
@@ -36,12 +36,12 @@ async function shouldAutoEnableAgentMode(opts: {
   isAlreadyAgentMode: boolean;
   hasExistingAgent: boolean;
 }): Promise<boolean> {
-  const { hasChatProvider, holmesAvailable, isAlreadyAgentMode, hasExistingAgent } = opts;
+  const { holmesAvailable, isAlreadyAgentMode, hasExistingAgent } = opts;
 
-  // Mirror the guard in the useEffect:
-  if (hasChatProvider || isAlreadyAgentMode || hasExistingAgent) return false;
+  // Mirror the guard in the useEffect (hasChatProvider no longer blocks):
+  if (isAlreadyAgentMode || hasExistingAgent) return false;
 
-  // Mock health check result
+  // Holmes wins if reachable, regardless of chat provider.
   return holmesAvailable;
 }
 
@@ -57,10 +57,20 @@ describe('agent mode default behaviour', () => {
     expect(defaultAgentMode).toBe(false);
   });
 
-  it('does NOT auto-enable agent mode when a chat provider is configured', async () => {
+  it('auto-enables agent mode when a chat provider is configured AND Holmes is reachable', async () => {
     const result = await shouldAutoEnableAgentMode({
       hasChatProvider: true,
       holmesAvailable: true,
+      isAlreadyAgentMode: false,
+      hasExistingAgent: false,
+    });
+    expect(result).toBe(true);
+  });
+
+  it('does NOT auto-enable agent mode when a chat provider is configured AND Holmes is unreachable', async () => {
+    const result = await shouldAutoEnableAgentMode({
+      hasChatProvider: true,
+      holmesAvailable: false,
       isAlreadyAgentMode: false,
       hasExistingAgent: false,
     });
@@ -123,15 +133,15 @@ describe('checkHolmesAgentHealth call gating', () => {
     hasChatProvider: boolean;
     holmesAvailable: boolean;
   }): Promise<void> {
-    const { hasChatProvider, holmesAvailable } = opts;
-    if (hasChatProvider) return; // guard — no health check needed
+    const { holmesAvailable } = opts;
+    // No guard on hasChatProvider — Holmes always runs the check.
     mockCheckHealth.mockResolvedValueOnce(holmesAvailable);
     await mockCheckHealth('test-cluster', {});
   }
 
-  it('skips the health check entirely when a chat provider is configured', async () => {
+  it('performs the health check even when a chat provider is configured', async () => {
     await runAutoInit({ hasChatProvider: true, holmesAvailable: true });
-    expect(mockCheckHealth).not.toHaveBeenCalled();
+    expect(mockCheckHealth).toHaveBeenCalledOnce();
   });
 
   it('performs the health check when there is no chat provider', async () => {

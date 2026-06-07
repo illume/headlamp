@@ -1373,12 +1373,12 @@ export default function AIPrompt(props: {
     [pluginSettings, t]
   );
 
-  // Auto-initialize agent mode on first mount only when Holmes is confirmed
-  // reachable AND there is no chat provider configured.
+  // Auto-initialize agent mode on first mount if Holmes is reachable.
+  // Holmes takes priority over chat mode: if Holmes is available, always
+  // default to it regardless of whether a chat provider is also configured.
+  // Fall back to chat mode only when Holmes is not reachable.
   React.useEffect(() => {
-    const savedConfigs = getSavedConfigurations(pluginSettings);
-    const hasChatProvider = (savedConfigs.providers?.length ?? 0) > 0;
-    if (hasChatProvider || isAgentMode || holmesAgentRef.current) return;
+    if (isAgentMode || holmesAgentRef.current) return;
     const cluster = getCluster();
     if (!cluster) return;
     checkHolmesAgentHealth(cluster, pluginSettings)
