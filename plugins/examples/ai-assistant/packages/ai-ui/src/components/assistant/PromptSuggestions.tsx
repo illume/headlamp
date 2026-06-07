@@ -1,6 +1,6 @@
 import { Icon } from '@iconify/react';
-import { Box, Chip, Typography } from '@mui/material';
 import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
+import { Box, Chip, Typography } from '@mui/material';
 import React from 'react';
 
 /** Props for {@link PromptSuggestions}. */

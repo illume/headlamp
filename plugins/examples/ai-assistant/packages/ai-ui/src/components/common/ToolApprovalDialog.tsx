@@ -1,4 +1,5 @@
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import {
   Accordion,
   AccordionDetails,
@@ -20,7 +21,6 @@ import {
   ListItemText,
   Typography,
 } from '@mui/material';
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React, { useState } from 'react';
 
 /** Describes a tool call awaiting approval in the dialog. */
@@ -214,19 +214,21 @@ const ToolApprovalDialog: React.FC<ToolApprovalDialogProps> = ({
 
       <DialogContent>
         <Alert severity="info" sx={{ mb: 3 }}>
-          The AI Assistant wants to execute {toolCalls.length} tool{toolCalls.length > 1 ? 's' : ''}
-          to complete your request. Please review and approve the tools you want to allow.
+          {t(
+            'The AI Assistant wants to execute {{count}} tools to complete your request. Please review and approve the tools you want to allow.',
+            { count: toolCalls.length }
+          )}
         </Alert>
 
         {mcpTools.length > 0 && (
           <Alert severity="warning" sx={{ mb: 3 }}>
             <Typography variant="subtitle2" gutterBottom>
-              MCP Tools (Inspektor Gadget)
+              {t('MCP Tools (Inspektor Gadget)')}
             </Typography>
             <Typography variant="body2">
-              These tools will execute debugging commands in your Kubernetes clusters through
-              Inspektor Gadget containers. They provide deep system-level insights but require
-              elevated permissions.
+              {t(
+                'These tools will execute debugging commands in your Kubernetes clusters through Inspektor Gadget containers. They provide deep system-level insights but require elevated permissions.'
+              )}
             </Typography>
           </Alert>
         )}
@@ -238,7 +240,7 @@ const ToolApprovalDialog: React.FC<ToolApprovalDialogProps> = ({
             onClick={handleSelectAll}
             startIcon={<Icon icon="mdi:check-all" />}
           >
-            Select All
+            {t('Select All')}
           </Button>
           <Button
             variant="outlined"
@@ -246,12 +248,12 @@ const ToolApprovalDialog: React.FC<ToolApprovalDialogProps> = ({
             onClick={handleDeselectAll}
             startIcon={<Icon icon="mdi:close-box-multiple" />}
           >
-            Deselect All
+            {t('Deselect All')}
           </Button>
         </Box>
 
-        {renderToolSection(regularTools, 'Kubernetes Tools', 'primary')}
-        {renderToolSection(mcpTools, 'MCP Tools (Inspektor Gadget)', 'secondary')}
+        {renderToolSection(regularTools, t('Kubernetes Tools'), 'primary')}
+        {renderToolSection(mcpTools, t('MCP Tools (Inspektor Gadget)'), 'secondary')}
 
         <FormGroup sx={{ mt: 2 }}>
           <FormControlLabel
@@ -263,7 +265,7 @@ const ToolApprovalDialog: React.FC<ToolApprovalDialogProps> = ({
             }
             label={
               <Typography variant="body2">
-                Remember my choice for this session (auto-approve similar tools)
+                {t('Remember my choice for this session (auto-approve similar tools)')}
               </Typography>
             }
           />
@@ -280,11 +282,14 @@ const ToolApprovalDialog: React.FC<ToolApprovalDialogProps> = ({
           }}
         >
           <Typography variant="body2" color="text.secondary">
-            {selectedToolIds.length} of {toolCalls.length} tools selected
+            {t('{{selected}} of {{total}} tools selected', {
+              selected: selectedToolIds.length,
+              total: toolCalls.length,
+            })}
           </Typography>
           <Box sx={{ display: 'flex', gap: 1 }}>
             <Button onClick={onDeny} disabled={loading} color="error">
-              Deny All
+              {t('Deny All')}
             </Button>
             <Button
               onClick={handleApprove}
@@ -299,8 +304,8 @@ const ToolApprovalDialog: React.FC<ToolApprovalDialogProps> = ({
               }
             >
               {loading
-                ? 'Executing...'
-                : `Approve ${selectedToolIds.length > 0 ? `(${selectedToolIds.length})` : ''}`}
+                ? t('Executing...')
+                : `${t('Approve')}${selectedToolIds.length > 0 ? ` (${selectedToolIds.length})` : ''}`}
             </Button>
           </Box>
         </Box>

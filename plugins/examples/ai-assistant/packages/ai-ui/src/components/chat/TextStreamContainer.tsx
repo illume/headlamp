@@ -13,14 +13,14 @@
 
 import { Prompt } from '@headlamp-k8s/ai-common/ai/manager';
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { Alert, Box, CircularProgress, Fab, Typography } from '@mui/material';
 import { useTheme } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import AgentThinkingSteps from '../agent/AgentThinkingSteps';
 import AgentThinkingBlock from '../assistant/AgentThinkingBlock';
 import InlineToolConfirmation from '../common/InlineToolConfirmation';
-import AgentThinkingSteps from '../agent/AgentThinkingSteps';
 import { DefaultContentRenderer, DefaultEditorDialog } from '../defaults/DefaultSlots';
 
 /** Props for the EditorDialog slot component. */

@@ -31,7 +31,7 @@ export interface LogsButtonProps {
 }
 
 /**
- * Inline card with a "{t('View in Editor')}" button. Opens a {@link LogsDialog}
+ * Inline card with a "View in Editor" button. Opens a {@link LogsDialog}
  * showing the log content for a Kubernetes resource.
  */
 const LogsButton: React.FC<LogsButtonProps> = ({

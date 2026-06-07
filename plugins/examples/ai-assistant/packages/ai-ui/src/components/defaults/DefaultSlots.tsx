@@ -6,6 +6,7 @@
  */
 
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import {
   Box,
   Button,
@@ -18,7 +19,6 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React from 'react';
 import type { ActionButtonSlotProps } from '../assistant/AIAssistantHeader';
 

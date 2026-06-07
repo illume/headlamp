@@ -4,6 +4,7 @@ import {
   type UserContext,
 } from '@headlamp-k8s/ai-common/components/mcpOutput/MCPArgumentProcessor';
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import {
   Alert,
   Box,
@@ -28,7 +29,6 @@ import {
   Typography,
   useTheme,
 } from '@mui/material';
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React, { useEffect, useState } from 'react';
 
 /** Describes a tool call awaiting inline approval. */
@@ -457,7 +457,9 @@ const InlineToolConfirmation: React.FC<InlineToolConfirmationProps> = ({
         <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <CircularProgress size={20} />
           <Typography variant="body2">
-            {isApproving ? 'Approving and executing tools...' : 'Executing approved tools...'}
+            {isApproving
+              ? t('Approving and executing tools...')
+              : t('Executing approved tools...')}
           </Typography>
         </CardContent>
       </Card>
@@ -478,7 +480,7 @@ const InlineToolConfirmation: React.FC<InlineToolConfirmationProps> = ({
         <CardContent sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <CircularProgress size={20} color="error" />
           <Typography variant="body2" color="error">
-            Denying tool execution...
+            {t('Denying tool execution...')}
           </Typography>
         </CardContent>
       </Card>
@@ -499,7 +501,7 @@ const InlineToolConfirmation: React.FC<InlineToolConfirmationProps> = ({
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
           <Icon icon="mdi:shield-check" style={{ color: theme.palette.primary.main }} />
           <Typography variant="subtitle2" sx={{ fontWeight: 'bold' }}>
-            Tool Execution Required
+            {t('Tool Execution Required')}
           </Typography>
           <Chip
             label={`${toolCalls.length} tool${toolCalls.length > 1 ? 's' : ''}`}
@@ -574,7 +576,7 @@ const InlineToolConfirmation: React.FC<InlineToolConfirmationProps> = ({
                   {tool.description && (
                     <Box sx={{ mb: 2 }}>
                       <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-                        Description
+                        {t('Description')}
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         {tool.description}
@@ -586,7 +588,7 @@ const InlineToolConfirmation: React.FC<InlineToolConfirmationProps> = ({
                   {(Object.keys(tool.arguments).length > 0 || tool.type === 'mcp') && (
                     <Box>
                       <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                        Arguments {tool.type === 'mcp' ? '(editable)' : ''}
+                        {tool.type === 'mcp' ? t('Arguments (editable)') : t('Arguments')}
                       </Typography>
                       {tool.type === 'mcp' ? (
                         <Box>{renderArgumentsForTool(tool, tool.id)}</Box>
@@ -622,10 +624,16 @@ const InlineToolConfirmation: React.FC<InlineToolConfirmationProps> = ({
         <Alert severity="info" sx={{ mb: 2, py: 0.5 }}>
           <Typography variant="caption">
             {mcpTools.length > 0
-              ? `${
-                  mcpTools.length > 1 ? 'These MCP tools have' : 'This MCP tool has'
-                } been configured with AI-analyzed arguments from your request. Click on any tool above to view details and edit arguments.`
-              : 'These tools will access your Kubernetes cluster and other systems. Click on any tool above to view details.'}
+              ? mcpTools.length > 1
+                ? t(
+                    'These MCP tools have been configured with AI-analyzed arguments from your request. Click on any tool above to view details and edit arguments.'
+                  )
+                : t(
+                    'This MCP tool has been configured with AI-analyzed arguments from your request. Click on the tool above to view details and edit arguments.'
+                  )
+              : t(
+                  'These tools will access your Kubernetes cluster and other systems. Click on any tool above to view details.'
+                )}
           </Typography>
         </Alert>
 
@@ -634,7 +642,7 @@ const InlineToolConfirmation: React.FC<InlineToolConfirmationProps> = ({
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
             <CircularProgress size={16} />
             <Typography variant="caption" color="text.secondary">
-              Processing intelligent argument suggestions...
+              {t('Processing intelligent argument suggestions...')}
             </Typography>
           </Box>
         )}
@@ -655,7 +663,7 @@ const InlineToolConfirmation: React.FC<InlineToolConfirmationProps> = ({
               cursor: isActionInProgress ? 'not-allowed' : 'pointer',
             }}
           >
-            {isDenying ? 'Denying...' : 'Deny'}
+            {isDenying ? t('Denying...') : t('Deny')}
           </Button>
           <Button
             variant="contained"
@@ -680,8 +688,11 @@ const InlineToolConfirmation: React.FC<InlineToolConfirmationProps> = ({
             }}
           >
             {isApproving
-              ? 'Executing...'
-              : `Execute ${toolCalls.length} Tool${toolCalls.length > 1 ? 's' : ''}`}
+              ? t('Executing...')
+              : t(
+                  toolCalls.length > 1 ? 'Execute {{count}} Tools' : 'Execute {{count}} Tool',
+                  { count: toolCalls.length }
+                )}
           </Button>
         </Box>
       </CardContent>

@@ -17,7 +17,7 @@ import {
   Typography,
 } from '@mui/material';
 import React from 'react';
-import { getLogLanguage, getFormattedLogs } from '../../formatting/logFormatting';
+import { getFormattedLogs,getLogLanguage } from '../../formatting/logFormatting';
 import { DefaultDialog } from '../defaults/DefaultSlots';
 
 /** Props for the LogsDialog component that displays log content in a modal. */
@@ -80,10 +80,10 @@ const LogsDialog: React.FC<LogsDialogProps> = ({ open, onClose, logs, title, res
       <DialogTitle>
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="h6">
-            {title} - Editor View
+            {t('{{title}} (Editor View)', { title })}
             {getLogLanguage(logs) === 'json' && (
               <Typography component="span" variant="caption" color="primary.main" sx={{ ml: 1 }}>
-                (Auto-formatted)
+                {t('(Auto-formatted)')}
               </Typography>
             )}
           </Typography>
@@ -94,7 +94,7 @@ const LogsDialog: React.FC<LogsDialogProps> = ({ open, onClose, logs, title, res
               onClick={copyToClipboard}
               variant="outlined"
             >
-              Copy
+              {t('Copy')}
             </Button>
             <Button
               size="small"
@@ -102,7 +102,7 @@ const LogsDialog: React.FC<LogsDialogProps> = ({ open, onClose, logs, title, res
               onClick={downloadLogs}
               variant="outlined"
             >
-              Download
+              {t('Download')}
             </Button>
           </Box>
         </Box>
@@ -156,7 +156,7 @@ const LogsDialog: React.FC<LogsDialogProps> = ({ open, onClose, logs, title, res
       </DialogContent>
       <DialogActions>
         <Button onClick={onClose} variant="contained">
-          Close
+          {t('Close')}
         </Button>
       </DialogActions>
     </DialogSlot>

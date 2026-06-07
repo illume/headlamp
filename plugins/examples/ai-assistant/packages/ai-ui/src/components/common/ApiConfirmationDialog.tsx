@@ -1,8 +1,8 @@
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { Box, Typography } from '@mui/material';
 import React, { useEffect, useRef } from 'react';
 import YAML from 'yaml';
 import { DefaultConfirmDialog, DefaultEditorDialog } from '../defaults/DefaultSlots';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 // Helper function to clean YAML content by removing the |- prefix if present
 function cleanYamlContent(content: string): string {
@@ -166,20 +166,23 @@ export default function ApiConfirmationDialog({
     onClose();
   }
   const getTitle = () => {
-    const base =
-      method.toUpperCase() === 'DELETE'
-        ? 'Delete'
-        : method.toUpperCase() === 'POST'
-        ? 'Create'
-        : method.toUpperCase() === 'GET'
-        ? 'Fetch'
-        : 'Update';
-
     if (resourceInfo) {
-      return `${base} ${resourceInfo.kind}: ${resourceInfo.name}`;
+      return method.toUpperCase() === 'DELETE'
+        ? t('Delete {{kind}}: {{name}}', { kind: resourceInfo.kind, name: resourceInfo.name })
+        : method.toUpperCase() === 'POST'
+        ? t('Create {{kind}}: {{name}}', { kind: resourceInfo.kind, name: resourceInfo.name })
+        : method.toUpperCase() === 'GET'
+        ? t('Fetch {{kind}}: {{name}}', { kind: resourceInfo.kind, name: resourceInfo.name })
+        : t('Update {{kind}}: {{name}}', { kind: resourceInfo.kind, name: resourceInfo.name });
     }
 
-    return `${base} Resource`;
+    return method.toUpperCase() === 'DELETE'
+      ? t('Delete Resource')
+      : method.toUpperCase() === 'POST'
+      ? t('Create Resource')
+      : method.toUpperCase() === 'GET'
+      ? t('Fetch Resource')
+      : t('Update Resource');
   };
 
   if (!url || !method) {
@@ -195,15 +198,22 @@ export default function ApiConfirmationDialog({
           onClose();
         }}
         onConfirm={handleDeleteConfirm}
-        title={`Delete ${resourceInfo?.kind || 'Resource'}`}
+        title={resourceInfo ? t('Delete {{kind}}', { kind: resourceInfo.kind }) : t('Delete Resource')}
         description={
           <Box>
             <Typography variant="body1" sx={{ mb: 2 }}>
               {resourceInfo
-                ? `Are you sure you want to delete the ${resourceInfo.kind} "${resourceInfo.name}"${
-                    resourceInfo.namespace ? ` in namespace "${resourceInfo.namespace}"` : ''
-                  }?`
-                : 'Are you sure you want to delete this resource?'}
+                ? resourceInfo.namespace
+                  ? t('Are you sure you want to delete the {{kind}} "{{name}}" in namespace "{{namespace}}"?', {
+                      kind: resourceInfo.kind,
+                      name: resourceInfo.name,
+                      namespace: resourceInfo.namespace,
+                    })
+                  : t('Are you sure you want to delete the {{kind}} "{{name}}"?', {
+                      kind: resourceInfo.kind,
+                      name: resourceInfo.name,
+                    })
+                : t('Are you sure you want to delete this resource?')}
             </Typography>
             {resourceInfo && (
               <Box
@@ -230,11 +240,15 @@ export default function ApiConfirmationDialog({
               </Box>
             )}
             <Typography variant="body2" sx={{ fontWeight: 'bold' }}>
-              This action cannot be undone.
+              {t('This action cannot be undone.')}
             </Typography>
           </Box>
         }
-        confirmLabel={`Yes, Delete ${resourceInfo?.kind || 'Resource'}`}
+        confirmLabel={
+          resourceInfo
+            ? t('Yes, Delete {{kind}}', { kind: resourceInfo.kind })
+            : t('Yes, Delete Resource')
+        }
       />
     );
   }
@@ -250,24 +264,30 @@ export default function ApiConfirmationDialog({
           onClose();
         }}
         onConfirm={handleUpdateConfirm}
-        title={`Apply Patch to ${
-          resourceInfo ? `${resourceInfo.kind}: ${resourceInfo.name}` : 'Resource'
-        }`}
+        title={
+          resourceInfo
+            ? t('Apply Patch to {{kind}}: {{name}}', {
+                kind: resourceInfo.kind,
+                name: resourceInfo.name,
+              })
+            : t('Apply Patch to Resource')
+        }
         description={
           <Box>
             <Typography variant="body1" sx={{ mb: 2 }}>
-              The following patch will be applied to the resource:
+              {t('The following patch will be applied to the resource:')}
             </Typography>
             <Box sx={{ p: 2, border: '1px solid #ccc', borderRadius: 1 }}>
               <pre>{editedBody}</pre>
             </Box>
             <Typography variant="body2" sx={{ mt: 2 }}>
-              Are you sure you want to apply this patch? The system will merge this patch with the
-              current resource and update it.
+              {t(
+                'Are you sure you want to apply this patch? The system will merge this patch with the current resource and update it.'
+              )}
             </Typography>
           </Box>
         }
-        confirmLabel="Yes, Apply Patch"
+        confirmLabel={t('Yes, Apply Patch')}
       />
     );
   }
@@ -296,7 +316,7 @@ export default function ApiConfirmationDialog({
       open={openEditorDialog}
       onClose={() => setOpenEditorDialog(false)}
       setOpen={setOpenEditorDialog}
-      saveLabel="Apply"
+      saveLabel={t('Apply')}
       onSave={handleSave}
       title={getTitle()}
     />

@@ -1,4 +1,5 @@
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import {
   Box,
   Button,
@@ -17,7 +18,6 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React, { useState } from 'react';
 
 /** Props for {@link TestModeInput}. */
@@ -48,7 +48,7 @@ const TestModeInput: React.FC<TestModeInputProps> = ({ onAddTestResponse, isTest
     hasError?: boolean;
   }> = [
     {
-      label: 'Simple Markdown Text',
+      label: t('Simple Markdown Text'),
       content: `Here's how you can create a simple deployment:
 
 ## Creating a Deployment
@@ -63,7 +63,7 @@ Let me know which approach you'd prefer!`,
       type: 'assistant' as const,
     },
     {
-      label: 'YAML Response with Code Block',
+      label: t('YAML Response with Code Block'),
       content: `Here's a sample deployment YAML:
 
 \`\`\`yaml
@@ -94,7 +94,7 @@ This creates a simple nginx deployment with 3 replicas.`,
       type: 'assistant' as const,
     },
     {
-      label: 'Multiple YAML Resources',
+      label: t('Multiple YAML Resources'),
       content: `I'll create both a deployment and service for you:
 
 ## 1. Deployment
@@ -144,7 +144,7 @@ Both resources are now ready to be applied to your cluster.`,
       type: 'assistant' as const,
     },
     {
-      label: 'Cluster Issue Summary',
+      label: t('Cluster Issue Summary'),
       content: `The \`test-trivy-trivy-operator-6f995dffb8-knb9h\` pod in the \`default\` namespace is in an unusual state in your \`ig-hl-cluster\` cluster. It may require your attention.
 
 Additionally, there are warnings related to this cluster:
@@ -161,7 +161,7 @@ Additionally, there are warnings related to this cluster:
       type: 'assistant' as const,
     },
     {
-      label: 'Headlamp Link',
+      label: t('Headlamp Link'),
       content: `You can view the resource details in Headlamp by clicking the link below:
 
 - [deployment-link](https://headlamp/resource-details?cluster=ig-hl-cluster&kind=Deployment&resource=nginx-deployment&ns=default)
@@ -175,7 +175,7 @@ Additionally, there are warnings related to this cluster:
       type: 'assistant' as const,
     },
     {
-      label: 'Resource Table Result',
+      label: t('Resource Table Result'),
       content: `Found 3 items across 2 namespaces:
 
 | NAME | NAMESPACE | STATUS | AGE |
@@ -188,18 +188,18 @@ All deployments are currently active in your cluster.`,
       type: 'assistant' as const,
     },
     {
-      label: 'Error Response',
+      label: t('Error Response'),
       content: `I'm sorry, but I cannot help with that request as it violates content policies.`,
       type: 'assistant' as const,
       hasError: true,
     },
     {
-      label: 'User Question',
+      label: t('User Question'),
       content: `How can I create a deployment with 3 replicas of nginx?`,
       type: 'user' as const,
     },
     {
-      label: 'Tool Confirmation - Kubernetes API',
+      label: t('Tool Confirmation - Kubernetes API'),
       content: {
         role: 'assistant',
         content: '',
@@ -239,7 +239,7 @@ All deployments are currently active in your cluster.`,
       type: 'assistant' as const,
     },
     {
-      label: 'Tool Confirmation - MCP Tool',
+      label: t('Tool Confirmation - MCP Tool'),
       content: {
         role: 'assistant',
         content: '',
@@ -280,7 +280,7 @@ All deployments are currently active in your cluster.`,
       type: 'assistant' as const,
     },
     {
-      label: 'Tool Confirmation - Multiple Tools',
+      label: t('Tool Confirmation - Multiple Tools'),
       content: {
         role: 'assistant',
         content: '',
@@ -429,9 +429,9 @@ All deployments are currently active in your cluster.`,
             />
 
             <Typography variant="caption" color="text.secondary">
-              Tip: Use ```yaml code blocks to test YAML rendering, markdown for formatting tests, or
-              JSON objects starting with {'{toolConfirmation: ...}'} to test tool confirmation
-              dialogs.
+              {t(
+                'Tip: Use ```yaml code blocks to test YAML rendering, markdown for formatting tests, or JSON objects starting with {toolConfirmation: ...} to test tool confirmation dialogs.'
+              )}
             </Typography>
           </Box>
         </DialogContent>

@@ -1,9 +1,9 @@
 import { FormattedMCPOutput } from '@headlamp-k8s/ai-common/langchain/formatters/MCPOutputFormatter';
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { Alert, Box, Paper, Typography } from '@mui/material';
 import React, { useCallback } from 'react';
 import MCPOutputDisplay from '../mcpOutput/MCPOutputDisplay';
-import { useTranslation } from '../../contexts/TranslationContext';
 
 /** Props for {@link MCPFormattedMessage}. */
 interface MCPFormattedMessageProps {
@@ -34,7 +34,7 @@ const MCPFormattedMessage: React.FC<MCPFormattedMessageProps> = ({
   onRetryTool,
 }) => {
   const { t } = useTranslation();
-  void t;
+
   // Try to parse the content as formatted MCP output
   const parseContent = (): ParsedMCPContent | null => {
     try {
@@ -175,12 +175,12 @@ const MCPFormattedMessage: React.FC<MCPFormattedMessageProps> = ({
           />
           <Typography variant="caption" color="text.secondary">
             {mcpContent.isError || mcpContent.mcpOutput.type === 'error'
-              ? 'Tool Error - AI Analysis'
-              : 'AI-Formatted Tool Output'}
+              ? t('Tool Error - AI Analysis')
+              : t('AI-Formatted Tool Output')}
           </Typography>
           {(mcpContent.isError || mcpContent.mcpOutput.type === 'error') && (
             <Alert severity="error" variant="outlined" sx={{ py: 0, px: 1, fontSize: '0.75rem' }}>
-              Tool Execution Failed
+              {t('Tool Execution Failed')}
             </Alert>
           )}
         </Box>
@@ -209,13 +209,15 @@ const MCPFormattedMessage: React.FC<MCPFormattedMessageProps> = ({
           >
             <Typography variant="caption" color="text.secondary">
               <Icon icon="mdi:sparkles" style={{ marginRight: 4, fontSize: 14 }} />
-              Processed by AI in {mcpContent.mcpOutput.metadata.processingTime}ms
+              {t('Processed by AI in {{processingTime}}ms', {
+                processingTime: mcpContent.mcpOutput.metadata.processingTime,
+              })}
               {mcpContent.mcpOutput.insights && mcpContent.mcpOutput.insights.length > 0 && (
-                <> • {mcpContent.mcpOutput.insights.length} insights generated</>
+                <> • {t('{{count}} insights generated', { count: mcpContent.mcpOutput.insights.length })}</>
               )}
               {mcpContent.mcpOutput.actionable_items &&
                 mcpContent.mcpOutput.actionable_items.length > 0 && (
-                  <> • {mcpContent.mcpOutput.actionable_items.length} action items</>
+                  <> • {t('{{count}} action items', { count: mcpContent.mcpOutput.actionable_items.length })}</>
                 )}
             </Typography>
           </Paper>
@@ -236,8 +238,10 @@ const MCPFormattedMessage: React.FC<MCPFormattedMessageProps> = ({
           >
             <Typography variant="caption" color="error.main">
               <Icon icon="mdi:bug" style={{ marginRight: 4, fontSize: 14 }} />
-              Error analyzed by AI in {mcpContent.mcpOutput.metadata.processingTime}ms • Tool:{' '}
-              {mcpContent.mcpOutput.metadata.toolName}
+              {t('Error analyzed by AI in {{processingTime}}ms • Tool: {{toolName}}', {
+                processingTime: mcpContent.mcpOutput.metadata.processingTime,
+                toolName: mcpContent.mcpOutput.metadata.toolName,
+              })}
             </Typography>
           </Paper>
         )}

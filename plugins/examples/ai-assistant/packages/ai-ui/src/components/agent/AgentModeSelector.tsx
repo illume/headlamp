@@ -1,4 +1,5 @@
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import {
   Box,
   CircularProgress,
@@ -11,7 +12,6 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React from 'react';
 
 const DEFAULT_INSTALL_DOC_URL =

@@ -13,6 +13,7 @@
  */
 
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import {
   Alert,
   Box,
@@ -25,17 +26,16 @@ import {
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import React, { useEffect, useRef, useState } from 'react';
-import type { DiagnosisResult, DiagnosisThinkingStep } from '../../diagnosis/ProactiveDiagnosisManager';
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import {
   getStatusIcon,
   getStatusLabel,
-  getStepSummary,
   getStepIcon,
   getStepIconColor,
+  getStepSummary,
   getStepTypeLabel,
   splitDiagnosisContent,
 } from '../../diagnosis/diagnosisHelpers';
+import type { DiagnosisResult, DiagnosisThinkingStep } from '../../diagnosis/ProactiveDiagnosisManager';
 import { DefaultContentRenderer } from '../defaults/DefaultSlots';
 
 /** Props for the ProactiveDiagnosisSection component that displays diagnosis results. */

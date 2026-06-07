@@ -183,8 +183,12 @@ const YamlDisplay: React.FC<YamlDisplayProps> = React.memo(
     );
 
     const handleOpenInEditor = useCallback(() => {
-      memoizedOnOpenInEditor(processedYaml, resourceType, title || `Apply ${resourceType}`);
-    }, [memoizedOnOpenInEditor, processedYaml, resourceType, title]);
+      memoizedOnOpenInEditor(
+        processedYaml,
+        resourceType,
+        title || t('Apply {{resourceType}}', { resourceType })
+      );
+    }, [memoizedOnOpenInEditor, processedYaml, resourceType, t, title]);
 
     // Memoize the theme value to prevent re-renders when theme object changes
     const editorTheme = useMemo(() => {
@@ -249,7 +253,7 @@ const YamlDisplay: React.FC<YamlDisplayProps> = React.memo(
               startIcon={<Icon icon="mdi:file-edit-outline" />}
               onClick={handleOpenInEditor}
             >
-              Open In Editor
+              {t('Open In Editor')}
             </Button>
           </Box>
 

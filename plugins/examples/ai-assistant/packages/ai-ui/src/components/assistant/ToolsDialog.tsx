@@ -1,6 +1,7 @@
-import { AVAILABLE_TOOLS } from '@headlamp-k8s/ai-common/langchain/tools/registry';
 import { ElectronMCPClient } from '@headlamp-k8s/ai-common/ai/mcp/electron-client';
+import { AVAILABLE_TOOLS } from '@headlamp-k8s/ai-common/langchain/tools/registry';
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import {
   Accordion,
   AccordionDetails,
@@ -22,7 +23,6 @@ import {
   TextField,
   Typography,
 } from '@mui/material';
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import React, { useEffect, useState } from 'react';
 import { DefaultDialog } from '../defaults/DefaultSlots';
 
@@ -146,7 +146,7 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
               const fullToolName = `${serverName}__${toolName}`;
               toolsFromConfig.push({
                 name: fullToolName,
-                description: `Tool: ${toolName}`,
+                description: t('Tool: {{toolName}}', { toolName }),
                 server: serverName,
               });
             });
@@ -311,11 +311,12 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
     <>
       <Box sx={{ mb: 2 }}>
         <Typography variant="h6" sx={{ mb: 0.5 }}>
-          MCP Tools
+          {t('MCP Tools')}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          These are Model Context Protocol tools that provide additional capabilities to the
-          assistant.
+          {t(
+            'These are Model Context Protocol tools that provide additional capabilities to the assistant.'
+          )}
         </Typography>
 
         {/* Search Bar */}
@@ -340,7 +341,7 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
         <Box sx={{ display: 'flex', justifyContent: 'center', my: 3 }}>
           <CircularProgress size={24} />
           <Typography variant="body2" sx={{ ml: 2 }}>
-            Loading MCP tools...
+            {t('Loading MCP tools...')}
           </Typography>
         </Box>
       ) : (
@@ -357,7 +358,7 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flex: 1 }}>
                     <Icon icon="mdi:server" style={{ fontSize: 20 }} />
                     <Typography variant="subtitle1">
-                      {serverName} ({tools.length} tools)
+                      {t('{{serverName}} ({{count}} tools)', { serverName, count: tools.length })}
                     </Typography>
                   </Box>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -426,7 +427,7 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
               color="text.secondary"
               sx={{ fontStyle: 'italic', textAlign: 'center', py: 3 }}
             >
-              No tools match your search query.
+              {t('No tools match your search query.')}
             </Typography>
           )}
 
@@ -436,7 +437,7 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
               color="text.secondary"
               sx={{ fontStyle: 'italic', textAlign: 'center', py: 3 }}
             >
-              No MCP tools available. Connect to MCP servers to see available tools.
+              {t('No MCP tools available. Connect to MCP servers to see available tools.')}
             </Typography>
           )}
         </>
@@ -525,8 +526,9 @@ export const ToolsDialog: React.FC<ToolsDialogProps> = ({
 
       <DialogContent>
         <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-          Enable or disable tools that the AI can use. Changes will take effect immediately and will
-          be saved to your settings.
+          {t(
+            'Enable or disable tools that the AI can use. Changes will take effect immediately and will be saved to your settings.'
+          )}
         </Typography>
 
         {/* Kubernetes Tools */}

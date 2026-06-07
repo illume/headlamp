@@ -1,5 +1,6 @@
 import { FormattedMCPOutput } from '@headlamp-k8s/ai-common/langchain/formatters/MCPOutputFormatter';
 import { Icon } from '@iconify/react';
+import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import {
   Alert,
   Box,
@@ -24,7 +25,6 @@ import {
   useTheme,
 } from '@mui/material';
 import React, { useEffect, useState } from 'react';
-import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import ReactMarkdown from 'react-markdown';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -177,13 +177,14 @@ const MarkdownRenderer: React.FC<{ data: any; width: string; syntaxTheme: any }>
               onClick={() => setShowFullContent(true)}
               startIcon={<Icon icon="mdi:unfold-more-horizontal" />}
             >
-              Show Full Content
+              {t('Show Full Content')}
             </Button>
           }
         >
           <Typography variant="body2">
-            Content has been truncated for display. Click "Show Full Content" to view the complete
-            documentation.
+            {t(
+              'Content has been truncated for display. Click "Show Full Content" to view the complete documentation.'
+            )}
           </Typography>
         </Alert>
       )}
@@ -353,7 +354,7 @@ const MarkdownRenderer: React.FC<{ data: any; width: string; syntaxTheme: any }>
             startIcon={<Icon icon="mdi:unfold-less-horizontal" />}
             variant="outlined"
           >
-            Collapse to Summary
+            {t('Collapse to Summary')}
           </Button>
         </Box>
       )}
@@ -569,7 +570,7 @@ const MCPOutputDisplay: React.FC<MCPOutputDisplayProps> = ({
                 {output.warnings && output.warnings.length > 0 && (
                   <Alert severity="warning" sx={{ mb: 2 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1 }}>
-                      Warnings:
+                      {t('Warnings:')}
                     </Typography>
                     {output.warnings.map((warning, index) => (
                       <Typography key={index} variant="body2">
@@ -613,7 +614,7 @@ const MCPOutputDisplay: React.FC<MCPOutputDisplayProps> = ({
                           color: theme.palette.primary.main,
                         }}
                       />
-                      Key Insights:
+                      {t('Key Insights:')}
                     </Typography>
                     {output.insights.map((insight, index) => (
                       <Typography
@@ -656,7 +657,7 @@ const MCPOutputDisplay: React.FC<MCPOutputDisplayProps> = ({
                           color: theme.palette.success.main,
                         }}
                       />
-                      Recommended Actions:
+                      {t('Recommended Actions:')}
                     </Typography>
                     {output.actionable_items.map((item, index) => (
                       <Typography
@@ -679,7 +680,7 @@ const MCPOutputDisplay: React.FC<MCPOutputDisplayProps> = ({
             <Collapse in={showRawData}>
               <Divider sx={{ my: 2 }} />
               <Typography variant="subtitle2" sx={{ mb: 1 }}>
-                Raw Data:
+                {t('Raw Data:')}
               </Typography>
               <SyntaxHighlighter
                 language="json"
@@ -706,7 +707,11 @@ const MCPOutputDisplay: React.FC<MCPOutputDisplayProps> = ({
             {/* Metadata */}
             {output.metadata && (
               <Box sx={{ mt: 2, display: 'flex', gap: 1, flexWrap: 'wrap' }}>
-                <Chip label={`Tool: ${output.metadata.toolName}`} size="small" variant="outlined" />
+                <Chip
+                  label={t('Tool: {{toolName}}', { toolName: output.metadata.toolName })}
+                  size="small"
+                  variant="outlined"
+                />
                 <Chip
                   label={`${(output.metadata.responseSize / 1024).toFixed(1)}KB`}
                   size="small"
@@ -728,7 +733,6 @@ const MCPOutputDisplay: React.FC<MCPOutputDisplayProps> = ({
 
 // Table Display Component
 const TableDisplay: React.FC<{ data: any; width: string }> = ({ data, width }) => {
-  const { t } = useTranslation();
   const theme = useTheme();
   const [sortBy, setSortBy] = useState(data.sortBy || null);
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
@@ -887,7 +891,6 @@ const TableDisplay: React.FC<{ data: any; width: string }> = ({ data, width }) =
 
 // Metrics Display Component
 const MetricsDisplay: React.FC<{ data: any; width: string }> = ({ data, width }) => {
-  const { t } = useTranslation();
   const theme = useTheme();
 
   const getStatusColor = (status: string) => {
@@ -1081,7 +1084,6 @@ const MetricsDisplay: React.FC<{ data: any; width: string }> = ({ data, width })
 
 // List Display Component
 const ListDisplay: React.FC<{ data: any; width: string }> = ({ data, width }) => {
-  const { t } = useTranslation();
   const theme = useTheme();
 
   const getStatusColor = (status: string) => {
@@ -1146,17 +1148,22 @@ const ListDisplay: React.FC<{ data: any; width: string }> = ({ data, width }) =>
 
 // Graph Display Component (placeholder for now)
 const GraphDisplay: React.FC<{ data: any; width: string }> = ({ data, width }) => {
+  const { t } = useTranslation();
+
   return (
     <Paper variant="outlined" sx={{ p: 3, textAlign: 'center', width: width, maxWidth: 'none' }}>
       <Icon icon="mdi:chart-bar" style={{ fontSize: 48, opacity: 0.5 }} />
       <Typography variant="h6" sx={{ mt: 2 }}>
-        Graph Visualization
+        {t('Graph Visualization')}
       </Typography>
       <Typography variant="body2" color="text.secondary">
-        {data.description || 'Chart visualization would appear here'}
+        {data.description || t('Chart visualization would appear here')}
       </Typography>
       <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-        Chart Type: {data.chartType} • {data.datasets?.length || 0} datasets
+        {t('Chart Type: {{chartType}} • {{count}} datasets', {
+          chartType: data.chartType,
+          count: data.datasets?.length || 0,
+        })}
       </Typography>
     </Paper>
   );
@@ -1254,6 +1261,8 @@ const ErrorDisplay: React.FC<{ data: any; onRetry?: () => void; width: string }>
   onRetry,
   width,
 }) => {
+  const { t } = useTranslation();
+
   return (
     <Box
       sx={{
@@ -1295,7 +1304,7 @@ const ErrorDisplay: React.FC<{ data: any; onRetry?: () => void; width: string }>
             whiteSpace: 'pre-wrap',
           }}
         >
-          {data.message || data.details || 'Tool Execution Error'}
+          {data.message || data.details || t('Tool Execution Error')}
         </Typography>
       </Paper>
 
@@ -1309,7 +1318,7 @@ const ErrorDisplay: React.FC<{ data: any; onRetry?: () => void; width: string }>
             startIcon={<Icon icon="mdi:refresh" />}
             sx={{ mr: 0.5 }}
           >
-            Retry Tool
+            {t('Retry Tool')}
           </Button>
         )}
       </Box>

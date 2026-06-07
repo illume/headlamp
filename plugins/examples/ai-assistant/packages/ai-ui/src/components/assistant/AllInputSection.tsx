@@ -1,3 +1,4 @@
+import { getProviderById } from '@headlamp-k8s/ai-common/config/modelConfig';
 import { StoredProviderConfig } from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
 import { Icon } from '@iconify/react';
 import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
@@ -14,9 +15,8 @@ import {
 } from '@mui/material';
 import React from 'react';
 import { getModelDisplayName, getProviderModelsForChat } from '../../providers/modelProviders';
-import { getProviderById } from '@headlamp-k8s/ai-common/config/modelConfig';
-import type { ActionButtonSlotProps } from './AIAssistantHeader';
 import { DefaultActionButton } from '../defaults/DefaultSlots';
+import type { ActionButtonSlotProps } from './AIAssistantHeader';
 import TestModeInput from './TestModeInput';
 
 export type { ActionButtonSlotProps } from './AIAssistantHeader';
