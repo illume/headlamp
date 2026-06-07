@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 The Kubernetes Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 /**
  * Composable settings page for the AI Assistant plugin.
  *
@@ -22,33 +38,22 @@
  * ```
  */
 
+import { getDefaultConfig } from '@headlamp-k8s/ai-common/config/modelConfig';
 import {
   getActiveConfig,
   type SavedConfigurations,
 } from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
 import type { CommandRunner } from '@headlamp-k8s/ai-common/providers/providerAutoDetect';
-import {
-  Box,
-  Button,
-  Divider,
-  FormControlLabel,
-  Link,
-  Switch,
-  Typography,
-} from '@mui/material';
+import { Box, Button, Divider, FormControlLabel, Link, Switch, Typography } from '@mui/material';
 import React from 'react';
-import { getDefaultConfig } from '@headlamp-k8s/ai-common/config/modelConfig';
+import { useTranslation } from 'react-i18next';
 import { AIToolsSettings, type ToolInfo } from './AIToolsSettings';
 import { AutoDetectProvider, useAutoDetect } from './AutoDetectProvider';
-import {
-  DeveloperSettings,
-  type DeveloperOptionsConfig,
-} from './DeveloperSettings';
+import { type DeveloperOptionsConfig,DeveloperSettings } from './DeveloperSettings';
 import { HolmesAgentSettings } from './HolmesAgentSettings';
-import { MCPSettings, type ConfigStore } from './MCPSettings';
+import { type ConfigStore,MCPSettings } from './MCPSettings';
 import ModelSelector from './ModelSelector';
 import { SkillSettings } from './SkillSettings';
-import { useTranslation } from 'react-i18next';
 
 /** Props for the {@link SettingsPage} component. */
 export interface SettingsPageProps {
@@ -312,6 +317,7 @@ export function SettingsPage({
         }}
         onAutoDetect={autoDetect.handleAutoDetect}
         autoDetecting={autoDetect.autoDetecting}
+        commandRunner={commandRunner}
       />
       <AutoDetectProvider
         detectedProviders={autoDetect.detectedProviders}

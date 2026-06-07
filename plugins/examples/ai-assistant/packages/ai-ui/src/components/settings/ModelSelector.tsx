@@ -1,16 +1,49 @@
+/*
+ * Copyright 2025 The Kubernetes Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import {
+  getDefaultConfig,
+  getProviderById,
+  getProviderFields,
+  modelProviders,
+} from '@headlamp-k8s/ai-common/config/modelConfig';
 import {
   deleteProviderConfig,
   getActiveConfig,
+  isSameStoredConfig,
   SavedConfigurations,
   saveProviderConfig,
   saveTermsAcceptance,
   StoredProviderConfig,
 } from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
+import {
+  detectCopilotChatModels,
+  detectCopilotProvider,
+  DetectedProvider,
+  detectGhCliAvailable,
+  detectProviders,
+  GH_CLI_AUTH_SENTINEL,
+  refreshGitHubToken,
+} from '@headlamp-k8s/ai-common/providers/providerAutoDetect';
 import { Icon } from '@iconify/react';
 import {
   Box,
   Button,
   Chip,
+  CircularProgress,
   DialogActions,
   DialogContent,
   DialogContentText,
@@ -19,6 +52,7 @@ import {
   FormHelperText,
   Grid,
   IconButton,
+  Link as MuiLink,
   Menu,
   MenuItem,
   Paper,
@@ -28,16 +62,10 @@ import {
   Typography,
 } from '@mui/material';
 import { Autocomplete } from '@mui/material';
-import { useEffect, useState } from 'react';
-import {
-  getDefaultConfig,
-  getProviderById,
-  getProviderFields,
-  modelProviders,
-} from '@headlamp-k8s/ai-common/config/modelConfig';
+import { type ReactNode, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DefaultDialog } from '../defaults/DefaultSlots';
 import TermsDialog from './TermsDialog';
-import { useTranslation } from 'react-i18next';
 
 /** Props for the ProviderSelectionDialog that lets users pick an AI provider. */
 interface ProviderSelectionDialogProps {
@@ -129,6 +157,8 @@ interface ConfigurationDialogProps {
   onSave?: (makeDefault: boolean) => void;
   /** Component used to render the dialog shell. Falls back to MUI Dialog. */
   DialogSlot?: React.ElementType;
+  /** Optional CommandRunner for CLI-based per-provider auto-detection. */
+  commandRunner?: import('@headlamp-k8s/ai-common/providers/providerAutoDetect').CommandRunner;
 }
 
 function ConfigurationDialog({
@@ -141,11 +171,123 @@ function ConfigurationDialog({
   onConfigNameChange,
   onSave,
   DialogSlot = DefaultDialog,
+  commandRunner,
 }: ConfigurationDialogProps) {
   const { t } = useTranslation();
   const provider = getProviderById(providerId);
   const fields = getProviderFields(providerId);
   const [initialRender, setInitialRender] = useState(true);
+  const [isDetecting, setIsDetecting] = useState(false);
+  const [detectStatus, setDetectStatus] = useState<{
+    kind: 'success' | 'error';
+    text: string;
+    hint?: ReactNode;
+  } | null>(null);
+  const [liveModelOptions, setLiveModelOptions] = useState<string[]>([]);
+
+  const isDetectSupported =
+    providerId === 'copilot' || providerId === 'azure' || providerId === 'local';
+
+  // Reset detect state when dialog opens/provider changes
+  useEffect(() => {
+    setDetectStatus(null);
+    setIsDetecting(false);
+    setLiveModelOptions([]);
+  }, [open, providerId]);
+
+  // Live Copilot model fetching when dialog opens with a token
+  useEffect(() => {
+    if (!open || providerId !== 'copilot' || !commandRunner) return;
+    const storedKey = config.apiKey;
+    const isSentinel = storedKey === GH_CLI_AUTH_SENTINEL;
+    const isTypedKey = Boolean(storedKey && !isSentinel);
+    if (!isSentinel && !isTypedKey) return;
+    if (isTypedKey && storedKey.length < 30) return;
+
+    let cancelled = false;
+    const run = async () => {
+      try {
+        const token = isTypedKey ? storedKey : await refreshGitHubToken(commandRunner);
+        if (!token || cancelled) return;
+        const models = await detectCopilotChatModels(token);
+        if (!cancelled && models && models.length > 0) {
+          setLiveModelOptions(models);
+        }
+      } catch {
+        // CORS or auth failure — keep static options
+      }
+    };
+    const delay = isTypedKey ? 600 : 0;
+    const timer = setTimeout(run, delay);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [open, providerId, config.apiKey, commandRunner]);
+
+  const handleDetect = async () => {
+    if (!commandRunner || !isDetectSupported) return;
+    setIsDetecting(true);
+    setDetectStatus(null);
+    try {
+      let detected: DetectedProvider | null = null;
+      if (providerId === 'copilot') {
+        detected = await detectCopilotProvider(commandRunner);
+      }
+      if (detected) {
+        onConfigChange({ ...config, ...detected.config });
+        if (
+          onConfigNameChange &&
+          (!configName || configName === provider?.name || configName === providerId)
+        ) {
+          onConfigNameChange(detected.displayName || provider?.name || providerId);
+        }
+        if (detected.config.model && detected.config.model !== config.apiKey) {
+          const models = await detectCopilotChatModels(
+            detected.config.apiKey === GH_CLI_AUTH_SENTINEL
+              ? (await refreshGitHubToken(commandRunner)) ?? ''
+              : detected.config.apiKey
+          );
+          if (models && models.length > 0) setLiveModelOptions(models);
+        }
+        setDetectStatus({ kind: 'success', text: t('Detected and applied provider settings.') });
+      } else {
+        let hint: ReactNode | undefined;
+        if (providerId === 'copilot') {
+          const ghAvailable = await detectGhCliAvailable(commandRunner);
+          if (!ghAvailable) {
+            hint = (
+              <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 0.5 }}>
+                {t(
+                  'GitHub CLI (gh) does not appear to be installed. Install it to enable GitHub Copilot auto-detection:'
+                )}{' '}
+                <MuiLink
+                  href="https://cli.github.com/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="caption"
+                >
+                  {t('Get started with GitHub CLI')}
+                </MuiLink>
+              </Typography>
+            );
+          }
+        }
+        setDetectStatus({
+          kind: 'error',
+          text: t('No detectable settings found for this provider in your environment.'),
+          hint,
+        });
+      }
+    } catch {
+      setDetectStatus({
+        kind: 'error',
+        text: t('Auto-detection failed unexpectedly. Please try again.'),
+      });
+    } finally {
+      setIsDetecting(false);
+    }
+  };
 
   const handleFieldChange = (fieldName: string, value: any) => {
     // Update the config with the new field value
@@ -180,7 +322,9 @@ function ConfigurationDialog({
         <Box display="flex" alignItems="center" gap={1}>
           {provider && <Icon icon={provider.icon} width="24px" height="24px" />}
           <Typography variant="h6">
-            {provider ? t('Configure {{provider}}', { provider: provider.name }) : t('Configure Provider')}
+            {provider
+              ? t('Configure {{provider}}', { provider: provider.name })
+              : t('Configure Provider')}
           </Typography>
         </Box>
       </DialogTitle>
@@ -225,7 +369,9 @@ function ConfigurationDialog({
                       </Typography>
                       <Autocomplete
                         freeSolo
-                        options={field.options || []}
+                        options={
+                          liveModelOptions.length > 0 ? liveModelOptions : field.options || []
+                        }
                         value={config[field.name] || ''}
                         onChange={(_, newValue) => {
                           handleFieldChange(field.name, newValue || '');
@@ -238,7 +384,9 @@ function ConfigurationDialog({
                             {...params}
                             fullWidth
                             size="small"
-                            placeholder={t('Enter or select model name (e.g., gpt-4, claude-3-opus, custom-model)')}
+                            placeholder={t(
+                              'Enter or select model name (e.g., gpt-4, claude-3-opus, custom-model)'
+                            )}
                             helperText={
                               config[field.name]
                                 ? field.options?.includes(config[field.name])
@@ -403,14 +551,44 @@ function ConfigurationDialog({
           <Typography variant="body2" color={isValid ? 'success.main' : 'error.main'}>
             {isValid ? t('Configuration is valid.') : t('Please fill in all required fields.')}
           </Typography>
+          {detectStatus && (
+            <Box sx={{ mt: 0.5 }}>
+              <Typography
+                variant="caption"
+                color={detectStatus.kind === 'success' ? 'success.main' : 'error.main'}
+                display="block"
+              >
+                {detectStatus.text}
+              </Typography>
+              {detectStatus.hint}
+            </Box>
+          )}
         </Box>
-        <Button onClick={onClose}>{t('Cancel')}</Button>
+        {commandRunner && isDetectSupported && (
+          <Button
+            variant="outlined"
+            startIcon={
+              isDetecting ? (
+                <CircularProgress size={16} color="inherit" />
+              ) : (
+                <Icon icon="mdi:magnify" />
+              )
+            }
+            onClick={handleDetect}
+            disabled={isDetecting}
+          >
+            {isDetecting ? t('Auto Detecting...') : t('Auto Detect')}
+          </Button>
+        )}
+        <Button onClick={onClose} disabled={isDetecting}>
+          {t('Cancel')}
+        </Button>
         {onSave && (
           <Button
             variant="contained"
             color="primary"
             onClick={() => onSave(true)}
-            disabled={!isValid}
+            disabled={!isValid || isDetecting}
           >
             {t('Save')}
           </Button>
@@ -450,6 +628,13 @@ interface ModelSelectorProps {
   autoDetecting?: boolean;
   /** Component used to render dialog shells. Falls back to MUI Dialog. */
   DialogSlot?: React.ElementType;
+  /**
+   * Called with detected providers when "Auto Detect All" completes.
+   * The parent is responsible for showing a selection dialog and saving chosen providers.
+   */
+  onAutoDetectResults?: (providers: DetectedProvider[]) => void;
+  /** CommandRunner injected by the host app for CLI-based auto-detection. */
+  commandRunner?: import('@headlamp-k8s/ai-common/providers/providerAutoDetect').CommandRunner;
 }
 
 export default function ModelSelector({
@@ -463,6 +648,8 @@ export default function ModelSelector({
   onAutoDetect,
   autoDetecting = false,
   DialogSlot = DefaultDialog,
+  onAutoDetectResults,
+  commandRunner,
 }: ModelSelectorProps) {
   const { t } = useTranslation();
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -496,84 +683,12 @@ export default function ModelSelector({
   };
 
   // Compare two configuration objects to see if they're essentially the same
+  // Delegates to isSameStoredConfig from ProviderConfigManager for consistency.
   function areConfigsSimilar(config1: Record<string, any>, config2: Record<string, any>): boolean {
-    // If one of the configs is empty or undefined, they're not similar
-    if (!config1 || !config2) return false;
-
-    // Compare API key if both have it
-    if (config1.apiKey && config2.apiKey) {
-      if (config1.apiKey !== config2.apiKey) {
-        return false;
-      }
-
-      // For API keys, also check model and deploymentName if they exist
-      // to distinguish between different configurations using the same key
-      if (config1.model && config2.model && config1.model !== config2.model) {
-        return false;
-      }
-
-      if (
-        config1.deploymentName &&
-        config2.deploymentName &&
-        config1.deploymentName !== config2.deploymentName
-      ) {
-        return false;
-      }
-
-      // If they share the same API key and don't have conflicting models/deployments,
-      // consider them similar
-      return true;
-    }
-
-    // Check if both have base URL
-    if (config1.baseUrl && config2.baseUrl) {
-      if (config1.baseUrl !== config2.baseUrl) {
-        return false;
-      }
-
-      // For base URLs, also check model if it exists
-      if (config1.model && config2.model && config1.model !== config2.model) {
-        return false;
-      }
-
-      // If they share the same base URL and model, consider them similar
-      return true;
-    }
-
-    // If we don't have API keys or base URLs to compare (unusual),
-    // do a more thorough check on important fields
-
-    // Compare models if both have them
-    if (config1.model && config2.model) {
-      if (config1.model !== config2.model) {
-        return false;
-      }
-    } else if ((config1.model && !config2.model) || (!config1.model && config2.model)) {
-      // One has a model and the other doesn't - they're different
-      return false;
-    }
-
-    // Compare deploymentNames if both have them
-    if (config1.deploymentName && config2.deploymentName) {
-      if (config1.deploymentName !== config2.deploymentName) {
-        return false;
-      }
-    } else if (
-      (config1.deploymentName && !config2.deploymentName) ||
-      (!config1.deploymentName && config2.deploymentName)
-    ) {
-      // One has a deploymentName and the other doesn't - they're different
-      return false;
-    }
-
-    // If we've made it this far and both configs have either matching models
-    // or matching deploymentNames, consider them similar
-    if ((config1.model && config2.model) || (config1.deploymentName && config2.deploymentName)) {
-      return true;
-    }
-
-    // If we don't have enough information to make a determination, consider them different
-    return false;
+    return isSameStoredConfig(
+      { providerId: selectedProvider, config: config1 },
+      { providerId: selectedProvider, config: config2 }
+    );
   }
 
   // Open dialog with provider configuration
@@ -687,6 +802,20 @@ export default function ModelSelector({
 
   const handleCloseMenu = () => {
     setAnchorEl(null);
+  };
+
+  /** Runs full auto-detection and surfaces results to the parent via onAutoDetectResults. */
+  const handleDetectAllProviders = async () => {
+    if (!commandRunner || !onAutoDetectResults) return;
+    try {
+      const detected = await detectProviders(savedConfigs?.providers || [], commandRunner);
+      if (detected.length > 0) {
+        setProviderSelectionOpen(false);
+        onAutoDetectResults(detected);
+      }
+    } catch {
+      // Silently ignore — caller can show error via onAutoDetectResults([]) pattern
+    }
   };
 
   // Menu handling
@@ -838,7 +967,7 @@ export default function ModelSelector({
                   <Icon icon="mdi:magnify-scan" />
                 )
               }
-              onClick={onAutoDetect}
+              onClick={onAutoDetect ?? handleDetectAllProviders}
               disabled={autoDetecting}
               sx={{ ml: 1 }}
             >
@@ -1064,6 +1193,7 @@ export default function ModelSelector({
         onConfigNameChange={handleDialogConfigNameChange}
         onSave={handleSaveDialog}
         DialogSlot={DialogSlot}
+        commandRunner={commandRunner}
       />
 
       <DialogSlot
@@ -1075,7 +1205,9 @@ export default function ModelSelector({
       >
         <DialogTitle>{t('Delete Configuration')}</DialogTitle>
         <DialogContent>
-          <DialogContentText>{t('Are you sure you want to delete this configuration?')}</DialogContentText>
+          <DialogContentText>
+            {t('Are you sure you want to delete this configuration?')}
+          </DialogContentText>
         </DialogContent>
         <DialogActions>
           <Button

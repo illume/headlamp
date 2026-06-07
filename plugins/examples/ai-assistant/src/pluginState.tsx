@@ -1,5 +1,29 @@
-import { SavedConfigurations, StoredProviderConfig } from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
-import { getAllAvailableToolsIncludingMCP, initializeToolsState } from '@headlamp-k8s/ai-common/managers/ToolConfigManager';
+/*
+ * Copyright 2025 The Kubernetes Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import {
+  SavedConfigurations,
+  StoredProviderConfig,
+} from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
+import {
+  getAllAvailableToolsIncludingMCP,
+  initializeToolsState,
+} from '@headlamp-k8s/ai-common/managers/ToolConfigManager';
+import type { DeveloperOptionsConfig } from '@headlamp-k8s/ai-ui/components/settings/DeveloperSettings';
+import type { MCPConfig } from '@headlamp-k8s/ai-ui/components/settings/MCPSettings';
 import { ConfigStore } from '@kinvolk/headlamp-plugin/lib';
 import type {
   EventListEvent,
@@ -9,8 +33,6 @@ import type {
 import React from 'react';
 import { useBetween } from 'use-between';
 import type { AksAgentPodInfo } from './agent/aksAgentManager';
-import type { MCPConfig } from '@headlamp-k8s/ai-ui/components/settings/MCPSettings';
-import type { DeveloperOptionsConfig } from '@headlamp-k8s/ai-ui/components/settings/DeveloperSettings';
 
 export const PLUGIN_NAME = '@headlamp-k8s/ai-assistant';
 export const getSettingsURL = () => `/settings/plugins/${encodeURIComponent(PLUGIN_NAME)}`;
@@ -150,6 +172,12 @@ interface PluginConfig extends SavedConfigurations {
   mcpConfig?: MCPConfig;
   /** Is the AI Assistant preview enabled? Disabled by default. */
   previewEnabled?: boolean;
+  /**
+   * Provider IDs the user has explicitly dismissed during auto-detection.
+   * Detection still runs each session but skips these provider types so
+   * the dialog only surfaces genuinely new providers.
+   */
+  autoDetectDismissedProviders?: string[];
 
   /** HolmesGPT Kubernetes Service settings (used by the Holmes agent mode) */
   holmesNamespace?: string; // default: "default"

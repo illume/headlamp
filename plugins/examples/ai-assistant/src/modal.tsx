@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 The Kubernetes Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 import { getHolmesProxyBaseUrl, HolmesAgent } from '@headlamp-k8s/ai-common/agent/holmesClient';
 import AIManager, { Prompt } from '@headlamp-k8s/ai-common/ai/manager';
 import { inlineToolApprovalManager } from '@headlamp-k8s/ai-common/approval/InlineToolApprovalManager';
@@ -60,6 +76,7 @@ const OPERATION_TYPES = {
 import {
   getActiveConfig,
   getSavedConfigurations,
+  isSameStoredConfig,
   StoredProviderConfig,
 } from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
 import { getEnabledToolIds } from '@headlamp-k8s/ai-common/managers/ToolConfigManager';
@@ -377,10 +394,7 @@ export default function AIPrompt(props: {
 
     // Check if the current active config still exists
     if (activeConfig) {
-      const stillExists = newProviders.find(
-        p =>
-          p.providerId === activeConfig.providerId && p.config.apiKey === activeConfig.config.apiKey
-      );
+      const stillExists = newProviders.find(p => isSameStoredConfig(p, activeConfig));
 
       if (!stillExists) {
         // Active provider was deleted, switch to a new one or clear
@@ -461,8 +475,7 @@ export default function AIPrompt(props: {
 
     if (
       !activeConfig ||
-      activeConfig.providerId !== config.providerId ||
-      activeConfig.config.apiKey !== config.config.apiKey ||
+      !isSameStoredConfig(activeConfig, config) ||
       JSON.stringify(activeConfig.config) !== JSON.stringify(config.config) ||
       selectedModel !== resolvedModel
     ) {

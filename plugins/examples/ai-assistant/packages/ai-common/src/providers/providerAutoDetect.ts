@@ -126,15 +126,11 @@ async function runDetectCommand(
 /**
  * Detects a GitHub personal access token via the `gh` CLI.
  */
-export async function detectGitHubToken(
-  commandRunner: CommandRunner
-): Promise<string | null> {
+export async function detectGitHubToken(commandRunner: CommandRunner): Promise<string | null> {
   console.debug('[ai-assistant auto-detect] checking for GitHub CLI token (gh auth token)...');
   const { stdout, exitCode } = await runDetectCommand('gh', ['auth', 'token'], commandRunner);
   if (exitCode !== 0 || !stdout) {
-    console.debug(
-      `[ai-assistant auto-detect] gh auth token failed: exitCode=${exitCode}`
-    );
+    console.debug(`[ai-assistant auto-detect] gh auth token failed: exitCode=${exitCode}`);
     return null;
   }
   const token = stdout.trim();
@@ -157,7 +153,9 @@ export async function validateGitHubToken(token: string): Promise<boolean> {
     });
     const valid = response.ok;
     console.debug(
-      `[ai-assistant auto-detect] GitHub token validation: ${valid ? 'valid' : 'invalid'} (status ${response.status})`
+      `[ai-assistant auto-detect] GitHub token validation: ${valid ? 'valid' : 'invalid'} (status ${
+        response.status
+      })`
     );
     return valid;
   } catch (e) {
@@ -169,9 +167,7 @@ export async function validateGitHubToken(token: string): Promise<boolean> {
 /**
  * Fetches available chat models from the GitHub Copilot model catalog.
  */
-export async function detectCopilotChatModels(
-  token: string
-): Promise<CopilotModelEntry[]> {
+export async function detectCopilotChatModels(token: string): Promise<CopilotModelEntry[]> {
   try {
     const response = await fetch('https://api.githubcopilot.com/models', {
       headers: {
@@ -180,19 +176,13 @@ export async function detectCopilotChatModels(
       },
     });
     if (!response.ok) {
-      console.debug(
-        `[ai-assistant auto-detect] Copilot model catalog returned ${response.status}`
-      );
+      console.debug(`[ai-assistant auto-detect] Copilot model catalog returned ${response.status}`);
       return [];
     }
     const data = await response.json();
     const models: CopilotModelEntry[] = data.data || data.models || [];
-    const chatModels = models.filter(
-      m => !m.capabilities?.type || m.capabilities.type === 'chat'
-    );
-    console.debug(
-      `[ai-assistant auto-detect] Copilot catalog: ${chatModels.length} chat model(s)`
-    );
+    const chatModels = models.filter(m => !m.capabilities?.type || m.capabilities.type === 'chat');
+    console.debug(`[ai-assistant auto-detect] Copilot catalog: ${chatModels.length} chat model(s)`);
     return chatModels;
   } catch (e) {
     console.debug('[ai-assistant auto-detect] Copilot model catalog fetch failed:', e);
@@ -217,9 +207,7 @@ const COPILOT_MODEL_PRIORITY: string[] = [
 /**
  * Selects the best chat model from a Copilot model list based on priority.
  */
-export function pickBestCopilotChatModel(
-  models: CopilotModelEntry[]
-): string {
+export function pickBestCopilotChatModel(models: CopilotModelEntry[]): string {
   for (const priority of COPILOT_MODEL_PRIORITY) {
     const match = models.find(m => m.id.toLowerCase().includes(priority));
     if (match) return match.id;
@@ -261,10 +249,31 @@ export async function detectCopilotProvider(
  * Fetches a fresh GitHub token from the `gh` CLI.
  * Call at model creation time when config.apiKey is {@link GH_CLI_AUTH_SENTINEL}.
  */
-export async function refreshGitHubToken(
-  commandRunner: CommandRunner
-): Promise<string | null> {
+export async function refreshGitHubToken(commandRunner: CommandRunner): Promise<string | null> {
   return detectGitHubToken(commandRunner);
+}
+
+/**
+ * Returns true when the `gh` CLI binary is present and executable,
+ * regardless of authentication state. Returns false if the binary is
+ * not installed (exit code 127, ENOENT, or "command not found" in stderr).
+ */
+export async function detectGhCliAvailable(commandRunner: CommandRunner): Promise<boolean> {
+  try {
+    const { stdout, exitCode } = await runDetectCommand('gh', ['auth', 'token'], commandRunner);
+    if (exitCode === 127) return false;
+    const combined = stdout.toLowerCase();
+    if (
+      combined.includes('command not found') ||
+      combined.includes('no such file') ||
+      combined.includes('is not recognized')
+    ) {
+      return false;
+    }
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -362,10 +371,12 @@ function isChatDeployment(deployment: AzureOpenAIDeployment): boolean {
   );
 }
 
-async function checkAzureLogin(
-  commandRunner: CommandRunner
-): Promise<string | null> {
-  const { stdout, exitCode } = await runDetectCommand('az', ['account', 'show', '-o', 'json'], commandRunner);
+async function checkAzureLogin(commandRunner: CommandRunner): Promise<string | null> {
+  const { stdout, exitCode } = await runDetectCommand(
+    'az',
+    ['account', 'show', '-o', 'json'],
+    commandRunner
+  );
   if (exitCode !== 0 || !stdout) return null;
   try {
     const account = JSON.parse(stdout);
@@ -380,7 +391,15 @@ async function listAzureOpenAIAccounts(
 ): Promise<AzureOpenAIAccount[]> {
   const { stdout, exitCode } = await runDetectCommand(
     'az',
-    ['cognitiveservices', 'account', 'list', '--query', "[?kind=='OpenAI' || kind=='AIServices']", '-o', 'json'],
+    [
+      'cognitiveservices',
+      'account',
+      'list',
+      '--query',
+      "[?kind=='OpenAI' || kind=='AIServices']",
+      '-o',
+      'json',
+    ],
     commandRunner
   );
   if (exitCode !== 0 || !stdout) return [];
@@ -399,7 +418,18 @@ async function listAzureOpenAIDeployments(
 ): Promise<AzureOpenAIDeployment[]> {
   const { stdout, exitCode } = await runDetectCommand(
     'az',
-    ['cognitiveservices', 'account', 'deployment', 'list', '-g', resourceGroup, '-n', accountName, '-o', 'json'],
+    [
+      'cognitiveservices',
+      'account',
+      'deployment',
+      'list',
+      '-g',
+      resourceGroup,
+      '-n',
+      accountName,
+      '-o',
+      'json',
+    ],
     commandRunner
   );
   if (exitCode !== 0 || !stdout) return [];
@@ -418,7 +448,18 @@ async function getAzureOpenAIKey(
 ): Promise<string | null> {
   const { stdout, exitCode } = await runDetectCommand(
     'az',
-    ['cognitiveservices', 'account', 'keys', 'list', '-g', resourceGroup, '-n', accountName, '-o', 'json'],
+    [
+      'cognitiveservices',
+      'account',
+      'keys',
+      'list',
+      '-g',
+      resourceGroup,
+      '-n',
+      accountName,
+      '-o',
+      'json',
+    ],
     commandRunner
   );
   if (exitCode !== 0 || !stdout) return null;
@@ -466,7 +507,11 @@ export async function collectAzureOpenAIProviders(
     if (endpoint && skipEndpoints.has(normaliseEndpoint(endpoint))) continue;
     if (!endpoint || !resourceGroup) continue;
 
-    const deployments = await listAzureOpenAIDeployments(resourceGroup, account.name, commandRunner);
+    const deployments = await listAzureOpenAIDeployments(
+      resourceGroup,
+      account.name,
+      commandRunner
+    );
     const chatDeployments = deployments.filter(isChatDeployment);
     if (chatDeployments.length === 0) continue;
 
@@ -570,9 +615,7 @@ export async function detectProviders(
   ]);
 
   const [copilot, azureAll, ollama] = await Promise.all([
-    skipCopilot || !commandRunner
-      ? Promise.resolve(null)
-      : detectCopilotProvider(commandRunner),
+    skipCopilot || !commandRunner ? Promise.resolve(null) : detectCopilotProvider(commandRunner),
     skipAllAzure || !commandRunner
       ? Promise.resolve([])
       : collectAzureOpenAIProviders(commandRunner, skipAzureAccountNames, skipAzureEndpoints),

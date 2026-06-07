@@ -48,13 +48,13 @@ export default function Settings() {
   const savedConfigs = usePluginConfig();
 
   // Command runner for CLI-based provider detection
-  const commandRunnerRef = React.useRef<CommandRunner | null>(null);
+  const [commandRunner, setCommandRunner] = React.useState<CommandRunner | null>(null);
   React.useEffect(() => {
     if (typeof (globalThis as any).pluginRunCommand === 'function') {
-      commandRunnerRef.current = async (command: string, args: string[]) => {
+      setCommandRunner(() => async (command: string, args: string[]) => {
         const result = await (globalThis as any).pluginRunCommand(command, args);
         return { stdout: result?.stdout ?? '', exitCode: result?.exitCode ?? -1 };
-      };
+      });
     }
   }, []);
 
@@ -66,7 +66,7 @@ export default function Settings() {
       savedConfigs={savedConfigs}
       onConfigsChange={configs => pluginStore.update(configs as any)}
       onTermsAccept={configs => pluginStore.update(configs as any)}
-      commandRunner={commandRunnerRef.current}
+      commandRunner={commandRunner}
       dismissedProviders={(pluginStore.get() as any)?.autoDetectDismissedProviders || []}
       onDismissProviders={keys => {
         const current = pluginStore.get() || {};
