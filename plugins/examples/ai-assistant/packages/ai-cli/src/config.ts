@@ -75,6 +75,14 @@ export function loadConfigFile(configPath: string): CLIConfig {
   return JSON.parse(fs.readFileSync(path.resolve(configPath), 'utf-8')) as CLIConfig;
 }
 
+/** Saves a CLIConfig to headlamp-ai.json in the Headlamp data directory. */
+export function saveHeadlampAIConfig(config: CLIConfig): string {
+  const configPath = path.join(getHeadlampDataDir(), 'headlamp-ai.json');
+  fs.mkdirSync(getHeadlampDataDir(), { recursive: true });
+  fs.writeFileSync(configPath, JSON.stringify(config, null, 2), 'utf-8');
+  return configPath;
+}
+
 /** Builds a CLIConfig from HEADLAMP_AI_* environment variables. Returns null if not set. */
 export function configFromEnv(): CLIConfig | null {
   const provider = process.env.HEADLAMP_AI_PROVIDER;

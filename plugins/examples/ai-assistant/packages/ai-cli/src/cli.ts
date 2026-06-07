@@ -37,14 +37,43 @@ import {
   loadAppConfig,
   loadAppMCPSettings,
   loadConfigFile,
+  saveHeadlampAIConfig,
 } from './config.js';
 import { initMCPTools } from './mcp.js';
-import { createModel, tryAutoDetectCopilot } from './model.js';
+import { createModel, runAutoDetect, tryAutoDetectCopilot } from './model.js';
 
 async function main() {
   const parsed = parseArgs(process.argv);
   if (parsed.help) {
     printUsage();
+    process.exit(0);
+  }
+
+  // --auto-detect: discover available providers and optionally save the best one
+  if (parsed.autoDetect) {
+    console.error('Detecting available AI providers...\n');
+    const found = await runAutoDetect();
+    if (found.length === 0) {
+      console.log(
+        'No providers detected.\n' +
+          '  - Install `gh` and run `gh auth login` for GitHub Copilot\n' +
+          '  - Run Ollama locally for local models\n' +
+          '  - Log in with `az login` for Azure OpenAI'
+      );
+      process.exit(0);
+    }
+    console.log(`Detected ${found.length} provider(s):\n`);
+    found.forEach((p, i) => {
+      console.log(`  ${i + 1}. ${p.displayName}  (via ${p.source})`);
+      if (p.config.model) console.log(`     model: ${p.config.model}`);
+    });
+    if (parsed.save) {
+      const best = found[0];
+      const savedPath = saveHeadlampAIConfig({ provider: best.providerId, config: best.config });
+      console.log(`\nSaved "${best.displayName}" to ${savedPath}`);
+    } else {
+      console.log('\nRun with --save to write the first provider to headlamp-ai.json');
+    }
     process.exit(0);
   }
 
@@ -99,8 +128,8 @@ async function main() {
   if (!config?.provider) {
     const detected = await tryAutoDetectCopilot();
     if (detected) {
-      console.error('Auto-detected GitHub Copilot via `gh auth token`.');
-      config = detected as CLIConfig;
+      console.error(`Auto-detected ${detected.displayName} via ${detected.source}.`);
+      config = { provider: detected.providerId, config: detected.config };
     }
   }
 

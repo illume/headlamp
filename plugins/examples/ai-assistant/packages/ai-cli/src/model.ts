@@ -17,7 +17,10 @@
 import { createLangChainModel } from '@headlamp-k8s/ai-common/langchain/LangChainManager';
 import {
   type CommandRunner,
+  detectCopilotProvider,
+  type DetectedProvider,
   detectGitHubToken,
+  detectProviders,
   GH_CLI_AUTH_SENTINEL,
 } from '@headlamp-k8s/ai-common/providers/providerAutoDetect';
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
@@ -64,16 +67,20 @@ export async function createModel(
   return createLangChainModel(providerId, resolvedConfig);
 }
 
-/** Tries to auto-detect a Copilot token and return a ready config. */
-export async function tryAutoDetectCopilot(): Promise<{
-  provider: string;
-  config: Record<string, any>;
-} | null> {
-  try {
-    const token = await detectGitHubToken(makeNodeCommandRunner());
-    if (token) return { provider: 'copilot', config: { apiKey: token, model: 'gpt-4o' } };
-  } catch {
-    // not available
-  }
-  return null;
+/**
+ * Tries to auto-detect a Copilot provider using the full flow from ai-common:
+ * gh auth token → validate → fetch Copilot model catalog → pick best model.
+ */
+export async function tryAutoDetectCopilot(): Promise<DetectedProvider | null> {
+  return detectCopilotProvider(makeNodeCommandRunner());
+}
+
+/**
+ * Runs all provider auto-detection (Copilot, Azure CLI, Ollama).
+ * Skips providers already in existingProviders.
+ */
+export async function runAutoDetect(
+  existingProviders: Array<{ providerId: string; config: Record<string, any> }> = []
+): Promise<DetectedProvider[]> {
+  return detectProviders(existingProviders, [], makeNodeCommandRunner());
 }

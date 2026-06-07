@@ -27,12 +27,20 @@ export interface ParsedArgs {
   deploymentName?: string;
   systemPrompt?: string;
   interactive: boolean;
+  autoDetect: boolean;
+  save: boolean;
   help: boolean;
   query: string;
 }
 
 export function parseArgs(argv: string[]): ParsedArgs {
-  const result: ParsedArgs = { interactive: false, help: false, query: '' };
+  const result: ParsedArgs = {
+    interactive: false,
+    autoDetect: false,
+    save: false,
+    help: false,
+    query: '',
+  };
   const args = argv.slice(2);
   const queryParts: string[] = [];
 
@@ -66,6 +74,13 @@ export function parseArgs(argv: string[]): ParsedArgs {
       case '-i':
         result.interactive = true;
         break;
+      case '--auto-detect':
+      case '--autodetect':
+        result.autoDetect = true;
+        break;
+      case '--save':
+        result.save = true;
+        break;
       case '--help':
       case '-h':
         result.help = true;
@@ -94,6 +109,8 @@ Options:
   --base-url <url>      Base URL for local/custom providers
   --system-prompt <p>   Custom system prompt
   --interactive, -i     Start interactive chat session
+  --auto-detect         Detect available AI providers (Copilot, Azure, Ollama)
+  --save                With --auto-detect: save the first detected provider to headlamp-ai.json
   --help, -h            Show this help message
 
 Auto-discovered config paths (same as Headlamp app):
