@@ -216,9 +216,8 @@ cd backend && go build -o headlamp-server ./cmd
 # Build frontend
 cd frontend && npm install && npm run build
 
-# Build plugin
-# From the ai-assistant root:
- npm install && npx @kinvolk/headlamp-plugin build
+# Build plugin (from the ai-assistant root)
+npm install && npx @kinvolk/headlamp-plugin build
 
 # Copy plugin
 mkdir -p /tmp/headlamp-plugins/ai-assistant
