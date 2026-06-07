@@ -1,7 +1,7 @@
 # COOP Popup Consent — Proof of Concept
 
 Minimal proof of concept for the same-port consent popup security model described in
-[`backend-run-command-proposal.md`](../backend-run-command-proposal.md).
+[`backend-and-mcp.md`](../backend-and-mcp.md).
 
 **No third-party dependencies.** Pure Node.js + minimal HTML/JS.
 
