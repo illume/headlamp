@@ -56,6 +56,7 @@ import AIChatContent from './components/assistant/AIChatContent';
 import { AIInputSection } from './components/assistant/AllInputSection';
 import { generateContextDescription } from './context/contextGenerator';
 import EditorDialog from './editordialog';
+import { checkHolmesAgentHealth } from './holmesClient';
 import { useKubernetesToolUI } from './hooks/useKubernetesToolUI';
 import {
   /* [PROACTIVE_DIAGNOSIS_DISABLED] fetchWarningEventsForClusters, */ fetchClusterWarnings,
@@ -316,8 +317,9 @@ export default function AIPrompt(props: {
   // Test mode detection
   const isTestMode = isTestModeCheck();
 
-  // Agent mode state – default to agent mode so users can start immediately
-  const [isAgentMode, setIsAgentMode] = React.useState(true);
+  // Agent mode state — default to chat mode; agent mode is only enabled
+  // explicitly by the user or when Holmes is confirmed available.
+  const [isAgentMode, setIsAgentMode] = React.useState(false);
 
   const [agentModeStatus, setAgentModeStatus] = React.useState<
     'idle' | 'checking' | 'found' | 'not-found'
@@ -1371,11 +1373,21 @@ export default function AIPrompt(props: {
     [pluginSettings, t]
   );
 
-  // Auto-initialize agent mode on first mount (agent is default mode)
+  // Auto-initialize agent mode on first mount only when Holmes is confirmed
+  // reachable AND there is no chat provider configured.
   React.useEffect(() => {
-    if (isAgentMode && !holmesAgentRef.current) {
-      handleToggleAgentMode(true);
-    }
+    const savedConfigs = getSavedConfigurations(pluginSettings);
+    const hasChatProvider = (savedConfigs.providers?.length ?? 0) > 0;
+    if (hasChatProvider || isAgentMode || holmesAgentRef.current) return;
+    const cluster = getCluster();
+    if (!cluster) return;
+    checkHolmesAgentHealth(cluster, pluginSettings)
+      .then(available => {
+        if (available) handleToggleAgentMode(true);
+      })
+      .catch(() => {
+        /* Holmes not reachable — stay in chat mode */
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
