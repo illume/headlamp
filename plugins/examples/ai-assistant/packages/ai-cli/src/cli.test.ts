@@ -31,11 +31,13 @@ import { describe, expect, it } from 'vitest';
  * - Returns the fallback response for unmatched prompts
  */
 describe('CLI e2e with mock-testing-model', () => {
-  const cliPath = path.resolve(__dirname, '..', 'dist', 'cli.js');
+  // Run src/cli.ts directly via tsx — no build step required.
+  const tsxBin = path.resolve(__dirname, '..', 'node_modules', '.bin', 'tsx');
+  const cliPath = path.resolve(__dirname, 'cli.ts');
 
   // Helper to run the CLI and capture stdout.
   function runCLI(args: string[], env?: Record<string, string>): string {
-    const result = execFileSync('node', [cliPath, ...args], {
+    const result = execFileSync(tsxBin, [cliPath, ...args], {
       encoding: 'utf-8',
       env: { ...process.env, ...env },
       timeout: 15_000,
@@ -49,31 +51,19 @@ describe('CLI e2e with mock-testing-model', () => {
   });
 
   it('matches template variables (<<resource>>)', () => {
-    const output = runCLI([
-      '--provider',
-      'mock-testing-model',
-      'What is a Pod?',
-    ]);
+    const output = runCLI(['--provider', 'mock-testing-model', 'What is a Pod?']);
     expect(output).toContain('Pod');
     expect(output).toContain('Kubernetes resource');
   });
 
   it('matches a different template variable value', () => {
-    const output = runCLI([
-      '--provider',
-      'mock-testing-model',
-      'What is a Deployment?',
-    ]);
+    const output = runCLI(['--provider', 'mock-testing-model', 'What is a Deployment?']);
     expect(output).toContain('Deployment');
     expect(output).toContain('Kubernetes resource');
   });
 
   it('returns fallback for unmatched prompts', () => {
-    const output = runCLI([
-      '--provider',
-      'mock-testing-model',
-      'Tell me about quantum physics',
-    ]);
+    const output = runCLI(['--provider', 'mock-testing-model', 'Tell me about quantum physics']);
     expect(output).toContain('mock testing model');
   });
 

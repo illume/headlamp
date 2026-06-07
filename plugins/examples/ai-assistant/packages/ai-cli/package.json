@@ -9,6 +9,9 @@
   "bin": {
     "headlamp-ai": "./src/cli.ts"
   },
+  "scripts": {
+    "test": "vitest run"
+  },
   "license": "Apache-2.0",
   "dependencies": {
     "@headlamp-k8s/ai-common": "file:../ai-common",
@@ -20,5 +23,8 @@
     "@langchain/mistralai": "^1.0.4",
     "@langchain/ollama": "^1.2.2",
     "@langchain/openai": "^1.2.6"
+  },
+  "devDependencies": {
+    "tsx": "^4.22.4"
   }
 }
