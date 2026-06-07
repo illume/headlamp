@@ -54,8 +54,7 @@
     "./parsing/yamlParser": "./src/parsing/yamlParser.ts",
     "./mcp/electron-client": "./src/mcp/electron-client.ts",
     "./types/electron": "./src/types/electron.d.ts",
-    "./testing/i18nTestSetup": "./src/testing/i18nTestSetup.ts",
-    "./i18n": "./src/i18n.ts"
+    "./testing/i18nTestSetup": "./src/testing/i18nTestSetup.ts"
   },
   "license": "Apache-2.0",
   "dependencies": {
