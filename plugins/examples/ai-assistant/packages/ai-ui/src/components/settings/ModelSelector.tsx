@@ -62,25 +62,8 @@ import {
   Typography,
 } from '@mui/material';
 import { Autocomplete } from '@mui/material';
-import i18next from 'i18next';
 import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { initReactI18next } from 'react-i18next';
-
-// The vite bundler does NOT externalize react-i18next, so each plugin gets its
-// own copy. Without initialization the default i18next instance has no
-// interpolation config and t() returns keys verbatim (e.g. "Configure {{provider}}").
-// Initialize once so that at minimum interpolation works even before the
-// plugin's own translations are loaded via initializePluginI18n.
-if (!i18next.isInitialized) {
-  i18next.use(initReactI18next).init({
-    lng: 'en',
-    fallbackLng: 'en',
-    interpolation: { escapeValue: false },
-    defaultNS: 'translation',
-    resources: {},
-  });
-}
 import { DefaultDialog } from '../defaults/DefaultSlots';
 import TermsDialog from './TermsDialog';
 
