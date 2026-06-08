@@ -17,6 +17,7 @@
 import LangChainManager from '@headlamp-k8s/ai-common/langchain/LangChainManager';
 import * as readline from 'readline';
 import { createKubectlTool } from './kubectl.js';
+import { loadSkillsFromUrls } from './skills.js';
 
 /**
  * Create a LangChainManager for the given provider and config.
@@ -26,15 +27,38 @@ import { createKubectlTool } from './kubectl.js';
  * Binds a kubectl-backed Kubernetes tool for CLI use.
  *
  * @param allowMutations When false (default), the kubectl tool only permits GET.
+ * @param skillSources  Git URLs for skill sources (e.g. https://github.com/microsoft/azure-skills).
  */
 export async function createManager(
   providerId: string,
   config: Record<string, any>,
-  options: { allowMutations?: boolean } = {}
+  options: { allowMutations?: boolean; skillSources?: string[] } = {}
 ): Promise<LangChainManager> {
   const manager = new LangChainManager(providerId, config);
   const kubectlTool = createKubectlTool({ readOnly: !options.allowMutations });
   await manager.enableDirectToolCalling([kubectlTool]);
+
+  // Load skills from Git repos if any were specified
+  if (options.skillSources && options.skillSources.length > 0) {
+    const {
+      manager: skillManager,
+      config: skillsConfig,
+      errors,
+      skillCount,
+    } = await loadSkillsFromUrls(options.skillSources);
+
+    for (const err of errors) {
+      console.error(`Warning: Failed to load skills from ${err.sourceUrl}: ${err.error}`);
+    }
+
+    if (skillCount > 0) {
+      manager.setSkillManager(skillManager, skillsConfig);
+      console.error(`Loaded ${skillCount} skill(s) from ${options.skillSources.length} source(s).`);
+    } else if (errors.length === 0) {
+      console.error('No skills found in the specified source(s).');
+    }
+  }
+
   return manager;
 }
 

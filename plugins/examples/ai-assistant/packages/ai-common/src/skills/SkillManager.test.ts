@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { SkillManager } from './SkillManager';
-import { SkillsConfig, DEFAULT_SKILLS_CONFIG } from './SkillConfigManager';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { DEFAULT_SKILLS_CONFIG, SkillsConfig } from './SkillConfigManager';
 import { SkillFileSystem } from './SkillLoader';
+import { SkillManager } from './SkillManager';
 import { DEFAULT_ROUTER_CONFIG } from './SkillRouter';
 
 /** Creates a mock filesystem for testing. */
@@ -181,6 +181,99 @@ describe('SkillManager', () => {
     });
   });
 
+  describe('loadAllSkillsWithErrors', () => {
+    it('should return skills and empty errors on success', async () => {
+      const { skills, errors } = await manager.loadAllSkillsWithErrors(config);
+      expect(skills).toHaveLength(2);
+      expect(errors).toHaveLength(0);
+      const names = skills.map(s => s.metadata.name);
+      expect(names).toContain('skill-one');
+      expect(names).toContain('skill-two');
+    });
+
+    it('should report per-source errors without losing successful sources', async () => {
+      // Add a bad local source that doesn't exist alongside a good one
+      const fs = createMockFs({
+        '/good-skills': 'DIR',
+        '/good-skills/SKILL.md': SKILL_1,
+      });
+      // Create a filesystem that throws on the bad path
+      const errorFs: SkillFileSystem = {
+        ...fs,
+        exists: async (path: string) => {
+          if (path === '/bad-skills') throw new Error('Disk read error');
+          return fs.exists(path);
+        },
+        readdir: fs.readdir,
+        readFile: fs.readFile,
+        isDirectory: fs.isDirectory,
+        joinPath: fs.joinPath,
+      };
+      const mgr = new SkillManager(errorFs);
+      const testConfig: SkillsConfig = {
+        ...DEFAULT_SKILLS_CONFIG,
+        sources: [
+          { type: 'local', url: '/good-skills', enabled: true },
+          { type: 'local', url: '/bad-skills', enabled: true },
+        ],
+      };
+
+      const { skills, errors } = await mgr.loadAllSkillsWithErrors(testConfig);
+      expect(skills).toHaveLength(1);
+      expect(skills[0].metadata.name).toBe('skill-one');
+      expect(errors).toHaveLength(1);
+      expect(errors[0].sourceUrl).toBe('/bad-skills');
+      expect(errors[0].sourceType).toBe('local');
+      expect(errors[0].error).toContain('Disk read error');
+    });
+
+    it('should report errors for git sources without httpClient', async () => {
+      const fs = createMockFs({});
+      const mgr = new SkillManager(fs); // no httpClient / zipExtractor
+      const testConfig: SkillsConfig = {
+        ...DEFAULT_SKILLS_CONFIG,
+        sources: [
+          {
+            type: 'git',
+            url: 'https://github.com/example/repo',
+            ref: 'main',
+            path: 'skills',
+            enabled: true,
+          },
+        ],
+      };
+
+      const { skills, errors } = await mgr.loadAllSkillsWithErrors(testConfig);
+      expect(skills).toHaveLength(0);
+      expect(errors).toHaveLength(1);
+      expect(errors[0].sourceUrl).toBe('https://github.com/example/repo');
+      expect(errors[0].sourceType).toBe('git');
+      expect(errors[0].error).toContain('HTTP client');
+    });
+
+    it('should skip disabled sources and report no errors for them', async () => {
+      config.sources[1].enabled = false;
+      const { skills, errors } = await manager.loadAllSkillsWithErrors(config);
+      expect(skills).toHaveLength(1);
+      expect(errors).toHaveLength(0);
+    });
+
+    it('should use cache on second call within TTL', async () => {
+      const result1 = await manager.loadAllSkillsWithErrors(config);
+      const result2 = await manager.loadAllSkillsWithErrors(config);
+      expect(result1.skills).toEqual(result2.skills);
+      expect(result2.errors).toHaveLength(0); // Cached — no loading, no errors
+    });
+
+    it('should reload after invalidateCache', async () => {
+      await manager.loadAllSkillsWithErrors(config);
+      manager.invalidateCache();
+      const { skills, errors } = await manager.loadAllSkillsWithErrors(config);
+      expect(skills).toHaveLength(2);
+      expect(errors).toHaveLength(0);
+    });
+  });
+
   describe('loadFromWellKnownDirs', () => {
     it('should scan well-known directories', async () => {
       const fs = createMockFs({
@@ -213,17 +306,23 @@ describe('SkillManager', () => {
       // Create config with many skills so routing is triggered
       const manySkillsFs = createMockFs({
         '/s1': 'DIR',
-        '/s1/SKILL.md': '---\nname: alpha\ndescription: Alpha install guide\ntags: [install]\n---\nAlpha content',
+        '/s1/SKILL.md':
+          '---\nname: alpha\ndescription: Alpha install guide\ntags: [install]\n---\nAlpha content',
         '/s2': 'DIR',
-        '/s2/SKILL.md': '---\nname: beta\ndescription: Beta network analysis\ntags: [network]\n---\nBeta content',
+        '/s2/SKILL.md':
+          '---\nname: beta\ndescription: Beta network analysis\ntags: [network]\n---\nBeta content',
         '/s3': 'DIR',
-        '/s3/SKILL.md': '---\nname: gamma\ndescription: Gamma security audit\ntags: [security]\n---\nGamma content',
+        '/s3/SKILL.md':
+          '---\nname: gamma\ndescription: Gamma security audit\ntags: [security]\n---\nGamma content',
         '/s4': 'DIR',
-        '/s4/SKILL.md': '---\nname: delta\ndescription: Delta deployment guide\ntags: [deployment]\n---\nDelta content',
+        '/s4/SKILL.md':
+          '---\nname: delta\ndescription: Delta deployment guide\ntags: [deployment]\n---\nDelta content',
         '/s5': 'DIR',
-        '/s5/SKILL.md': '---\nname: epsilon\ndescription: Epsilon troubleshooting\ntags: [troubleshooting]\n---\nEpsilon content',
+        '/s5/SKILL.md':
+          '---\nname: epsilon\ndescription: Epsilon troubleshooting\ntags: [troubleshooting]\n---\nEpsilon content',
         '/s6': 'DIR',
-        '/s6/SKILL.md': '---\nname: zeta\ndescription: Zeta monitoring setup\ntags: [monitoring]\n---\nZeta content',
+        '/s6/SKILL.md':
+          '---\nname: zeta\ndescription: Zeta monitoring setup\ntags: [monitoring]\n---\nZeta content',
       });
 
       const mgr = new SkillManager(manySkillsFs);
@@ -264,9 +363,13 @@ describe('SkillManager', () => {
       return {
         router: {
           hasIndex: () => opts?.hasIndex ?? false,
-          clearIndex: () => { indexCleared = true; },
+          clearIndex: () => {
+            indexCleared = true;
+          },
         } as any,
-        get indexCleared() { return indexCleared; },
+        get indexCleared() {
+          return indexCleared;
+        },
       };
     }
 

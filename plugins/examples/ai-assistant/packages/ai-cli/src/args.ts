@@ -32,6 +32,8 @@ export interface ParsedArgs {
   save: boolean;
   help: boolean;
   query: string;
+  /** Git repo URLs to load skills from (repeatable). */
+  skillSources: string[];
 }
 
 export function parseArgs(argv: string[]): ParsedArgs {
@@ -42,6 +44,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
     save: false,
     help: false,
     query: '',
+    skillSources: [],
   };
   const args = argv.slice(2);
   const queryParts: string[] = [];
@@ -71,6 +74,9 @@ export function parseArgs(argv: string[]): ParsedArgs {
         break;
       case '--system-prompt':
         result.systemPrompt = args[++i];
+        break;
+      case '--skill-source':
+        result.skillSources.push(args[++i]);
         break;
       case '--interactive':
       case '-i':
@@ -114,6 +120,7 @@ Options:
   --base-url <url>      Base URL for local/custom providers
   --system-prompt <p>   Custom system prompt
   --interactive, -i     Start interactive chat session
+  --skill-source <url>  Git repo URL to load skills from (repeatable, e.g. https://github.com/microsoft/azure-skills)
   --allow-mutations     Allow mutating kubectl operations (POST, PUT, DELETE, PATCH). Default: read-only
   --auto-detect         Detect available AI providers (Copilot, Azure, Ollama)
   --save                With --auto-detect: save the first detected provider to headlamp-ai.json

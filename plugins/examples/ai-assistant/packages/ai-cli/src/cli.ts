@@ -38,7 +38,7 @@ import {
   loadConfigFile,
   saveHeadlampAIConfig,
 } from './config.js';
-import { makeNodeCommandRunner,runAutoDetect, tryAutoDetectCopilot } from './model.js';
+import { makeNodeCommandRunner, runAutoDetect, tryAutoDetectCopilot } from './model.js';
 
 async function main() {
   const parsed = parseArgs(process.argv);
@@ -156,6 +156,7 @@ async function main() {
   // Create a LangChainManager — same code path as the Headlamp UI.
   const manager = await createManager(config.provider, resolvedConfig, {
     allowMutations: parsed.allowMutations,
+    skillSources: parsed.skillSources,
   });
 
   if (parsed.interactive) {

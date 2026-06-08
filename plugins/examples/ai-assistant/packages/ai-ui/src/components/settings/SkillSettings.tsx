@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 The Kubernetes Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 /**
  * Settings UI for configuring AI skill sources.
  *
@@ -15,7 +31,6 @@ import {
   Box,
   Button,
   Chip,
-  FormControlLabel,
   IconButton,
   Paper,
   Switch,
@@ -25,15 +40,15 @@ import {
   TableContainer,
   TableHead,
   TableRow,
-  TextField,
   Tooltip,
   Typography,
 } from '@mui/material';
 import React, { useCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DefaultDialog, DefaultSectionWrapper } from '../defaults/DefaultSlots';
 import type { ConfigStore } from './MCPSettings';
 import SkillSourceEditorDialog from './SkillSourceEditorDialog';
-import { useTranslation } from 'react-i18next';
+import { type SkillDisplayInfo, SkillsViewerDialog } from './SkillsViewerDialog';
 
 /** Well-known directories that may contain skills in a project. */
 export const WELL_KNOWN_SKILL_DIRS = [
@@ -198,6 +213,13 @@ export interface SkillSettingsProps {
   DialogSlot?: React.ElementType;
   /** Callback when skills configuration changes. */
   onConfigChange?: (config: SkillsConfig) => void;
+  /**
+   * Async function that loads all skills and returns them for display.
+   * When provided, a "View Loaded Skills" button is shown.
+   */
+  loadSkills?: () => Promise<SkillDisplayInfo[]>;
+  /** Callback fired when skill loading completes (for notifications). */
+  onSkillsLoadComplete?: (result: { count: number; error?: string }) => void;
 }
 
 /** Default skills configuration. */
@@ -248,6 +270,8 @@ export function SkillSettings({
   SectionWrapper = DefaultSectionWrapper,
   DialogSlot = DefaultDialog,
   onConfigChange,
+  loadSkills,
+  onSkillsLoadComplete,
 }: SkillSettingsProps) {
   const { t } = useTranslation();
   const [config, setConfig] = useState<SkillsConfig>(() => {
@@ -259,6 +283,7 @@ export function SkillSettings({
   const [wellKnownStatuses, setWellKnownStatuses] = useState<WellKnownPathStatus[]>([]);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingSource, setEditingSource] = useState<SkillSourceEntry | undefined>(undefined);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   const displayConfig = pendingConfig || config;
 
@@ -476,88 +501,92 @@ export function SkillSettings({
 
       {/* Well-Known Paths Section — only shown in app mode (local paths not accessible in browser) */}
       {isRunningAsApp && (
-      <Box sx={{ mb: 3 }}>
-        <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
-          {t('Detected Skill Directories')}
-        </Typography>
-        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-          Well-known skill directories from Claude, GitHub Copilot, and other tools. Detected
-          directories can be enabled to load skills from.
-        </Typography>
-        <TableContainer component={Paper} variant="outlined">
-          <Table size="small">
-            <TableHead>
-              <TableRow>
-                <TableCell>{t('Directory')}</TableCell>
-                <TableCell>{t('Tool')}</TableCell>
-                <TableCell align="center">{t('Status')}</TableCell>
-                <TableCell align="center">{t('Enabled')}</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {wellKnownStatuses.map(status => (
-                <TableRow key={status.path}>
-                  <TableCell>
-                    <Box>
-                      <Typography variant="body2" sx={{ fontWeight: 500 }}>
-                        {t(status.label)}
-                      </Typography>
-                      <Typography variant="caption" color="textSecondary" sx={{ fontFamily: 'monospace' }}>
-                        {status.path}
-                      </Typography>
-                    </Box>
-                  </TableCell>
-                  <TableCell>
-                    <Chip label={t(status.tool)} size="small" variant="outlined" />
-                  </TableCell>
-                  <TableCell align="center">
-                    {checkPathExists ? (
-                      status.detected ? (
-                        <Tooltip title={t('Directory found')}>
-                          <Chip
-                            icon={<Icon icon="mdi:check-circle" />}
-                            label={t('Detected')}
-                            size="small"
-                            color="success"
-                            variant="outlined"
-                          />
-                        </Tooltip>
+        <Box sx={{ mb: 3 }}>
+          <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+            {t('Detected Skill Directories')}
+          </Typography>
+          <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+            Well-known skill directories from Claude, GitHub Copilot, and other tools. Detected
+            directories can be enabled to load skills from.
+          </Typography>
+          <TableContainer component={Paper} variant="outlined">
+            <Table size="small">
+              <TableHead>
+                <TableRow>
+                  <TableCell>{t('Directory')}</TableCell>
+                  <TableCell>{t('Tool')}</TableCell>
+                  <TableCell align="center">{t('Status')}</TableCell>
+                  <TableCell align="center">{t('Enabled')}</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {wellKnownStatuses.map(status => (
+                  <TableRow key={status.path}>
+                    <TableCell>
+                      <Box>
+                        <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                          {t(status.label)}
+                        </Typography>
+                        <Typography
+                          variant="caption"
+                          color="textSecondary"
+                          sx={{ fontFamily: 'monospace' }}
+                        >
+                          {status.path}
+                        </Typography>
+                      </Box>
+                    </TableCell>
+                    <TableCell>
+                      <Chip label={t(status.tool)} size="small" variant="outlined" />
+                    </TableCell>
+                    <TableCell align="center">
+                      {checkPathExists ? (
+                        status.detected ? (
+                          <Tooltip title={t('Directory found')}>
+                            <Chip
+                              icon={<Icon icon="mdi:check-circle" />}
+                              label={t('Detected')}
+                              size="small"
+                              color="success"
+                              variant="outlined"
+                            />
+                          </Tooltip>
+                        ) : (
+                          <Tooltip title={t('Directory not found')}>
+                            <Chip
+                              icon={<Icon icon="mdi:close-circle" />}
+                              label={t('Not found')}
+                              size="small"
+                              color="default"
+                              variant="outlined"
+                            />
+                          </Tooltip>
+                        )
                       ) : (
-                        <Tooltip title={t('Directory not found')}>
+                        <Tooltip title={t('Path detection unavailable')}>
                           <Chip
-                            icon={<Icon icon="mdi:close-circle" />}
-                            label={t('Not found')}
+                            icon={<Icon icon="mdi:help-circle" />}
+                            label={t('Unknown')}
                             size="small"
                             color="default"
                             variant="outlined"
                           />
                         </Tooltip>
-                      )
-                    ) : (
-                      <Tooltip title={t('Path detection unavailable')}>
-                        <Chip
-                          icon={<Icon icon="mdi:help-circle" />}
-                          label={t('Unknown')}
-                          size="small"
-                          color="default"
-                          variant="outlined"
-                        />
-                      </Tooltip>
-                    )}
-                  </TableCell>
-                  <TableCell align="center">
-                    <Switch
-                      checked={status.enabled}
-                      onChange={() => handleToggleWellKnownPath(status.path)}
-                      size="small"
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
-      </Box>
+                      )}
+                    </TableCell>
+                    <TableCell align="center">
+                      <Switch
+                        checked={status.enabled}
+                        onChange={() => handleToggleWellKnownPath(status.path)}
+                        size="small"
+                      />
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
       )}
 
       {/* Suggested GitHub Repositories */}
@@ -621,77 +650,77 @@ export function SkillSettings({
 
       {/* Custom Filesystem Sources — only shown in app mode */}
       {isRunningAsApp && (
-      <Box sx={{ mb: 3 }}>
-        <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-            {t('Filesystem Sources')}
-          </Typography>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => handleOpenEditor({ type: 'local', url: '', enabled: true })}
-            startIcon={<Icon icon="mdi:folder-plus" />}
-          >
-            {t('Add Path')}
-          </Button>
-        </Box>
-        <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
-          {t('Custom filesystem directories to scan for skill files.')}
-        </Typography>
-        {customLocalSources.length > 0 ? (
-          <TableContainer component={Paper} variant="outlined">
-            <Table size="small">
-              <TableHead>
-                <TableRow>
-                  <TableCell>{t('Path')}</TableCell>
-                  <TableCell align="center">{t('Enabled')}</TableCell>
-                  <TableCell align="right">{t('Actions')}</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {customLocalSources.map(source => (
-                  <TableRow key={source.originalIndex}>
-                    <TableCell>
-                      <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
-                        {source.url}
-                      </Typography>
-                    </TableCell>
-                    <TableCell align="center">
-                      <Switch
-                        checked={source.enabled}
-                        onChange={() => handleToggleSource(source.originalIndex)}
-                        size="small"
-                      />
-                    </TableCell>
-                    <TableCell align="right">
-                      <Tooltip title={t('Edit')}>
-                        <IconButton size="small" onClick={() => handleOpenEditor(source)}>
-                          <Icon icon="mdi:pencil" />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title={t('Delete')}>
-                        <IconButton
-                          size="small"
-                          onClick={() => handleDeleteSource(source.originalIndex)}
-                          color="error"
-                        >
-                          <Icon icon="mdi:delete" />
-                        </IconButton>
-                      </Tooltip>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        ) : (
-          <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
-            <Typography variant="body2" color="textSecondary">
-              {t('No custom filesystem sources configured.')}
+        <Box sx={{ mb: 3 }}>
+          <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+              {t('Filesystem Sources')}
             </Typography>
-          </Paper>
-        )}
-      </Box>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => handleOpenEditor({ type: 'local', url: '', enabled: true })}
+              startIcon={<Icon icon="mdi:folder-plus" />}
+            >
+              {t('Add Path')}
+            </Button>
+          </Box>
+          <Typography variant="body2" color="textSecondary" sx={{ mb: 2 }}>
+            {t('Custom filesystem directories to scan for skill files.')}
+          </Typography>
+          {customLocalSources.length > 0 ? (
+            <TableContainer component={Paper} variant="outlined">
+              <Table size="small">
+                <TableHead>
+                  <TableRow>
+                    <TableCell>{t('Path')}</TableCell>
+                    <TableCell align="center">{t('Enabled')}</TableCell>
+                    <TableCell align="right">{t('Actions')}</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {customLocalSources.map(source => (
+                    <TableRow key={source.originalIndex}>
+                      <TableCell>
+                        <Typography variant="body2" sx={{ fontFamily: 'monospace' }}>
+                          {source.url}
+                        </Typography>
+                      </TableCell>
+                      <TableCell align="center">
+                        <Switch
+                          checked={source.enabled}
+                          onChange={() => handleToggleSource(source.originalIndex)}
+                          size="small"
+                        />
+                      </TableCell>
+                      <TableCell align="right">
+                        <Tooltip title={t('Edit')}>
+                          <IconButton size="small" onClick={() => handleOpenEditor(source)}>
+                            <Icon icon="mdi:pencil" />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title={t('Delete')}>
+                          <IconButton
+                            size="small"
+                            onClick={() => handleDeleteSource(source.originalIndex)}
+                            color="error"
+                          >
+                            <Icon icon="mdi:delete" />
+                          </IconButton>
+                        </Tooltip>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <Paper variant="outlined" sx={{ p: 2, textAlign: 'center' }}>
+              <Typography variant="body2" color="textSecondary">
+                {t('No custom filesystem sources configured.')}
+              </Typography>
+            </Paper>
+          )}
+        </Box>
       )}
 
       {/* GitHub Repository Sources */}
@@ -728,7 +757,10 @@ export function SkillSettings({
                 {customGitSources.map(source => (
                   <TableRow key={source.originalIndex}>
                     <TableCell>
-                      <Typography variant="body2" sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}>
+                      <Typography
+                        variant="body2"
+                        sx={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
+                      >
                         {source.url}
                       </Typography>
                     </TableCell>
@@ -781,15 +813,27 @@ export function SkillSettings({
 
       {/* Summary / Unsaved Changes */}
       <Box display="flex" justifyContent="space-between" alignItems="center">
-        <Typography variant="body2" color="textSecondary">
-          {displayConfig.sources.length} source(s) configured,{' '}
-          {displayConfig.sources.filter(s => s.enabled).length} enabled.
-          {hasUnsavedChanges && (
-            <Typography component="span" color="warning.main" sx={{ ml: 1 }}>
-              (Unsaved changes)
-            </Typography>
+        <Box display="flex" alignItems="center" gap={1}>
+          <Typography variant="body2" color="textSecondary">
+            {displayConfig.sources.length} source(s) configured,{' '}
+            {displayConfig.sources.filter(s => s.enabled).length} enabled.
+            {hasUnsavedChanges && (
+              <Typography component="span" color="warning.main" sx={{ ml: 1 }}>
+                (Unsaved changes)
+              </Typography>
+            )}
+          </Typography>
+          {loadSkills && (
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => setViewerOpen(true)}
+              startIcon={<Icon icon="mdi:book-open-variant" />}
+            >
+              {t('View Loaded Skills')}
+            </Button>
           )}
-        </Typography>
+        </Box>
         {hasUnsavedChanges && (
           <Box display="flex" alignItems="center" gap={1}>
             <Button
@@ -822,6 +866,17 @@ export function SkillSettings({
         existingUrls={displayConfig.sources.map(s => s.url)}
         DialogSlot={DialogSlot}
       />
+
+      {/* Skills Viewer Dialog */}
+      {loadSkills && (
+        <SkillsViewerDialog
+          open={viewerOpen}
+          onClose={() => setViewerOpen(false)}
+          loadSkills={loadSkills}
+          DialogSlot={DialogSlot}
+          onLoadComplete={onSkillsLoadComplete}
+        />
+      )}
     </SectionWrapper>
   );
 }

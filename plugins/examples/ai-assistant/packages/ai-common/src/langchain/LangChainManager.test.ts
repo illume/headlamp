@@ -208,6 +208,350 @@ describe('BUG-7: tool role must produce ToolMessage, not AIMessage', () => {
 });
 
 // ---------------------------------------------------------------------------
+// BUG-8: assistant messages with toolCalls lose tool_calls during conversion.
+//
+// convertPromptsToMessages drops prompt.toolCalls when building AIMessage,
+// causing Anthropic to reject subsequent tool_result messages with:
+//   "unexpected tool_use_id found in tool_result blocks"
+// because the matching tool_use block is missing from the previous message.
+// ---------------------------------------------------------------------------
+describe('BUG-8: assistant messages must preserve tool_calls', () => {
+  it('AIMessage includes tool_calls when prompt has toolCalls', () => {
+    const manager = createTestManager();
+    const prompts = [
+      {
+        role: 'assistant',
+        content: 'Let me check that for you.',
+        toolCalls: [
+          {
+            id: 'toolu_abc123',
+            function: {
+              name: 'kubernetes_api_request',
+              arguments: '{"method":"GET","path":"/api/v1/pods"}',
+            },
+          },
+        ],
+      },
+    ];
+
+    const messages = (manager as any).convertPromptsToMessages(prompts);
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toBeInstanceOf(AIMessage);
+    expect(messages[0].tool_calls).toHaveLength(1);
+    expect(messages[0].tool_calls[0]).toEqual({
+      id: 'toolu_abc123',
+      name: 'kubernetes_api_request',
+      args: { method: 'GET', path: '/api/v1/pods' },
+      type: 'tool_call',
+    });
+  });
+
+  it('AIMessage has no tool_calls when prompt has no toolCalls', () => {
+    const manager = createTestManager();
+    const prompts = [
+      {
+        role: 'assistant',
+        content: 'Here is the answer.',
+      },
+    ];
+
+    const messages = (manager as any).convertPromptsToMessages(prompts);
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toBeInstanceOf(AIMessage);
+    expect(messages[0].tool_calls).toEqual([]);
+  });
+
+  it('AIMessage has no tool_calls when prompt has empty toolCalls array', () => {
+    const manager = createTestManager();
+    const prompts = [
+      {
+        role: 'assistant',
+        content: 'No tools needed.',
+        toolCalls: [],
+      },
+    ];
+
+    const messages = (manager as any).convertPromptsToMessages(prompts);
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0].tool_calls).toEqual([]);
+  });
+
+  it('tool_use/tool_result pairs are properly linked across messages', () => {
+    const manager = createTestManager();
+    const prompts = [
+      {
+        role: 'assistant',
+        content: '',
+        toolCalls: [
+          {
+            id: 'toolu_xyz789',
+            function: {
+              name: 'kubernetes_api_request',
+              arguments: '{"method":"GET","path":"/api/v1/namespaces"}',
+            },
+          },
+        ],
+      },
+      {
+        role: 'tool',
+        content: '{"items":[{"metadata":{"name":"default"}}]}',
+        toolCallId: 'toolu_xyz789',
+      },
+    ];
+
+    const messages = (manager as any).convertPromptsToMessages(prompts);
+
+    expect(messages).toHaveLength(2);
+    // Assistant message has the tool_use
+    expect(messages[0]).toBeInstanceOf(AIMessage);
+    expect(messages[0].tool_calls[0].id).toBe('toolu_xyz789');
+    // Tool message references same id
+    expect(messages[1]).toBeInstanceOf(ToolMessage);
+    expect(messages[1].tool_call_id).toBe('toolu_xyz789');
+  });
+
+  it('handles multiple tool calls in a single assistant message', () => {
+    const manager = createTestManager();
+    const prompts = [
+      {
+        role: 'assistant',
+        content: 'Checking both clusters.',
+        toolCalls: [
+          {
+            id: 'call_1',
+            function: { name: 'kubernetes_api_request', arguments: '{"path":"/api/v1/pods"}' },
+          },
+          {
+            id: 'call_2',
+            function: { name: 'kubernetes_api_request', arguments: '{"path":"/api/v1/nodes"}' },
+          },
+        ],
+      },
+    ];
+
+    const messages = (manager as any).convertPromptsToMessages(prompts);
+
+    expect(messages[0].tool_calls).toHaveLength(2);
+    expect(messages[0].tool_calls[0].id).toBe('call_1');
+    expect(messages[0].tool_calls[1].id).toBe('call_2');
+  });
+
+  it('handles toolCalls with pre-parsed arguments object', () => {
+    const manager = createTestManager();
+    const prompts = [
+      {
+        role: 'assistant',
+        content: '',
+        toolCalls: [
+          {
+            id: 'call_obj',
+            function: {
+              name: 'some_tool',
+              arguments: { key: 'value' }, // already an object, not a string
+            },
+          },
+        ],
+      },
+    ];
+
+    const messages = (manager as any).convertPromptsToMessages(prompts);
+
+    expect(messages[0].tool_calls[0].args).toEqual({ key: 'value' });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// BUG-9: tool_use ids without matching tool_result blocks cause 400 errors.
+//
+// When display-only tool results are filtered out in prepareChatHistory,
+// the assistant message still has tool_calls but the corresponding
+// tool_result messages are gone — Anthropic rejects this with:
+//   "tool_use ids were found without tool_result blocks immediately after"
+//
+// sanitizeToolAlignment strips orphaned tool_calls and orphan tool results
+// so the history is always well-formed.
+// ---------------------------------------------------------------------------
+describe('BUG-9: sanitizeToolAlignment fixes tool_use/tool_result mismatches', () => {
+  it('strips tool_calls when no matching tool results follow', () => {
+    const manager = createTestManager();
+    const prompts = [
+      { role: 'user', content: 'list pods' },
+      {
+        role: 'assistant',
+        content: 'Let me check.',
+        toolCalls: [
+          { id: 'tc1', function: { name: 'k8s', arguments: '{}' } },
+          { id: 'tc2', function: { name: 'k8s', arguments: '{}' } },
+        ],
+      },
+      // No tool results at all — both are orphaned
+      { role: 'user', content: 'hello again' },
+    ];
+
+    const result = (manager as any).sanitizeToolAlignment(prompts);
+
+    // assistant message should lose its toolCalls
+    expect(result[1].toolCalls).toBeUndefined();
+    // user message after it should be preserved
+    expect(result).toHaveLength(3);
+    expect(result[2].role).toBe('user');
+  });
+
+  it('keeps tool_calls when all results are present', () => {
+    const manager = createTestManager();
+    const prompts = [
+      {
+        role: 'assistant',
+        content: '',
+        toolCalls: [
+          { id: 'tc1', function: { name: 'tool_a', arguments: '{}' } },
+          { id: 'tc2', function: { name: 'tool_b', arguments: '{}' } },
+        ],
+      },
+      { role: 'tool', content: 'result1', toolCallId: 'tc1' },
+      { role: 'tool', content: 'result2', toolCallId: 'tc2' },
+    ];
+
+    const result = (manager as any).sanitizeToolAlignment(prompts);
+
+    expect(result).toHaveLength(3);
+    expect(result[0].toolCalls).toHaveLength(2);
+  });
+
+  it('keeps only matched tool_calls when some results are missing', () => {
+    const manager = createTestManager();
+    const prompts = [
+      {
+        role: 'assistant',
+        content: '',
+        toolCalls: [
+          { id: 'tc1', function: { name: 'tool_a', arguments: '{}' } },
+          { id: 'tc2', function: { name: 'tool_b', arguments: '{}' } },
+          { id: 'tc3', function: { name: 'tool_c', arguments: '{}' } },
+        ],
+      },
+      { role: 'tool', content: 'result1', toolCallId: 'tc1' },
+      // tc2 and tc3 results missing
+    ];
+
+    const result = (manager as any).sanitizeToolAlignment(prompts);
+
+    // Only tc1 should remain in tool_calls
+    expect(result[0].toolCalls).toHaveLength(1);
+    expect(result[0].toolCalls[0].id).toBe('tc1');
+    // The tool result for tc1 should be kept
+    expect(result[1].role).toBe('tool');
+    expect(result[1].toolCallId).toBe('tc1');
+  });
+
+  it('drops orphan tool results that have no matching assistant tool_call', () => {
+    const manager = createTestManager();
+    const prompts = [
+      { role: 'assistant', content: 'No tools here.' },
+      // Orphan tool result — no preceding assistant with matching toolCalls
+      { role: 'tool', content: 'stale result', toolCallId: 'orphan_id' },
+      { role: 'user', content: 'next question' },
+    ];
+
+    const result = (manager as any).sanitizeToolAlignment(prompts);
+
+    // orphan tool message should be dropped
+    expect(result).toHaveLength(2);
+    expect(result[0].role).toBe('assistant');
+    expect(result[1].role).toBe('user');
+  });
+
+  it('handles the exact BUG-9 scenario: display-only filtering leaves orphaned tool_use', () => {
+    const manager = createTestManager();
+
+    // Simulate what happens: assistant has 6 tool_calls, but all results
+    // were isDisplayOnly (confirmation placeholders) and got filtered before
+    // sanitizeToolAlignment is called.
+    const prompts = [
+      { role: 'user', content: 'delete these pods' },
+      {
+        role: 'assistant',
+        content: '',
+        toolCalls: [
+          { id: 'toolu_1', function: { name: 'k8s_api', arguments: '{}' } },
+          { id: 'toolu_2', function: { name: 'k8s_api', arguments: '{}' } },
+          { id: 'toolu_3', function: { name: 'k8s_api', arguments: '{}' } },
+          { id: 'toolu_4', function: { name: 'k8s_api', arguments: '{}' } },
+          { id: 'toolu_5', function: { name: 'k8s_api', arguments: '{}' } },
+          { id: 'toolu_6', function: { name: 'k8s_api', arguments: '{}' } },
+        ],
+      },
+      // All 6 tool results were filtered (isDisplayOnly) before we get here
+      { role: 'user', content: 'what happened?' },
+      { role: 'assistant', content: 'Those operations need confirmation.' },
+    ];
+
+    const result = (manager as any).sanitizeToolAlignment(prompts);
+
+    // The assistant at index 1 should have toolCalls stripped
+    expect(result[1].toolCalls).toBeUndefined();
+    // All 4 messages should remain (minus no tool messages)
+    expect(result).toHaveLength(4);
+    expect(result[0].role).toBe('user');
+    expect(result[1].role).toBe('assistant');
+    expect(result[2].role).toBe('user');
+    expect(result[3].role).toBe('assistant');
+  });
+
+  it('works with multiple rounds of tool calling in one history', () => {
+    const manager = createTestManager();
+    const prompts = [
+      // Round 1: valid
+      {
+        role: 'assistant',
+        content: '',
+        toolCalls: [{ id: 'tc1', function: { name: 'tool_a', arguments: '{}' } }],
+      },
+      { role: 'tool', content: 'result1', toolCallId: 'tc1' },
+      { role: 'assistant', content: 'Here is the result.' },
+      // Round 2: orphaned (results filtered)
+      { role: 'user', content: 'do more' },
+      {
+        role: 'assistant',
+        content: '',
+        toolCalls: [
+          { id: 'tc2', function: { name: 'tool_b', arguments: '{}' } },
+          { id: 'tc3', function: { name: 'tool_c', arguments: '{}' } },
+        ],
+      },
+      // No tool results for tc2/tc3
+      { role: 'user', content: 'what happened?' },
+    ];
+
+    const result = (manager as any).sanitizeToolAlignment(prompts);
+
+    // Round 1 should be intact
+    expect(result[0].toolCalls).toHaveLength(1);
+    expect(result[1].role).toBe('tool');
+    // Round 2 should have toolCalls stripped
+    expect(result[4].role).toBe('assistant');
+    expect(result[4].toolCalls).toBeUndefined();
+  });
+
+  it('passes through history with no tool calls unchanged', () => {
+    const manager = createTestManager();
+    const prompts = [
+      { role: 'user', content: 'hello' },
+      { role: 'assistant', content: 'hi there' },
+      { role: 'user', content: 'how are you' },
+      { role: 'assistant', content: 'fine' },
+    ];
+
+    const result = (manager as any).sanitizeToolAlignment(prompts);
+
+    expect(result).toEqual(prompts);
+  });
+});
+
+// ---------------------------------------------------------------------------
 // BUG-2: .signal accessed without optional chain after abort() nulls controller.
 //
 // abort() sets this.currentAbortController = null. If a concurrent async

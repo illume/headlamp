@@ -15,10 +15,10 @@
  */
 
 import {
-  ParsedSkill,
-  parseCopilotInstructionsFile,
-  parseSkillFile,
   DEFAULT_MAX_SKILL_SIZE_BYTES,
+  parseCopilotInstructionsFile,
+  ParsedSkill,
+  parseSkillFile,
 } from './skillParser';
 
 /**
@@ -77,15 +77,11 @@ export function isValidGitUrl(url: string): boolean {
       return false;
     }
     // Only allow known Git hosting providers
-    const allowedHosts = [
-      'github.com',
-      'gitlab.com',
-      'bitbucket.org',
-    ];
+    const allowedHosts = ['github.com', 'gitlab.com', 'bitbucket.org'];
     // Exact match or legitimate subdomain (e.g. api.github.com).
     // The dot prefix in `.${host}` prevents matching look-alikes like fakegithub.com.
-    return allowedHosts.some(host =>
-      parsed.hostname === host || parsed.hostname.endsWith(`.${host}`)
+    return allowedHosts.some(
+      host => parsed.hostname === host || parsed.hostname.endsWith(`.${host}`)
     );
   } catch {
     return false;
@@ -198,8 +194,8 @@ function normalizePath(p: string): string {
  */
 export async function computeContentHash(files: Map<string, string>): Promise<string> {
   const sortedEntries = [...files.entries()].sort(([a], [b]) => a.localeCompare(b));
-  const parts = sortedEntries.map(([path, content]) =>
-    `${path.length}:${path}:${content.length}:${content}`
+  const parts = sortedEntries.map(
+    ([path, content]) => `${path.length}:${path}:${content.length}:${content}`
   );
   const combined = parts.join('');
   const data = new TextEncoder().encode(combined);
@@ -214,7 +210,7 @@ export async function computeContentHash(files: Map<string, string>): Promise<st
 export const MAX_ZIP_EXTRACTED_BYTES = 10 * 1024 * 1024;
 
 /** Maximum number of files to extract from a zip archive. */
-export const MAX_ZIP_FILE_COUNT = 500;
+export const MAX_ZIP_FILE_COUNT = 2000;
 
 /**
  * Filesystem abstraction for loading skill files.
@@ -244,6 +240,17 @@ export interface SkillFileSystem {
 export interface SkillHttpClient {
   /** Downloads a URL and returns the response as an ArrayBuffer. */
   fetchZip(url: string): Promise<ArrayBuffer>;
+  /**
+   * Fetches skill files individually via the Git host API.
+   *
+   * Browser fallback for when zip download is blocked by CORS.
+   * Uses the GitHub Trees API + raw.githubusercontent.com which both
+   * send `Access-Control-Allow-Origin: *`.
+   *
+   * Returns the same `Map<relativePath, content>` format as
+   * {@link SkillZipExtractor.extractTextFiles}.
+   */
+  fetchFiles?(repoUrl: string, ref: string, pathFilter?: string): Promise<Map<string, string>>;
 }
 
 /**
@@ -451,9 +458,9 @@ export class SkillLoader {
   ): Promise<{ skills: ParsedSkill[]; contentHash: string }> {
     const { url: repoUrl, ref = 'main', path: subPath, sha256: expectedHash } = source;
 
-    if (!this.httpClient || !this.zipExtractor) {
+    if (!this.httpClient || (!this.zipExtractor && !this.httpClient.fetchFiles)) {
       throw new Error(
-        'HTTP client and ZIP extractor are required for Git repository skill loading'
+        'HTTP client and ZIP extractor (or fetchFiles) are required for Git repository skill loading'
       );
     }
 
@@ -470,15 +477,31 @@ export class SkillLoader {
       );
     }
 
-    const zipUrl = buildGitHubZipUrl(repoUrl, ref);
-
-    const zipData = await this.httpClient.fetchZip(zipUrl);
-    const files = await this.zipExtractor.extractTextFiles(
-      zipData,
-      subPath,
-      MAX_ZIP_EXTRACTED_BYTES,
-      MAX_ZIP_FILE_COUNT
-    );
+    // Fetch skill files: try zip first (one request), fall back to
+    // individual file fetching when zip is blocked (e.g. browser CORS).
+    let files: Map<string, string>;
+    if (this.zipExtractor) {
+      try {
+        const zipUrl = buildGitHubZipUrl(repoUrl, ref);
+        const zipData = await this.httpClient.fetchZip(zipUrl);
+        files = await this.zipExtractor.extractTextFiles(
+          zipData,
+          subPath,
+          MAX_ZIP_EXTRACTED_BYTES,
+          MAX_ZIP_FILE_COUNT
+        );
+      } catch (zipError) {
+        if (this.httpClient.fetchFiles) {
+          files = await this.httpClient.fetchFiles(repoUrl, ref, subPath);
+        } else {
+          throw zipError;
+        }
+      }
+    } else if (this.httpClient.fetchFiles) {
+      files = await this.httpClient.fetchFiles(repoUrl, ref, subPath);
+    } else {
+      throw new Error('No method available to fetch skill files');
+    }
 
     // Filter out entries with path traversal sequences (check path segments, not substrings)
     const safeFiles = new Map<string, string>();

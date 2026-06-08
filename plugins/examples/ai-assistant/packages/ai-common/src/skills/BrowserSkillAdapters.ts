@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-import type {
-  SkillFileSystem,
-  SkillHttpClient,
-  SkillZipExtractor,
-} from './SkillLoader';
+import type { SkillFileSystem, SkillHttpClient, SkillZipExtractor } from './SkillLoader';
 import { MAX_ZIP_EXTRACTED_BYTES, MAX_ZIP_FILE_COUNT } from './SkillLoader';
 import type { ParsedSkill } from './skillParser';
 
 /**
- * Browser-compatible HTTP client for fetching skill zip archives from GitHub.
+ * Browser-compatible HTTP client for fetching skill files from GitHub.
  *
- * Uses the Fetch API (available in all modern browsers) to download
- * GitHub zipball archives. CORS is supported by the GitHub API.
+ * Provides two fetch strategies:
+ * - `fetchZip`: Downloads the zipball (fast, single request — works in CLI
+ *   and Electron but CORS-blocked in browsers).
+ * - `fetchFiles`: Uses the GitHub Trees API + raw.githubusercontent.com to
+ *   fetch individual files (multiple requests but CORS-safe in all browsers).
+ *
+ * The SkillLoader tries `fetchZip` first and automatically falls back to
+ * `fetchFiles` when the zip download fails (e.g. CORS block).
  */
 export function createFetchHttpClient(): SkillHttpClient {
   return {
@@ -40,7 +42,104 @@ export function createFetchHttpClient(): SkillHttpClient {
       }
       return response.arrayBuffer();
     },
+    fetchFiles: (repoUrl: string, ref: string, pathFilter?: string) =>
+      fetchGitHubFilesViaTreesApi(repoUrl, ref, pathFilter),
   };
+}
+
+/**
+ * Fetches `.md` skill files from a GitHub repository using the Trees API
+ * and raw.githubusercontent.com. Both endpoints send
+ * `Access-Control-Allow-Origin: *`, so this works from any browser origin.
+ *
+ * Flow:
+ * 1. `GET api.github.com/repos/{owner}/{repo}/git/trees/{ref}?recursive=1`
+ * 2. Filter for `.md` files under `pathFilter`
+ * 3. Fetch each via `raw.githubusercontent.com/{owner}/{repo}/{ref}/{path}`
+ * 4. Return `Map<cleanPath, content>` matching the zip extractor format
+ *
+ * Enforces the same size and file count limits as the zip extractor.
+ */
+async function fetchGitHubFilesViaTreesApi(
+  repoUrl: string,
+  ref: string,
+  pathFilter?: string
+): Promise<Map<string, string>> {
+  const parsed = new URL(repoUrl);
+  if (parsed.hostname !== 'github.com') {
+    throw new Error(`fetchFiles only supports github.com: ${repoUrl}`);
+  }
+  const pathParts = parsed.pathname
+    .replace(/\.git$/, '')
+    .split('/')
+    .filter(Boolean);
+  if (pathParts.length < 2) {
+    throw new Error(`Invalid GitHub repository URL: ${repoUrl}`);
+  }
+  const owner = pathParts[0];
+  const repo = pathParts[1];
+
+  // 1. Fetch the recursive file tree
+  const treeUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${ref}?recursive=1`;
+  const treeResp = await fetch(treeUrl, {
+    headers: { Accept: 'application/vnd.github+json' },
+  });
+  if (!treeResp.ok) {
+    throw new Error(`GitHub Trees API HTTP ${treeResp.status}: ${treeResp.statusText}`);
+  }
+  const treeData = await treeResp.json();
+
+  if (treeData.truncated) {
+    console.warn('GitHub tree response was truncated — some skill files may be missing.');
+  }
+
+  // 2. Filter for .md blobs under pathFilter
+  const mdEntries: Array<{ path: string }> = [];
+  for (const entry of treeData.tree) {
+    if (entry.type !== 'blob') continue;
+    if (!entry.path.endsWith('.md')) continue;
+    if (pathFilter && !entry.path.startsWith(pathFilter)) continue;
+    mdEntries.push(entry);
+  }
+
+  if (mdEntries.length > MAX_ZIP_FILE_COUNT) {
+    throw new Error(`Too many skill files (${mdEntries.length}), max is ${MAX_ZIP_FILE_COUNT}`);
+  }
+
+  // 3. Fetch contents with concurrency limit
+  const CONCURRENCY = 10;
+  const result = new Map<string, string>();
+  let totalBytes = 0;
+
+  for (let i = 0; i < mdEntries.length; i += CONCURRENCY) {
+    const batch = mdEntries.slice(i, i + CONCURRENCY);
+    const fetched = await Promise.all(
+      batch.map(async entry => {
+        const rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/${ref}/${entry.path}`;
+        const resp = await fetch(rawUrl);
+        if (!resp.ok) {
+          throw new Error(`HTTP ${resp.status} fetching ${rawUrl}`);
+        }
+        return { path: entry.path, content: await resp.text() };
+      })
+    );
+
+    for (const { path: filePath, content } of fetched) {
+      totalBytes += content.length;
+      if (totalBytes > MAX_ZIP_EXTRACTED_BYTES) {
+        throw new Error(`Exceeded max total size: ${MAX_ZIP_EXTRACTED_BYTES} bytes`);
+      }
+      // Strip pathFilter prefix to match zip extractor output format
+      const cleanPath = pathFilter
+        ? filePath.slice(pathFilter.length).replace(/^\//, '')
+        : filePath;
+      if (cleanPath) {
+        result.set(cleanPath, content);
+      }
+    }
+  }
+
+  return result;
 }
 
 /**
@@ -69,8 +168,7 @@ export function createJSZipExtractor(): SkillZipExtractor {
 
       // GitHub zips have a top-level directory like "owner-repo-sha/"
       const entries = Object.keys(zip.files).sort();
-      const topLevelPrefix =
-        entries.length > 0 ? entries[0].split('/')[0] + '/' : '';
+      const topLevelPrefix = entries.length > 0 ? entries[0].split('/')[0] + '/' : '';
 
       for (const entryPath of entries) {
         const entry = zip.files[entryPath];

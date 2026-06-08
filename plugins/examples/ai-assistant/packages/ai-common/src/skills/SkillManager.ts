@@ -14,11 +14,18 @@
  * limitations under the License.
  */
 
-import { SkillLoader, SkillSource, SkillFileSystem, SkillHttpClient, SkillZipExtractor } from './SkillLoader';
-import { SkillsConfig, isSkillEnabled } from './SkillConfigManager';
-import { ParsedSkill, formatSkillsForPrompt } from './skillParser';
-import { routeAndFormatSkills, SkillRouterConfig, DEFAULT_ROUTER_CONFIG } from './SkillRouter';
 import { EmbeddingRouter } from './EmbeddingRouter';
+import { isSkillEnabled, SkillsConfig } from './SkillConfigManager';
+import { SkillFileSystem, SkillHttpClient, SkillLoader, SkillZipExtractor } from './SkillLoader';
+import { formatSkillsForPrompt, ParsedSkill } from './skillParser';
+import { DEFAULT_ROUTER_CONFIG, routeAndFormatSkills, SkillRouterConfig } from './SkillRouter';
+
+/** Per-source error reported during skill loading. */
+export interface SkillLoadError {
+  sourceUrl: string;
+  sourceType: string;
+  error: string;
+}
 
 /**
  * Coordinates skill loading, caching, filtering, and prompt injection.
@@ -135,15 +142,72 @@ export class SkillManager {
   }
 
   /**
+   * Loads all skills and collects per-source errors instead of swallowing them.
+   *
+   * Same caching behavior as {@link loadAllSkills}, but returns errors
+   * alongside skills so the UI can display what went wrong.
+   *
+   * @param config - The current skills configuration.
+   * @returns Object with loaded skills and per-source errors.
+   */
+  async loadAllSkillsWithErrors(
+    config: SkillsConfig
+  ): Promise<{ skills: ParsedSkill[]; errors: SkillLoadError[] }> {
+    const errors: SkillLoadError[] = [];
+    const now = Date.now();
+    const sourcesKey = this.buildSourcesKey(config);
+
+    if (sourcesKey !== this.lastSourcesKey) {
+      this.cachedSkills.clear();
+      this.lastSourcesKey = sourcesKey;
+    }
+
+    if (this.cachedSkills.size > 0 && now - this.lastLoadTimestamp < this.cacheTtlMs) {
+      return { skills: this.getAllCachedSkills(), errors };
+    }
+
+    this.cachedSkills.clear();
+
+    if (config.maxSkillSizeBytes !== this.lastMaxSkillSizeBytes) {
+      this.loader = new SkillLoader(
+        this.fs,
+        this.httpClient,
+        this.zipExtractor,
+        config.maxSkillSizeBytes
+      );
+      this.lastMaxSkillSizeBytes = config.maxSkillSizeBytes;
+    }
+
+    for (const source of config.sources) {
+      if (!source.enabled) continue;
+
+      try {
+        const sourceKey = `${source.type}:${source.url}:${source.path || ''}`;
+        const skills = await this.loader.loadFromSource(source);
+        this.cachedSkills.set(sourceKey, skills);
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        console.warn(`Error loading skills from ${source.url}:`, error);
+        errors.push({
+          sourceUrl: source.url,
+          sourceType: source.type,
+          error: message,
+        });
+      }
+    }
+
+    this.lastLoadTimestamp = now;
+    return { skills: this.getAllCachedSkills(), errors };
+  }
+
+  /**
    * Returns all loaded skills filtered by the user's enabled/disabled preferences.
    *
    * @param config - The current skills configuration.
    * @returns Array of enabled skills.
    */
   getEnabledSkills(config: SkillsConfig): ParsedSkill[] {
-    return this.getAllCachedSkills().filter(skill =>
-      isSkillEnabled(config, skill.metadata.name)
-    );
+    return this.getAllCachedSkills().filter(skill => isSkillEnabled(config, skill.metadata.name));
   }
 
   /**
@@ -225,7 +289,10 @@ export class SkillManager {
       try {
         return await this.embeddingRouter.routeAndFormat(query, enabledSkills, routerConfig);
       } catch (error) {
-        console.warn('SkillManager: embedding routing failed, falling back to keyword routing:', error);
+        console.warn(
+          'SkillManager: embedding routing failed, falling back to keyword routing:',
+          error
+        );
       }
     }
 

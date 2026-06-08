@@ -665,7 +665,67 @@ export default class LangChainManager extends AIManager {
     const filteredHistory = this.history.filter(
       prompt => prompt.role !== 'system' && !prompt.isDisplayOnly
     );
-    return this.convertPromptsToMessages(filteredHistory);
+    // Sanitize tool_use / tool_result alignment so Anthropic doesn't reject the
+    // request.  Two invariants must hold:
+    //   1. Every assistant message with tool_calls must be followed immediately
+    //      by tool_result messages for each tool_call id.
+    //   2. Every tool_result message must have a matching tool_use in the
+    //      preceding assistant message.
+    // When filtering removes display-only tool results (e.g. confirmation
+    // placeholders) we can end up violating (1).  Fix by stripping tool_calls
+    // whose results are missing, and dropping orphan tool messages.
+    const sanitized = this.sanitizeToolAlignment(filteredHistory);
+    return this.convertPromptsToMessages(sanitized);
+  }
+
+  /**
+   * Ensure every assistant message with toolCalls is followed by matching tool
+   * result messages, and every tool result message references a tool_call in
+   * the preceding assistant message.  Returns a new array — does not mutate.
+   */
+  private sanitizeToolAlignment(prompts: Prompt[]): Prompt[] {
+    const result: Prompt[] = [];
+
+    for (let i = 0; i < prompts.length; i++) {
+      const p = prompts[i];
+
+      if (p.role === 'assistant' && p.toolCalls && p.toolCalls.length > 0) {
+        // Collect the tool result messages that immediately follow
+        const toolResultIds = new Set<string>();
+        let j = i + 1;
+        while (j < prompts.length && prompts[j].role === 'tool') {
+          if (prompts[j].toolCallId) {
+            toolResultIds.add(prompts[j].toolCallId!);
+          }
+          j++;
+        }
+
+        // Keep only tool_calls that have a matching result
+        const matchedCalls = p.toolCalls.filter(tc => toolResultIds.has(tc.id));
+
+        if (matchedCalls.length === 0) {
+          // No results at all — emit as a plain assistant message (no tool_calls)
+          result.push({ ...p, toolCalls: undefined });
+        } else {
+          // Emit with only the matched tool_calls
+          result.push({ ...p, toolCalls: matchedCalls });
+        }
+      } else if (p.role === 'tool') {
+        // Only include if the preceding result entry is an assistant with a
+        // matching tool_call id.  Walk backwards to find the last assistant.
+        const lastAssistant =
+          result.length > 0 ? [...result].reverse().find(r => r.role === 'assistant') : undefined;
+        const assistantToolIds = new Set((lastAssistant?.toolCalls ?? []).map((tc: any) => tc.id));
+        if (p.toolCallId && assistantToolIds.has(p.toolCallId)) {
+          result.push(p);
+        }
+        // else: orphan tool result — drop it
+      } else {
+        result.push(p);
+      }
+    }
+
+    return result;
   }
 
   // Helper method to create system prompt with context
@@ -811,11 +871,27 @@ The user is waiting for you to explain what the tools discovered. Provide a dire
           return new SystemMessage(prompt.content);
         case 'user':
           return new HumanMessage(prompt.content);
-        case 'assistant':
+        case 'assistant': {
+          // When the assistant message had tool calls, include them so that
+          // subsequent tool_result messages can be matched by their tool_use_id.
+          // Without this, Anthropic rejects the request with:
+          //   "unexpected tool_use_id found in tool_result blocks"
+          const toolCalls =
+            prompt.toolCalls?.map(tc => ({
+              id: tc.id,
+              name: tc.function.name,
+              args:
+                typeof tc.function.arguments === 'string'
+                  ? JSON.parse(tc.function.arguments)
+                  : tc.function.arguments ?? {},
+              type: 'tool_call' as const,
+            })) ?? [];
           return new AIMessage({
             content: prompt.content,
+            tool_calls: toolCalls.length > 0 ? toolCalls : undefined,
             additional_kwargs: {},
           });
+        }
         case 'tool':
           return new ToolMessage({
             content: prompt.content,

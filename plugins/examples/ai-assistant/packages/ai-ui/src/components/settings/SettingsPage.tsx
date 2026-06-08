@@ -49,11 +49,12 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { AIToolsSettings, type ToolInfo } from './AIToolsSettings';
 import { AutoDetectProvider, useAutoDetect } from './AutoDetectProvider';
-import { type DeveloperOptionsConfig,DeveloperSettings } from './DeveloperSettings';
+import { type DeveloperOptionsConfig, DeveloperSettings } from './DeveloperSettings';
 import { HolmesAgentSettings } from './HolmesAgentSettings';
-import { type ConfigStore,MCPSettings } from './MCPSettings';
+import { type ConfigStore, MCPSettings } from './MCPSettings';
 import ModelSelector from './ModelSelector';
 import { SkillSettings } from './SkillSettings';
+import type { SkillDisplayInfo } from './SkillsViewerDialog';
 
 /** Props for the {@link SettingsPage} component. */
 export interface SettingsPageProps {
@@ -97,6 +98,10 @@ export interface SettingsPageProps {
   checkPathExists?: (path: string) => Promise<boolean>;
   /** Root directory of the current project (for skill path resolution). */
   projectRoot?: string;
+  /** Async function that loads all skills and returns them for display. */
+  loadSkills?: () => Promise<SkillDisplayInfo[]>;
+  /** Callback fired when skill loading completes (for notifications). */
+  onSkillsLoadComplete?: (result: { count: number; error?: string }) => void;
 
   // --- Holmes ---
 
@@ -157,6 +162,8 @@ export function SettingsPage({
   configStore,
   checkPathExists,
   projectRoot,
+  loadSkills,
+  onSkillsLoadComplete,
   onHolmesConfigChange,
   defaultHolmesNamespace,
   defaultHolmesServiceName,
@@ -350,6 +357,8 @@ export function SettingsPage({
         checkPathExists={checkPathExists}
         projectRoot={projectRoot}
         isRunningAsApp={isRunningAsApp}
+        loadSkills={loadSkills}
+        onSkillsLoadComplete={onSkillsLoadComplete}
       />
 
       {/* Holmes Agent Section */}

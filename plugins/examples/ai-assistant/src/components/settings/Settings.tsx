@@ -15,10 +15,18 @@
  */
 
 import type { CommandRunner } from '@headlamp-k8s/ai-common/providers/providerAutoDetect';
+import {
+  createFetchHttpClient,
+  createJSZipExtractor,
+  createNoopFileSystem,
+} from '@headlamp-k8s/ai-common/skills/BrowserSkillAdapters';
+import { getSkillsConfig } from '@headlamp-k8s/ai-common/skills/SkillConfigManager';
+import { SkillManager } from '@headlamp-k8s/ai-common/skills/SkillManager';
 import type { DeveloperOptionsConfig } from '@headlamp-k8s/ai-ui/components/settings/DeveloperSettings';
 import { SettingsPage } from '@headlamp-k8s/ai-ui/components/settings/SettingsPage';
 import { isTestModeCheck } from '@headlamp-k8s/ai-ui/testing/testMode';
 import { Headlamp, runCommand } from '@kinvolk/headlamp-plugin/lib';
+import { useSnackbar } from 'notistack';
 import React from 'react';
 
 // pluginRunCommand is injected as a scope variable by Headlamp's plugin runner.
@@ -39,6 +47,18 @@ import {
   usePluginConfig,
 } from '../../pluginState';
 
+/** Skill display info shape (mirrors SkillsViewerDialog.SkillDisplayInfo). */
+interface SkillDisplayInfo {
+  name: string;
+  description: string;
+  source: string;
+  content: string;
+  contentSizeBytes: number;
+  version?: string;
+  author?: string;
+  tags?: string[];
+}
+
 /**
  * Plugin settings page for the AI Assistant.
  *
@@ -51,6 +71,63 @@ import {
  */
 export default function Settings() {
   const savedConfigs = usePluginConfig();
+  const { enqueueSnackbar } = useSnackbar();
+
+  // Persistent SkillManager for the viewer (reuses cache across opens)
+  const skillManagerRef = React.useRef<SkillManager | null>(null);
+
+  const loadSkills = React.useCallback(async (): Promise<SkillDisplayInfo[]> => {
+    if (!skillManagerRef.current) {
+      skillManagerRef.current = new SkillManager(
+        createNoopFileSystem(),
+        createFetchHttpClient(),
+        createJSZipExtractor()
+      );
+    }
+    // Invalidate cache to force fresh load
+    skillManagerRef.current.invalidateCache();
+    const config = getSkillsConfig(pluginStore.get());
+
+    const enabledCount = config.sources.filter(s => s.enabled).length;
+    if (enabledCount === 0) {
+      return [];
+    }
+
+    const { skills, errors } = await skillManagerRef.current.loadAllSkillsWithErrors(config);
+
+    // Surface per-source errors so the user knows what failed
+    for (const err of errors) {
+      enqueueSnackbar(`Skill source "${err.sourceUrl}" failed: ${err.error}`, {
+        variant: 'error',
+        autoHideDuration: 8000,
+      });
+    }
+
+    return skills.map(s => ({
+      name: s.metadata.name,
+      description: s.metadata.description,
+      source: s.source,
+      content: s.content,
+      contentSizeBytes: s.contentSizeBytes,
+      version: s.metadata.version,
+      author: s.metadata.author,
+      tags: s.metadata.tags,
+    }));
+  }, [enqueueSnackbar]);
+
+  const handleSkillsLoadComplete = React.useCallback(
+    (result: { count: number; error?: string }) => {
+      if (result.error) {
+        enqueueSnackbar(`Failed to load skills: ${result.error}`, { variant: 'error' });
+      } else {
+        enqueueSnackbar(
+          `Loaded ${result.count} skill${result.count !== 1 ? 's' : ''} from configured sources.`,
+          { variant: result.count > 0 ? 'success' : 'info' }
+        );
+      }
+    },
+    [enqueueSnackbar]
+  );
 
   // Command runner for CLI-based provider detection
   const [commandRunner, setCommandRunner] = React.useState<CommandRunner | null>(null);
@@ -92,6 +169,8 @@ export default function Settings() {
       }}
       isRunningAsApp={Headlamp.isRunningAsApp()}
       configStore={pluginStore}
+      loadSkills={loadSkills}
+      onSkillsLoadComplete={handleSkillsLoadComplete}
       onHolmesConfigChange={(patch: Record<string, any>) => {
         const current = pluginStore.get() || {};
         pluginStore.update({ ...current, ...patch });

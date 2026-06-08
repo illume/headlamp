@@ -27,6 +27,10 @@ storybook-static
 
 dist
 
+# TypeScript compilation artifacts in source directories
+src/**/*.js
+packages/**/src/**/*.js
+
 # Package subdirectory artifacts
 packages/*/node_modules
 
