@@ -29,18 +29,16 @@
 
 import * as path from 'path';
 import { parseArgs, printUsage, readStdin } from './args.js';
-import { DEFAULT_SYSTEM_PROMPT, interactiveMode, query } from './chat.js';
+import { createManager, interactiveMode, query } from './chat.js';
 import {
   type CLIConfig,
   configFromEnv,
   getHeadlampDataDir,
   loadAppConfig,
-  loadAppMCPSettings,
   loadConfigFile,
   saveHeadlampAIConfig,
 } from './config.js';
-import { initMCPTools } from './mcp.js';
-import { createModel, runAutoDetect, tryAutoDetectCopilot } from './model.js';
+import { makeNodeCommandRunner,runAutoDetect, tryAutoDetectCopilot } from './model.js';
 
 async function main() {
   const parsed = parseArgs(process.argv);
@@ -79,7 +77,6 @@ async function main() {
 
   const dataDir = getHeadlampDataDir();
   const appConfigPath = path.join(dataDir, 'headlamp-ai.json');
-  const mcpSettingsPath = path.join(dataDir, 'mcp-tools-settings.json');
 
   let config: CLIConfig | null = null;
 
@@ -140,36 +137,29 @@ async function main() {
     process.exit(1);
   }
 
-  if (!config.mcp) {
-    const appMCP = loadAppMCPSettings();
-    if (appMCP) {
-      config.mcp = appMCP;
-      console.error(`Using MCP settings from ${mcpSettingsPath}`);
+  // Resolve the API key (e.g. GH_CLI_AUTH_SENTINEL → real token)
+  const resolvedConfig = { ...config.config };
+  if (config.provider === 'copilot') {
+    const { GH_CLI_AUTH_SENTINEL, detectGitHubToken } = await import(
+      '@headlamp-k8s/ai-common/providers/providerAutoDetect'
+    );
+    if (resolvedConfig.apiKey === GH_CLI_AUTH_SENTINEL) {
+      const token = await detectGitHubToken(makeNodeCommandRunner());
+      if (!token) {
+        console.error('Failed to get GitHub token via `gh auth token`.');
+        process.exit(1);
+      }
+      resolvedConfig.apiKey = token;
     }
   }
 
-  const systemPrompt = parsed.systemPrompt || config.systemPrompt || DEFAULT_SYSTEM_PROMPT;
-
-  let model = await createModel(config.provider, config.config).catch((err: any) => {
-    console.error(`Error creating model: ${err.message}`);
-    process.exit(1);
+  // Create a LangChainManager — same code path as the Headlamp UI.
+  const manager = await createManager(config.provider, resolvedConfig, {
+    allowMutations: parsed.allowMutations,
   });
 
-  let mcpCleanup: (() => Promise<void>) | undefined;
-  if (config.mcp) {
-    const mcp = await initMCPTools(model, config.mcp).catch((err: any) => {
-      console.error(`Warning: MCP init failed: ${err.message}`);
-      return null;
-    });
-    if (mcp) {
-      model = mcp.model;
-      mcpCleanup = mcp.cleanup;
-    }
-  }
-
   if (parsed.interactive) {
-    await interactiveMode(model, systemPrompt);
-    await mcpCleanup?.();
+    await interactiveMode(manager);
     return;
   }
 
@@ -179,17 +169,14 @@ async function main() {
     console.error(
       'Error: No query provided. Use --interactive or pipe from stdin. Run --help for usage.'
     );
-    await mcpCleanup?.();
     process.exit(1);
   }
 
   try {
-    console.log(await query(model, userQuery, systemPrompt, []));
+    console.log(await query(manager, userQuery));
   } catch (err: any) {
     console.error(`Error: ${err.message}`);
   }
-
-  await mcpCleanup?.();
 }
 
 main()

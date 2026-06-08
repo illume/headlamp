@@ -28,6 +28,7 @@ export interface ParsedArgs {
   systemPrompt?: string;
   interactive: boolean;
   autoDetect: boolean;
+  allowMutations: boolean;
   save: boolean;
   help: boolean;
   query: string;
@@ -37,6 +38,7 @@ export function parseArgs(argv: string[]): ParsedArgs {
   const result: ParsedArgs = {
     interactive: false,
     autoDetect: false,
+    allowMutations: false,
     save: false,
     help: false,
     query: '',
@@ -78,6 +80,9 @@ export function parseArgs(argv: string[]): ParsedArgs {
       case '--autodetect':
         result.autoDetect = true;
         break;
+      case '--allow-mutations':
+        result.allowMutations = true;
+        break;
       case '--save':
         result.save = true;
         break;
@@ -109,6 +114,7 @@ Options:
   --base-url <url>      Base URL for local/custom providers
   --system-prompt <p>   Custom system prompt
   --interactive, -i     Start interactive chat session
+  --allow-mutations     Allow mutating kubectl operations (POST, PUT, DELETE, PATCH). Default: read-only
   --auto-detect         Detect available AI providers (Copilot, Azure, Ollama)
   --save                With --auto-detect: save the first detected provider to headlamp-ai.json
   --help, -h            Show this help message

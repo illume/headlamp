@@ -21,9 +21,9 @@ import {
   AIMessageChunk,
   BaseMessage,
   ChatMessage,
-  concat,
   HumanMessage,
   SystemMessage,
+  ToolMessage,
 } from '@langchain/core/messages';
 import { StringOutputParser } from '@langchain/core/output_parsers';
 import { ChatPromptTemplate, MessagesPlaceholder } from '@langchain/core/prompts';
@@ -167,6 +167,8 @@ export default class LangChainManager extends AIManager {
   private promptTemplate: ChatPromptTemplate;
   private outputParser: StringOutputParser;
   private useDirectToolCalling: boolean = false;
+  /** Extra LangChain tools provided externally (e.g. kubectl for CLI). */
+  private extraTools: Map<string, any> = new Map();
 
   // Skills system
   private skillManager: SkillManager | null = null;
@@ -352,7 +354,7 @@ export default class LangChainManager extends AIManager {
         // chunk.tool_calls during streaming contains only partial data
         // (tool_call_chunks); concat() merges them into complete tool_calls.
         accumulatedChunk = accumulatedChunk
-          ? (concat(accumulatedChunk, chunk) as AIMessageChunk)
+          ? (accumulatedChunk.concat(chunk) as AIMessageChunk)
           : chunk;
       }
 
@@ -482,11 +484,39 @@ export default class LangChainManager extends AIManager {
   }
 
   /**
+   * Enables direct tool calling without requiring a full KubernetesToolContext.
+   * Useful for CLI or headless environments where UI callbacks are not available.
+   * Accepts optional extra LangChain tools to bind alongside the built-in ones.
+   */
+  async enableDirectToolCalling(extraTools?: any[]): Promise<void> {
+    if (this.canUseDirectToolCalling()) {
+      await this.toolManager.waitForMCPToolsInitialization();
+      // Register extra tools so they can be found during execution
+      if (extraTools) {
+        for (const t of extraTools) {
+          this.extraTools.set(t.name, t);
+        }
+      }
+      const builtinTools = this.toolManager.getLangChainTools();
+      const allTools = [...builtinTools, ...(extraTools ?? [])];
+      if (allTools.length > 0) {
+        // @ts-ignore - bindTools return type mismatch
+        this.boundModel = this.model.bindTools(allTools);
+      } else {
+        this.boundModel = this.model;
+      }
+      this.useDirectToolCalling = true;
+    }
+  }
+
+  /**
    * Check if the current provider can use direct tool calling
    */
   private canUseDirectToolCalling(): boolean {
     // All major providers support direct tool calling
-    return ['openai', 'azure', 'anthropic', 'mistral', 'gemini', 'vllm'].includes(this.providerId);
+    return ['openai', 'azure', 'anthropic', 'mistral', 'gemini', 'vllm', 'copilot'].includes(
+      this.providerId
+    );
   }
 
   /**
@@ -641,7 +671,7 @@ export default class LangChainManager extends AIManager {
   // Helper method to create system prompt with context
   private createSystemPrompt(): string {
     const effectiveSkillsText = this.currentSkillsPromptText;
-    const availableTools = this.toolManager.getToolNames();
+    const availableTools = [...this.toolManager.getToolNames(), ...this.extraTools.keys()];
     const hasKubernetesTool = availableTools.includes('kubernetes_api_request');
 
     let systemPromptContent;
@@ -787,7 +817,10 @@ The user is waiting for you to explain what the tools discovered. Provide a dire
             additional_kwargs: {},
           });
         case 'tool':
-          return new AIMessage(`Tool Response (${prompt.toolCallId}): ${prompt.content}`);
+          return new ToolMessage({
+            content: prompt.content,
+            tool_call_id: prompt.toolCallId ?? '',
+          });
 
         default:
           return new ChatMessage(prompt.content, prompt.role);
@@ -930,7 +963,6 @@ The user is waiting for you to explain what the tools discovered. Provide a dire
       if (this.useDirectToolCalling) {
         return await this.handleDirectToolCallingRequest(message);
       }
-
       const modelToUse = this.boundModel || this.model;
 
       // For local models, use simplified approach
@@ -979,25 +1011,61 @@ The user is waiting for you to explain what the tools discovered. Provide a dire
         new HumanMessage(chainInput.input),
       ];
 
-      // Single LLM call with tool capabilities
-      const response = await modelToUse.invoke(messages, {
+      // Capture the full LLMResult via callback so we can access ALL generations.
+      // The Copilot API may split text and tool_calls across multiple "choices":
+      //   - Choice 0: text content, tool_calls: []
+      //   - Choice 1+: tool_calls with actual function calls
+      // invoke() only returns the first choice, losing the tool calls.
+      // The callback fires synchronously before invoke() returns.
+      let fullLLMResult: any = null;
+      const captureCallback = {
+        handleLLMEnd(output: any) {
+          fullLLMResult = output;
+        },
+      };
+
+      const result = await modelToUse.invoke(messages, {
         signal: this.currentAbortController?.signal,
+        callbacks: [captureCallback],
       });
 
       this.currentAbortController = null;
 
-      // Handle tool calls if present
-      if (response.tool_calls?.length) {
-        return await this.handleToolCalls(response);
+      const fullContent = this.extractTextContent(result.content);
+      const allToolCalls = result.tool_calls ?? [];
+
+      // If the first generation has no tool_calls but other generations do,
+      // merge them. This handles the Copilot API multi-choice split.
+      if (allToolCalls.length === 0 && fullLLMResult?.generations?.[0]) {
+        const generations = fullLLMResult.generations[0];
+        let mergedContent = fullContent;
+        for (const gen of generations) {
+          const msg = (gen as any).message;
+          if (msg?.tool_calls?.length) {
+            allToolCalls.push(...msg.tool_calls);
+          }
+          // Also capture any text content from other generations
+          if (!mergedContent && msg?.content) {
+            const text = this.extractTextContent(msg.content);
+            if (text) mergedContent = text;
+          }
+        }
+      }
+
+      // Handle tool calls if present (from any generation)
+      if (allToolCalls.length > 0) {
+        const mergedResponse = {
+          content: result.content,
+          tool_calls: allToolCalls,
+        };
+        return await this.handleToolCalls(mergedResponse);
       } else {
         // Handle regular response
         const assistantPrompt: Prompt = {
           role: 'assistant',
-          content: this.extractTextContent(response.content),
+          content: fullContent,
         };
         this.history.push(assistantPrompt);
-
-        // Clear progress steps for non-tool responses
 
         return assistantPrompt;
       }
@@ -1019,7 +1087,7 @@ The user is waiting for you to explain what the tools discovered. Provide a dire
     const messages = [systemMessage, userMessage];
 
     const response = await model.invoke(messages, {
-      signal: this.currentAbortController.signal,
+      signal: this.currentAbortController?.signal,
     });
 
     this.currentAbortController = null;
@@ -1052,7 +1120,7 @@ The user is waiting for you to explain what the tools discovered. Provide a dire
     // For simple requests without tools, use the chain
     const chain = this.createBasicChain();
     const response = await chain.invoke(chainInput, {
-      signal: this.currentAbortController.signal,
+      signal: this.currentAbortController?.signal,
     });
 
     this.currentAbortController = null;
@@ -1079,15 +1147,38 @@ The user is waiting for you to explain what the tools discovered. Provide a dire
 
     // IMPORTANT: Use the boundModel (which has tools) instead of the original model
     const modelToUse = this.boundModel || model;
+
+    // Capture full LLMResult for multi-generation merging (same as handleDirectToolCallingRequest)
+    let fullLLMResult: any = null;
+    const captureCallback = {
+      handleLLMEnd(output: any) {
+        fullLLMResult = output;
+      },
+    };
+
     const response = await modelToUse.invoke(messages, {
-      signal: this.currentAbortController.signal,
+      signal: this.currentAbortController?.signal,
+      callbacks: [captureCallback],
     });
 
     this.currentAbortController = null;
 
+    const toolCalls = response.tool_calls ?? [];
+
+    // Merge tool_calls from other generations if the first has none (Copilot multi-choice)
+    if (toolCalls.length === 0 && fullLLMResult?.generations?.[0]) {
+      for (const gen of fullLLMResult.generations[0]) {
+        const msg = (gen as any).message;
+        if (msg?.tool_calls?.length) {
+          toolCalls.push(...msg.tool_calls);
+        }
+      }
+    }
+
     // Handle tool calls if present
-    if (response.tool_calls?.length) {
-      return await this.handleToolCalls(response);
+    if (toolCalls.length > 0) {
+      const mergedResponse = { content: response.content, tool_calls: toolCalls };
+      return await this.handleToolCalls(mergedResponse);
     }
 
     // Handle regular response
@@ -1096,8 +1187,6 @@ The user is waiting for you to explain what the tools discovered. Provide a dire
       content: this.extractTextContent(response.content),
     };
     this.history.push(assistantPrompt);
-
-    // Clear progress steps after generating response without tool calls
 
     return assistantPrompt;
   }
@@ -1527,7 +1616,7 @@ ${Object.entries(toolResults)
 
   // Extract tool call handling into separate method
   private async handleToolCalls(response: any): Promise<Prompt> {
-    const enabledToolIds = this.toolManager.getToolNames();
+    const enabledToolIds = [...this.toolManager.getToolNames(), ...this.extraTools.keys()];
 
     // If no tools are enabled but LLM is returning tool calls, this indicates a bug
     if (enabledToolIds.length === 0) {
@@ -1904,13 +1993,28 @@ Without access to the Kubernetes API, I cannot fetch current pod, deployment, se
       const args = JSON.parse(toolCall.function.arguments);
 
       try {
-        // Execute the tool call using ToolManager
-        const toolResponse = await this.toolManager.executeTool(
-          toolCall.function.name,
-          args,
-          toolCall.id,
-          assistantPrompt
-        );
+        // Try extra tools first (e.g. kubectl for CLI), then ToolManager
+        const extraTool = this.extraTools.get(toolCall.function.name);
+        let toolResponse;
+
+        if (extraTool) {
+          // Execute the extra LangChain tool directly
+          const result = await extraTool.invoke(args);
+          const content = typeof result === 'string' ? result : JSON.stringify(result);
+          toolResponse = {
+            content,
+            shouldAddToHistory: true,
+            shouldProcessFollowUp: true,
+          };
+        } else {
+          // Execute the tool call using ToolManager
+          toolResponse = await this.toolManager.executeTool(
+            toolCall.function.name,
+            args,
+            toolCall.id,
+            assistantPrompt
+          );
+        }
 
         // Check if the response indicates an error even if the tool didn't throw
         let isErrorResponse = false;
@@ -2041,7 +2145,7 @@ Format your response to make the errors prominent and actionable.`,
     console.error('Error in userSend:', error);
 
     // Handle abort errors
-    if (error.message === 'AbortError') {
+    if (error.name === 'AbortError' || error.message?.includes('aborted')) {
       const errorPrompt: Prompt = {
         role: 'assistant',
         content: 'Request cancelled.',

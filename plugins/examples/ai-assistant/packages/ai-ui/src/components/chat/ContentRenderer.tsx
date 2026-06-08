@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 The Kubernetes Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 /**
  * Renders AI assistant message content (markdown, YAML, JSON, logs).
  *
@@ -15,11 +31,10 @@ import React, { useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import YAML from 'yaml';
-import MCPFormattedMessage from '../chat/MCPFormattedMessage';
-import YamlDisplay from '../common/YamlDisplay';
-import LogsButton from '../common/LogsButton';
 import { parseKubernetesYAML } from '../../parsing/yamlParser';
-import { useTranslation } from 'react-i18next';
+import MCPFormattedMessage from '../chat/MCPFormattedMessage';
+import LogsButton from '../common/LogsButton';
+import YamlDisplay from '../common/YamlDisplay';
 
 /** Result of a parse attempt, indicating success or failure with optional data. */
 interface ParseResult<T> {
@@ -560,11 +575,12 @@ const ContentRenderer: React.FC<ContentRendererProps> = React.memo(
       } catch (error) {
         // Not JSON or not formatted MCP output, continue with normal processing
       }
-
+      console.debug('Content is not formatted MCP output, proceeding with normal rendering.');
       // Second, check if content is a JSON response with error or success keys
       const jsonParseResult = parseJsonContent(content.trim());
       if (jsonParseResult.success) {
         const parsedContent = jsonParseResult.data;
+        console.debug('Content is a JSON response:', parsedContent);
 
         // Check if it's an error response
         if (parsedContent.error === true && parsedContent.content) {
@@ -607,7 +623,7 @@ const ContentRenderer: React.FC<ContentRendererProps> = React.memo(
           );
         }
       }
-
+      console.debug('Content is not a JSON response, proceeding with normal rendering.');
       // Check if the entire content is a JSON Kubernetes resource
       if (isJsonKubernetesResource(content)) {
         const yamlContent = convertJsonToYaml(content);

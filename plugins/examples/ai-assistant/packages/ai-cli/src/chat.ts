@@ -14,46 +14,39 @@
  * limitations under the License.
  */
 
-import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
-import { HumanMessage, SystemMessage } from '@langchain/core/messages';
+import LangChainManager from '@headlamp-k8s/ai-common/langchain/LangChainManager';
 import * as readline from 'readline';
+import { createKubectlTool } from './kubectl.js';
 
-export const DEFAULT_SYSTEM_PROMPT = `You are a helpful AI assistant for Kubernetes management.
-You help users understand and manage their Kubernetes clusters.
-Be concise and precise in your responses.`;
-
-type History = Array<{ role: string; content: string }>;
-
-/** Send one message and return the model's text response. */
-export async function query(
-  model: BaseChatModel,
-  message: string,
-  systemPrompt: string,
-  history: History = []
-): Promise<string> {
-  const messages: any[] = [new SystemMessage(systemPrompt)];
-  for (const msg of history) {
-    messages.push(
-      msg.role === 'user' ? new HumanMessage(msg.content) : new SystemMessage(msg.content)
-    );
-  }
-  messages.push(new HumanMessage(message));
-
-  const response = await model.invoke(messages);
-  return typeof response.content === 'string'
-    ? response.content
-    : Array.isArray(response.content)
-    ? response.content
-        .filter((c: any) => c.type === 'text')
-        .map((c: any) => c.text)
-        .join('')
-    : String(response.content);
+/**
+ * Create a LangChainManager for the given provider and config.
+ * This uses the same code path as the Headlamp UI, including
+ * the generate()-based tool call extraction that handles the
+ * Copilot API's multi-generation responses.
+ * Binds a kubectl-backed Kubernetes tool for CLI use.
+ *
+ * @param allowMutations When false (default), the kubectl tool only permits GET.
+ */
+export async function createManager(
+  providerId: string,
+  config: Record<string, any>,
+  options: { allowMutations?: boolean } = {}
+): Promise<LangChainManager> {
+  const manager = new LangChainManager(providerId, config);
+  const kubectlTool = createKubectlTool({ readOnly: !options.allowMutations });
+  await manager.enableDirectToolCalling([kubectlTool]);
+  return manager;
 }
 
-/** Run an interactive REPL session. */
-export async function interactiveMode(model: BaseChatModel, systemPrompt: string): Promise<void> {
+/** Send one message via LangChainManager.userSend and return the text. */
+export async function query(manager: LangChainManager, message: string): Promise<string> {
+  const result = await manager.userSend(message);
+  return result.content;
+}
+
+/** Run an interactive REPL session using LangChainManager. */
+export async function interactiveMode(manager: LangChainManager): Promise<void> {
   const rl = readline.createInterface({ input: process.stdin, output: process.stdout });
-  const history: History = [];
 
   console.log('Headlamp AI Assistant (interactive mode)');
   console.log('Type your questions. Press Ctrl+C or type "exit" to quit.\n');
@@ -66,9 +59,7 @@ export async function interactiveMode(model: BaseChatModel, systemPrompt: string
         return;
       }
       try {
-        const resp = await query(model, trimmed, systemPrompt, history);
-        history.push({ role: 'user', content: trimmed });
-        history.push({ role: 'assistant', content: resp });
+        const resp = await query(manager, trimmed);
         console.log(`\nAssistant: ${resp}\n`);
       } catch (err: any) {
         console.error(`\nError: ${err.message}\n`);

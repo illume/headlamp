@@ -1,10 +1,25 @@
-import { getHeadlampLink } from './headlampLink';
-import { Link } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
+/*
+ * Copyright 2025 The Kubernetes Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import type { ContentRendererProps as BaseProps } from '@headlamp-k8s/ai-ui/components/chat/ContentRenderer';
+import ContentRendererBase from '@headlamp-k8s/ai-ui/components/chat/ContentRenderer';
 import { Link as MuiLink } from '@mui/material';
 import React from 'react';
 import { Link as RouterLink, useHistory } from 'react-router-dom';
-import ContentRendererBase from '@headlamp-k8s/ai-ui/components/chat/ContentRenderer';
-import type { ContentRendererProps as BaseProps } from '@headlamp-k8s/ai-ui/components/chat/ContentRenderer';
+import { getHeadlampLink } from './headlampLink';
 
 /**
  * Headlamp link renderer for markdown content.
@@ -17,13 +32,18 @@ const HeadlampLinkRenderer = React.memo(({ href, children, ...props }: any) => {
   const history = useHistory();
 
   // Check if it's a resource details link
-  const headlampLinkDetails = getHeadlampLink(href);
+  // Wrapped in try-catch because headlamp-plugin imports (ResourceClasses)
+  // may be undefined depending on plugin externalization
+  let headlampLinkDetails;
+  try {
+    headlampLinkDetails = getHeadlampLink(href);
+  } catch {
+    // Fall through to external link rendering
+    headlampLinkDetails = { isHeadlampLink: false, url: '', kubeObject: null };
+  }
   if (headlampLinkDetails.isHeadlampLink) {
-    const { kubeObject } = headlampLinkDetails;
-    if (kubeObject) {
-      return <Link kubeObject={kubeObject} />;
-    }
-    // In case it's a Headlamp processed link but no kube object
+    // Use RouterLink for all Headlamp links to avoid headlampEventSlice crash
+    // where DefaultHeadlampEvents is undefined
     if (headlampLinkDetails.url) {
       return (
         <MuiLink
@@ -60,9 +80,7 @@ type ContentRendererProps = Omit<BaseProps, 'LinkRendererSlot'>;
  * that injects the HeadlampLinkRenderer for Kubernetes resource links.
  */
 const ContentRenderer: React.FC<ContentRendererProps> = React.memo(
-  (props) => (
-    <ContentRendererBase {...props} LinkRendererSlot={HeadlampLinkRenderer} />
-  ),
+  props => <ContentRendererBase {...props} LinkRendererSlot={HeadlampLinkRenderer} />,
   (prevProps, nextProps) => {
     return (
       prevProps.content === nextProps.content &&

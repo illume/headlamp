@@ -171,7 +171,7 @@ LOG HANDLING FOR MULTI-CONTAINER PODS:
         return {
           content: errorContent,
           shouldAddToHistory: true,
-          shouldProcessFollowUp: false,
+          shouldProcessFollowUp: true, // Let the LLM explain the error to the user
           metadata: {
             method: method.toUpperCase(),
             url,
