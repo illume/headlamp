@@ -78,6 +78,172 @@ export const GENERAL_FIXTURES: FixtureEntry[] = [
   },
 ];
 
+/**
+ * Fixtures for proactive diagnosis prompts.
+ *
+ * The ProactiveDiagnosisManager sends structured prompts containing event details.
+ * These fixtures use substring matching to detect key phrases like "Reason: BackOff"
+ * and return realistic diagnosis responses so the mock model works end-to-end
+ * with proactive diagnosis in the UI.
+ */
+export const DIAGNOSIS_FIXTURES: FixtureEntry[] = [
+  {
+    prompt: '- **Reason:** BackOff',
+    response: `## Diagnosis: CrashLoopBackOff
+
+### What happened
+The container is repeatedly crashing and Kubernetes is backing off on restart attempts. Each restart increases the backoff delay (10s, 20s, 40s, up to 5 minutes).
+
+### Root cause analysis
+Common causes include:
+- **Application error** — the container process exits with a non-zero code immediately after starting
+- **Missing configuration** — required environment variables, ConfigMaps, or Secrets are not available
+- **Resource limits** — the container is OOM-killed because memory limits are too low
+
+### Impact
+The pod is not serving traffic. If this is part of a Deployment, the unavailable replica reduces capacity.
+
+### Remediation steps
+1. Check the container logs for the crash reason:
+   \`\`\`bash
+   kubectl logs <pod-name> --previous
+   \`\`\`
+2. Verify all required ConfigMaps and Secrets exist
+3. Check resource limits — increase memory if OOM-killed
+4. Fix the application error and redeploy
+
+### Prevention
+- Add proper health checks (liveness and readiness probes)
+- Set appropriate resource requests and limits
+- Use init containers to verify dependencies before the main container starts
+
+SUGGESTIONS: Show pod logs | Check pod events | Describe the pod`,
+  },
+  {
+    prompt: '- **Reason:** FailedScheduling',
+    response: `## Diagnosis: FailedScheduling
+
+### What happened
+The Kubernetes scheduler cannot find a node that satisfies the pod's requirements. The pod remains in **Pending** state.
+
+### Root cause analysis
+The most common causes are:
+- **Insufficient resources** — no node has enough CPU or memory to accommodate the pod's requests
+- **Node affinity/taints** — the pod has node affinity rules or the available nodes have taints that the pod doesn't tolerate
+- **PersistentVolume constraints** — the pod requires a PV in a specific availability zone where no nodes exist
+
+### Impact
+The workload is not running. Dependent services may experience degraded performance or outages.
+
+### Remediation steps
+1. Check available node resources:
+   \`\`\`bash
+   kubectl describe nodes | grep -A 5 "Allocated resources"
+   \`\`\`
+2. Review pod resource requests — consider lowering them if over-provisioned
+3. Add more nodes to the cluster or enable cluster autoscaler
+4. Check for taints and tolerations mismatches
+
+### Prevention
+- Use resource quotas to prevent over-commitment
+- Configure cluster autoscaler for automatic node provisioning
+- Set realistic resource requests based on actual usage
+
+SUGGESTIONS: Show node resources | List pending pods | Check cluster autoscaler`,
+  },
+  {
+    prompt: '- **Reason:** ImagePullBackOff',
+    response: `## Diagnosis: ImagePullBackOff
+
+### What happened
+Kubernetes cannot pull the container image. The kubelet retries with exponential backoff.
+
+### Root cause analysis
+- **Image not found** — the image tag doesn't exist in the registry
+- **Authentication failure** — the registry requires credentials that are not configured as an \`imagePullSecret\`
+- **Network issues** — the node cannot reach the container registry
+
+### Impact
+The pod cannot start. All replicas using this image are affected.
+
+### Remediation steps
+1. Verify the image exists:
+   \`\`\`bash
+   docker pull <image-name>
+   \`\`\`
+2. Check if an \`imagePullSecret\` is configured on the pod or service account
+3. Verify network connectivity from the node to the registry
+4. Check for typos in the image name or tag
+
+### Prevention
+- Pin images to specific digests or immutable tags (avoid \`latest\`)
+- Pre-pull images on nodes using a DaemonSet
+- Use a local registry mirror for air-gapped environments
+
+SUGGESTIONS: Check image pull secrets | Describe the pod | List registry credentials`,
+  },
+  {
+    prompt: '- **Reason:** OOMKilled',
+    response: `## Diagnosis: OOMKilled
+
+### What happened
+The container was terminated because it exceeded its memory limit. The Linux OOM killer selected it for termination.
+
+### Root cause analysis
+- **Memory limit too low** — the application requires more memory than the configured limit
+- **Memory leak** — the application has a memory leak causing unbounded growth
+- **Spike in load** — a traffic spike caused temporary memory consumption beyond the limit
+
+### Impact
+The container restarts, causing brief downtime. If this happens repeatedly, it triggers CrashLoopBackOff.
+
+### Remediation steps
+1. Check the current memory limit and actual usage:
+   \`\`\`bash
+   kubectl top pod <pod-name>
+   \`\`\`
+2. Increase the memory limit if the application legitimately needs more
+3. Profile the application for memory leaks
+4. Consider using a Vertical Pod Autoscaler (VPA) to right-size limits
+
+### Prevention
+- Set memory requests equal to limits to guarantee memory allocation
+- Monitor memory usage trends with Prometheus/Grafana
+- Load-test the application to determine realistic memory requirements
+
+SUGGESTIONS: Show pod metrics | Check resource limits | Enable VPA`,
+  },
+  {
+    prompt: 'A Kubernetes <<eventType>> event has been detected',
+    response: `## Diagnosis
+
+### What happened
+A Kubernetes <<eventType>> event was detected on a cluster resource. This indicates an issue that requires attention.
+
+### Root cause analysis
+The event details suggest a configuration or runtime issue with the affected resource. Common patterns include:
+- Resource misconfiguration (incorrect specs, missing dependencies)
+- Infrastructure issues (node pressure, network problems)
+- Application errors (crash loops, health check failures)
+
+### Impact
+Depending on the severity, this may cause service degradation or outage for the affected workload.
+
+### Remediation steps
+1. Inspect the affected resource for detailed status and conditions
+2. Check related events for additional context
+3. Review recent changes that may have triggered the issue
+4. Apply the appropriate fix based on the specific error reason
+
+### Prevention
+- Implement proper monitoring and alerting for Warning events
+- Use admission webhooks to validate configurations before deployment
+- Maintain runbooks for common failure scenarios
+
+SUGGESTIONS: Show related events | Describe the resource | Check recent deployments`,
+  },
+];
+
 /** Built-in scripted conversation for the cluster exploration demo. */
 export const DEMO_CLUSTER_EXPLORATION: FixtureSequence = {
   name: 'cluster-exploration-demo',

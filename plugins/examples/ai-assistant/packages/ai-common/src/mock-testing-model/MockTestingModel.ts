@@ -16,7 +16,7 @@
 
 import type { BaseChatModel } from '@langchain/core/language_models/chat_models';
 import { FakeListChatModel } from '@langchain/core/utils/testing';
-import { DEMO_CLUSTER_EXPLORATION, GENERAL_FIXTURES } from './builtinFixtures.js';
+import { DEMO_CLUSTER_EXPLORATION, DIAGNOSIS_FIXTURES, GENERAL_FIXTURES } from './builtinFixtures.js';
 
 // The variable delimiters used in prompt/response templates.
 // `<<varName>>` was chosen because `{{…}}` conflicts with Mustache/Handlebars/
@@ -286,7 +286,7 @@ export function getBuiltinFixtures(): {
   sequences: FixtureSequence[];
 } {
   return {
-    entries: [...GENERAL_FIXTURES],
+    entries: [...GENERAL_FIXTURES, ...DIAGNOSIS_FIXTURES],
     sequences: [DEMO_CLUSTER_EXPLORATION],
   };
 }
