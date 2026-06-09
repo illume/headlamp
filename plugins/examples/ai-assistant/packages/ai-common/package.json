@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     "./agent/holmesClient": "./src/agent/holmesClient.ts",
+    "./agent/MockHolmesAgent": "./src/agent/MockHolmesAgent.ts",
     "./agent/agentTypes": "./src/agent/agentTypes.ts",
     "./agent/aksAgentParsing": "./src/agent/aksAgentParsing.ts",
     "./agent/aksAgentPrompts": "./src/agent/aksAgentPrompts.ts",

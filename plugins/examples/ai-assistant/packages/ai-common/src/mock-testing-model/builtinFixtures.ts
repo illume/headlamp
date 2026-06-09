@@ -104,10 +104,7 @@ Common causes include:
 The pod is not serving traffic. If this is part of a Deployment, the unavailable replica reduces capacity.
 
 ### Remediation steps
-1. Check the container logs for the crash reason:
-   \`\`\`bash
-   kubectl logs <pod-name> --previous
-   \`\`\`
+1. Check the container logs — navigate to the pod in Headlamp and open the **Logs** tab (use the "Previous" toggle for crashed containers)
 2. Verify all required ConfigMaps and Secrets exist
 3. Check resource limits — increase memory if OOM-killed
 4. Fix the application error and redeploy
@@ -136,10 +133,7 @@ The most common causes are:
 The workload is not running. Dependent services may experience degraded performance or outages.
 
 ### Remediation steps
-1. Check available node resources:
-   \`\`\`bash
-   kubectl describe nodes | grep -A 5 "Allocated resources"
-   \`\`\`
+1. Check available node resources — navigate to **Cluster** > **Nodes** in Headlamp and review the resource allocation on each node
 2. Review pod resource requests — consider lowering them if over-provisioned
 3. Add more nodes to the cluster or enable cluster autoscaler
 4. Check for taints and tolerations mismatches
@@ -167,11 +161,8 @@ Kubernetes cannot pull the container image. The kubelet retries with exponential
 The pod cannot start. All replicas using this image are affected.
 
 ### Remediation steps
-1. Verify the image exists:
-   \`\`\`bash
-   docker pull <image-name>
-   \`\`\`
-2. Check if an \`imagePullSecret\` is configured on the pod or service account
+1. Verify the image exists in the registry and the tag is correct
+2. Check if an \`imagePullSecret\` is configured on the pod or service account — view this in the pod's YAML under **Workloads** > **Pods** in Headlamp
 3. Verify network connectivity from the node to the registry
 4. Check for typos in the image name or tag
 
@@ -198,10 +189,7 @@ The container was terminated because it exceeded its memory limit. The Linux OOM
 The container restarts, causing brief downtime. If this happens repeatedly, it triggers CrashLoopBackOff.
 
 ### Remediation steps
-1. Check the current memory limit and actual usage:
-   \`\`\`bash
-   kubectl top pod <pod-name>
-   \`\`\`
+1. Check the current memory limit and actual usage — view resource metrics on the pod detail page in Headlamp
 2. Increase the memory limit if the application legitimately needs more
 3. Profile the application for memory leaks
 4. Consider using a Vertical Pod Autoscaler (VPA) to right-size limits

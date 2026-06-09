@@ -15,6 +15,7 @@
  */
 
 import { getHolmesProxyBaseUrl, HolmesAgent } from '@headlamp-k8s/ai-common/agent/holmesClient';
+import { MockHolmesAgent } from '@headlamp-k8s/ai-common/agent/MockHolmesAgent';
 import AIManager, { Prompt } from '@headlamp-k8s/ai-common/ai/manager';
 import { inlineToolApprovalManager } from '@headlamp-k8s/ai-common/approval/InlineToolApprovalManager';
 import { getProviderById } from '@headlamp-k8s/ai-common/config/modelConfig';
@@ -44,7 +45,7 @@ import { useClustersConf, useSelectedClusters } from '@kinvolk/headlamp-plugin/l
 import { getCluster, getClusterGroup } from '@kinvolk/headlamp-plugin/lib/Utils';
 import { Box, Button, Grid, Typography } from '@mui/material';
 import { isEqual } from 'lodash';
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import {
   type AgentThinkingStep,
@@ -55,6 +56,7 @@ import {
 import AIChatContent from './components/assistant/AIChatContent';
 import { AIInputSection } from './components/assistant/AllInputSection';
 import { generateContextDescription } from './context/contextGenerator';
+import ContentRenderer from './ContentRenderer';
 import EditorDialog from './editordialog';
 import { checkHolmesAgentHealth } from './holmesClient';
 import { useKubernetesToolUI } from './hooks/useKubernetesToolUI';
@@ -68,6 +70,8 @@ import {
   proactiveDiagnosisManager,
   ProactiveDiagnosisManager,
 } from '@headlamp-k8s/ai-ui/diagnosis/ProactiveDiagnosisManager';
+import { useProactiveDiagnosis } from '@headlamp-k8s/ai-ui/hooks/useProactiveDiagnosis';
+import ProactiveDiagnosisSection from '@headlamp-k8s/ai-ui/components/assistant/ProactiveDiagnosisSection';
 import { useDynamicPrompts } from './prompts/promptGenerator';
 
 // Operation type constants for translation
@@ -132,6 +136,14 @@ export default function AIPrompt(props: {
   const dynamicPrompts = useDynamicPrompts();
   const prompWidthContext = usePromptWidth();
   const { t } = useTranslation();
+
+  // Proactive diagnosis UI state
+  const {
+    diagnoses,
+    isCycleRunning,
+    scrollToEventUid,
+    clearScrollTarget,
+  } = useProactiveDiagnosis();
 
   // Agent mode state — aksAgentClusters and hasCheckedForAgents live in global state
   // so the check that runs in index.tsx is shared here without re-running
@@ -199,7 +211,7 @@ export default function AIPrompt(props: {
   // top 3 warning/error events fetched via a one-shot API call.
   const proactiveDiagIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Dedicated HolmesAgent for proactive diagnosis — one instance, reused sequentially.
-  const diagnosisAgentRef = useRef<HolmesAgent | null>(null);
+  const diagnosisAgentRef = useRef<HolmesAgent | MockHolmesAgent | null>(null);
 
   // Build a stable diagnose function that uses the current agent or AI manager.
   // This function is passed to the proactive diagnosis manager so it can call
@@ -318,7 +330,7 @@ export default function AIPrompt(props: {
   const [agentModeStatus, setAgentModeStatus] = React.useState<
     'idle' | 'checking' | 'found' | 'not-found'
   >('idle');
-  const holmesAgentRef = React.useRef<HolmesAgent | null>(null);
+  const holmesAgentRef = React.useRef<HolmesAgent | MockHolmesAgent | null>(null);
 
   const [showEditor, setShowEditor] = React.useState(false);
   const [editorContent, setEditorContent] = React.useState('');
@@ -1030,13 +1042,22 @@ export default function AIPrompt(props: {
         setAgentModeStatus('found');
         setIsAgentMode(true);
 
-        // Create the HolmesAgent routing through K8s service proxy
-        const cluster = getCluster();
-        if (!cluster) {
-          console.error('[AgentMode] No cluster available');
-          return;
+        // Use MockHolmesAgent when the developer option is enabled
+        const useMockAgent = pluginSettings?.devOptions?.enableMockAgent === true;
+
+        let agent: HolmesAgent | MockHolmesAgent;
+        if (useMockAgent) {
+          agent = new MockHolmesAgent();
+          console.log('[AgentMode] Using MockHolmesAgent');
+        } else {
+          // Create the HolmesAgent routing through K8s service proxy
+          const cluster = getCluster();
+          if (!cluster) {
+            console.error('[AgentMode] No cluster available');
+            return;
+          }
+          agent = new HolmesAgent(getHolmesProxyBaseUrl(cluster, pluginSettings));
         }
-        const agent = new HolmesAgent(getHolmesProxyBaseUrl(cluster, pluginSettings));
         agent.subscribe({
           onEvent: ({ event }) => {
             console.log('[AgentMode] onEvent:', event.type, event);
@@ -1239,7 +1260,9 @@ export default function AIPrompt(props: {
         // One HolmesAgent instance, reused sequentially for all diagnoses.
         // Between each diagnosis we resetThread() to get a fresh conversation.
         // Chat is blocked (loading=true) while diagnosis runs.
-        const diagAgent = new HolmesAgent(getHolmesProxyBaseUrl(cluster, pluginSettings));
+        const diagAgent = useMockAgent
+          ? new MockHolmesAgent()
+          : new HolmesAgent(getHolmesProxyBaseUrl(getCluster()!, pluginSettings));
         diagnosisAgentRef.current = diagAgent;
 
         const agentDiagnoseFn = async (prompt: string, onStep?: DiagnosisStepCallback): Promise<string> => {
@@ -1360,12 +1383,20 @@ export default function AIPrompt(props: {
     [pluginSettings, t]
   );
 
-  // Auto-initialize agent mode on first mount if Holmes is reachable.
+  // Auto-initialize agent mode on first mount if Holmes is reachable
+  // or if mock agent is enabled.
   // Holmes takes priority over chat mode: if Holmes is available, always
   // default to it regardless of whether a chat provider is also configured.
   // Fall back to chat mode only when Holmes is not reachable.
   React.useEffect(() => {
     if (isAgentMode || holmesAgentRef.current) return;
+
+    // If mock agent is enabled, skip health check and go straight to agent mode
+    if (pluginSettings?.devOptions?.enableMockAgent) {
+      handleToggleAgentMode(true);
+      return;
+    }
+
     const cluster = getCluster();
     if (!cluster) return;
     checkHolmesAgentHealth(cluster, pluginSettings)
@@ -1782,6 +1813,14 @@ export default function AIPrompt(props: {
               minWidth: 0,
             }}
           >
+            <ProactiveDiagnosisSection
+              diagnoses={diagnoses}
+              scrollToEventUid={scrollToEventUid}
+              onScrollComplete={clearScrollTarget}
+              isCycleRunning={isCycleRunning}
+              onYamlAction={handleYamlAction}
+              ContentRendererSlot={ContentRenderer}
+            />
             <AIChatContent
               history={memoizedHistory}
               isLoading={loading}

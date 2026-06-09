@@ -49,6 +49,7 @@ import HeadlampEventHandler from './components/appbar/HeadlampEventHandler';
 import AIPanelComponent from './components/panel/AIPanelComponent';
 import Settings from './components/settings/Settings';
 import { PLUGIN_NAME, useGlobalState } from './pluginState';
+import type { RawK8sEvent } from './kubernetes/EventFetcher';
 
 // Register UI Panel component that uses the shared state to show/hide
 registerUIPanel({
@@ -67,9 +68,9 @@ function AIDiagnosisButton({ event }: { event: Event }) {
   const pluginState = useGlobalState();
 
   const handleDiagnose = () => {
-    const data = event.jsonData || {};
+    const data = (event.jsonData || {}) as Partial<RawK8sEvent>;
     const eventUid = data?.metadata?.uid || `${data?.metadata?.name}-${data?.metadata?.namespace}`;
-    const involvedObject = data?.involvedObject || {};
+    const involvedObject = data?.involvedObject ?? { kind: '', name: '', namespace: '' };
 
     const eventDigest = {
       uid: eventUid,

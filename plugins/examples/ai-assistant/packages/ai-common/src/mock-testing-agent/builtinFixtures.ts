@@ -217,8 +217,80 @@ All nodes are healthy and running Kubernetes v1.32.0.
 Everything looks healthy — all deployments have their desired replica count.`,
 };
 
+/** A diagnosis session triggered by proactive diagnosis prompts. */
+export const EVENT_DIAGNOSIS_SESSION: MockAgentSession = {
+  name: 'event-diagnosis',
+  description:
+    'Simulates an agent diagnosing a Kubernetes warning/error event — walks through event inspection, resource analysis, and root cause.',
+  question: 'event has been detected',
+  steps: [
+    {
+      phase: 'init',
+      label: 'Model: gpt-4o',
+      durationMs: 100,
+    },
+    {
+      phase: 'planning',
+      label: 'Inspect event details and involved object',
+      durationMs: 80,
+    },
+    {
+      phase: 'planning',
+      label: 'Check related events and resource status',
+      durationMs: 80,
+    },
+    {
+      phase: 'executing',
+      label: 'Running kubectl describe',
+      toolCall: {
+        tool: 'call_kubectl',
+        input: 'describe pod -n default',
+        output: 'Events:\n  Warning  BackOff  2m   kubelet  Back-off restarting failed container\n  Normal   Pulling  5m   kubelet  Pulling image "nginx:latest"',
+        durationMs: 200,
+      },
+      durationMs: 200,
+    },
+    {
+      phase: 'executing',
+      label: 'Running kubectl get events',
+      toolCall: {
+        tool: 'call_kubectl',
+        input: 'get events --sort-by=.lastTimestamp',
+        output: 'LAST SEEN   TYPE      REASON    OBJECT              MESSAGE\n2m          Warning   BackOff   pod/nginx-abc123    Back-off restarting failed container',
+        durationMs: 150,
+      },
+      durationMs: 150,
+    },
+  ],
+  answer: `## Event Diagnosis
+
+### What happened
+A Kubernetes Warning event was detected indicating a problem with a cluster resource. The event signals that the system encountered an issue during normal operation.
+
+### Root cause analysis
+After inspecting the involved resource and related events:
+- The container is failing to start properly and entering a restart loop
+- The kubelet is applying exponential backoff between restart attempts
+- Related events show the issue has been recurring for several minutes
+
+### Impact
+The affected workload is not serving traffic. If this is part of a Deployment, the unavailable replica reduces overall capacity and availability.
+
+### Remediation steps
+1. Check the container logs — navigate to the pod in Headlamp and open the **Logs** tab (use the "Previous" toggle for crashed containers)
+2. Inspect the pod's configuration for misconfigured probes, resource limits, or image references
+3. Verify that required ConfigMaps, Secrets, and volumes are available
+4. Fix the root cause and redeploy
+
+### Prevention
+- Add proper health checks (liveness and readiness probes) with appropriate thresholds
+- Set resource requests and limits based on actual usage patterns
+- Use admission webhooks to validate configurations before deployment`,
+};
+
 /** All built-in sessions. */
 export const BUILTIN_SESSIONS: MockAgentSession[] = [
   POD_TROUBLESHOOTING_SESSION,
   CLUSTER_EXPLORATION_SESSION,
+  EVENT_DIAGNOSIS_SESSION,
 ];

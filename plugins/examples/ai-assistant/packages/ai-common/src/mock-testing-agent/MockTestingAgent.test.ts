@@ -172,7 +172,7 @@ describe('MockTestingAgent', () => {
 
   describe('builtinFixtures', () => {
     it('BUILTIN_SESSIONS contains expected sessions', () => {
-      expect(BUILTIN_SESSIONS.length).toBe(2);
+      expect(BUILTIN_SESSIONS.length).toBe(3);
 
       const podSession = BUILTIN_SESSIONS.find(s => s.name === 'pod-troubleshooting');
       expect(podSession).toBeDefined();
@@ -182,6 +182,11 @@ describe('MockTestingAgent', () => {
       const clusterSession = BUILTIN_SESSIONS.find(s => s.name === 'cluster-exploration');
       expect(clusterSession).toBeDefined();
       expect(clusterSession!.steps.length).toBeGreaterThan(0);
+
+      const diagnosisSession = BUILTIN_SESSIONS.find(s => s.name === 'event-diagnosis');
+      expect(diagnosisSession).toBeDefined();
+      expect(diagnosisSession!.steps.length).toBeGreaterThan(0);
+      expect(diagnosisSession!.answer.length).toBeGreaterThan(0);
     });
 
     it('all sessions have required fields', () => {
