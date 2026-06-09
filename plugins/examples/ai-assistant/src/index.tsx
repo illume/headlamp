@@ -22,8 +22,11 @@
 import {
   registerAppBarAction,
   registerPluginSettings,
+  registerResourceTableColumnsProcessor,
   registerUIPanel,
 } from '@kinvolk/headlamp-plugin/lib';
+import { ActionButton, ResourceTableColumn } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
+import Event from '@kinvolk/headlamp-plugin/lib/K8s/event';
 import i18next from 'i18next';
 import React from 'react';
 import { initReactI18next } from 'react-i18next';
@@ -38,11 +41,14 @@ if (!i18next.isInitialized) {
 }
 // Register provider icons for offline use
 import '@headlamp-k8s/ai-ui/icons/iconBundles';
+import {
+  proactiveDiagnosisManager,
+} from '@headlamp-k8s/ai-ui/diagnosis/ProactiveDiagnosisManager';
 import HeadlampAIPrompt from './components/appbar/HeadlampAIPrompt';
 import HeadlampEventHandler from './components/appbar/HeadlampEventHandler';
 import AIPanelComponent from './components/panel/AIPanelComponent';
 import Settings from './components/settings/Settings';
-import { PLUGIN_NAME } from './pluginState';
+import { PLUGIN_NAME, useGlobalState } from './pluginState';
 
 // Register UI Panel component that uses the shared state to show/hide
 registerUIPanel({
@@ -55,25 +61,69 @@ registerAppBarAction(HeadlampAIPrompt);
 
 registerAppBarAction(HeadlampEventHandler);
 
-// [PROACTIVE_DIAGNOSIS_DISABLED]
-// import {
-//   proactiveDiagnosisManager,
-//   ProactiveDiagnosisManager,
-// } from '@headlamp-k8s/ai-ui';
-
 registerPluginSettings(PLUGIN_NAME, Settings);
 
-/* [PROACTIVE_DIAGNOSIS_DISABLED] — AIDiagnosisButton & events table column
-
 function AIDiagnosisButton({ event }: { event: Event }) {
-  ...
+  const pluginState = useGlobalState();
+
+  const handleDiagnose = () => {
+    const data = event.jsonData || {};
+    const eventUid = data?.metadata?.uid || `${data?.metadata?.name}-${data?.metadata?.namespace}`;
+    const involvedObject = data?.involvedObject || {};
+
+    const eventDigest = {
+      uid: eventUid,
+      name: data?.metadata?.name || 'unknown',
+      type: data?.type || 'Warning',
+      reason: data?.reason || '',
+      message: data?.message || '',
+      objectKind: involvedObject?.kind || '',
+      objectName: involvedObject?.name || '',
+      objectNamespace: involvedObject?.namespace || '',
+      lastTimestamp: data?.lastTimestamp || data?.metadata?.creationTimestamp || '',
+      rawEvent: data,
+    };
+
+    if (!proactiveDiagnosisManager.hasDiagnosis(eventUid)) {
+      proactiveDiagnosisManager.diagnoseSingleEvent(eventDigest).catch(err => {
+        console.error('[AIDiagnosisButton] Failed to diagnose event:', err);
+      });
+    }
+
+    proactiveDiagnosisManager.setScrollToEventUid(eventUid);
+    pluginState.setIsUIPanelOpen(true);
+  };
+
+  return (
+    <ActionButton
+      description="Diagnose with AI"
+      icon="mdi:robot-outline"
+      onClick={handleDiagnose}
+    />
+  );
 }
 
 registerResourceTableColumnsProcessor(function addAIDiagnosisToEvents({ id, columns }) {
-  ...
-});
+  if (id === 'headlamp-cluster.overview.events') {
+    const eventColumns = columns as ResourceTableColumn<Event>[];
+    eventColumns.push({
+      label: 'AI Diagnosis',
+      getValue: (event: Event) => {
+        const eventType = event.jsonData?.type || '';
+        return (eventType === 'Warning' || eventType === 'Error') ? eventType : '';
+      },
+      render: (event: Event) => {
+        const eventType = event.jsonData?.type || '';
+        if (eventType === 'Warning' || eventType === 'Error') {
+          return <AIDiagnosisButton event={event} />;
+        }
+        return null;
+      },
+    });
+  }
 
-[PROACTIVE_DIAGNOSIS_DISABLED] */
+  return columns;
+});
 
 // Export the cluster change notifier for external use
 export { useClusterChangeNotifier, ClusterChangeNotifier } from './hooks/useClusterChangeNotifier';

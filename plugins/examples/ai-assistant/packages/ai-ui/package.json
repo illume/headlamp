@@ -41,7 +41,7 @@
     "./components/settings/SettingsPage": "./src/components/settings/SettingsPage.tsx",
     "./components/panel/AIPanelComponent": "./src/components/panel/AIPanelComponent.tsx",
     "./contexts/PromptWidthContext": "./src/contexts/PromptWidthContext.tsx",
-    "./hooks/useProactiveDiagnosis": "./src/hooks/useProactiveDiagnosis.ts",
+    "./hooks/useProactiveDiagnosis": "./src/diagnosis/useProactiveDiagnosis.ts",
     "./hooks/useToolApproval": "./src/hooks/useToolApproval.ts",
     "./diagnosis/ProactiveDiagnosisManager": "./src/diagnosis/ProactiveDiagnosisManager.ts",
     "./diagnosis/diagnosisHelpers": "./src/diagnosis/diagnosisHelpers.ts",

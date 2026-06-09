@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { DiagnosisResult, proactiveDiagnosisManager } from '../diagnosis/ProactiveDiagnosisManager';
+import { DiagnosisResult, proactiveDiagnosisManager } from './ProactiveDiagnosisManager';
 
 /** Subscribes to proactive diagnosis state and exposes diagnosis results plus scroll controls. */
 export function useProactiveDiagnosis() {

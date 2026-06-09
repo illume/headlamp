@@ -66,7 +66,7 @@ async function loadUseProactiveDiagnosis(options?: {
     useCallback: vi.fn((callback: (...args: any[]) => any) => callback),
   }));
 
-  vi.doMock('../diagnosis/ProactiveDiagnosisManager', () => ({
+  vi.doMock('./ProactiveDiagnosisManager', () => ({
     proactiveDiagnosisManager: manager,
   }));
 

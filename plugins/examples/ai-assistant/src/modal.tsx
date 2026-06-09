@@ -59,15 +59,15 @@ import EditorDialog from './editordialog';
 import { checkHolmesAgentHealth } from './holmesClient';
 import { useKubernetesToolUI } from './hooks/useKubernetesToolUI';
 import {
-  /* [PROACTIVE_DIAGNOSIS_DISABLED] fetchWarningEventsForClusters, */ fetchClusterWarnings,
+  fetchWarningEventsForClusters,
+  fetchClusterWarnings,
 } from './kubernetes/EventFetcher';
 import { getSettingsURL, useGlobalState } from './pluginState';
-// [PROACTIVE_DIAGNOSIS_DISABLED]
-// import {
-//   DiagnosisStepCallback,
-//   proactiveDiagnosisManager,
-//   ProactiveDiagnosisManager,
-// } from '@headlamp-k8s/ai-ui';
+import {
+  type DiagnosisStepCallback,
+  proactiveDiagnosisManager,
+  ProactiveDiagnosisManager,
+} from '@headlamp-k8s/ai-ui/diagnosis/ProactiveDiagnosisManager';
 import { useDynamicPrompts } from './prompts/promptGenerator';
 
 // Operation type constants for translation
@@ -194,11 +194,8 @@ export default function AIPrompt(props: {
   const clusterWarningsRef = useRef<Record<string, { warnings: any[]; error?: Error | null }>>({});
 
   // ─── Proactive Diagnosis ────────────────────────────────────────────
-  // [PROACTIVE_DIAGNOSIS_DISABLED] — entire proactive diagnosis block commented out.
-  // To re-enable, uncomment the code below and the import above.
-  /*
   // Wire the proactive diagnosis manager to the agent or AI manager.
-  // It runs a diagnosis cycle on-demand (with a 1-hour cooldown) on the
+  // It runs a diagnosis cycle on-demand (with a 20-min cooldown) on the
   // top 3 warning/error events fetched via a one-shot API call.
   const proactiveDiagIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Dedicated HolmesAgent for proactive diagnosis — one instance, reused sequentially.
@@ -306,9 +303,6 @@ export default function AIPrompt(props: {
       proactiveDiagnosisManager.removeListener('cycle-end', handleCycleEnd);
     };
   }, [diagnoseFnReady]); // runProactiveCycle is now stable, no need in deps
-  */
-  // Stub: proactive diagnosis disabled — isDiagnosisRunning is always false
-  const isDiagnosisRunning = false;
   // ─── End Proactive Diagnosis Setup ──────────────────────────────────
 
   const [activeConfig, setActiveConfig] = useState<StoredProviderConfig | null>(null);
@@ -625,8 +619,6 @@ export default function AIPrompt(props: {
     });
   }, [pluginSettings]);
 
-  // [PROACTIVE_DIAGNOSIS_DISABLED] — LangChain fallback diagnosis connection
-  /*
   // ─── Connect AI manager to proactive diagnosis (fallback for non-agent mode) ──
   // When NOT in agent mode but an AI config is available, use LangChainManager as fallback.
   // In agent mode, the diagnoseFn is already set by handleToggleAgentMode above.
@@ -676,7 +668,6 @@ export default function AIPrompt(props: {
     }
     // If isAgentMode is true, diagnoseFn is managed by handleToggleAgentMode — don't touch it.
   }, [isAgentMode, activeConfig, selectedModel, enabledTools]);
-  */
   // ─── End proactive diagnosis connection ─────────────────────────────
 
   const updateHistory = React.useCallback(() => {
@@ -1244,8 +1235,6 @@ export default function AIPrompt(props: {
         });
         holmesAgentRef.current = agent;
 
-        // [PROACTIVE_DIAGNOSIS_DISABLED] — agent diagnosis setup
-        /*
         // ─── Set up proactive diagnosis via dedicated HolmesAgent ──────
         // One HolmesAgent instance, reused sequentially for all diagnoses.
         // Between each diagnosis we resetThread() to get a fresh conversation.
@@ -1341,7 +1330,6 @@ export default function AIPrompt(props: {
         setDiagnoseFnReady(true);
         console.log('[ProactiveDiagnosis] Agent diagnose function ready');
         // ─── End proactive diagnosis agent setup ────────────────────
-        */
 
         setPromptHistory(prev => [
           ...prev,
@@ -1359,11 +1347,10 @@ export default function AIPrompt(props: {
         setIsAgentMode(false);
         setAgentModeStatus('idle');
         holmesAgentRef.current = null;
-        // [PROACTIVE_DIAGNOSIS_DISABLED] — Clean up proactive diagnosis
-        // diagnoseFnRef.current = null;
-        // diagnosisAgentRef.current = null;
-        // proactiveDiagnosisManager.setDiagnoseFn(null);
-        // setDiagnoseFnReady(false);
+        diagnoseFnRef.current = null;
+        diagnosisAgentRef.current = null;
+        proactiveDiagnosisManager.setDiagnoseFn(null);
+        setDiagnoseFnReady(false);
         setPromptHistory(prev => [
           ...prev,
           { role: 'system', content: t('Switched back to AI Chat mode.') },
