@@ -41,15 +41,13 @@ if (!i18next.isInitialized) {
 }
 // Register provider icons for offline use
 import '@headlamp-k8s/ai-ui/icons/iconBundles';
-import {
-  proactiveDiagnosisManager,
-} from '@headlamp-k8s/ai-ui/diagnosis/ProactiveDiagnosisManager';
+import { proactiveDiagnosisManager } from '@headlamp-k8s/ai-ui/diagnosis/ProactiveDiagnosisManager';
 import HeadlampAIPrompt from './components/appbar/HeadlampAIPrompt';
 import HeadlampEventHandler from './components/appbar/HeadlampEventHandler';
 import AIPanelComponent from './components/panel/AIPanelComponent';
 import Settings from './components/settings/Settings';
-import { PLUGIN_NAME, useGlobalState } from './pluginState';
 import type { RawK8sEvent } from './kubernetes/EventFetcher';
+import { PLUGIN_NAME, useGlobalState } from './pluginState';
 
 // Register UI Panel component that uses the shared state to show/hide
 registerUIPanel({
@@ -111,7 +109,7 @@ registerResourceTableColumnsProcessor(function addAIDiagnosisToEvents({ id, colu
       label: 'AI Diagnosis',
       getValue: (event: Event) => {
         const eventType = event.jsonData?.type || '';
-        return (eventType === 'Warning' || eventType === 'Error') ? eventType : '';
+        return eventType === 'Warning' || eventType === 'Error' ? eventType : '';
       },
       render: (event: Event) => {
         const eventType = event.jsonData?.type || '';

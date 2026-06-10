@@ -20,7 +20,7 @@ import {
   type MockAgentSession,
 } from './MockTestingAgent';
 import { BUILTIN_SESSIONS } from './builtinFixtures';
-import type { AgentThinkingStep } from '../agent/aksAgentThinking';
+import type { AgentThinkingStep } from '../agent/agentTypes';
 
 describe('MockTestingAgent', () => {
   describe('createMockTestingAgent', () => {

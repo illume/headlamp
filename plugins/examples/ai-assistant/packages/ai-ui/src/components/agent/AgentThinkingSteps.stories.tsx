@@ -4,7 +4,7 @@
 import { createTheme, CssBaseline, ThemeProvider } from '@mui/material';
 import { Meta, StoryFn } from '@storybook/react';
 import React from 'react';
-import type { AgentThinkingStep } from '@headlamp-k8s/ai-common/agent/aksAgentThinking';
+import type { AgentThinkingStep } from '@headlamp-k8s/ai-common/agent/agentTypes';
 import AgentThinkingSteps from './AgentThinkingSteps';
 
 const darkTheme = createTheme({

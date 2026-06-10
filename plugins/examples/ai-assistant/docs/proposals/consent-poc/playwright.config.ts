@@ -23,6 +23,7 @@ const vulnURL = `http://localhost:${VULN_PORT}`;
 
 export default defineConfig({
   testDir: './tests',
+  testMatch: '*.pw-spec.ts',
   timeout: 30 * 1000,
   expect: { timeout: 5000 },
   fullyParallel: false,

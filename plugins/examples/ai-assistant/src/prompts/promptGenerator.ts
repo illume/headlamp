@@ -84,6 +84,6 @@ export function useDynamicPrompts(): string[] {
   const event = pluginState.event;
 
   return React.useMemo(() => {
-    return generatePrompts(event);
+    return generatePrompts(event as unknown as PromptEvent | null);
   }, [location.pathname, event]);
 }

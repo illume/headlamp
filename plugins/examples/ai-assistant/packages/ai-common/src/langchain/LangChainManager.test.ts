@@ -673,7 +673,7 @@ describe('extraTools: external tools via enableDirectToolCalling', () => {
     // Register an extra tool
     const fakeTool = {
       name: 'kubernetes_api_request',
-      invoke: async () => JSON.stringify({ items: [] }),
+      invoke: async () => JSON.stringify({ items: [], shouldProcessFollowUp: false }),
     };
     (manager as any).extraTools.set('kubernetes_api_request', fakeTool);
     (manager as any).useDirectToolCalling = true;

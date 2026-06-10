@@ -6,12 +6,12 @@
  * EditorDialog (with cluster apply support).
  */
 
+import type { AgentThinkingStep } from '@headlamp-k8s/ai-common/agent/agentTypes';
 import { Prompt } from '@headlamp-k8s/ai-common/ai/manager';
+import TextStreamContainerBase from '@headlamp-k8s/ai-ui/components/chat/TextStreamContainer';
 import React from 'react';
-import type { AgentThinkingStep } from './agent/aksAgentManager';
 import ContentRenderer from './ContentRenderer';
 import EditorDialog from './editordialog';
-import TextStreamContainerBase from '@headlamp-k8s/ai-ui/components/chat/TextStreamContainer';
 
 const TextStreamContainer = React.memo(function TextStreamContainer({
   history,

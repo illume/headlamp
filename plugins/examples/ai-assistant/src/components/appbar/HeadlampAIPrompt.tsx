@@ -4,11 +4,6 @@ import { useTranslation } from '@kinvolk/headlamp-plugin/lib';
 import { getCluster } from '@kinvolk/headlamp-plugin/lib/Utils';
 import React from 'react';
 import { useHistory } from 'react-router-dom';
-import {
-  type AksAgentPodInfo,
-  checkAksAgentInstalled,
-  getClustersFromHeadlampConfig,
-} from '../../agent/aksAgentManager';
 import { checkHolmesAgentHealth } from '../../holmesClient';
 import { getSettingsURL, pluginStore, useGlobalState, usePluginConfig } from '../../pluginState';
 
@@ -51,36 +46,6 @@ export default function HeadlampAIPrompt() {
     };
   }, [savedConfigs]);
 
-  // Run AKS cluster check once on mount so results are ready before the panel opens
-  React.useEffect(() => {
-    if (pluginState.hasCheckedForAgents) return;
-    getClustersFromHeadlampConfig().then(async clusters => {
-      pluginState.setAksClusterServerMap(Object.fromEntries(clusters.map(c => [c.name, c.server])));
-
-      // For each AKS cluster, check if the agent is installed and record its pod info
-      const podInfoMap: Record<string, AksAgentPodInfo> = {};
-      const clustersWithAgent: string[] = [];
-
-      await Promise.all(
-        clusters.map(async c => {
-          const agentPodInfo = await checkAksAgentInstalled(c.name);
-          if (agentPodInfo) {
-            podInfoMap[c.name] = agentPodInfo;
-            clustersWithAgent.push(c.name);
-          }
-        })
-      );
-
-      pluginState.setAksAgentClusters(
-        clustersWithAgent.length > 0 ? clustersWithAgent : clusters.map(c => c.name)
-      );
-      pluginState.setAksAgentPodInfoMap(podInfoMap);
-      pluginState.setHasCheckedForAgents(true);
-    });
-  }, []);
-
-  const hasAksAgents = pluginState.aksAgentClusters.length > 0;
-
   React.useEffect(() => {
     if (hasAnyValidConfig && hasShownPopover) {
       const currentConf = pluginStore.get() || {};
@@ -91,15 +56,9 @@ export default function HeadlampAIPrompt() {
     }
   }, [hasAnyValidConfig, hasShownPopover]);
 
-  // Show popover only if no valid config AND no AKS agents available AND no Holmes agent
+  // Show popover only if no valid config AND no Holmes agent
   React.useEffect(() => {
-    if (
-      !hasAnyValidConfig &&
-      !hasAksAgents &&
-      !hasShownPopover &&
-      !pluginState.isUIPanelOpen &&
-      !isAgentAvailable
-    ) {
+    if (!hasAnyValidConfig && !hasShownPopover && !pluginState.isUIPanelOpen && !isAgentAvailable) {
       const timer = setTimeout(() => {
         setShowPopover(true);
       }, 500);
@@ -107,13 +66,7 @@ export default function HeadlampAIPrompt() {
     } else {
       setShowPopover(false);
     }
-  }, [
-    hasAnyValidConfig,
-    hasAksAgents,
-    hasShownPopover,
-    pluginState.isUIPanelOpen,
-    isAgentAvailable,
-  ]);
+  }, [hasAnyValidConfig, hasShownPopover, pluginState.isUIPanelOpen, isAgentAvailable]);
 
   const handleClosePopover = () => {
     setShowPopover(false);

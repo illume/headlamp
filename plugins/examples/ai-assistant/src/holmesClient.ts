@@ -19,12 +19,12 @@
  * headlamp-plugin's `clusterRequest` pre-bound.
  */
 
-import { clusterRequest } from '@kinvolk/headlamp-plugin/lib/ApiProxy';
 import {
   checkHolmesAgentHealth as checkHolmesAgentHealthBase,
   type ClusterRequestFn,
   type HolmesPluginConfig,
 } from '@headlamp-k8s/ai-common/agent/holmesClient';
+import { clusterRequest } from '@kinvolk/headlamp-plugin/lib/ApiProxy';
 
 // Re-export everything from the ai-common module
 export {
@@ -37,7 +37,10 @@ export {
   HolmesAgent,
 } from '@headlamp-k8s/ai-common/agent/holmesClient';
 
-export type { HolmesPluginConfig, ClusterRequestFn } from '@headlamp-k8s/ai-common/agent/holmesClient';
+export type {
+  HolmesPluginConfig,
+  ClusterRequestFn,
+} from '@headlamp-k8s/ai-common/agent/holmesClient';
 
 /**
  * Check if the Holmes agent is reachable, using headlamp-plugin's `clusterRequest`.
@@ -48,9 +51,5 @@ export async function checkHolmesAgentHealth(
   cluster: string,
   config?: HolmesPluginConfig
 ): Promise<boolean> {
-  return checkHolmesAgentHealthBase(
-    clusterRequest as unknown as ClusterRequestFn,
-    cluster,
-    config
-  );
+  return checkHolmesAgentHealthBase(clusterRequest as unknown as ClusterRequestFn, cluster, config);
 }

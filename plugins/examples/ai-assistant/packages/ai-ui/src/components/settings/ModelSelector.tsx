@@ -211,7 +211,7 @@ function ConfigurationDialog({
         if (!token || cancelled) return;
         const models = await detectCopilotChatModels(token);
         if (!cancelled && models && models.length > 0) {
-          setLiveModelOptions(models);
+          setLiveModelOptions(models.map(m => m.id));
         }
       } catch {
         // CORS or auth failure — keep static options
@@ -248,7 +248,7 @@ function ConfigurationDialog({
               ? (await refreshGitHubToken(commandRunner)) ?? ''
               : detected.config.apiKey
           );
-          if (models && models.length > 0) setLiveModelOptions(models);
+          if (models && models.length > 0) setLiveModelOptions(models.map(m => m.id));
         }
         setDetectStatus({ kind: 'success', text: t('Detected and applied provider settings.') });
       } else {
@@ -808,7 +808,7 @@ export default function ModelSelector({
   const handleDetectAllProviders = async () => {
     if (!commandRunner || !onAutoDetectResults) return;
     try {
-      const detected = await detectProviders(savedConfigs?.providers || [], commandRunner);
+      const detected = await detectProviders(savedConfigs?.providers || [], [], commandRunner);
       if (detected.length > 0) {
         setProviderSelectionOpen(false);
         onAutoDetectResults(detected);
@@ -1054,6 +1054,7 @@ export default function ModelSelector({
                       </Box>
                       <IconButton
                         size="small"
+                        aria-label={t('More options')}
                         onClick={e => {
                           e.stopPropagation();
                           setAnchorEl(e.currentTarget);

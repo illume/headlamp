@@ -30,8 +30,7 @@ import { useSnackbar } from 'notistack';
 import React from 'react';
 
 // pluginRunCommand is injected as a scope variable by Headlamp's plugin runner.
-// Using declare const (same pattern as aksAgentManager.ts) lets TypeScript
-// reference it without an explicit definition.
+// Using declare const lets TypeScript reference it without an explicit definition.
 declare const pluginRunCommand: typeof runCommand;
 import {
   HOLMES_SERVICE_NAME,
@@ -39,7 +38,6 @@ import {
   HOLMES_SERVICE_PORT,
 } from '../../holmesClient';
 import {
-  AKS_AGENT_INSTALL_DOC_URL,
   getAllAvailableTools,
   isToolEnabled,
   pluginStore,
@@ -193,7 +191,6 @@ export default function Settings() {
         const current = pluginStore.get() || {};
         pluginStore.update({ ...current, configPopoverShown: false });
       }}
-      aksDocUrl={AKS_AGENT_INSTALL_DOC_URL}
       devOptions={savedConfigs?.devOptions ?? {}}
       onDevOptionsChange={(options: DeveloperOptionsConfig) => {
         const current = pluginStore.get() || {};

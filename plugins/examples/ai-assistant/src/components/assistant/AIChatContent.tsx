@@ -1,9 +1,9 @@
+import type { AgentThinkingStep } from '@headlamp-k8s/ai-common/agent/agentTypes';
 import { Prompt } from '@headlamp-k8s/ai-common/ai/manager';
+import AIChatContentBase from '@headlamp-k8s/ai-ui/components/assistant/AIChatContent';
 import { Link } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import React from 'react';
-import type { AgentThinkingStep } from '../../agent/aksAgentManager';
 import TextStreamContainer from '../../textstream';
-import AIChatContentBase from '@headlamp-k8s/ai-ui/components/assistant/AIChatContent';
 
 /** Props for the AIChatContent component that renders the chat message history. */
 interface AIChatContentProps {

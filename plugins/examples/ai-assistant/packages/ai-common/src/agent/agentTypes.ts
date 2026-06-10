@@ -27,3 +27,25 @@ export interface HolmesServiceInfo {
   /** Network port exposed by the Holmes service. */
   port: number;
 }
+
+/** A single thinking step shown to the user while the agent is working. */
+export interface AgentThinkingStep {
+  /** Monotonic identifier for the thinking step. */
+  id: number;
+  /** User-friendly description */
+  label: string;
+  /** Current state of this step */
+  status: 'pending' | 'running' | 'completed';
+  /** epoch millis when the step was created / last updated */
+  timestamp: number;
+  /**
+   * Phase this step belongs to.
+   * - 'init'      — toolset / model loading
+   * - 'planning'  — task list items
+   * - 'executing' — tool calls
+   */
+  phase: 'init' | 'planning' | 'executing';
+}
+
+/** Callback invoked repeatedly as the agent streams thinking progress. */
+export type AgentProgressCallback = (steps: AgentThinkingStep[]) => void;

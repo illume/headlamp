@@ -27,8 +27,8 @@ import {
 } from '@headlamp-k8s/ai-common/skills/BrowserSkillAdapters';
 import { getSkillsConfig } from '@headlamp-k8s/ai-common/skills/SkillConfigManager';
 import { SkillManager } from '@headlamp-k8s/ai-common/skills/SkillManager';
-import { ChatMode } from '@headlamp-k8s/ai-ui/components/agent/AgentModeSelector';
 import AIAssistantHeader from '@headlamp-k8s/ai-ui/components/assistant/AIAssistantHeader';
+import type { ChatMode } from '@headlamp-k8s/ai-ui/components/assistant/AllInputSection';
 import { PromptSuggestions } from '@headlamp-k8s/ai-ui/components/assistant/PromptSuggestions';
 import ApiConfirmationDialog from '@headlamp-k8s/ai-ui/components/common/ApiConfirmationDialog';
 import {
@@ -41,37 +41,28 @@ import { runCommand, useTranslation } from '@kinvolk/headlamp-plugin/lib';
 
 // pluginRunCommand is injected as a scope variable by Headlamp's plugin runner.
 declare const pluginRunCommand: typeof runCommand;
+import ProactiveDiagnosisSection from '@headlamp-k8s/ai-ui/components/assistant/ProactiveDiagnosisSection';
+import {
+  type DiagnosisStepCallback,
+  ProactiveDiagnosisManager,
+  proactiveDiagnosisManager,
+} from '@headlamp-k8s/ai-ui/diagnosis/ProactiveDiagnosisManager';
+import { useProactiveDiagnosis } from '@headlamp-k8s/ai-ui/hooks/useProactiveDiagnosis';
 import { useClustersConf, useSelectedClusters } from '@kinvolk/headlamp-plugin/lib/k8s';
 import { getCluster, getClusterGroup } from '@kinvolk/headlamp-plugin/lib/Utils';
 import { Box, Button, Grid, Typography } from '@mui/material';
 import { isEqual } from 'lodash';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
-import {
-  type AgentThinkingStep,
-  type ConversationEntry,
-  destroyAgentSession,
-  runAksAgent,
-} from './agent/aksAgentManager';
 import AIChatContent from './components/assistant/AIChatContent';
 import { AIInputSection } from './components/assistant/AllInputSection';
-import { generateContextDescription } from './context/contextGenerator';
 import ContentRenderer from './ContentRenderer';
+import { generateContextDescription } from './context/contextGenerator';
 import EditorDialog from './editordialog';
 import { checkHolmesAgentHealth } from './holmesClient';
 import { useKubernetesToolUI } from './hooks/useKubernetesToolUI';
-import {
-  fetchWarningEventsForClusters,
-  fetchClusterWarnings,
-} from './kubernetes/EventFetcher';
+import { fetchClusterWarnings, fetchWarningEventsForClusters } from './kubernetes/EventFetcher';
 import { getSettingsURL, useGlobalState } from './pluginState';
-import {
-  type DiagnosisStepCallback,
-  proactiveDiagnosisManager,
-  ProactiveDiagnosisManager,
-} from '@headlamp-k8s/ai-ui/diagnosis/ProactiveDiagnosisManager';
-import { useProactiveDiagnosis } from '@headlamp-k8s/ai-ui/hooks/useProactiveDiagnosis';
-import ProactiveDiagnosisSection from '@headlamp-k8s/ai-ui/components/assistant/ProactiveDiagnosisSection';
 import { useDynamicPrompts } from './prompts/promptGenerator';
 
 // Operation type constants for translation
@@ -138,46 +129,17 @@ export default function AIPrompt(props: {
   const { t } = useTranslation();
 
   // Proactive diagnosis UI state
-  const {
-    diagnoses,
-    isCycleRunning,
-    scrollToEventUid,
-    clearScrollTarget,
-  } = useProactiveDiagnosis();
+  const { diagnoses, isCycleRunning, scrollToEventUid, clearScrollTarget } =
+    useProactiveDiagnosis();
 
-  // Agent mode state — aksAgentClusters and hasCheckedForAgents live in global state
-  // so the check that runs in index.tsx is shared here without re-running
+  // Chat/agent mode state
   const [chatMode, setChatMode] = React.useState<ChatMode>('chat');
-  const [selectedAgentCluster, setSelectedAgentCluster] = React.useState<string>('');
-  const [isCheckingClusters] = React.useState(false);
-
-  // Agent thinking-step progress (streamed in real time)
-  const [agentThinkingSteps, setAgentThinkingSteps] = React.useState<AgentThinkingStep[]>([]);
 
   useEffect(() => {
     if (width) {
       prompWidthContext.setPromptWidth(width);
     }
   }, [width]);
-
-  // React to AKS agent clusters detected by index.tsx and stored in global state.
-  // Auto-select the first cluster and switch to agent mode when no provider is configured.
-  React.useEffect(() => {
-    const aksClusters = _pluginSetting.aksAgentClusters;
-    if (!_pluginSetting.hasCheckedForAgents || aksClusters.length === 0) return;
-
-    setSelectedAgentCluster(prev => {
-      if (prev && aksClusters.includes(prev)) return prev;
-      return aksClusters[0];
-    });
-
-    // Auto-switch to agent mode when no AI provider is configured
-    const savedConfigData = getSavedConfigurations(pluginSettings);
-    const hasValidConfig = savedConfigData.providers && savedConfigData.providers.length > 0;
-    if (!hasValidConfig) {
-      setChatMode('agent');
-    }
-  }, [_pluginSetting.aksAgentClusters, _pluginSetting.hasCheckedForAgents]);
 
   // Get cluster names for warning lookup - use selected clusters or current cluster only
   const clusterNames = useMemo(() => {
@@ -637,7 +599,10 @@ export default function AIPrompt(props: {
   useEffect(() => {
     // Only set the LangChain fallback if agent mode is NOT active
     if (!isAgentMode && activeConfig) {
-      const diagnoseFn = async (prompt: string, onStep?: DiagnosisStepCallback): Promise<string> => {
+      const diagnoseFn = async (
+        prompt: string,
+        onStep?: DiagnosisStepCallback
+      ): Promise<string> => {
         try {
           const configWithModel = {
             ...activeConfig.config,
@@ -843,80 +808,7 @@ export default function AIPrompt(props: {
     setOpenPopup(true);
   };
 
-  async function handleAksAgentPrompt(prompt: string) {
-    setOpenPopup(true);
-
-    const userPrompt: Prompt = { role: 'user', content: prompt };
-    setPromptHistory(prev => [...prev, userPrompt]);
-
-    if (!selectedAgentCluster) {
-      setPromptHistory(prev => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: t('No cluster with AKS agent selected. Please select a cluster first.'),
-          error: true,
-        },
-      ]);
-      return;
-    }
-
-    const agentPodInfo = _pluginSetting.aksAgentPodInfoMap?.[selectedAgentCluster] || null;
-    if (!agentPodInfo) {
-      setPromptHistory(prev => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: t(
-            'No AKS agent pod found on cluster "{{cluster}}". Make sure the AKS agent is installed and running.',
-            { cluster: selectedAgentCluster }
-          ),
-          error: true,
-        },
-      ]);
-      return;
-    }
-
-    setLoading(true);
-    setAgentThinkingSteps([]);
-    try {
-      // Build conversation history from prior exchanges for context
-      const conversationHistory: ConversationEntry[] = promptHistory
-        .filter(p => (p.role === 'user' || p.role === 'assistant') && !p.error && p.content)
-        .map(p => ({ role: p.role as 'user' | 'assistant', content: p.content }));
-
-      const response = await runAksAgent(
-        prompt,
-        agentPodInfo,
-        selectedAgentCluster,
-        steps => setAgentThinkingSteps(steps),
-        conversationHistory
-      );
-
-      setPromptHistory(prev => [...prev, { role: 'assistant', content: response }]);
-    } catch (error) {
-      setPromptHistory(prev => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: t('Error communicating with AKS agent: {{message}}', {
-            message: error?.message || t('Unknown error'),
-          }),
-          error: true,
-        },
-      ]);
-    } finally {
-      setLoading(false);
-      setAgentThinkingSteps([]);
-    }
-  }
-
   async function AnalyzeResourceBasedOnPrompt(prompt: string) {
-    // Route to AKS agent flow when in agent mode
-    if (chatMode === 'agent') {
-      return handleAksAgentPrompt(prompt);
-    }
-
     setOpenPopup(true);
 
     // Always add user message to promptHistory immediately so it shows up right away
@@ -1265,7 +1157,10 @@ export default function AIPrompt(props: {
           : new HolmesAgent(getHolmesProxyBaseUrl(getCluster()!, pluginSettings));
         diagnosisAgentRef.current = diagAgent;
 
-        const agentDiagnoseFn = async (prompt: string, onStep?: DiagnosisStepCallback): Promise<string> => {
+        const agentDiagnoseFn = async (
+          prompt: string,
+          onStep?: DiagnosisStepCallback
+        ): Promise<string> => {
           // Reset thread for a fresh conversation — no leftover history
           diagAgent.resetThread();
 
@@ -1337,7 +1232,9 @@ export default function AIPrompt(props: {
             await diagAgent.runAgent({
               runId: `diag-run-${uniqueId}`,
             });
-            console.log(`[ProactiveDiagnosis] runAgent completed (${uniqueId}), length=${responseText.length}`);
+            console.log(
+              `[ProactiveDiagnosis] runAgent completed (${uniqueId}), length=${responseText.length}`
+            );
 
             return sanitizeAgentContent(responseText) || 'No diagnosis available.';
           } catch (err: any) {
@@ -1714,9 +1611,7 @@ export default function AIPrompt(props: {
   }, [shouldShowGreeting, getGreetingMessage, promptHistory]);
 
   // If no valid configuration AND NOT in agent mode, show setup message
-  // If no valid configuration AND NOT in any agent mode AND no AKS agents, show setup message
-  const hasAksAgents = _pluginSetting.aksAgentClusters.length > 0;
-  if (!hasValidConfig && !isAgentMode && chatMode !== 'agent' && !hasAksAgents) {
+  if (!hasValidConfig && !isAgentMode && chatMode !== 'agent') {
     return (
       <Box
         sx={{
@@ -1829,7 +1724,6 @@ export default function AIPrompt(props: {
               onOperationFailure={handleOperationFailure}
               onYamlAction={handleYamlAction}
               onRetryTool={handleRetryTool}
-              agentThinkingSteps={agentThinkingSteps}
             />
           </Grid>
           <Grid
@@ -1882,10 +1776,7 @@ export default function AIPrompt(props: {
               }}
               onStop={handleStopRequest}
               onClearHistory={() => {
-                if (chatMode === 'agent') {
-                  destroyAgentSession();
-                  setPromptHistory([]);
-                } else if (isTestMode) {
+                if (isTestMode) {
                   setPromptHistory([]);
                 } else {
                   aiManager?.reset();
@@ -1908,23 +1799,10 @@ export default function AIPrompt(props: {
               }}
               chatMode={chatMode}
               onChatModeChange={mode => {
-                if (chatMode === 'agent') {
-                  destroyAgentSession();
-                }
                 setChatMode(mode);
                 setPromptHistory([]);
                 setApiError(null);
               }}
-              aksAgentClusters={_pluginSetting.aksAgentClusters}
-              selectedAgentCluster={selectedAgentCluster}
-              onAgentClusterChange={cluster => {
-                if (cluster !== selectedAgentCluster) {
-                  destroyAgentSession();
-                  setPromptHistory([]);
-                }
-                setSelectedAgentCluster(cluster);
-              }}
-              isCheckingClusters={isCheckingClusters}
             />
           </Grid>
         </Grid>

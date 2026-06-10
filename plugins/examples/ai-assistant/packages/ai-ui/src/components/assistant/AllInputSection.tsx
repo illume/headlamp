@@ -24,22 +24,6 @@ export type { ActionButtonSlotProps } from './AIAssistantHeader';
 /** Chat or agent mode selection. */
 export type ChatMode = 'chat' | 'agent';
 
-/** Props for an agent mode selector component injected via composition. */
-export interface AgentModeSelectorProps {
-  /** Current chat/agent mode. */
-  mode: ChatMode;
-  /** Callback when mode changes. */
-  onModeChange: (mode: ChatMode) => void;
-  /** AKS clusters that have the agent installed. */
-  aksAgentClusters: string[];
-  /** Currently selected agent cluster. */
-  selectedAgentCluster: string;
-  /** Callback when cluster selection changes. */
-  onAgentClusterChange: (cluster: string) => void;
-  /** Whether cluster checking is in progress. */
-  isCheckingClusters: boolean;
-}
-
 /** Props for a tools dialog component injected via composition. */
 export interface ToolsDialogSlotProps {
   /** Whether the dialog is currently visible. */
@@ -94,20 +78,10 @@ export interface AIInputSectionProps {
   ) => void;
   /** Callback invoked when the set of enabled tools changes. */
   onToolsChange: (enabledTools: string[]) => void;
-  /** AKS agent chat mode ('chat' or 'agent'). */
+  /** Chat mode ('chat' or 'agent'). */
   chatMode?: ChatMode;
-  /** Callback to change the AKS agent chat mode. */
+  /** Callback to change the chat mode. */
   onChatModeChange?: (mode: ChatMode) => void;
-  /** AKS clusters that have the agent installed. */
-  aksAgentClusters?: string[];
-  /** Currently selected AKS agent cluster. */
-  selectedAgentCluster?: string;
-  /** Callback when the AKS agent cluster selection changes. */
-  onAgentClusterChange?: (cluster: string) => void;
-  /** Whether AKS cluster checking is in progress. */
-  isCheckingClusters?: boolean;
-  /** Optional component to render the agent mode selector. */
-  AgentModeSelectorSlot?: React.ComponentType<AgentModeSelectorProps>;
   /** Optional component to render the tools dialog. */
   ToolsDialogSlot?: React.ComponentType<ToolsDialogSlotProps>;
   /** Component used to render icon action buttons. Falls back to MUI IconButton + Tooltip. */
@@ -135,11 +109,6 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
   onToolsChange,
   chatMode = 'chat',
   onChatModeChange,
-  aksAgentClusters = [],
-  selectedAgentCluster = '',
-  onAgentClusterChange,
-  isCheckingClusters = false,
-  AgentModeSelectorSlot,
   ToolsDialogSlot,
   ActionButtonSlot = DefaultActionButton,
 }) => {
@@ -205,18 +174,6 @@ export const AIInputSection: React.FC<AIInputSectionProps> = ({
     <Box>
       {/* Test Mode Input Component */}
       <TestModeInput onAddTestResponse={onTestModeResponse} isTestMode={isTestMode} />
-
-      {/* AKS Agent Mode Selector */}
-      {!isTestMode && onChatModeChange && aksAgentClusters.length > 0 && AgentModeSelectorSlot && (
-        <AgentModeSelectorSlot
-          mode={chatMode}
-          onModeChange={onChatModeChange}
-          aksAgentClusters={aksAgentClusters}
-          selectedAgentCluster={selectedAgentCluster}
-          onAgentClusterChange={onAgentClusterChange || (() => {})}
-          isCheckingClusters={isCheckingClusters}
-        />
-      )}
 
       {/* Proactive diagnosis in-progress banner */}
       {isDiagnosisRunning && (

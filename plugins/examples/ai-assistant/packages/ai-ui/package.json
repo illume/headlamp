@@ -4,7 +4,6 @@
   "description": "Browser-only AI UI code for Headlamp",
   "type": "module",
   "exports": {
-    "./components/agent/AgentModeSelector": "./src/components/agent/AgentModeSelector.tsx",
     "./components/agent/AgentThinkingSteps": "./src/components/agent/AgentThinkingSteps.tsx",
     "./components/appbar/AIAssistantToggle": "./src/components/appbar/AIAssistantToggle.tsx",
     "./components/assistant/AgentThinkingBlock": "./src/components/assistant/AgentThinkingBlock.tsx",

@@ -24,7 +24,7 @@
  * cycles, and final answer extraction.
  */
 
-import type { AgentThinkingStep, AgentProgressCallback } from '../agent/aksAgentThinking';
+import type { AgentThinkingStep, AgentProgressCallback } from '../agent/agentTypes';
 import { BUILTIN_SESSIONS } from './builtinFixtures';
 
 // ── Types ────────────────────────────────────────────────────────────────────

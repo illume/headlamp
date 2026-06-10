@@ -21,7 +21,6 @@ async function loadHook(options?: { cluster?: string | null; isElectron?: boolea
   }
 
   let stateIndex = 0;
-  const stateValues: [any, any][] = [];
   const effects: Array<() => void | (() => void)> = [];
   const mockSetCurrentCluster = vi.fn();
 

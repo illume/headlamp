@@ -1,4 +1,4 @@
-import type { AgentThinkingStep } from '@headlamp-k8s/ai-common/agent/aksAgentThinking';
+import type { AgentThinkingStep } from '@headlamp-k8s/ai-common/agent/agentTypes';
 import { Icon } from '@iconify/react';
 import { useTranslation } from 'react-i18next';
 import { Box, CircularProgress, Collapse, keyframes, Typography, useTheme } from '@mui/material';

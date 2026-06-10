@@ -1,19 +1,13 @@
-import React from 'react';
-import { ActionButton } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
-import { AIInputSection as AIInputSectionBase } from '@headlamp-k8s/ai-ui/components/assistant/AllInputSection';
 import type { AIInputSectionProps as BaseProps } from '@headlamp-k8s/ai-ui/components/assistant/AllInputSection';
-import { AgentModeSelector } from '@headlamp-k8s/ai-ui/components/agent/AgentModeSelector';
+import { AIInputSection as AIInputSectionBase } from '@headlamp-k8s/ai-ui/components/assistant/AllInputSection';
 import { ToolsDialog } from '@headlamp-k8s/ai-ui/components/assistant/ToolsDialog';
+import { ActionButton } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
+import React from 'react';
 
-type AIInputSectionProps = Omit<BaseProps, 'AgentModeSelectorSlot' | 'ToolsDialogSlot' | 'ActionButtonSlot'>;
+type AIInputSectionProps = Omit<BaseProps, 'ToolsDialogSlot' | 'ActionButtonSlot'>;
 
-export const AIInputSection: React.FC<AIInputSectionProps> = (props) => (
-  <AIInputSectionBase
-    {...props}
-    AgentModeSelectorSlot={AgentModeSelector}
-    ToolsDialogSlot={ToolsDialog}
-    ActionButtonSlot={ActionButton}
-  />
+export const AIInputSection: React.FC<AIInputSectionProps> = props => (
+  <AIInputSectionBase {...props} ToolsDialogSlot={ToolsDialog} ActionButtonSlot={ActionButton} />
 );
 
 export default AIInputSection;

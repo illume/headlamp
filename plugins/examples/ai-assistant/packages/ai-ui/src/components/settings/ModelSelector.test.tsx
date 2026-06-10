@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { fireEvent,render, screen } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -101,7 +101,9 @@ describe('ModelSelector — delete dialog', () => {
     fireEvent.click(confirmDelete);
 
     // Dialog must be gone
-    expect(screen.queryByText(/are you sure you want to delete/i)).toBeNull();
+    await waitFor(() => {
+      expect(screen.queryByText(/are you sure you want to delete/i)).toBeNull();
+    });
   });
 });
 

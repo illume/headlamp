@@ -45,9 +45,11 @@ async function loadHook(options?: { updateHistory?: () => void; t?: (key: string
   }));
 
   const module = await import('./useKubernetesToolUI');
+  const boundHook = (updateHistory?: () => void) =>
+    module.useKubernetesToolUI(updateHistory ?? options?.updateHistory);
 
   return {
-    useKubernetesToolUI: module.useKubernetesToolUI,
+    useKubernetesToolUI: boundHook,
     setters: {
       setShowApiConfirmation: mockSetShowApiConfirmation,
       setApiRequest: mockSetApiRequest,
