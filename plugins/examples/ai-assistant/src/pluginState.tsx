@@ -197,8 +197,8 @@ function usePluginSettings() {
   // Get the current configuration
   const conf = pluginStore.get();
 
-  // Add state to control UI panel visibility - initialize from stored settings
-  const [isUIPanelOpen, setIsUIPanelOpenState] = React.useState(conf?.isUIPanelOpen ?? false);
+  // Add state to control UI panel visibility - always start closed (don't restore from storage)
+  const [isUIPanelOpen, setIsUIPanelOpenState] = React.useState(false);
 
   // Add state for enabled tools - will be initialized properly using initializeToolsState
   const [enabledTools, setEnabledToolsState] = React.useState<string[]>([]);
@@ -234,15 +234,9 @@ function usePluginSettings() {
     }
   }, [conf, toolsInitialized]);
 
-  // Wrap setIsUIPanelOpen to also update the stored configuration
+  // Wrap setIsUIPanelOpen to update React state (panel state is not persisted — always starts closed)
   const setIsUIPanelOpen = (isOpen: boolean) => {
     setIsUIPanelOpenState(isOpen);
-    // Save the panel state to configuration
-    const currentConf = pluginStore.get() || {};
-    pluginStore.update({
-      ...currentConf,
-      isUIPanelOpen: isOpen,
-    });
   };
 
   // Wrap setEnabledTools to also update the stored configuration
