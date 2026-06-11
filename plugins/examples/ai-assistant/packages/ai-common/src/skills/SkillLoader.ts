@@ -232,14 +232,37 @@ export interface SkillFileSystem {
 }
 
 /**
+ * Progress information emitted while loading a skill source.
+ * Phases:
+ *  - 'downloading' — zip is being fetched from the network
+ *  - 'extracting'  — zip has been received, files are being extracted
+ *  - 'done'        — all files have been parsed
+ */
+export interface SkillLoadProgress {
+  phase: 'downloading' | 'extracting' | 'done';
+  /** Bytes received so far (during 'downloading' phase, zip path only). */
+  bytesDownloaded: number;
+  /** Total expected bytes (0 if Content-Length is unknown or not using zip). */
+  totalBytes: number;
+  /** Number of skill files fetched so far (Trees-API path). */
+  filesFound: number;
+  /** Total files to fetch (Trees-API path; 0 if unknown). */
+  totalFiles: number;
+}
+
+/**
  * HTTP client abstraction for fetching remote skill sources.
  *
  * Decoupled from `fetch` to allow testing and environment-specific
  * implementations (e.g., Electron net module, proxy support).
  */
 export interface SkillHttpClient {
-  /** Downloads a URL and returns the response as an ArrayBuffer. */
-  fetchZip(url: string): Promise<ArrayBuffer>;
+  /**
+   * Downloads a URL and returns the response as an ArrayBuffer.
+   * If `onProgress` is provided, it is called periodically with bytes
+   * received and total expected bytes (0 when Content-Length is absent).
+   */
+  fetchZip(url: string, onProgress?: (bytes: number, total: number) => void): Promise<ArrayBuffer>;
   /**
    * Fetches skill files individually via the Git host API.
    *
@@ -247,10 +270,18 @@ export interface SkillHttpClient {
    * Uses the GitHub Trees API + raw.githubusercontent.com which both
    * send `Access-Control-Allow-Origin: *`.
    *
+   * `onProgress` is called after each file is fetched with
+   * (filesDownloaded, totalFiles).
+   *
    * Returns the same `Map<relativePath, content>` format as
    * {@link SkillZipExtractor.extractTextFiles}.
    */
-  fetchFiles?(repoUrl: string, ref: string, pathFilter?: string): Promise<Map<string, string>>;
+  fetchFiles?(
+    repoUrl: string,
+    ref: string,
+    pathFilter?: string,
+    onProgress?: (done: number, total: number) => void
+  ): Promise<Map<string, string>>;
 }
 
 /**
@@ -323,7 +354,10 @@ export class SkillLoader {
    * @param source - The skill source configuration.
    * @returns Array of parsed skills from the source.
    */
-  async loadFromSource(source: SkillSource): Promise<ParsedSkill[]> {
+  async loadFromSource(
+    source: SkillSource,
+    onProgress?: (progress: SkillLoadProgress) => void
+  ): Promise<ParsedSkill[]> {
     if (!source.enabled) {
       return [];
     }
@@ -332,7 +366,7 @@ export class SkillLoader {
       case 'local':
         return this.loadFromDirectory(source.url, source.path);
       case 'git': {
-        const result = await this.loadFromGitRepoWithIntegrity(source);
+        const result = await this.loadFromGitRepoWithIntegrity(source, onProgress);
         return result.skills;
       }
       default:
@@ -454,7 +488,8 @@ export class SkillLoader {
    *   or integrity verification fails.
    */
   async loadFromGitRepoWithIntegrity(
-    source: SkillSource
+    source: SkillSource,
+    onProgress?: (progress: SkillLoadProgress) => void
   ): Promise<{ skills: ParsedSkill[]; contentHash: string }> {
     const { url: repoUrl, ref = 'main', path: subPath, sha256: expectedHash } = source;
 
@@ -483,7 +518,22 @@ export class SkillLoader {
     if (this.zipExtractor) {
       try {
         const zipUrl = buildGitHubZipUrl(repoUrl, ref);
-        const zipData = await this.httpClient.fetchZip(zipUrl);
+        const zipData = await this.httpClient.fetchZip(zipUrl, (bytes, total) => {
+          onProgress?.({
+            phase: 'downloading',
+            bytesDownloaded: bytes,
+            totalBytes: total,
+            filesFound: 0,
+            totalFiles: 0,
+          });
+        });
+        onProgress?.({
+          phase: 'extracting',
+          bytesDownloaded: zipData.byteLength,
+          totalBytes: zipData.byteLength,
+          filesFound: 0,
+          totalFiles: 0,
+        });
         files = await this.zipExtractor.extractTextFiles(
           zipData,
           subPath,
@@ -492,13 +542,31 @@ export class SkillLoader {
         );
       } catch (zipError) {
         if (this.httpClient.fetchFiles) {
-          files = await this.httpClient.fetchFiles(repoUrl, ref, subPath);
+          // fetchFiles itself reports progress; don't reset to zero here
+          files = await this.httpClient.fetchFiles(repoUrl, ref, subPath, (done, total) => {
+            onProgress?.({
+              phase: 'downloading',
+              bytesDownloaded: 0,
+              totalBytes: 0,
+              filesFound: done,
+              totalFiles: total,
+            });
+          });
         } else {
           throw zipError;
         }
       }
     } else if (this.httpClient.fetchFiles) {
-      files = await this.httpClient.fetchFiles(repoUrl, ref, subPath);
+      // fetchFiles reports its own progress; don't emit a zero reset here
+      files = await this.httpClient.fetchFiles(repoUrl, ref, subPath, (done, total) => {
+        onProgress?.({
+          phase: 'downloading',
+          bytesDownloaded: 0,
+          totalBytes: 0,
+          filesFound: done,
+          totalFiles: total,
+        });
+      });
     } else {
       throw new Error('No method available to fetch skill files');
     }

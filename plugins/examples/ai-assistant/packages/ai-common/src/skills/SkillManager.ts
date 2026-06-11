@@ -151,7 +151,8 @@ export class SkillManager {
    * @returns Object with loaded skills and per-source errors.
    */
   async loadAllSkillsWithErrors(
-    config: SkillsConfig
+    config: SkillsConfig,
+    onProgress?: (sourceUrl: string, progress: import('./SkillLoader').SkillLoadProgress) => void
   ): Promise<{ skills: ParsedSkill[]; errors: SkillLoadError[] }> {
     const errors: SkillLoadError[] = [];
     const now = Date.now();
@@ -183,7 +184,10 @@ export class SkillManager {
 
       try {
         const sourceKey = `${source.type}:${source.url}:${source.path || ''}`;
-        const skills = await this.loader.loadFromSource(source);
+        const skills = await this.loader.loadFromSource(
+          source,
+          onProgress ? p => onProgress(source.url, p) : undefined
+        );
         this.cachedSkills.set(sourceKey, skills);
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

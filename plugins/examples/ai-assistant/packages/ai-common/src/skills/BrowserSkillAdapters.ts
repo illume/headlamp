@@ -32,7 +32,10 @@ import type { ParsedSkill } from './skillParser';
  */
 export function createFetchHttpClient(): SkillHttpClient {
   return {
-    fetchZip: async (url: string): Promise<ArrayBuffer> => {
+    fetchZip: async (
+      url: string,
+      onProgress?: (bytes: number, total: number) => void
+    ): Promise<ArrayBuffer> => {
       const response = await fetch(url, {
         headers: { Accept: 'application/vnd.github+json' },
         redirect: 'follow',
@@ -40,10 +43,41 @@ export function createFetchHttpClient(): SkillHttpClient {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText} for ${url}`);
       }
+
+      // Stream with progress if the caller wants it and the browser supports it
+      if (onProgress && response.body) {
+        const contentLength = parseInt(response.headers.get('Content-Length') || '0', 10);
+        const reader = response.body.getReader();
+        const chunks: Uint8Array[] = [];
+        let received = 0;
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          chunks.push(value);
+          received += value.length;
+          onProgress(received, contentLength);
+        }
+
+        // Reassemble chunks into a single ArrayBuffer
+        const total = chunks.reduce((sum, c) => sum + c.length, 0);
+        const result = new Uint8Array(total);
+        let offset = 0;
+        for (const chunk of chunks) {
+          result.set(chunk, offset);
+          offset += chunk.length;
+        }
+        return result.buffer;
+      }
+
       return response.arrayBuffer();
     },
-    fetchFiles: (repoUrl: string, ref: string, pathFilter?: string) =>
-      fetchGitHubFilesViaTreesApi(repoUrl, ref, pathFilter),
+    fetchFiles: (
+      repoUrl: string,
+      ref: string,
+      pathFilter?: string,
+      onProgress?: (done: number, total: number) => void
+    ) => fetchGitHubFilesViaTreesApi(repoUrl, ref, pathFilter, onProgress),
   };
 }
 
@@ -63,7 +97,8 @@ export function createFetchHttpClient(): SkillHttpClient {
 async function fetchGitHubFilesViaTreesApi(
   repoUrl: string,
   ref: string,
-  pathFilter?: string
+  pathFilter?: string,
+  onProgress?: (done: number, total: number) => void
 ): Promise<Map<string, string>> {
   const parsed = new URL(repoUrl);
   if (parsed.hostname !== 'github.com') {
@@ -93,12 +128,14 @@ async function fetchGitHubFilesViaTreesApi(
     console.warn('GitHub tree response was truncated — some skill files may be missing.');
   }
 
-  // 2. Filter for .md blobs under pathFilter
+  // 2. Filter for .md blobs under pathFilter.
+  // Use 'pathFilter/' as the prefix so 'skills' doesn't match 'skills-extra/...'.
+  const pathPrefix = pathFilter ? `${pathFilter}/` : '';
   const mdEntries: Array<{ path: string }> = [];
   for (const entry of treeData.tree) {
     if (entry.type !== 'blob') continue;
     if (!entry.path.endsWith('.md')) continue;
-    if (pathFilter && !entry.path.startsWith(pathFilter)) continue;
+    if (pathPrefix && !entry.path.startsWith(pathPrefix)) continue;
     mdEntries.push(entry);
   }
 
@@ -106,10 +143,14 @@ async function fetchGitHubFilesViaTreesApi(
     throw new Error(`Too many skill files (${mdEntries.length}), max is ${MAX_ZIP_FILE_COUNT}`);
   }
 
+  // Report total count before starting downloads
+  onProgress?.(0, mdEntries.length);
+
   // 3. Fetch contents with concurrency limit
   const CONCURRENCY = 10;
   const result = new Map<string, string>();
   let totalBytes = 0;
+  let fetched_count = 0;
 
   for (let i = 0; i < mdEntries.length; i += CONCURRENCY) {
     const batch = mdEntries.slice(i, i + CONCURRENCY);
@@ -129,13 +170,13 @@ async function fetchGitHubFilesViaTreesApi(
       if (totalBytes > MAX_ZIP_EXTRACTED_BYTES) {
         throw new Error(`Exceeded max total size: ${MAX_ZIP_EXTRACTED_BYTES} bytes`);
       }
-      // Strip pathFilter prefix to match zip extractor output format
-      const cleanPath = pathFilter
-        ? filePath.slice(pathFilter.length).replace(/^\//, '')
-        : filePath;
+      // Strip the 'pathFilter/' prefix to match zip extractor output format
+      const cleanPath = pathPrefix ? filePath.slice(pathPrefix.length) : filePath;
       if (cleanPath) {
         result.set(cleanPath, content);
       }
+      fetched_count++;
+      onProgress?.(fetched_count, mdEntries.length);
     }
   }
 

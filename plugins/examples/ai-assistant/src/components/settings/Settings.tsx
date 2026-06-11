@@ -74,44 +74,59 @@ export default function Settings() {
   // Persistent SkillManager for the viewer (reuses cache across opens)
   const skillManagerRef = React.useRef<SkillManager | null>(null);
 
-  const loadSkills = React.useCallback(async (): Promise<SkillDisplayInfo[]> => {
-    if (!skillManagerRef.current) {
-      skillManagerRef.current = new SkillManager(
-        createNoopFileSystem(),
-        createFetchHttpClient(),
-        createJSZipExtractor()
+  const loadSkills = React.useCallback(
+    async (
+      onProgress?: (progress: any) => void,
+      sourceUrl?: string
+    ): Promise<SkillDisplayInfo[]> => {
+      if (!skillManagerRef.current) {
+        skillManagerRef.current = new SkillManager(
+          createNoopFileSystem(),
+          createFetchHttpClient(),
+          createJSZipExtractor()
+        );
+      }
+      // Invalidate cache to force fresh load
+      skillManagerRef.current.invalidateCache();
+      const config = getSkillsConfig(pluginStore.get());
+
+      // When a sourceUrl is given, only load that one source (avoids resetting
+      // the progress bar between sources when showing a per-repo download)
+      const filteredConfig = sourceUrl
+        ? { ...config, sources: config.sources.filter(s => s.url === sourceUrl) }
+        : config;
+
+      const enabledCount = filteredConfig.sources.filter(s => s.enabled).length;
+      if (enabledCount === 0) {
+        return [];
+      }
+
+      const { skills, errors } = await skillManagerRef.current.loadAllSkillsWithErrors(
+        filteredConfig,
+        onProgress ? (_url, p) => onProgress(p) : undefined
       );
-    }
-    // Invalidate cache to force fresh load
-    skillManagerRef.current.invalidateCache();
-    const config = getSkillsConfig(pluginStore.get());
 
-    const enabledCount = config.sources.filter(s => s.enabled).length;
-    if (enabledCount === 0) {
-      return [];
-    }
+      // Surface per-source errors so the user knows what failed
+      for (const err of errors) {
+        enqueueSnackbar(`Skill source "${err.sourceUrl}" failed: ${err.error}`, {
+          variant: 'error',
+          autoHideDuration: 8000,
+        });
+      }
 
-    const { skills, errors } = await skillManagerRef.current.loadAllSkillsWithErrors(config);
-
-    // Surface per-source errors so the user knows what failed
-    for (const err of errors) {
-      enqueueSnackbar(`Skill source "${err.sourceUrl}" failed: ${err.error}`, {
-        variant: 'error',
-        autoHideDuration: 8000,
-      });
-    }
-
-    return skills.map(s => ({
-      name: s.metadata.name,
-      description: s.metadata.description,
-      source: s.source,
-      content: s.content,
-      contentSizeBytes: s.contentSizeBytes,
-      version: s.metadata.version,
-      author: s.metadata.author,
-      tags: s.metadata.tags,
-    }));
-  }, [enqueueSnackbar]);
+      return skills.map(s => ({
+        name: s.metadata.name,
+        description: s.metadata.description,
+        source: s.source,
+        content: s.content,
+        contentSizeBytes: s.contentSizeBytes,
+        version: s.metadata.version,
+        author: s.metadata.author,
+        tags: s.metadata.tags,
+      }));
+    },
+    [enqueueSnackbar]
+  );
 
   const handleSkillsLoadComplete = React.useCallback(
     (result: { count: number; error?: string }) => {

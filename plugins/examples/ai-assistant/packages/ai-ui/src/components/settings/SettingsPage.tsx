@@ -99,7 +99,10 @@ export interface SettingsPageProps {
   /** Root directory of the current project (for skill path resolution). */
   projectRoot?: string;
   /** Async function that loads all skills and returns them for display. */
-  loadSkills?: () => Promise<SkillDisplayInfo[]>;
+  loadSkills?: (
+    onProgress?: (progress: any) => void,
+    sourceUrl?: string
+  ) => Promise<SkillDisplayInfo[]>;
   /** Callback fired when skill loading completes (for notifications). */
   onSkillsLoadComplete?: (result: { count: number; error?: string }) => void;
 
@@ -224,6 +227,9 @@ export function SettingsPage({
 
   return (
     <Box width={'100%'}>
+      <Typography variant="body1" sx={{ mb: 3 }}>
+        meow
+      </Typography>
       <Typography variant="body1" sx={{ mb: 3 }}>
         This plugin is in early development and is not yet ready for production use. Using it may
         incur in costs from the AI provider! Use at your own risk.

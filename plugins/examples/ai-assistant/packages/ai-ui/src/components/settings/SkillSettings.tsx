@@ -55,7 +55,11 @@ import { useTranslation } from 'react-i18next';
 import { DefaultDialog, DefaultSectionWrapper } from '../defaults/DefaultSlots';
 import type { ConfigStore } from './MCPSettings';
 import SkillSourceEditorDialog from './SkillSourceEditorDialog';
-import { type SkillDisplayInfo, SkillsViewerDialog } from './SkillsViewerDialog';
+import {
+  type SkillDisplayInfo,
+  type SkillLoadProgress,
+  SkillsViewerDialog,
+} from './SkillsViewerDialog';
 
 /** Well-known directories that may contain skills in a project. */
 export const WELL_KNOWN_SKILL_DIRS = [
@@ -224,7 +228,10 @@ export interface SkillSettingsProps {
    * Async function that loads all skills and returns them for display.
    * When provided, a "View Loaded Skills" button is shown.
    */
-  loadSkills?: () => Promise<SkillDisplayInfo[]>;
+  loadSkills?: (
+    onProgress?: (progress: SkillLoadProgress) => void,
+    sourceUrl?: string
+  ) => Promise<SkillDisplayInfo[]>;
   /** Callback fired when skill loading completes (for notifications). */
   onSkillsLoadComplete?: (result: { count: number; error?: string }) => void;
 }
@@ -291,8 +298,32 @@ export function SkillSettings({
   const [editorOpen, setEditorOpen] = useState(false);
   const [editingSource, setEditingSource] = useState<SkillSourceEntry | undefined>(undefined);
   const [viewerOpen, setViewerOpen] = useState(false);
+  /** When non-null, the viewer is scoped to a single repo download. */
+  const [activeRepoUrl, setActiveRepoUrl] = useState<string | null>(null);
 
   const displayConfig = pendingConfig || config;
+
+  /** Immediately persist a config without going through the pending/unsaved state. */
+  const saveConfigNow = useCallback(
+    (newConfig: SkillsConfig) => {
+      const currentData = configStore.get() || {};
+      configStore.update({
+        ...currentData,
+        skills: {
+          sources: newConfig.sources,
+          disabledSkills: newConfig.disabledSkills,
+          maxSkillSizeBytes: newConfig.maxSkillSizeBytes,
+          maxTotalSkillSizeBytes: newConfig.maxTotalSkillSizeBytes,
+        },
+      });
+      const saved = getSkillsConfig(configStore.get());
+      setConfig(saved);
+      setPendingConfig(saved);
+      setHasUnsavedChanges(false);
+      onConfigChange?.(saved);
+    },
+    [configStore, onConfigChange]
+  );
 
   // Load config from store on mount
   useEffect(() => {
@@ -399,12 +430,16 @@ export function SkillSettings({
       );
 
       let newSources: SkillSourceEntry[];
+      let enabling = false;
       if (existingIndex >= 0) {
+        const wasEnabled = displayConfig.sources[existingIndex].enabled;
+        enabling = !wasEnabled;
         newSources = displayConfig.sources.map((s, i) =>
           i === existingIndex ? { ...s, enabled: !s.enabled } : s
         );
       } else {
-        // Add new source (enabled when toggled on from suggestions)
+        // Adding for the first time → always enabling
+        enabling = true;
         newSources = [
           ...displayConfig.sources,
           {
@@ -416,9 +451,18 @@ export function SkillSettings({
           },
         ];
       }
-      updatePendingConfig({ ...displayConfig, sources: newSources });
+
+      const newConfig = { ...displayConfig, sources: newSources };
+      // Save immediately — no pending state for well-known repos
+      saveConfigNow(newConfig);
+
+      // Open viewer to show download progress when enabling
+      if (enabling && loadSkills) {
+        setActiveRepoUrl(repo.url);
+        setViewerOpen(true);
+      }
     },
-    [displayConfig, updatePendingConfig]
+    [displayConfig, saveConfigNow, loadSkills]
   );
 
   const handleToggleSource = useCallback(
@@ -874,12 +918,27 @@ export function SkillSettings({
         DialogSlot={DialogSlot}
       />
 
-      {/* Skills Viewer Dialog */}
+      {/* Skills Viewer Dialog — general "view all" or per-repo download view */}
       {loadSkills && (
         <SkillsViewerDialog
           open={viewerOpen}
-          onClose={() => setViewerOpen(false)}
-          loadSkills={loadSkills}
+          onClose={() => {
+            setViewerOpen(false);
+            setActiveRepoUrl(null);
+          }}
+          loadSkills={onProgress => {
+            // Pass sourceUrl so Settings.tsx only loads that one repo — prevents
+            // the progress bar from resetting between multiple enabled sources
+            if (activeRepoUrl) {
+              return loadSkills(onProgress, activeRepoUrl);
+            }
+            return loadSkills(onProgress);
+          }}
+          title={
+            activeRepoUrl
+              ? WELL_KNOWN_SKILL_REPOS.find(r => r.url === activeRepoUrl)?.label ?? activeRepoUrl
+              : undefined
+          }
           DialogSlot={DialogSlot}
           onLoadComplete={onSkillsLoadComplete}
         />

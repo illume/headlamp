@@ -29,10 +29,10 @@ import {
   Box,
   Button,
   Chip,
-  CircularProgress,
   DialogActions,
   DialogContent,
   DialogTitle,
+  LinearProgress,
   Typography,
 } from '@mui/material';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
@@ -53,15 +53,30 @@ export interface SkillDisplayInfo {
   tags?: string[];
 }
 
+/** Progress info from skill loading (mirrors SkillLoadProgress in SkillLoader.ts). */
+export interface SkillLoadProgress {
+  phase: 'downloading' | 'extracting' | 'done';
+  bytesDownloaded: number;
+  totalBytes: number;
+  filesFound: number;
+  /** Total files to fetch (Trees-API path; 0 if unknown). */
+  totalFiles: number;
+}
+
 export interface SkillsViewerDialogProps {
   open: boolean;
   onClose: () => void;
-  /** Async function that loads skills and returns them for display. */
-  loadSkills: () => Promise<SkillDisplayInfo[]>;
+  /**
+   * Async function that loads skills and returns them for display.
+   * Receives an optional onProgress callback for real-time download/extract progress.
+   */
+  loadSkills: (onProgress?: (progress: SkillLoadProgress) => void) => Promise<SkillDisplayInfo[]>;
   /** Component used to render dialog shells. */
   DialogSlot?: React.ElementType;
   /** Callback fired when loading completes (with count or error). */
   onLoadComplete?: (result: { count: number; error?: string }) => void;
+  /** Optional title override (e.g. the repo name being downloaded). */
+  title?: string;
 }
 
 function formatBytes(bytes: number): string {
@@ -160,23 +175,46 @@ export function SkillsViewerDialog({
   loadSkills,
   DialogSlot = DefaultDialog,
   onLoadComplete,
+  title,
 }: SkillsViewerDialogProps) {
   const { t } = useTranslation();
   const [skills, setSkills] = useState<SkillDisplayInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<string | false>(false);
+  const [progress, setProgress] = useState<SkillLoadProgress | null>(null);
+  // Throttle progress updates to one per animation frame to avoid flooding React
+  const pendingProgress = React.useRef<SkillLoadProgress | null>(null);
+  const rafRef = React.useRef<number | null>(null);
+  const onProgressThrottled = React.useCallback((p: SkillLoadProgress) => {
+    pendingProgress.current = p;
+    if (rafRef.current === null) {
+      rafRef.current = requestAnimationFrame(() => {
+        setProgress(pendingProgress.current);
+        rafRef.current = null;
+      });
+    }
+  }, []);
 
   const doLoad = useCallback(async () => {
     setLoading(true);
     setError(null);
+    setProgress({
+      phase: 'downloading',
+      bytesDownloaded: 0,
+      totalBytes: 0,
+      filesFound: 0,
+      totalFiles: 0,
+    });
     try {
-      const loaded = await loadSkills();
+      const loaded = await loadSkills(onProgressThrottled);
+      setProgress(null);
       setSkills(loaded);
       onLoadComplete?.({ count: loaded.length });
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
+      setProgress(null);
       onLoadComplete?.({ count: 0, error: msg });
     } finally {
       setLoading(false);
@@ -202,7 +240,7 @@ export function SkillsViewerDialog({
       <DialogTitle>
         <Box display="flex" alignItems="center" gap={1}>
           <Icon icon="mdi:book-open-variant" width={24} />
-          {t('Loaded Skills')}
+          {title ?? t('Loaded Skills')}
           {!loading && skills.length > 0 && (
             <Chip
               label={`${skills.length} skill${skills.length !== 1 ? 's' : ''} · ${formatBytes(
@@ -216,9 +254,39 @@ export function SkillsViewerDialog({
       </DialogTitle>
       <DialogContent dividers sx={{ minHeight: 200 }}>
         {loading && (
-          <Box display="flex" justifyContent="center" alignItems="center" py={4}>
-            <CircularProgress size={32} sx={{ mr: 2 }} />
-            <Typography color="textSecondary">{t('Loading skills from sources...')}</Typography>
+          <Box py={3}>
+            <Box display="flex" justifyContent="space-between" mb={0.5}>
+              <Typography variant="body2" color="textSecondary">
+                {progress?.phase === 'extracting'
+                  ? t('Extracting...')
+                  : (progress?.totalFiles ?? 0) > 0
+                  ? t('Downloading files...')
+                  : t('Connecting...')}
+              </Typography>
+              {(progress?.totalFiles ?? 0) > 0 && (
+                <Typography variant="body2" color="textSecondary">
+                  {`${progress!.filesFound} / ${progress!.totalFiles}`}
+                </Typography>
+              )}
+              {(progress?.totalBytes ?? 0) > 0 && (
+                <Typography variant="body2" color="textSecondary">
+                  {`${formatBytes(progress!.bytesDownloaded)} / ${formatBytes(
+                    progress!.totalBytes
+                  )}`}
+                </Typography>
+              )}
+            </Box>
+            {/* Always determinate — never switch variant to avoid animation flash */}
+            <LinearProgress
+              variant="determinate"
+              value={
+                (progress?.totalFiles ?? 0) > 0
+                  ? (progress!.filesFound / progress!.totalFiles) * 100
+                  : (progress?.totalBytes ?? 0) > 0
+                  ? (progress!.bytesDownloaded / progress!.totalBytes) * 100
+                  : 0
+              }
+            />
           </Box>
         )}
 
