@@ -98,54 +98,41 @@ test('parseKubeConfig endpoint rejects singular kubeconfig format', async ({ pag
   expect(rejectResponse.status).toBe(400);
 });
 
-test('stateless cluster loads without errors after storing kubeconfig', async ({ page }) => {
+test('stateless cluster appears in home page after storing kubeconfig', async ({ page }) => {
   const base64EncodedKubeconfig = await getBase64EncodedKubeconfig();
 
-  // Step 1: Store kubeconfig in IndexedDB
+  // Step 1: Store kubeconfig in IndexedDB (simulates what KubeConfigLoader does)
   await saveKubeconfigToIndexDB(page, base64EncodedKubeconfig);
   await page.waitForLoadState('load');
-  await page.screenshot({ path: 'screenshots/stateless-04-kubeconfig-saved.png' });
+  await page.screenshot({ path: 'screenshots/stateless-01-kubeconfig-stored-in-idb.png' });
 
-  // Step 2: Intercept /parseKubeConfig requests to verify no errors on reload
-  const parseKubeConfigResponses: { status: number; url: string }[] = [];
-  page.on('response', response => {
-    if (response.url().includes('/parseKubeConfig')) {
-      parseKubeConfigResponses.push({
-        status: response.status(),
-        url: response.url(),
-      });
+  // Step 2: Intercept /parseKubeConfig to verify no errors
+  const parseKubeConfigErrors: string[] = [];
+  page.on('response', async response => {
+    if (response.url().includes('/parseKubeConfig') && response.status() !== 200) {
+      const body = await response.text().catch(() => '');
+      parseKubeConfigErrors.push(`${response.status()}: ${body}`);
     }
   });
 
-  // Collect console errors to detect "kubeconfigs is required" messages
-  const consoleErrors: string[] = [];
-  page.on('console', msg => {
-    if (msg.type() === 'error') {
-      consoleErrors.push(msg.text());
-    }
-  });
-
-  // Step 3: Reload to trigger fetchStatelessClusterKubeConfigs on page load
-  await page.reload({ waitUntil: 'networkidle' });
-  await page.waitForLoadState('load');
-  await page.screenshot({ path: 'screenshots/stateless-05-after-reload.png' });
-
-  // Step 4: Verify /parseKubeConfig returned 200 (not 400 "kubeconfigs is required")
-  const failedRequests = parseKubeConfigResponses.filter(r => r.status !== 200);
-  expect(failedRequests).toHaveLength(0);
-
-  // Step 5: Verify no "kubeconfigs is required" error in console
-  const kubeconfigErrors = consoleErrors.filter(e => e.includes('kubeconfigs is required'));
-  expect(kubeconfigErrors).toHaveLength(0);
-
-  // Step 6: Navigate to the stateless dummy cluster.
-  // Use 'load' instead of 'networkidle' because stateless clusters may poll continuously.
-  await page.goto(`${process.env.HEADLAMP_TEST_URL || 'http://localhost:4466'}/c/dummy`, {
-    waitUntil: 'load',
-    timeout: 30000,
-  });
+  // Step 3: Navigate to home page — triggers fetchStatelessClusterKubeConfigs
+  const testURL = process.env.HEADLAMP_TEST_URL || 'http://localhost:4466';
+  await page.goto(testURL, { waitUntil: 'load', timeout: 30000 });
   await page.waitForLoadState('domcontentloaded');
-  await page.screenshot({ path: 'screenshots/stateless-06-dummy-cluster-page.png' });
+  await page.screenshot({ path: 'screenshots/stateless-02-home-page-loaded.png' });
+
+  // Step 4: Verify no /parseKubeConfig errors occurred
+  expect(parseKubeConfigErrors).toHaveLength(0);
+
+  // Step 5: Verify the "dummy" stateless cluster appears in the home page cluster table
+  const dummyClusterLink = page.locator('a[href="/c/dummy/"]');
+  await expect(dummyClusterLink).toBeVisible({ timeout: 15000 });
+  await page.screenshot({ path: 'screenshots/stateless-03-dummy-cluster-visible.png' });
+
+  // Step 6: Click on the dummy cluster and verify navigation
+  await dummyClusterLink.click();
+  await page.waitForURL('**/c/dummy/**', { timeout: 15000 });
+  await page.screenshot({ path: 'screenshots/stateless-04-dummy-cluster-page.png' });
 });
 
 const getBase64EncodedKubeconfig = async () => {
