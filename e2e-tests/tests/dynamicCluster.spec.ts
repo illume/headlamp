@@ -47,6 +47,43 @@ test('Store modified kubeconfig to IndexDB and check if present', async ({ page 
   expect(storedKubeconfig).not.toBeNull();
 });
 
+test('parseKubeConfig endpoint accepts kubeconfigs array format', async ({ page }) => {
+  const base64EncodedKubeconfig = await getBase64EncodedKubeconfig();
+
+  // Call /parseKubeConfig with the correct kubeconfigs (plural, array) format
+  const response = await page.evaluate(async (kubeconfig: string) => {
+    const resp = await fetch('/parseKubeConfig', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kubeconfigs: [kubeconfig] }),
+    });
+    return { status: resp.status, body: await resp.json() };
+  }, base64EncodedKubeconfig);
+
+  expect(response.status).toBe(200);
+  expect(response.body).toHaveProperty('clusters');
+  expect(Array.isArray(response.body.clusters)).toBe(true);
+  expect(response.body.clusters.length).toBeGreaterThan(0);
+  expect(response.body.clusters[0]).toHaveProperty('name', 'dummy');
+});
+
+test('parseKubeConfig endpoint rejects singular kubeconfig format', async ({ page }) => {
+  const base64EncodedKubeconfig = await getBase64EncodedKubeconfig();
+
+  // Verify the old singular kubeconfig format is rejected by the backend
+  const rejectResponse = await page.evaluate(async (kubeconfig: string) => {
+    const resp = await fetch('/parseKubeConfig', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ kubeconfig: kubeconfig }),
+    });
+    return { status: resp.status };
+  }, base64EncodedKubeconfig);
+
+  // The backend requires kubeconfigs (plural, array) and rejects kubeconfig (singular)
+  expect(rejectResponse.status).toBe(400);
+});
+
 test('check dummy is present in cluster and working', async ({ page }) => {
   const base64EncodedKubeconfig = await getBase64EncodedKubeconfig();
   await saveKubeconfigToIndexDB(page, base64EncodedKubeconfig);
