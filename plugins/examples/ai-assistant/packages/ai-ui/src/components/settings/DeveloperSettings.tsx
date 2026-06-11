@@ -1,3 +1,19 @@
+/*
+ * Copyright 2025 The Kubernetes Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 /**
  * Developer options section for the AI Assistant settings page.
  *
@@ -11,14 +27,7 @@ import {
   type SavedConfigurations,
   type StoredProviderConfig,
 } from '@headlamp-k8s/ai-common/managers/ProviderConfigManager';
-import {
-  Box,
-  Collapse,
-  Divider,
-  FormControlLabel,
-  Switch,
-  Typography,
-} from '@mui/material';
+import { Box, Collapse, FormControlLabel, Switch, Typography } from '@mui/material';
 import IconButton from '@mui/material/IconButton';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -56,9 +65,7 @@ const MOCK_MODEL_DISPLAY_NAME = 'Mock Testing Model';
 export function hasMockModelProvider(
   savedConfigs: SavedConfigurations | null | undefined
 ): boolean {
-  return (
-    savedConfigs?.providers?.some(p => p.providerId === MOCK_MODEL_PROVIDER_ID) ?? false
-  );
+  return savedConfigs?.providers?.some(p => p.providerId === MOCK_MODEL_PROVIDER_ID) ?? false;
 }
 
 /**
@@ -97,9 +104,7 @@ export function removeMockModelProvider(
   savedConfigs: SavedConfigurations | null | undefined
 ): SavedConfigurations {
   const configs: SavedConfigurations = savedConfigs || { providers: [] };
-  const providers = (configs.providers || []).filter(
-    p => p.providerId !== MOCK_MODEL_PROVIDER_ID
-  );
+  const providers = (configs.providers || []).filter(p => p.providerId !== MOCK_MODEL_PROVIDER_ID);
 
   let defaultIndex = configs.defaultProviderIndex ?? 0;
   // If the removed provider was before or at the default index, adjust
@@ -175,16 +180,20 @@ export function DeveloperSettings({
         onClick={() => setExpanded(!expanded)}
       >
         <Typography variant="h6">{t('Developer Options')}</Typography>
-        <IconButton size="small" sx={{ ml: 1 }} aria-label={expanded ? t('Collapse developer options') : t('Expand developer options')}>
-          {expanded ? '▲' : '▼'}
+        <IconButton
+          size="small"
+          sx={{ ml: 1 }}
+          aria-label={expanded ? t('Collapse developer options') : t('Expand developer options')}
+        >
+          {expanded ? '▼' : '▶'}
         </IconButton>
       </Box>
 
       <Collapse in={expanded}>
         <Box sx={{ ml: 2, mt: 1 }}>
           <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-            Enable fake implementations for testing, demos, and development without real API
-            keys or network access.
+            Enable fake implementations for testing, demos, and development without real API keys or
+            network access.
           </Typography>
 
           {/* Mock Testing Model */}
@@ -226,8 +235,7 @@ export function DeveloperSettings({
                 <Typography variant="body1">{t('Mock Testing Agent')}</Typography>
                 <Typography variant="caption" color="text.secondary">
                   A scripted agent with built-in sessions for pod troubleshooting and cluster
-                  exploration. Simulates thinking steps and tool calls without a real agent
-                  backend.
+                  exploration. Simulates thinking steps and tool calls without a real agent backend.
                 </Typography>
               </Box>
             }
