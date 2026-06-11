@@ -26,6 +26,13 @@
  * works with headlamp-plugin components or plain MUI fallbacks.
  */
 
+/**
+ * Set to false to hide filesystem-based skill settings (detected directories
+ * and custom local-path sources). Flip to true once checkPathExists / projectRoot
+ * are wired up in Settings.tsx so path detection actually works.
+ */
+const FILESYSTEM_SKILLS_ENABLED = false;
+
 import { Icon } from '@iconify/react';
 import {
   Box,
@@ -500,7 +507,7 @@ export function SkillSettings({
       </Box>
 
       {/* Well-Known Paths Section — only shown in app mode (local paths not accessible in browser) */}
-      {isRunningAsApp && (
+      {isRunningAsApp && FILESYSTEM_SKILLS_ENABLED && (
         <Box sx={{ mb: 3 }}>
           <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
             {t('Detected Skill Directories')}
@@ -649,7 +656,7 @@ export function SkillSettings({
       </Box>
 
       {/* Custom Filesystem Sources — only shown in app mode */}
-      {isRunningAsApp && (
+      {isRunningAsApp && FILESYSTEM_SKILLS_ENABLED && (
         <Box sx={{ mb: 3 }}>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
             <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
