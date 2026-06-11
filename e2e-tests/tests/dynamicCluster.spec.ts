@@ -108,10 +108,9 @@ test('stateless cluster appears in home page after storing kubeconfig', async ({
 
   // Step 2: Intercept /parseKubeConfig to verify no errors
   const parseKubeConfigErrors: string[] = [];
-  page.on('response', async response => {
+  page.on('response', response => {
     if (response.url().includes('/parseKubeConfig') && response.status() !== 200) {
-      const body = await response.text().catch(() => '');
-      parseKubeConfigErrors.push(`${response.status()}: ${body}`);
+      parseKubeConfigErrors.push(`${response.status()}`);
     }
   });
 
