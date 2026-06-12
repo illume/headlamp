@@ -2841,6 +2841,8 @@ Format your response to make the errors prominent and actionable.`,
         el.innerHTML = content;
         text = el.textContent || '';
       } else {
+        // Basic regex fallback for Node.js/CLI — sufficient for stripping tool output
+        // formatting but not a security boundary. The DOM path above is used in browsers.
         text = content
           .replace(/<[^>]*>/g, '')
           .replace(/&amp;/g, '&')
