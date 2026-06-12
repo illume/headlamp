@@ -373,6 +373,16 @@ export function isEqualClusterConfigs(
  */
 export async function fetchStatelessClusterKubeConfigs(dispatch: any) {
   const config = await getStatelessClusterKubeConfigs();
+
+  // If there are no kubeconfigs, clear the state and return early
+  if (!config || config.length === 0) {
+    const statelessClusters = store.getState().config.statelessClusters;
+    if (statelessClusters && Object.keys(statelessClusters).length > 0) {
+      dispatch(setStatelessConfig({ statelessClusters: {} }));
+    }
+    return;
+  }
+
   const statelessClusters = store.getState().config.statelessClusters;
   const headers = addBackstageAuthHeaders(JSON_HEADERS);
   const clusterReq = {
