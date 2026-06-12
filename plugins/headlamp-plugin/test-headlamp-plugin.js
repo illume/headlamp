@@ -220,7 +220,6 @@ function run(cmd, args) {
       stdio: 'inherit',
       cwd: curDir,
       env: process.env,
-      shell: true,
     });
     if (res.error) {
       throw res.error;
@@ -255,7 +254,6 @@ function runAndCaptureOutput(cmd, args) {
       cwd: curDir,
       env: process.env,
       encoding: 'utf8',
-      shell: true,
     });
     if (res.error) {
       throw res.error;

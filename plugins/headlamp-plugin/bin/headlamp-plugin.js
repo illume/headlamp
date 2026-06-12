@@ -103,7 +103,6 @@ function create(name, link, noInstall) {
     console.log('Linking @kinvolk/headlamp-plugin');
     child_process.spawnSync('npm', ['link', '@kinvolk/headlamp-plugin'], {
       cwd: dstFolder,
-      shell: true,
     });
   }
 
@@ -180,7 +179,6 @@ function create(name, link, noInstall) {
       console.log('Linking @kinvolk/headlamp-plugin');
       child_process.spawnSync('npm', ['link', '@kinvolk/headlamp-plugin'], {
         cwd: dstFolder,
-        shell: true,
       });
     }
   }
