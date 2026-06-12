@@ -20,6 +20,19 @@ import { defineConfig, mergeConfig } from 'vite';
 export default mergeConfig(
   baseConfig,
   defineConfig({
+    plugins: [
+      {
+        // headlamp-plugin start forces sourcemap:'inline', which inlines ~10 MB
+        // of source maps into main.js (inflating it from ~2.9 MB to ~16.9 MB).
+        // Override to use a separate .map file instead.
+        name: 'headlamp-separate-sourcemaps',
+        config(config) {
+          if (config.build?.sourcemap === 'inline') {
+            return { build: { sourcemap: true } };
+          }
+        },
+      },
+    ],
     server: {
       watch: {
         // Watch the local workspace packages so `headlamp-plugin start`
