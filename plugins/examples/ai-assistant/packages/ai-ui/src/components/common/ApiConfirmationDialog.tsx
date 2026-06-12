@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import { Box, Typography } from '@mui/material';
 import React, { useEffect, useRef } from 'react';
-import YAML from 'yaml';
+import jsYaml from 'js-yaml';
 import { DefaultConfirmDialog, DefaultEditorDialog } from '../defaults/DefaultSlots';
 
 // Helper function to clean YAML content by removing the |- prefix if present
@@ -70,7 +70,7 @@ export default function ApiConfirmationDialog({
 
         let parsed;
         try {
-          parsed = YAML.parse(processedBody);
+          parsed = jsYaml.load(processedBody);
         } catch (yamlError) {
           try {
             parsed = JSON.parse(processedBody);
@@ -81,7 +81,7 @@ export default function ApiConfirmationDialog({
         }
 
         if (parsed) {
-          const yamlContent = YAML.stringify(parsed).trim();
+          const yamlContent = jsYaml.dump(parsed).trim();
           setEditedBody(yamlContent);
 
           if (parsed.kind && parsed.metadata && parsed.metadata.name) {
@@ -136,8 +136,8 @@ export default function ApiConfirmationDialog({
     if (open && method.toUpperCase() === 'PUT' && body && resourceInfo) {
       const processedBody = cleanYamlContent(body);
       try {
-        const parsed = YAML.parse(processedBody);
-        const yamlContent = YAML.stringify(parsed).trim();
+        const parsed = jsYaml.load(processedBody);
+        const yamlContent = jsYaml.dump(parsed).trim();
         setEditedBody(yamlContent);
       } catch (e) {
         setEditedBody(processedBody);

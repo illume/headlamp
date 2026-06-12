@@ -4,9 +4,9 @@ import { Dialog } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import { getCluster } from '@kinvolk/headlamp-plugin/lib/Utils';
 import Editor from '@monaco-editor/react';
 import { Box, Button, DialogActions, DialogContent, DialogTitle, Typography } from '@mui/material';
+import jsYaml from 'js-yaml';
 import { useSnackbar } from 'notistack';
 import React, { useEffect, useState } from 'react';
-import YAML from 'yaml';
 
 type EditorDialogProps = {
   open: boolean;
@@ -56,7 +56,7 @@ export default function EditorDialog({
       }
 
       // Use the current content from state, which contains user edits
-      const resource = YAML.parse(content);
+      const resource = jsYaml.load(content) as any;
       if (!resource) {
         throw new Error(t('Invalid YAML content'));
       }

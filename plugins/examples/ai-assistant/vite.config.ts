@@ -31,5 +31,15 @@ export default mergeConfig(
     optimizeDeps: {
       exclude: ['@headlamp-k8s/ai-common', '@headlamp-k8s/ai-ui'],
     },
+    resolve: {
+      alias: [
+        {
+          // langsmith is pulled in by @langchain/core for optional tracing but
+          // is never used directly. Stubbing it out saves ~345 KB.
+          find: /^langsmith(\/.*)?$/,
+          replacement: new URL('./stubs/langsmith.ts', import.meta.url).pathname,
+        },
+      ],
+    },
   })
 );
