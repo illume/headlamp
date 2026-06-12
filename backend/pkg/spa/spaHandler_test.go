@@ -105,6 +105,19 @@ func TestSpaHandlerTraversal(t *testing.T) {
 			path:       "/headlamp/%2e%2e/outside.txt",
 			wantStatus: http.StatusBadRequest,
 		},
+		// HasPrefix bypass: a sibling directory whose name starts with the
+		// static dir name must be rejected, not matched.
+		{
+			name:       "sibling dir with shared prefix is rejected",
+			path:       "/headlamp/../headlamp_evil/secret.txt",
+			wantStatus: http.StatusBadRequest,
+		},
+		// Backslash in URL path — dangerous on Windows, rejected everywhere.
+		{
+			name:       "backslash in path is rejected",
+			path:       `/headlamp\..\..\etc\passwd`,
+			wantStatus: http.StatusBadRequest,
+		},
 	}
 
 	for _, tt := range tests {
