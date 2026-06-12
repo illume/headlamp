@@ -30,7 +30,7 @@ import { Alert, Box, Button, Link as MuiLink, Typography } from '@mui/material';
 import React, { useMemo, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import YAML from 'yaml';
+import jsYaml from 'js-yaml';
 import { parseKubernetesYAML } from '../../parsing/yamlParser';
 import MCPFormattedMessage from '../chat/MCPFormattedMessage';
 import LogsButton from '../common/LogsButton';
@@ -219,10 +219,9 @@ const convertJsonToYaml = (content: string): string => {
     // Check if it's a Kubernetes resource (has apiVersion and kind)
     if (parsed && typeof parsed === 'object' && parsed.apiVersion && parsed.kind) {
       // Convert to YAML format
-      return YAML.stringify(parsed, {
-        sortMapEntries: false,
-        lineWidth: 0,
-        minContentWidth: 0,
+      return jsYaml.dump(parsed, {
+        sortKeys: false,
+        lineWidth: -1,
       });
     }
   } catch (error) {

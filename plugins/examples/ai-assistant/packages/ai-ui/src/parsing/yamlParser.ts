@@ -1,4 +1,4 @@
-import YAML from 'yaml';
+import jsYaml from 'js-yaml';
 
 /** Describes a named YAML example used in the UI. */
 export interface YamlExample {
@@ -20,7 +20,7 @@ export function parseKubernetesYAML(yamlStr: string): {
   namespace?: string;
 } {
   try {
-    const parsed = YAML.parse(yamlStr);
+    const parsed = jsYaml.load(yamlStr);
 
     if (!parsed || typeof parsed !== 'object') {
       return { isValid: false };
@@ -50,9 +50,9 @@ export function parseKubernetesYAML(yamlStr: string): {
       yamlStr.includes('\n---')
     ) {
       try {
-        const docs = YAML.parseAllDocuments(yamlStr);
+        const docs = jsYaml.loadAll(yamlStr);
         if (docs.length > 0) {
-          const firstDoc = docs[0].toJSON();
+          const firstDoc = docs[0] as any;
           if (firstDoc && typeof firstDoc === 'object' && firstDoc.apiVersion && firstDoc.kind) {
             const name = firstDoc.metadata?.name;
             const namespace = firstDoc.metadata?.namespace || 'default';
@@ -91,7 +91,7 @@ export function extractYamlContent(
   const extractFromCodeBlock = (match: string) => {
     const yamlContent = match.trim();
     try {
-      const parsed = YAML.parse(yamlContent);
+      const parsed = jsYaml.load(yamlContent);
       if (parsed && typeof parsed === 'object' && parsed.apiVersion && parsed.kind) {
         results.push({
           yaml: yamlContent,
@@ -126,7 +126,7 @@ export function extractYamlContent(
         const yamlContent = dashMatch[1].trim();
 
         try {
-          const parsed = YAML.parse(yamlContent);
+          const parsed = jsYaml.load(yamlContent);
           if (parsed && typeof parsed === 'object' && parsed.apiVersion && parsed.kind) {
             // Try to find a title from the preceding content
             const precedingContent = content.substring(0, dashMatch.index).trim();
@@ -153,7 +153,7 @@ export function extractYamlContent(
         if (match[1] && match[1].trim()) {
           const yamlContent = match[1].trim();
           try {
-            const parsed = YAML.parse(yamlContent);
+            const parsed = jsYaml.load(yamlContent);
             if (parsed && typeof parsed === 'object' && parsed.apiVersion && parsed.kind) {
               results.push({
                 yaml: yamlContent,
@@ -183,7 +183,7 @@ export function extractYamlContent(
             // If we hit a blank line after collecting some YAML, try to finalize it
             if (line === '' && currentYaml.length > 0) {
               try {
-                const parsed = YAML.parse(currentYaml);
+                const parsed = jsYaml.load(currentYaml);
                 if (parsed && typeof parsed === 'object' && parsed.apiVersion && parsed.kind) {
                   results.push({
                     yaml: currentYaml.trim(),
@@ -207,7 +207,7 @@ export function extractYamlContent(
         // Check the last collected block
         if (inYamlBlock && currentYaml.length > 0) {
           try {
-            const parsed = YAML.parse(currentYaml);
+            const parsed = jsYaml.load(currentYaml);
             if (parsed && typeof parsed === 'object' && parsed.apiVersion && parsed.kind) {
               results.push({
                 yaml: currentYaml.trim(),

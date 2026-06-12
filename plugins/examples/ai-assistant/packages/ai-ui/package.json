@@ -65,11 +65,11 @@
     "@iconify/react": "^4.0.0",
     "@monaco-editor/react": "^4.0.0",
     "@mui/material": "^5.0.0",
+    "js-yaml": "^4.0.0",
     "react": "^18.0.0",
     "react-markdown": "^8.0.0 || ^9.0.0",
     "react-syntax-highlighter": "^15.0.0 || ^16.0.0",
-    "remark-gfm": "^4.0.0",
-    "yaml": "^2.0.0"
+    "remark-gfm": "^4.0.0"
   },
   "peerDependenciesMeta": {
     "react": {
@@ -84,6 +84,9 @@
     "@monaco-editor/react": {
       "optional": true
     },
+    "js-yaml": {
+      "optional": true
+    },
     "react-markdown": {
       "optional": true
     },
@@ -92,14 +95,10 @@
     },
     "remark-gfm": {
       "optional": true
-    },
-    "yaml": {
-      "optional": true
     }
   },
   "devDependencies": {
-    "vitest": "^4.1.7",
-    "yaml": "^2.9.0"
+    "vitest": "^4.1.7"
   },
   "scripts": {
     "test": "vitest run --passWithNoTests"

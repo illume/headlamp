@@ -22,7 +22,7 @@ import { clusterAction } from '@kinvolk/headlamp-plugin/lib';
 import { apply, clusterRequest } from '@kinvolk/headlamp-plugin/lib/ApiProxy';
 import { getCluster } from '@kinvolk/headlamp-plugin/lib/Utils';
 type TranslationFunction = (key: string, options?: Record<string, unknown>) => string;
-import YAML from 'yaml';
+import jsYaml from 'js-yaml';
 
 const cleanUrl = (url: string) => {
   const urlObj = new URL(url, 'http://dummy.com'); // Use dummy base for relative URLs
@@ -73,7 +73,7 @@ export const handleActualApiRequest = async (
     // Parse resource first, fail fast
     let resource;
     try {
-      resource = YAML.parse(body);
+      resource = jsYaml.load(body);
     } catch (yamlError) {
       try {
         resource = JSON.parse(body);
@@ -246,7 +246,7 @@ export const handleActualApiRequest = async (
     // Parse patch first, fail fast
     let patch;
     try {
-      patch = YAML.parse(body);
+      patch = jsYaml.load(body);
     } catch (yamlError) {
       try {
         patch = JSON.parse(body);
