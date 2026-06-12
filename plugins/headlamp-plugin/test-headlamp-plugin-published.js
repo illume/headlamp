@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+#!/bin/env node
 
 /*
  * Copyright 2025 The Kubernetes Authors

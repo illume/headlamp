@@ -114,11 +114,7 @@ function testHeadlampPlugin() {
   // extract archive and check files
   const extractionFolder = join(tmpDir, 'dst');
   fs.mkdirSync(extractionFolder, { recursive: true });
-  tar.x({
-    file: join(tmpDir, `${PACKAGE_NAME}-0.1.0.tar.gz`),
-    cwd: extractionFolder,
-    sync: true,
-  });
+  run('tar', ['-xzf', join(tmpDir, `${PACKAGE_NAME}-0.1.0.tar.gz`), '-C', extractionFolder]);
   checkFileExists(join(extractionFolder, `${PACKAGE_NAME}`, 'main.js'));
   checkFileExists(join(extractionFolder, `${PACKAGE_NAME}`, 'package.json'));
   fs.rmSync(tmpDir, { recursive: true });
@@ -193,7 +189,6 @@ function testHeadlampPlugin() {
 const fs = require('fs');
 const child_process = require('child_process');
 const path = require('path');
-const tar = require('tar');
 const join = path.join;
 const resolve = path.resolve;
 let curDir;
