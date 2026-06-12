@@ -1,5 +1,18 @@
 import jsYaml from 'js-yaml';
 
+/** Result of parsing YAML, typed for Kubernetes resource access. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type ParsedYaml = Record<string, any>;
+
+/** Loads YAML text and returns a typed record, or null for non-object results. */
+function loadYaml(text: string): ParsedYaml | null {
+  const result = jsYaml.load(text);
+  if (result && typeof result === 'object' && !Array.isArray(result)) {
+    return result as ParsedYaml;
+  }
+  return null;
+}
+
 /** Describes a named YAML example used in the UI. */
 export interface YamlExample {
   /** Display title for the example. */
@@ -20,9 +33,9 @@ export function parseKubernetesYAML(yamlStr: string): {
   namespace?: string;
 } {
   try {
-    const parsed = jsYaml.load(yamlStr);
+    const parsed = loadYaml(yamlStr);
 
-    if (!parsed || typeof parsed !== 'object') {
+    if (!parsed) {
       return { isValid: false };
     }
 
@@ -52,7 +65,7 @@ export function parseKubernetesYAML(yamlStr: string): {
       try {
         const docs = jsYaml.loadAll(yamlStr);
         if (docs.length > 0) {
-          const firstDoc = docs[0] as any;
+          const firstDoc = docs[0] as ParsedYaml | null | undefined;
           if (firstDoc && typeof firstDoc === 'object' && firstDoc.apiVersion && firstDoc.kind) {
             const name = firstDoc.metadata?.name;
             const namespace = firstDoc.metadata?.namespace || 'default';
@@ -91,8 +104,8 @@ export function extractYamlContent(
   const extractFromCodeBlock = (match: string) => {
     const yamlContent = match.trim();
     try {
-      const parsed = jsYaml.load(yamlContent);
-      if (parsed && typeof parsed === 'object' && parsed.apiVersion && parsed.kind) {
+      const parsed = loadYaml(yamlContent);
+      if (parsed && parsed.apiVersion && parsed.kind) {
         results.push({
           yaml: yamlContent,
           resourceType: parsed.kind,
@@ -126,8 +139,8 @@ export function extractYamlContent(
         const yamlContent = dashMatch[1].trim();
 
         try {
-          const parsed = jsYaml.load(yamlContent);
-          if (parsed && typeof parsed === 'object' && parsed.apiVersion && parsed.kind) {
+          const parsed = loadYaml(yamlContent);
+          if (parsed && parsed.apiVersion && parsed.kind) {
             // Try to find a title from the preceding content
             const precedingContent = content.substring(0, dashMatch.index).trim();
             const lastLineBreak = precedingContent.lastIndexOf('\n');
@@ -153,8 +166,8 @@ export function extractYamlContent(
         if (match[1] && match[1].trim()) {
           const yamlContent = match[1].trim();
           try {
-            const parsed = jsYaml.load(yamlContent);
-            if (parsed && typeof parsed === 'object' && parsed.apiVersion && parsed.kind) {
+            const parsed = loadYaml(yamlContent);
+            if (parsed && parsed.apiVersion && parsed.kind) {
               results.push({
                 yaml: yamlContent,
                 resourceType: parsed.kind,
@@ -183,8 +196,8 @@ export function extractYamlContent(
             // If we hit a blank line after collecting some YAML, try to finalize it
             if (line === '' && currentYaml.length > 0) {
               try {
-                const parsed = jsYaml.load(currentYaml);
-                if (parsed && typeof parsed === 'object' && parsed.apiVersion && parsed.kind) {
+                const parsed = loadYaml(currentYaml);
+                if (parsed && parsed.apiVersion && parsed.kind) {
                   results.push({
                     yaml: currentYaml.trim(),
                     resourceType: parsed.kind,
@@ -207,8 +220,8 @@ export function extractYamlContent(
         // Check the last collected block
         if (inYamlBlock && currentYaml.length > 0) {
           try {
-            const parsed = jsYaml.load(currentYaml);
-            if (parsed && typeof parsed === 'object' && parsed.apiVersion && parsed.kind) {
+            const parsed = loadYaml(currentYaml);
+            if (parsed && parsed.apiVersion && parsed.kind) {
               results.push({
                 yaml: currentYaml.trim(),
                 resourceType: parsed.kind,

@@ -63,7 +63,6 @@
     "@langchain/ollama": "^1.2.2",
     "@langchain/openai": "^1.2.6",
     "@modelcontextprotocol/sdk": "^1.17.5",
-    "dompurify": "^3.4.10",
     "jszip": "^3.10.1",
     "langchain": "^1.2.19",
     "zod": "^4.1.12"

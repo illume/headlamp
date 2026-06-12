@@ -33,7 +33,6 @@ import { ChatGoogleGenerativeAI } from '@langchain/google-genai';
 import { ChatMistralAI } from '@langchain/mistralai';
 import { ChatOllama } from '@langchain/ollama';
 import { AzureChatOpenAI, ChatOpenAI } from '@langchain/openai';
-import DOMPurify from 'dompurify';
 import AIManager, { Prompt } from '../ai/manager';
 import { basePrompt } from '../ai/prompts';
 import { inlineToolApprovalManager } from '../approval/InlineToolApprovalManager';
@@ -2834,11 +2833,23 @@ Format your response to make the errors prominent and actionable.`,
         return JSON.stringify(parsed);
       }
 
-      // Use DOMPurify to strip all HTML, returning plain text only
-      return DOMPurify.sanitize(content, { ALLOWED_TAGS: [], ALLOWED_ATTR: [] }).replace(
-        /\[IMAGE\]/gi,
-        '[IMAGE]'
-      );
+      // Strip all HTML tags, returning plain text only.
+      // Uses the DOM when available (browser), falls back to regex (Node.js/CLI).
+      let text: string;
+      if (typeof document !== 'undefined') {
+        const el = document.createElement('div');
+        el.innerHTML = content;
+        text = el.textContent || '';
+      } else {
+        text = content
+          .replace(/<[^>]*>/g, '')
+          .replace(/&amp;/g, '&')
+          .replace(/&lt;/g, '<')
+          .replace(/&gt;/g, '>')
+          .replace(/&quot;/g, '"')
+          .replace(/&#39;/g, "'");
+      }
+      return text.replace(/\[IMAGE\]/gi, '[IMAGE]');
     } catch (error) {
       console.warn('Error sanitizing content:', error);
       // If sanitization fails, return a safe version

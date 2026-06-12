@@ -56,6 +56,7 @@ export default function EditorDialog({
       }
 
       // Use the current content from state, which contains user edits
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const resource = jsYaml.load(content) as any;
       if (!resource) {
         throw new Error(t('Invalid YAML content'));
