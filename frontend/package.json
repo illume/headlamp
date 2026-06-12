@@ -113,6 +113,7 @@
     "preview": "vite preview",
     "prebuild": "npm run make-version",
     "build": "cross-env PUBLIC_URL=./ NODE_OPTIONS=--max-old-space-size=8096 vite build && npx shx rm -f build/frontend/index.baseUrl.html",
+    "postbuild": "node ./scripts/precompress-build.mjs build",
     "pretest": "npm run make-version",
     "test": "vitest",
     "start-without-multiplexer": "cross-env REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER=false npm run start",
@@ -127,7 +128,8 @@
     "tsc": "tsgo",
     "make-version": "node ./make-env.js",
     "star": "cross-env REACT_APP_HEADLAMP_BACKEND_TOKEN=headlamp rsbuild dev",
-    "build:rsbuild": "rsbuild build"
+    "build:rsbuild": "rsbuild build",
+    "postbuild:rsbuild": "node ./scripts/precompress-build.mjs build"
   },
   "browserslist": {
     "production": [

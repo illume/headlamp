@@ -1,7 +1,10 @@
 package spa
 
 import (
+	"mime"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
 )
 
@@ -152,4 +155,80 @@ func setEncodingHeaders(w http.ResponseWriter, encoding string) {
 		// responses never carry a stale encoding marker.
 		h.Del("Content-Encoding")
 	}
+}
+
+// BrotliSidecars returns an http.Handler that transparently serves precompressed
+// .br sidecars when the client advertises brotli support and a matching sidecar
+// exists alongside the requested file in dir. It falls back to next for all
+// other cases, so it is safe to wrap any existing file-serving handler.
+//
+// dir must be the same root directory that next serves from (e.g. the value
+// passed to http.Dir) so the middleware can resolve file paths correctly.
+//
+// Reuses the same pickEncoding / encodingExt / setEncodingHeaders helpers as
+// the SPA handlers, giving plugins identical brotli negotiation behaviour.
+func BrotliSidecars(dir string, next http.Handler) http.Handler {
+	absDir, err := filepath.Abs(dir)
+	if err != nil {
+		// Cannot resolve dir — brotli is best-effort, fall through unchanged.
+		return next
+	}
+
+	sep := string(filepath.Separator)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		setEncodingHeaders(w, "")
+
+		if served := tryBrotliSidecar(w, r, absDir, sep); served {
+			return
+		}
+
+		next.ServeHTTP(w, r)
+	})
+}
+
+// tryBrotliSidecar attempts to serve a precompressed .br sidecar for the
+// requested path. It returns true when a sidecar was found and served.
+func tryBrotliSidecar(w http.ResponseWriter, r *http.Request, absDir, sep string) bool {
+	// Reject backslashes — HTTP paths must use '/', and '\' is a path
+	// separator on Windows that could be used for traversal.
+	if strings.ContainsRune(r.URL.Path, '\\') {
+		return false
+	}
+
+	encoding := pickEncoding(r.Header.Get("Accept-Encoding"))
+	if encoding == "" {
+		return false
+	}
+
+	// Map URL path → absolute file path inside absDir.
+	// Trim the leading '/' first (URL paths are forward-slash-only per RFC),
+	// then convert separators — doing FromSlash before TrimLeft would turn
+	// "/app.js" into "\app.js" on Windows which filepath.Join treats as rooted.
+	urlPath := strings.TrimLeft(r.URL.Path, "/")
+	urlPath = filepath.FromSlash(urlPath)
+	absPath := filepath.Join(absDir, urlPath)
+
+	// Containment check — same Rel-based logic as spaHandler.
+	rel, relErr := filepath.Rel(absDir, absPath)
+	if relErr != nil || rel == ".." || strings.HasPrefix(rel, ".."+sep) {
+		return false
+	}
+
+	sidecar := absPath + encodingExt(encoding)
+
+	info, err := os.Stat(sidecar) //nolint:gosec // path validated by filepath.Rel above
+	if err != nil || info.IsDir() {
+		return false
+	}
+
+	ctype := mime.TypeByExtension(filepath.Ext(absPath))
+	if ctype != "" {
+		w.Header().Set("Content-Type", ctype)
+	}
+
+	setEncodingHeaders(w, encoding)
+	http.ServeFile(w, r, sidecar) //nolint:gosec // path validated by filepath.Rel above
+
+	return true
 }

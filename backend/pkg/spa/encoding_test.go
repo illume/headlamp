@@ -223,10 +223,57 @@ func TestSetEncodingHeadersNoDuplicateVary(t *testing.T) {
 
 	varyValues := rr.Header()["Vary"]
 	count := 0
+
 	for _, v := range varyValues {
 		if v == "Accept-Encoding" {
 			count++
 		}
 	}
+
 	assert.Equal(t, 1, count, "Vary: Accept-Encoding must appear exactly once, got %v", varyValues)
+}
+
+// TestBrotliSidecarsMiddleware verifies that BrotliSidecars correctly wraps
+// a file handler to serve .br sidecars for plugin dist folders.
+func TestBrotliSidecarsMiddleware(t *testing.T) {
+	dir := t.TempDir()
+	writeFile(t, dir, "myplugin/main.js", []byte("function plugin() {}"))
+	writeFile(t, dir, "myplugin/main.js.br", []byte("BROTLI-PLUGIN"))
+
+	// Simulate how headlamp.go wraps http.FileServer for plugins.
+	fileServer := http.FileServer(http.Dir(dir))
+	handler := http.StripPrefix("/plugins/", spa.BrotliSidecars(dir, fileServer))
+
+	tests := []struct {
+		name           string
+		acceptEncoding string
+		wantBody       string
+		wantEncoding   string
+	}{
+		{"serves sidecar when br offered", "br", "BROTLI-PLUGIN", "br"},
+		{"falls back to identity for gzip-only", "gzip", "function plugin() {}", ""},
+		{"falls back to identity when no encoding", "", "function plugin() {}", ""},
+		{"identity when brotli disabled via q=0", "br;q=0", "function plugin() {}", ""},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			req, err := http.NewRequestWithContext(
+				context.Background(), "GET", "/plugins/myplugin/main.js", nil)
+			require.NoError(t, err)
+
+			if tc.acceptEncoding != "" {
+				req.Header.Set("Accept-Encoding", tc.acceptEncoding)
+			}
+
+			rr := httptest.NewRecorder()
+			handler.ServeHTTP(rr, req)
+
+			assert.Equal(t, http.StatusOK, rr.Code)
+			assert.Equal(t, tc.wantBody, rr.Body.String())
+			assert.Equal(t, tc.wantEncoding, rr.Header().Get("Content-Encoding"))
+			assert.Contains(t, rr.Header().Get("Vary"), "Accept-Encoding")
+			assert.Contains(t, rr.Header().Get("Content-Type"), "javascript")
+		})
+	}
 }

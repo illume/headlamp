@@ -6,6 +6,7 @@ import (
 	"io/fs"
 	"mime"
 	"net/http"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -24,14 +25,18 @@ type embeddedSpaHandler struct {
 
 // ServeHTTP serves the static files embedded in the binary.
 func (h embeddedSpaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	path := strings.TrimPrefix(r.URL.Path, h.baseURL)
+	rPath := strings.TrimPrefix(r.URL.Path, h.baseURL)
+	// Strip the leading "/" so path.Join keeps "static" as the root.
+	// embed.FS paths are always forward-slash-separated, so use path.Join,
+	// not filepath.Join (which emits OS separators on Windows).
+	rPath = strings.TrimLeft(rPath, "/")
 
-	if path == "" || path == "/" {
-		path = h.indexPath
+	if rPath == "" {
+		rPath = h.indexPath
 	}
 
 	// Prepend "static" to the path as that's the root in our embed.FS
-	fullPath := filepath.Join("static", path)
+	fullPath := path.Join("static", rPath)
 
 	// `Vary: Accept-Encoding` must be set on every response so caches keep
 	// per-encoding entries even when we end up serving identity bytes.
@@ -41,7 +46,7 @@ func (h embeddedSpaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// can decide up front whether the precompressed sidecar is safe to
 	// use. We must skip the sidecar for the index document because the
 	// `__baseUrl__` replacement below mutates the served bytes.
-	isServingIndex := path == h.indexPath || path == "/"+h.indexPath || path == "/"+h.indexPath+"/"
+	isServingIndex := rPath == h.indexPath
 
 	// Try to serve a precompressed sidecar (`.br`) when the client
 	// supports it and the file isn't the index.html (which we rewrite
@@ -52,8 +57,9 @@ func (h embeddedSpaHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 	content, err := h.serveFile(fullPath)
 	if err != nil {
-		// If there's any error, serve the index file
-		content, err = h.serveFile(filepath.Join("static", h.indexPath))
+		// If there's any error, serve the index file.
+		// Use path.Join (not filepath.Join) — embed.FS paths must use forward slashes.
+		content, err = h.serveFile(path.Join("static", h.indexPath))
 		if err != nil {
 			http.Error(w, "Unable to read index file", http.StatusInternalServerError)
 			return
