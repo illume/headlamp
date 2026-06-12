@@ -1,0 +1,42 @@
+name: Test headlamp-plugin (Windows CMD)
+
+on:
+  pull_request:
+    paths:
+      - "plugins/headlamp-plugin/**"
+      - ".github/workflows/plugin-test-win.yml"
+  push:
+    branches:
+      - main
+      - rc-*
+      - testing-rc-*
+    paths:
+      - "plugins/headlamp-plugin/**"
+      - ".github/workflows/plugin-test-win.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test-plugins-win:
+    name: test headlamp-plugin (Windows CMD)
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: cmd
+
+    strategy:
+      matrix:
+        node-version: [22.x]
+
+    steps:
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332 # v4.1.7
+
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8 # v4.0.2
+        with:
+          node-version: ${{ matrix.node-version }}
+
+      - name: Run headlamp-plugin tests
+        working-directory: plugins/headlamp-plugin
+        run: node test-headlamp-plugin.js
