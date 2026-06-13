@@ -20,6 +20,8 @@ This revision **re-checked every claim** in the earlier draft. Two claims were o
 
 The structural driver behind most of group (1) is described in **The Two-State-Store Problem**.
 
+**Most of the React Query code is untested.** Of the **15 usage sites**, only **2 (13%)** have proper, isolated query-behavior tests (`RouteSwitcher.test.tsx`, `useKubeObjectList.test.tsx`); **9 (60%)** have **no test at all**, and the remaining **4** have only partial or indirect coverage (Storybook stories, or a test file that never exercises the query). Critically, **every one of the 12 genuine defects lives in code that no test would catch** — the partial `hooks.test.tsx` coverage misses both the WebSocket cluster-drop (#1) and the stale `queryKey` memo (#5), and the other 10 defects are in sites with zero tests. See the **Test Coverage Summary** for the per-site breakdown.
+
 ---
 
 ## All React Query Usage Sites
@@ -421,6 +423,18 @@ Picking **one** owner per piece of state would dissolve this whole class of bug:
 
 ## Test Coverage Summary
 
+**Headline: 9 of 15 React Query sites (60%) have no test whatsoever, and only 2 (13%) are properly tested.** The breakdown by coverage level:
+
+| Coverage level | Count | Sites |
+|----------------|-------|-------|
+| ✅ Proper isolated query test | **2** (13%) | #2 `RouteSwitcher`, #11 `useKubeObjectList` |
+| ⚠️ Partial / indirect only | **4** (27%) | #3 `TopBar` (story only), #7 `auth.ts` (test skips RQ cleanup), #9 & #10 `hooks.ts` (miss the cluster/stale-key bugs) |
+| ❌ No test at all | **9** (60%) | #1 `Layout`, #4 `AdvancedSearch`, #5 `sources`, #6 `queryClient`, #8 `authchooser`, #12 `VersionButton`, #13 `AuthVisible`, #14 `ScaleMultipleButton`, #15 `Link` |
+
+**All 12 genuine defects are in untested or under-tested code:** the 10 defects in `AuthVisible`, `AdvancedSearch`, `Layout`, `VersionButton`, and `auth.ts` sit in sites with no query test, and the remaining two (#1, #5) are in `hooks.ts`, whose `hooks.test.tsx` never exercises the WebSocket update path or the `queryKey` memo deps. No existing test would fail if any of these bugs regressed.
+
+Per-site detail:
+
 | # | Site | Has Test? | Test File | Notes |
 |---|------|-----------|-----------|-------|
 | 1 | `Layout.tsx` `['cluster-fetch']` | ❌ | — | No test for the config poll (#6) |
@@ -439,7 +453,7 @@ Picking **one** owner per piece of state would dissolve this whole class of bug:
 | 14 | `ScaleMultipleButton.tsx` | ❌ | — | No test |
 | 15 | `Link.tsx` prefetch | ❌ | — | No test |
 
-**Coverage:** 2 of 15 sites have proper, isolated query tests (`RouteSwitcher.test.tsx`, `useKubeObjectList.test.tsx`). `hooks.ts` has partial coverage that misses the cluster/stale-key bugs.
+**Bottom line:** only `RouteSwitcher.test.tsx` and `useKubeObjectList.test.tsx` create their own `QueryClient` and assert on query behavior. The entire app-shell config poll, both `api-discovery` callers, all three RBAC widgets (`AuthVisible`, `ScaleMultipleButton`, the `authchooser` invalidation), `VersionButton`, and the `Link` prefetch have **zero** query-behavior tests, and `hooks.ts` — the most-used data layer in the app — has only partial coverage that misses its two correctness bugs.
 
 ---
 
