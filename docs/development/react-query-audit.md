@@ -8,7 +8,7 @@
 
 ## Executive Summary
 
-The codebase has **6 distinct React Query usage sites**. Of these, **only 2 have dedicated tests** that exercise the query behavior. The audit found **4 high/critical issues** and **9 medium/low issues**. The most impactful bugs are a side-effect-producing `queryFn` in Layout.tsx, and missing `enabled` guards and error handling in the AdvancedSearch component.
+The codebase has **6 distinct React Query usage sites**. Of these, **only 2 have dedicated tests** that exercise the query behavior. The audit found **10 bugs total** (1 critical, 3 high, 4 medium, 2 low). The most impactful bugs are a side-effect-producing `queryFn` in Layout.tsx, and missing `enabled` guards and error handling in the AdvancedSearch component.
 
 ---
 
@@ -226,7 +226,7 @@ export const queryClient = new QueryClient({
 | 7 | `auth.ts` | `['clusterMe']`, `['auth']` | ⚠️ | `auth.test.ts` | Tests exist but don't cover React Query interactions |
 | 8 | `authchooser/index.tsx` | `['clusterMe']` | ❌ | — | Storybook stories exist but don't test query invalidation |
 
-**Coverage rate:** 1 out of 6 query usage sites has proper test coverage (17%).
+**Coverage rate:** 1 out of 6 query usage sites has proper test coverage (RouteSwitcher.test.tsx). TopBar has partial coverage via Storybook stories only.
 
 ---
 
