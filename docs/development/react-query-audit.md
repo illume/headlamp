@@ -2,7 +2,7 @@
 
 > **Date:** 2026-06-13
 > **Scope:** All `@tanstack/react-query` usage in `frontend/src/`
-> **Method:** Every usage site below was re-read against the source on the date above; line numbers and code snippets were verified, not carried over from a previous pass.
+> **Method:** Every usage site below was re-read against the source on 2026-06-13; line numbers and code snippets were verified, not carried over from a previous pass.
 
 ---
 
@@ -61,7 +61,7 @@ client.setQueryData(queryKey, new kubeObjectClass(update.object));    // lines 1
 
 **Problem:** The initial `queryFn` constructs the object **with** `cluster`; both WebSocket `onMessage` handlers (the multiplexer path and the legacy `connectionsRequests` path) reconstruct it **without** `cluster`. After the first live update, the cached object loses `kubeObject.cluster`.
 
-**Why this is clearly a bug:** the *list* equivalent does it correctly — `useKubeObjectList.ts` passes `cluster` to `KubeList.applyUpdate(..., cluster)` at lines 255 and 363–367, and the per-item constructor sets `itm.cluster = cluster` (line 103). Only the single-object path in `hooks.ts` omits it.
+**Why this is clearly a bug:** the *list* equivalent does it correctly — `useKubeObjectList.ts` passes `cluster` to `KubeList.applyUpdate(..., cluster)` at line 255 and again at lines 363–367, and the per-item constructor sets `itm.cluster = cluster` (line 103). Only the single-object path in `hooks.ts` omits it.
 
 **Impact:** Anything reading `kubeObject.cluster` after a server-side change — detail navigation, multi-cluster views, and the `Link.tsx` prefetch key (#11) — gets `undefined`. Intermittent and hard to reproduce because it only manifests after an object changes server-side.
 
@@ -89,7 +89,7 @@ queryFn: async () => item!.getAuthorization(authVerb, { subresource, namespace }
                                             (item as any).cluster),
 ```
 
-**Problem:** The authorization request is scoped to `(item as any).cluster`, but `cluster` is **not** in the query key. Two items with the same name/apiName/apiVersion/verb in **different clusters** share one cache entry, so the first cluster's RBAC result is served for the second.
+**Problem:** The authorization request correctly passes `(item as any).cluster` to `getAuthorization`, but `cluster` is **not** included in the query *key*. Two items with the same name/apiName/apiVersion/verb in **different clusters** therefore share one cache entry, so the first cluster's RBAC result is served for the second.
 
 **Why this is clearly a bug:** the sibling RBAC check in `ScaleMultipleButton.tsx:90–96` **does** include `(item as any).cluster` in its key, confirming the omission here is unintentional.
 
@@ -120,7 +120,7 @@ if (!VALID_AUTH_VERBS.includes(authVerb)) {
 const { data } = useQuery<any>({ /* … */ });   // …hook after a possible return
 ```
 
-**Problem:** `useQuery` and the `useEffect` at `:96` are called **after** a conditional `return null`. If `authVerb` switches between valid and invalid for the same mounted component, the hook count changes between renders and React throws "rendered fewer hooks than expected". The two `eslint-disable react-hooks/rules-of-hooks` comments suppress a warning that is flagging a real defect.
+**Problem:** `useQuery` and the `useEffect` at line 96 are called **after** a conditional `return null`. If `authVerb` switches between valid and invalid for the same mounted component, the hook count changes between renders and React throws "rendered fewer hooks than expected". The two `eslint-disable react-hooks/rules-of-hooks` comments suppress a warning that is flagging a real defect.
 
 **Impact:** Potential render crashes; at minimum, fragile code that defeats the linter.
 
@@ -176,7 +176,7 @@ const queryKey = useMemo(
 );
 ```
 
-**Problem:** The key value depends on `cluster`, `endpoint`, `namespace`, `name`, **and** `cleanedUpQueryParams`, but the dependency array lists only `[endpoint, namespace, name]`. If `cluster` or `queryParams` change while those three stay constant, the memoized `queryKey` does **not** update, so the query reads/writes the wrong cache entry. The same staleness affects `connectionsRequests` (the legacy WebSocket memo, deps `[endpoint]` at `:178`), which closes over `queryKey`, `namespace`, `name`, and `cleanedUpQueryParams` and writes updates to the stale key. This is also what makes #1 write to a possibly-wrong key.
+**Problem:** The key value depends on `cluster`, `endpoint`, `namespace`, `name`, **and** `cleanedUpQueryParams`, but the dependency array lists only `[endpoint, namespace, name]`. If `cluster` or `queryParams` change while those three stay constant, the memoized `queryKey` does **not** update, so the query reads/writes the wrong cache entry. The same staleness affects `connectionsRequests` (the legacy WebSocket memo, deps `[endpoint]` at `:178`), which closes over `queryKey`, `namespace`, `name`, and `cleanedUpQueryParams` and writes updates to the stale key. This is also what makes BUG #1 write to a possibly-wrong key.
 
 **Impact:** Stale or cross-cluster data for single-object fetches when only `cluster`/`queryParams` change.
 
@@ -289,7 +289,7 @@ if (selectedResources === undefined && selectedResourcesState === 'all' && resou
 }
 ```
 
-**Problem:** When the `resources` query resolves, this calls the `setSelectedResources` state setter **directly in the render body** (not in an effect or event handler). React's documented contract is that calling a setter during render is only safe for the *currently rendering* component when guarded to converge; here it is driven by external (query) data and an unrelated localStorage value, which is exactly the "cascading/derived-state-during-render" anti-pattern. It schedules an extra render whenever the query produces data while `selectedResources` is still `undefined`.
+**Problem:** When the `resources` query resolves, this calls the `setSelectedResources` state setter **directly in the render body** (not in an effect or event handler). React's documented contract is that calling a setter during render is only safe for the *currently rendering* component when guarded to converge; here it is driven by external (query) data and `selectedResourcesState` (the `'resources'` value from `useLocalStorageState`, line 51), which is exactly the "cascading/derived-state-during-render" anti-pattern. It schedules an extra render whenever the query produces data while `selectedResources` is still `undefined`.
 
 **Impact:** Avoidable re-render churn tied to query resolution; brittle if the guard conditions change. Belongs in a `useEffect` keyed on `resources`/`selectedResourcesState`.
 
@@ -404,8 +404,8 @@ The most important structural finding is a pattern, not a single bug: **Headlamp
 ### Why two stores cause the bugs above
 
 1. **No single source of truth.** For config, Redux is authoritative but RQ also caches the payload; the two can diverge (BUG #6).
-2. **`queryFn` becomes a write path.** Because the only way to get data *into* Redux is to fetch it, the fetch is forced to perform `dispatch`/snackbar/`onError` side effects (BUGs #4, #6, #7). Every poll and every retry re-runs them.
-3. **Invalidation must be done twice.** Logout has to clear Redux *and* the RQ cache (`auth.ts:142–143`), and the two are not symmetric (BUGs #11, #12).
+2. **`queryFn` becomes a write path.** Because the only way to get data *into* Redux is to fetch it, the fetch is forced to perform `dispatch`/snackbar/`onError` side effects (BUG #4, BUG #6, BUG #7). Every poll and every retry re-runs them.
+3. **Invalidation must be done twice.** Logout has to clear Redux *and* the RQ cache (`auth.ts:142–143`), and the two are not symmetric (BUG #11, BUG #12).
 4. **Dependency tracking is bypassed.** RQ can't see Redux as a dependency; `fetchConfig` reading `store.getState()` and the stale `queryKey` memo (#5) both stem from data flowing through Redux that RQ can't react to. The code "works" only because of the polling interval.
 5. **Cross-store races.** WebSocket updates write directly to the RQ cache (BUG #1) while Redux-driven re-renders touch the same components, producing ordering-dependent UI.
 
