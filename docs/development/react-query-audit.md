@@ -2,387 +2,231 @@
 
 > **Date:** 2026-06-13
 > **Scope:** All `@tanstack/react-query` usage in `frontend/src/`
-> **Files audited:** 15 files (`useQuery`/`useQueries`, 1 QueryClient config, and imperative `queryClient.*` / `useQueryClient().*` calls)
+> **Method:** Every usage site below was re-read against the source on the date above; line numbers and code snippets were verified, not carried over from a previous pass.
 
 ---
 
 ## Executive Summary
 
-A first pass found **6 obvious React Query usage sites**. A deeper sweep of `frontend/src/` (including the `lib/k8s/api/v2` data layer and per-resource RBAC/version widgets) found **7 more**, for **13 distinct usage sites** in total. Of these, **only 2 have dedicated tests** that exercise the query behavior. The audit found **18 bugs total** (1 critical, 7 high, 7 medium, 3 low).
+`frontend/src/` has **15 React Query usage sites** (`useQuery`/`useQueries`, the `QueryClient` config + provider, and imperative `queryClient.*` / `useQueryClient().*` calls). The bulk of the app's React Query usage lives in the `lib/k8s/api/v2` data layer (`hooks.ts`, `useKubeObjectList.ts`), not in the app-shell components.
 
-The single biggest theme is **two overlapping client-side state stores** — Redux *and* the React Query cache — holding the same data with no single source of truth. This is described in its own section ("The Two-State-Store Problem") and is the root cause of the most impactful bugs (`Layout.tsx` config polling, `VersionButton.tsx` snackbars). The other recurring themes are **side effects inside `queryFn`**, **missing `cluster` in query keys** (cross-cluster cache collisions), and **inconsistent, non-shared RBAC query keys**.
+This revision **re-checked every claim** in the earlier draft. Two claims were overstated and are corrected below (the AdvancedSearch "infinite spinner" and the empty-cluster "extra network request"). Several items previously listed as numbered "bugs" are actually intentional or negligible; they are moved to **Non-issues & minor observations** so the genuine defects stand out.
+
+**Genuine defects: 12** (7 correctness, 5 lower-impact). The recurring root causes are:
+
+1. **Side effects inside `queryFn`** (Redux dispatch, snackbars, `onError`) instead of pure data fetching — Layout, VersionButton, AuthVisible.
+2. **Missing / stale `cluster` in cache identity** — the WebSocket single-object update path, the `AuthVisible` key, and the `queryKey` memo deps. These are multi-cluster correctness bugs.
+3. **Rules-of-Hooks and render-phase state updates** — `AuthVisible` calls `useQuery` after an early `return`; `AdvancedSearch` calls a state setter during render from query data.
+
+The structural driver behind most of group (1) is described in **The Two-State-Store Problem**.
 
 ---
 
 ## All React Query Usage Sites
 
-| # | File | Hook / Method | Query Key | Purpose |
-|---|------|--------------|-----------|---------|
+| # | File:line | Hook / Method | Query Key | Purpose |
+|---|-----------|--------------|-----------|---------|
 | 1 | `components/App/Layout.tsx:216` | `useQuery` | `['cluster-fetch']` | Poll backend for cluster config |
 | 2 | `components/App/RouteSwitcher.tsx:170` | `useQuery` | `['auth', cluster]` | Check auth status for a cluster |
 | 3 | `components/App/TopBar.tsx:299` | `useQueries` | `['clusterMe', clusterName]` | Fetch user info per cluster |
-| 4 | `components/advancedSearch/AdvancedSearch.tsx:73` | `useQuery` | `['api-discovery', ...clusters]` | Discover API resources for search |
-| 5 | `components/resourceMap/sources/definitions/sources.tsx:140` | `useQuery` | `['api-discovery', ...clusters]` | Discover API resources for resource map |
-| 6 | `lib/queryClient.ts:19` | `new QueryClient()` | N/A | Global singleton config |
-| 7 | `lib/auth.ts:125,127,142,143` | `queryClient.invalidateQueries / removeQueries` | `['clusterMe', ...]`, `['auth']` | Cache cleanup on login/logout |
-| 8 | `components/authchooser/index.tsx:211` | `queryClient.invalidateQueries` | `['clusterMe', clusterName]` | Refresh user info after auth |
-| 9 | `lib/k8s/api/v2/hooks.ts:139` | `useQuery` + `setQueryData` (line 172, 193) | `kubeObjectQueryKey(...)` | Fetch single object + apply WebSocket updates |
-| 10 | `lib/k8s/api/v2/hooks.ts:276` | `useQuery` | `['endpoints', cluster, namespace, name, endpointsKey]` | Probe for working API endpoint |
-| 11 | `lib/k8s/api/v2/useKubeObjectList.ts:478` | `useQueries` + `setQueryData` (line 250, 360) | `kubeObjectListQuery(...).queryKey` | Fetch object lists + apply WebSocket updates |
-| 12 | `components/Sidebar/VersionButton.tsx:81` | `useQuery` | `['version', cluster]` | Poll cluster version |
+| 4 | `components/advancedSearch/AdvancedSearch.tsx:73` | `useQuery` | `['api-discovery', ...selectedClusters]` | Discover API resources for search |
+| 5 | `components/resourceMap/sources/definitions/sources.tsx:140` | `useQuery` | `['api-discovery', ...selectedClusters]` | Discover API resources for resource map |
+| 6 | `lib/queryClient.ts:19` + `App.tsx:68` | `new QueryClient()` / `QueryClientProvider` | N/A | Global singleton + provider |
+| 7 | `lib/auth.ts:125,127,142,143` | `invalidateQueries` / `removeQueries` | `['clusterMe', …]`, `['auth']` | Cache cleanup on login/logout |
+| 8 | `components/authchooser/index.tsx:211` | `invalidateQueries` | `['clusterMe', clusterName]` | Refresh user info after auth |
+| 9 | `lib/k8s/api/v2/hooks.ts:139` | `useQuery` + `setQueryData` (172, 193) | `kubeObjectQueryKey(...)` (`['object', …]`) | Fetch single object + apply WebSocket updates |
+| 10 | `lib/k8s/api/v2/hooks.ts:276` | `useQuery` | `['endpoints', cluster, namespace, name, endpointsKey]` | Probe for a working API endpoint |
+| 11 | `lib/k8s/api/v2/useKubeObjectList.ts:65` (query) + `setQueryData` (250, 360) | `useQueries` | `['kubeObject', 'list', …, cluster, namespace, queryParams]` | Fetch object lists + apply WebSocket updates |
+| 12 | `components/Sidebar/VersionButton.tsx:81` | `useQuery` | `['version', cluster ?? '']` | Poll cluster version |
 | 13 | `components/common/Resource/AuthVisible.tsx:68` | `useQuery` | `['authVisible', name, apiName, apiVersion, verb, subresource, namespace]` | Per-item RBAC check |
 | 14 | `components/common/Resource/ScaleMultipleButton.tsx:88` | `useQueries` | `['scaleMultiple:auth', cluster, namespace, name, kind]` | Per-item RBAC check for scaling |
-| 15 | `components/common/Link.tsx:65` | `setQueryData` + `invalidateQueries` (line 79, 82) | `kubeObjectQueryKey(...)` | Prepopulate object cache before navigation |
+| 15 | `components/common/Link.tsx:65` | `setQueryData` + `invalidateQueries` (79, 82) | `kubeObjectQueryKey(...)` | Prepopulate object cache before navigation |
 
-> The original "6 sites" framing missed the entire `lib/k8s/api/v2` data layer (sites 9–11), which is where the bulk of the app's React Query usage actually lives, plus three widget-level queries (sites 12–14) and one imperative prefetch (site 15).
+> `Table.tsx` and `GraphView.tsx` import `useQueryParamsState`, which is a **URL search-param** hook, not React Query — they are not usage sites.
 
 ---
 
-## Bugs Ranked by Impact
+## Correctness Bugs (verified, high impact)
 
-### 🔴 BUG #1 — CRITICAL: `queryFn` dispatches Redux actions (side effects)
+### 🔴 BUG #1 — WebSocket single-object updates drop `cluster`
 
-**File:** `components/App/Layout.tsx:218`
-**Code:**
+**File:** `lib/k8s/api/v2/hooks.ts:172` and `:193` (compare the initial fetch at `:153`)
+
 ```typescript
-useQuery({
-  queryKey: ['cluster-fetch'],
-  queryFn: () => fetchConfig(dispatch),  // dispatches setConfig(), applyBackendThemeConfig()
-  refetchInterval: ...,
-});
+// initial fetch — cluster IS passed:
+return new kubeObjectClass(obj, cluster) as Instance;                 // line 153
+// live WebSocket updates — cluster is NOT passed:
+client.setQueryData(queryKey, new kubeObjectClass(update.object));    // lines 172 & 193
 ```
 
-**Problem:** `fetchConfig()` calls `dispatch(setConfig(...))` and `dispatch(applyBackendThemeConfig(...))` inside the query function. React Query `queryFn` should be pure data-fetching functions. Side effects in `queryFn` cause:
-- Redux state updates during React Query's internal render cycle, risking "cannot update during render" warnings
-- Duplicate dispatches on every refetch (the `refetchInterval` fires every 10 seconds), even when the data hasn't changed and React Query would have deduplicated it
-- The `config` return value from the query is **not the source of truth** — Redux is — making the React Query cache redundant
-- Testing difficulty: you can't test the query without also testing Redux side effects
+**Problem:** The initial `queryFn` constructs the object **with** `cluster`; both WebSocket `onMessage` handlers (the multiplexer path and the legacy `connectionsRequests` path) reconstruct it **without** `cluster`. After the first live update, the cached object loses `kubeObject.cluster`.
 
-**Impact:** Subtle re-render storms on the 10-second polling interval. The query's cached `config` value and Redux's `state.config` can diverge if a dispatch fails.
+**Why this is clearly a bug:** the *list* equivalent does it correctly — `useKubeObjectList.ts` passes `cluster` to `KubeList.applyUpdate(..., cluster)` at lines 255 and 363–367, and the per-item constructor sets `itm.cluster = cluster` (line 103). Only the single-object path in `hooks.ts` omits it.
+
+**Impact:** Anything reading `kubeObject.cluster` after a server-side change — detail navigation, multi-cluster views, and the `Link.tsx` prefetch key (#11) — gets `undefined`. Intermittent and hard to reproduce because it only manifests after an object changes server-side.
+
+**Fix:** `new kubeObjectClass(update.object, cluster)` in both handlers.
 
 **Manual test steps:**
-1. Run `npm start` and open Headlamp with at least one cluster configured.
-2. Open the Redux DevTools extension (or temporarily add `console.count('setConfig')` inside the `setConfig` case of the `config` reducer).
-3. Leave the app idle on any page for ~40 seconds without changing anything.
-4. **Expected (bug present):** a `GET /config` request fires every ~10s (Network tab) and `setConfig`/`applyBackendThemeConfig` actions are dispatched on the polling interval; with the `console.count`, the counter increases roughly every 10s even though the backend config never changed.
-5. **Expected (after fix):** the polling fetch still runs, but Redux actions are only dispatched when the config payload actually changes.
+1. `npm start`; open a detail view for one object (e.g. a Pod) so the `useGet` query in `hooks.ts` is active.
+2. Add a temporary `console.log(kubeObject.cluster)` in a child (or the `Link.tsx` prefetch).
+3. `kubectl label pod <name> audit=1 --overwrite` to push a `MODIFIED` update.
+4. **Bug present:** after the update the logged `.cluster` is `undefined`.
+5. **After fix:** `.cluster` is preserved.
 
-**Test coverage:** ❌ No test covers this query.
+**Test coverage:** ❌ `hooks.test.tsx` does not exercise cluster propagation through the WebSocket update path.
 
 ---
 
-### 🟠 BUG #2 — HIGH: Missing error handling in AdvancedSearch
+### 🔴 BUG #2 — `cluster` missing from the `authVisible` query key (cross-cluster RBAC collision)
 
-**File:** `components/advancedSearch/AdvancedSearch.tsx:73`
-**Code:**
+**File:** `components/common/Resource/AuthVisible.tsx:70–78` (key) / `:79–90` (fn)
+
 ```typescript
-const { data: resources, isLoading } = useQuery({
-  queryFn: () => apiDiscovery([...selectedClusters]),
-  queryKey: ['api-discovery', ...selectedClusters],
-});
+queryKey: ['authVisible', itemName, itemClass.apiName, itemClass.apiVersion,
+           authVerb, subresource, namespace],
+queryFn: async () => item!.getAuthorization(authVerb, { subresource, namespace },
+                                            (item as any).cluster),
 ```
 
-**Problem:** The query destructures only `data` and `isLoading` — `error` / `isError` are ignored. If `apiDiscovery` fails (network error, cluster unreachable), the component will show an infinite loading spinner with no error feedback. React Query's default retry (3 attempts) will delay the loading state for ~6 seconds before silently failing.
+**Problem:** The authorization request is scoped to `(item as any).cluster`, but `cluster` is **not** in the query key. Two items with the same name/apiName/apiVersion/verb in **different clusters** share one cache entry, so the first cluster's RBAC result is served for the second.
 
-**Impact:** Users see a perpetual loading spinner when API discovery fails, with no way to understand or recover from the error.
+**Why this is clearly a bug:** the sibling RBAC check in `ScaleMultipleButton.tsx:90–96` **does** include `(item as any).cluster` in its key, confirming the omission here is unintentional.
+
+**Impact:** Incorrect RBAC gating across clusters — UI actions shown/hidden based on a *different* cluster's permissions. Correctness/security-relevant, not just performance.
 
 **Manual test steps:**
-1. Run `npm start` and open the Advanced Search page (the search/magnifying-glass entry in the UI).
-2. In browser DevTools → Network, enable request blocking for the API-discovery request (or set the cluster offline / use an unreachable cluster) so `apiDiscovery` rejects.
-3. Select one or more clusters to trigger the query.
-4. **Expected (bug present):** after ~6s of React Query retries the spinner remains forever; no error message is shown to the user.
-5. **Expected (after fix):** an error state/message is rendered instead of an infinite spinner.
+1. Two clusters A and B holding a resource with the **same** name/apiName/apiVersion but **different** permissions for your user (allowed in A, denied in B).
+2. View it in A; confirm the gated control appears.
+3. Without reloading, view the same-named resource in B.
+4. **Bug present:** B serves A's cached result (key omits cluster) and the control is wrongly shown/hidden.
+5. **After fix (cluster in key):** each cluster gets its own entry.
 
-**Test coverage:** ❌ No test covers this query.
+**Test coverage:** ❌ None.
 
 ---
 
-### 🟠 BUG #3 — HIGH: Missing `enabled` guard when clusters are empty
+### 🔴 BUG #3 — Conditional `useQuery` call in `AuthVisible` (Rules of Hooks)
 
-**File:** `components/advancedSearch/AdvancedSearch.tsx:73` and `components/resourceMap/sources/definitions/sources.tsx:140`
+**File:** `components/common/Resource/AuthVisible.tsx:59–68`
 
-**Problem:** Both queries call `apiDiscovery([...selectedClusters])` without an `enabled: selectedClusters.length > 0` guard. When no clusters are selected (e.g., on first load before cluster selection), the query fires with an empty array, triggering an unnecessary API call.
-
-**Impact:** Wasted network request on load. If `apiDiscovery([])` returns unexpected results or errors, it may cause downstream issues.
-
-**Manual test steps:**
-1. Run `npm start` and open DevTools → Network, filtered to the API-discovery request.
-2. Navigate to the Advanced Search page (and separately the resource Map view) in a state where **no clusters are selected yet** (fresh load / cleared selection).
-3. **Expected (bug present):** an `apiDiscovery` request fires immediately with an empty cluster list before any cluster is selected.
-4. **Expected (after fix):** no API-discovery request is made until at least one cluster is selected.
-
-**Test coverage:** ❌ Neither file has tests.
-
----
-
-### 🟠 BUG #4 — HIGH: Array order in query key causes cache misses
-
-**File:** `components/advancedSearch/AdvancedSearch.tsx:75` and `sources.tsx:142`
-**Code:**
-```typescript
-queryKey: ['api-discovery', ...selectedClusters]
-```
-
-**Problem:** React Query compares query keys using **structural equality**. If `selectedClusters` is `['cluster-b', 'cluster-a']` vs `['cluster-a', 'cluster-b']`, these are treated as **different cache entries**, even though they fetch the same data. The same user selecting clusters in a different order gets a cache miss and a redundant API call.
-
-**Impact:** Duplicate cache entries and redundant network requests for the same set of clusters.
-
-**Fix:** Sort the array: `queryKey: ['api-discovery', [...selectedClusters].sort()]`
-
-**Manual test steps:**
-1. Run `npm start` with at least two clusters configured. Open DevTools → Network filtered to the API-discovery request.
-2. On the Advanced Search page, select clusters in the order **A then B**; note one discovery request fires and resolves (cached).
-3. Clear the selection, then select the **same** clusters in the order **B then A**.
-4. **Expected (bug present):** a second, redundant API-discovery request fires for the same set of clusters (cache miss due to array order).
-5. **Expected (after fix, sorted key):** no new request — the cached result is reused regardless of selection order.
-
-**Test coverage:** ❌ No tests.
-
----
-
-### 🟡 BUG #5 — MEDIUM: `logout()` uses broad prefix-based query removal
-
-**File:** `lib/auth.ts:142`
-**Code:**
-```typescript
-queryClient.removeQueries({ queryKey: ['auth'], exact: false });
-```
-
-**Problem:** `exact: false` means this removes **all queries whose key starts with `['auth']`**. This includes `['auth', 'cluster-1']`, `['auth', 'cluster-2']`, etc. When logging out of one cluster, this clears auth state for **all** clusters.
-
-**Impact:** In multi-cluster setups, logging out of one cluster clears cached auth checks for every cluster, causing unnecessary re-authentication checks across the board.
-
-**Manual test steps:**
-1. Run `npm start` with two token-authenticated clusters (A and B). Log in to both so each has an `['auth', cluster]` cache entry.
-2. (Optional) Open React Query DevTools to watch the cache, or add a temporary `console.log` in the `['auth', ...]` `queryFn`.
-3. Log out of cluster A only.
-4. **Expected (bug present):** the cached auth state for cluster **B** is also removed (its `['auth', 'B']` entry disappears), so navigating to B re-runs the auth check unnecessarily.
-5. **Expected (after fix, `exact: true` / scoped key):** only cluster A's auth entry is removed; B's remains.
-
-**Test coverage:** ❌ `auth.ts` has a test file (`auth.test.ts`) but it does **not** test React Query interactions.
-
----
-
-### 🟡 BUG #6 — MEDIUM: Mixed `invalidateQueries` vs `removeQueries` strategy
-
-**File:** `lib/auth.ts:125,127`
-**Code:**
-```typescript
-if (token) {
-  queryClient.invalidateQueries({ queryKey: ['clusterMe', cluster], exact: true });
-} else {
-  queryClient.removeQueries({ queryKey: ['clusterMe', cluster], exact: true });
-}
-```
-
-**Problem:** `invalidateQueries` marks data stale and triggers a background refetch. `removeQueries` deletes the data entirely. Using both based on whether a token exists creates an asymmetric cache lifecycle:
-- Setting a token → refetch (shows stale data briefly, then fresh)
-- Clearing a token → remove (shows nothing, then loading state on next mount)
-
-This inconsistency is **intentional** (clear token = no data to show), but it interacts poorly with Bug #5: `logout()` calls `removeQueries` on `['auth']` *and* `['clusterMe']` separately, creating a window where auth state and user info state are out of sync.
-
-**Impact:** Brief UI inconsistency between auth state and user info display during logout.
-
-**Manual test steps:**
-1. Run `npm start` with a token-authenticated cluster; log in so both `['auth', cluster]` and `['clusterMe', cluster]` entries are populated.
-2. Open React Query DevTools to observe both entries.
-3. Set a new token (re-auth) and observe `['clusterMe', cluster]` is marked stale and refetched (invalidate path).
-4. Then clear the token / log out and observe `['clusterMe', cluster]` is removed outright, while `['auth']` is removed via the broad prefix removal.
-5. **Expected (bug present):** during logout there is a window where the auth entry and the user-info entry are torn down asymmetrically (one invalidated+refetching, one removed), producing a brief inconsistent UI.
-6. **Expected (after fix):** token-set and token-clear follow a symmetric, predictable cache lifecycle.
-
-**Test coverage:** ❌ No test covers this interaction.
-
----
-
-### 🟡 BUG #7 — MEDIUM: `dispatch` in `queryFn` closure may cause stale closures
-
-**File:** `components/App/Layout.tsx:218`
-**Code:**
-```typescript
-queryFn: () => fetchConfig(dispatch),
-```
-
-**Problem:** `dispatch` is captured in the `queryFn` closure. While `dispatch` from `useDispatch()` is typically stable, the `fetchConfig` function also reads `store.getState()` directly (line 138-139), bypassing React Query's dependency tracking. The query key is `['cluster-fetch']` with no dependencies — React Query has no way to know that the query depends on Redux state.
-
-**Impact:** If Redux state changes between refetches, `fetchConfig` reads the latest state but React Query doesn't know the dependencies changed. This works by accident because the query refetches on an interval anyway, but it's fragile.
-
-**Manual test steps:**
-1. Run `npm start` and add a temporary `console.log('fetchConfig clusters', store.getState().config.clusters)` at the top of `fetchConfig` in `Layout.tsx`.
-2. Open the app, then add or remove a cluster (e.g. via the cluster settings / dynamic clusters flow) so `state.config.clusters` changes.
-3. Observe the next `['cluster-fetch']` refetch (within ~10s).
-4. **Expected (bug present):** the log shows `fetchConfig` reading the updated Redux state even though the query key `['cluster-fetch']` never changed — the query has no declared dependency on that state and only "sees" it because of the interval.
-5. **Expected (after fix):** config dependencies flow through the query key / props rather than a direct `store.getState()` read.
-
-**Test coverage:** ❌ No test.
-
----
-
-### 🟡 BUG #8 — MEDIUM: Global singleton `QueryClient` can cause test pollution
-
-**File:** `lib/queryClient.ts:19`
-**Code:**
-```typescript
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 3 * 60_000,
-      refetchOnWindowFocus: false,
-    },
-  },
-});
-```
-
-**Problem:** This is a module-level singleton. Any test that imports a component using this `queryClient` (directly or transitively via `App.tsx`) shares state with other tests. Cached data from one test can leak into the next.
-
-**Mitigating factor:** `RouteSwitcher.test.tsx` and `useKubeObjectList.test.tsx` both create their own `QueryClient` instances, avoiding this issue. But any test that renders through `<App />` or imports the singleton directly is vulnerable.
-
-**Impact:** Flaky tests due to cached state from previous test runs.
-
-**Manual test steps:**
-1. Add a temporary test (or use an existing one) that renders a component which uses the module-level `queryClient` singleton and populates a query, e.g. `['version', 'test-cluster']`.
-2. Add a second test in the same file that asserts the same query key is empty/uninitialised.
-3. Run `npm run frontend:test -- <file>` with the two tests in this order, then reorder them.
-4. **Expected (bug present):** the second test's result depends on test order — data set by the first test leaks via the shared singleton, causing intermittent failures.
-5. **Expected (after fix / isolation):** each test that creates its own `QueryClient` (as `RouteSwitcher.test.tsx` and `useKubeObjectList.test.tsx` do) is order-independent.
-
-**Test coverage:** ⚠️ Partially mitigated — key test files create their own clients.
-
----
-
-### 🟢 BUG #9 — LOW: No explicit `gcTime` in global config
-
-**File:** `lib/queryClient.ts:20-24`
-
-**Problem:** Without explicit `gcTime`, React Query uses the default (5 minutes). In a long-running Headlamp session with many cluster navigations, inactive queries accumulate in memory for 5 minutes each.
-
-**Impact:** Minor memory overhead in long sessions. Not a practical issue for most users.
-
-**Manual test steps:**
-1. Run `npm start`, open Chrome DevTools → Memory, and take a heap snapshot baseline.
-2. Navigate across many resources/clusters to spin up and abandon many queries, then stop interacting.
-3. Within 5 minutes (default `gcTime`), take another heap snapshot and filter for retained React Query cache entries / object instances.
-4. **Expected (bug present):** inactive queries linger in memory for the full 5-minute default before garbage collection.
-5. **Expected (after fix):** a shorter explicit `gcTime` reduces the retention window for inactive queries.
-
----
-
-### 🟢 BUG #10 — LOW: `staleTime: 3 * 60_000` may be too long for Kubernetes data
-
-**File:** `lib/queryClient.ts:22`
-
-**Problem:** Kubernetes resources can change frequently (pods scaling, deployments rolling out). A 3-minute stale time means users may see outdated data. However, this only affects React Query–managed queries — the primary Kubernetes resource watchers use WebSockets (via `useKubeObjectList`), which are not affected by this setting.
-
-**Impact:** Low — only affects the `cluster-fetch`, `auth`, `api-discovery`, and `clusterMe` queries, not real-time resource data.
-
-**Manual test steps:**
-1. Run `npm start` and open a view backed by one of the React Query–managed queries above (e.g. the cluster version in the sidebar, or API discovery results).
-2. Change the corresponding data on the cluster out-of-band (e.g. via `kubectl`), then return to the app **without** triggering a manual refetch or window refocus.
-3. **Expected (bug present):** the UI keeps showing the previous value for up to 3 minutes (`staleTime`) before React Query considers it stale.
-4. **Expected (after a shorter `staleTime`):** the data is considered stale and refetched sooner. Note: real-time resource lists use WebSockets (`useKubeObjectList`) and are unaffected by this setting.
-
----
-
-## Additional Bugs Found in the Deeper Sweep
-
-These were missed by the first pass because it stopped at the obvious app-shell components and never inspected the `lib/k8s/api/v2` data layer or the per-resource widgets.
-
-### 🟠 BUG #11 — HIGH: Conditional hook call in `AuthVisible`
-
-**File:** `components/common/Resource/AuthVisible.tsx:59-68`
-**Code:**
 ```typescript
 if (!VALID_AUTH_VERBS.includes(authVerb)) {
-  console.warn(`Invalid authVerb provided: "${authVerb}". Skipping authorization check.`);
-  return null;            // early return…
+  console.warn(`Invalid authVerb provided: "${authVerb}". ...`);
+  return null;                       // early return…
 }
 // …
 // eslint-disable-next-line react-hooks/rules-of-hooks
-const { data } = useQuery<any>({ /* … */ });   // …hook called after a possible return
+const { data } = useQuery<any>({ /* … */ });   // …hook after a possible return
 ```
 
-**Problem:** `useQuery` (and the `useEffect` below it) are called **after** a conditional `return null`. This violates the Rules of Hooks — if `authVerb` is sometimes valid and sometimes not for the same mounted component, the hook order changes between renders and React will throw. The `eslint-disable react-hooks/rules-of-hooks` comments suppress the warning that is correctly flagging a real bug.
+**Problem:** `useQuery` and the `useEffect` at `:96` are called **after** a conditional `return null`. If `authVerb` switches between valid and invalid for the same mounted component, the hook count changes between renders and React throws "rendered fewer hooks than expected". The two `eslint-disable react-hooks/rules-of-hooks` comments suppress a warning that is flagging a real defect.
 
-**Impact:** Potential "rendered fewer hooks than expected" crashes; at minimum, fragile code that defeats the linter.
+**Impact:** Potential render crashes; at minimum, fragile code that defeats the linter.
 
-**Fix:** Move the `authVerb` validation into the `enabled` flag / `queryFn` so the hooks are always called unconditionally.
+**Fix:** Always call the hooks; move the verb check into `enabled` / the `queryFn` (and `return null` after, based on `data`).
 
 **Manual test steps:**
-1. In `AuthVisible.tsx`, temporarily remove the `// eslint-disable-next-line react-hooks/rules-of-hooks` comments and run `npm run frontend:lint` — the linter should flag the conditional hook call.
-2. To exercise at runtime: render an `AuthVisible` whose `authVerb` prop **changes between a valid and an invalid verb** across renders (a valid verb makes the hooks run; an invalid verb hits the early `return null`).
-3. **Expected (bug present):** React logs/throws "rendered fewer hooks than expected" (or "rendered more hooks") because the hook count changes between renders.
-4. **Expected (after fix):** the hooks are always called; the verb validation is handled via `enabled`/inside `queryFn`, and lint passes without the disable comments.
+1. Temporarily remove the two `// eslint-disable-next-line react-hooks/rules-of-hooks` comments and run `npm run frontend:lint` — it flags the conditional hook.
+2. Runtime: render an `AuthVisible` whose `authVerb` flips between a valid and an invalid verb across renders.
+3. **Bug present:** React logs/throws a hook-count error.
+4. **After fix:** hooks always run; lint passes without the disables.
 
-**Test coverage:** ❌ No test.
+**Test coverage:** ❌ None.
 
 ---
 
-### 🟠 BUG #12 — HIGH: `cluster` missing from the `authVisible` query key
+### 🟠 BUG #4 — `AuthVisible` `queryFn` swallows errors into `undefined`
 
-**File:** `components/common/Resource/AuthVisible.tsx:70-85`
-**Code:**
+**File:** `components/common/Resource/AuthVisible.tsx:79–90`
+
 ```typescript
-queryKey: ['authVisible', itemName, itemClass.apiName, itemClass.apiVersion, authVerb, subresource, namespace],
-queryFn: async () => item!.getAuthorization(authVerb, { subresource, namespace }, (item as any).cluster),
+queryFn: async () => {
+  try {
+    return await item!.getAuthorization(authVerb, { subresource, namespace }, (item as any).cluster);
+  } catch (e: any) {
+    onError?.(e);          // → implicitly returns undefined
+  }
+},
 ```
 
-**Problem:** The authorization request is scoped to `(item as any).cluster`, but `cluster` is **not** part of the query key. Two items with the same name/apiName/apiVersion/verb in **different clusters** collide on the same cache entry. The first cluster's RBAC result is served for the second cluster.
+**Problem:** On failure the `catch` calls `onError` and returns `undefined`. React Query therefore records a **successful** query with `data === undefined`; `isError`/`error` are never set and the failure is cached as success (so it is not retried as an error). `visible` then falls to `false`, conflating "explicitly denied" with "the check failed". Calling `onError` inside `queryFn` is also a side effect (same anti-pattern as #6/#7).
 
-**Impact:** Incorrect RBAC gating across clusters — a user could see (or be denied) actions based on a *different* cluster's permissions. This is a correctness/security-relevant bug, not just a performance one.
-
-**Contrast:** `ScaleMultipleButton.tsx:90-96` does the same RBAC check but **correctly** includes `(item as any).cluster` in its key, confirming the omission in `AuthVisible` is a bug.
+**Impact:** Transient auth-check failures silently hide UI as if denied, and are cached as success.
 
 **Manual test steps:**
-1. Run `npm start` with two clusters (A and B) that contain a resource with the **same name, apiName, and apiVersion** but **different RBAC permissions** for your user (allowed in A, denied in B).
-2. Navigate to that resource in cluster **A** first and confirm the `AuthVisible`-gated UI (e.g. an action button) appears.
-3. Without reloading, navigate to the same-named resource in cluster **B**.
-4. **Expected (bug present):** cluster B serves cluster A's cached RBAC result (key omits `cluster`), so the gated UI wrongly appears (or wrongly hides) based on A's permissions.
-5. **Expected (after fix, `cluster` in key):** each cluster gets its own cache entry and the correct permission is reflected.
+1. Open a view rendering `AuthVisible`-gated children; pass an `onError` callback.
+2. In DevTools → Network, block/fail the SelfSubjectAccessReview request.
+3. **Bug present:** `onError` fires, yet the query reports success with `data === undefined`, `isError` stays `false`, children are hidden, and no error retry happens.
+4. **After fix:** the error propagates (`isError`/`error` set) and is distinguishable from a deny.
 
-**Test coverage:** ❌ No test.
+**Test coverage:** ❌ None.
 
 ---
 
-### 🟠 BUG #13 — HIGH: WebSocket updates drop the `cluster` field
+### 🟠 BUG #5 — Stale `queryKey` memo (and stale WS closure) drop `cluster`/`queryParams`
 
-**File:** `lib/k8s/api/v2/hooks.ts:172,193` (compare with `:153`)
-**Code:**
+**File:** `lib/k8s/api/v2/hooks.ts:131–136` (and `:159–178`)
+
 ```typescript
-// initial fetch — cluster is passed:
-return new kubeObjectClass(obj, cluster) as Instance;          // line 153
-// live WebSocket update — cluster is NOT passed:
-client.setQueryData(queryKey, new kubeObjectClass(update.object));   // lines 172 & 193
+const queryKey = useMemo(
+  () => kubeObjectQueryKey({ cluster, name, namespace, endpoint, queryParams: cleanedUpQueryParams }),
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  [endpoint, namespace, name]            // omits cluster + cleanedUpQueryParams
+);
 ```
 
-**Problem:** The initial `queryFn` constructs the object **with** `cluster`, but both WebSocket `onMessage` handlers reconstruct it **without** `cluster`. After the first live update, the cached object loses its `cluster` association.
+**Problem:** The key value depends on `cluster`, `endpoint`, `namespace`, `name`, **and** `cleanedUpQueryParams`, but the dependency array lists only `[endpoint, namespace, name]`. If `cluster` or `queryParams` change while those three stay constant, the memoized `queryKey` does **not** update, so the query reads/writes the wrong cache entry. The same staleness affects `connectionsRequests` (the legacy WebSocket memo, deps `[endpoint]` at `:178`), which closes over `queryKey`, `namespace`, `name`, and `cleanedUpQueryParams` and writes updates to the stale key. This is also what makes #1 write to a possibly-wrong key.
 
-**Impact:** Any code relying on `kubeObject.cluster` (links, detail navigation, multi-cluster views, the `Link.tsx` prefetch key below) breaks after the first WebSocket update — intermittently and hard to reproduce, since it only manifests once an object changes server-side.
-
-**Fix:** Pass `cluster` in both handlers: `new kubeObjectClass(update.object, cluster)`.
+**Impact:** Stale or cross-cluster data for single-object fetches when only `cluster`/`queryParams` change.
 
 **Manual test steps:**
-1. Run `npm start` and open a detail view for a single object (e.g. a specific Pod) so the `useGet`/`useWatch` query in `hooks.ts` is active.
-2. In DevTools console, inspect the cached object's `.cluster` field (or add a temporary `console.log(kubeObject.cluster)` in a child component / the `Link.tsx` prefetch).
-3. Trigger a server-side change to that object (e.g. `kubectl label pod ...`) so a WebSocket `MODIFIED` update arrives.
-4. **Expected (bug present):** after the update, the cached object's `.cluster` becomes `undefined`, and any link/navigation relying on it produces a wrong/empty cluster.
-5. **Expected (after fix):** `.cluster` is preserved across WebSocket updates.
+1. Add `console.log('queryKey', queryKey)` next to the `useMemo`.
+2. Render a single-object view, then change **only** `cluster` (or a query param) while keeping `endpoint`/`namespace`/`name` the same.
+3. **Bug present:** the logged key does not change; the wrong cache entry is used.
+4. **After fix (full deps):** the key updates on `cluster`/`queryParams` change.
 
-**Test coverage:** ❌ No test exercises the WebSocket update path's cluster propagation.
+**Test coverage:** ❌ None.
 
 ---
 
-### 🟠 BUG #14 — HIGH: Side effects + self-referential stale closure in `VersionButton`
+### 🟠 BUG #6 — `queryFn` performs Redux side effects on the config poll
 
-**File:** `components/Sidebar/VersionButton.tsx:81-120`
-**Code:**
+**File:** `components/App/Layout.tsx:218` (`queryFn`), backed by `fetchConfig` at `:137`
+
+```typescript
+useQuery({
+  queryKey: ['cluster-fetch'],
+  queryFn: () => fetchConfig(dispatch),   // dispatch(setConfig), dispatch(applyBackendThemeConfig)
+  refetchInterval: CLUSTER_FETCH_INTERVAL,
+});
+```
+
+**Problem:** `fetchConfig` dispatches `setConfig`/`applyBackendThemeConfig` (lines 153, 165, 176) and reads `store.getState()` (lines 138–139) **inside the fetch**. `queryFn` should be a pure data fetch. Here Redux — not the query's return value — is the source of truth, so the cache is redundant, every poll/retry re-runs the dispatch path, and the fetch can't be tested without a Redux store. (The `configDifferent` guard at `:156` limits dispatches to actual changes, which is good, but the side effect still belongs in a `useEffect`.)
+
+**Impact:** Redux writes driven by React Query's internal refetch/retry timing rather than by data changes; cache and `state.config` can diverge.
+
+**Manual test steps:**
+1. `npm start`; add `console.count('setConfig')` in the `setConfig` reducer case.
+2. Idle on any page ~40s.
+3. **Bug present:** a `GET /config` fires every ~10s; dispatch path re-runs on the interval (the count increments when the payload changes).
+4. **After fix:** the poll still fetches, but dispatch happens in a `useEffect` keyed on `data`.
+
+**Test coverage:** ❌ None.
+
+---
+
+### 🟠 BUG #7 — Snackbar side effect + self-referential closure in `VersionButton`
+
+**File:** `components/Sidebar/VersionButton.tsx:81–120`
+
 ```typescript
 const { data: clusterVersion } = useQuery<StringDict | null>({
   queryKey: ['version', cluster ?? ''],
   queryFn: () => getVersion().then(results => {
-    if (clusterVersion && results?.gitVersion) {            // reads its own query data
+    if (clusterVersion && results?.gitVersion) {          // reads its own query data
       versionChange = semver.compare(results.gitVersion, clusterVersion.gitVersion);
-      // …
-      enqueueSnackbar(msg, { /* … */ });                    // side effect inside queryFn
+      enqueueSnackbar(msg, { /* … */ });                  // side effect inside queryFn
     }
     return results;
   }),
@@ -390,208 +234,221 @@ const { data: clusterVersion } = useQuery<StringDict | null>({
 });
 ```
 
-**Problem:** Two issues compound here:
-1. **Side effect in `queryFn`:** `enqueueSnackbar(...)` fires from inside the fetch. The "version upgraded/downgraded" snackbar is therefore tied to React Query's internal refetch/retry mechanics, not to a clean comparison of old vs new data. Retries (default 3) could fire multiple snackbars for a single real change.
-2. **Self-referential stale closure:** the `queryFn` reads `clusterVersion` — the very value the query is producing. The `clusterVersion` captured in the closure is the value from the render that created this `queryFn`, which can be stale relative to the actual previous cache value. Comparing "new vs old" version this way is unreliable.
+**Problem:** Two compounding issues: (1) `enqueueSnackbar` fires from inside the fetch, tying the "version changed" toast to refetch/retry mechanics; (2) the `queryFn` reads `clusterVersion`, the very value the query produces — the closure captures the value from the render that built this `queryFn`, which can be stale relative to the actual previous cache value.
 
-**Impact:** Missed, duplicated, or incorrect "version changed" notifications. Mirrors BUG #1 (`Layout.tsx`): a polling `queryFn` performing side effects instead of returning pure data.
+**Impact:** Missed, duplicated, or stale-comparison "version changed" notifications. Same pattern as #6.
 
-**Fix:** Return data only from `queryFn`; compute the version delta and call `enqueueSnackbar` in a `useEffect` keyed on `clusterVersion`, comparing against a `useRef` of the previous value.
+**Fix:** Return data only; compute the delta and call `enqueueSnackbar` in a `useEffect` keyed on `clusterVersion`, comparing against a `useRef` of the previous value.
 
 **Manual test steps:**
-1. Run `npm start` against a cluster. Open the sidebar version button so the `['version', cluster]` query is active (it polls on `versionFetchInterval`).
-2. To force a "version changed" path, temporarily make `getVersion` return a different `gitVersion` on the second call (e.g. stub it), or point at a cluster whose reported version you can change.
-3. To exercise the retry interaction, make the first `getVersion` attempt reject so React Query retries.
-4. **Expected (bug present):** the "Cluster version upgraded/downgraded" snackbar fires from inside `queryFn`, and can appear multiple times for one real change (once per retry) or use a stale previous-version value for the comparison.
-5. **Expected (after fix):** exactly one snackbar per actual version change, computed in a `useEffect` against a `useRef` of the previous value, unaffected by retries.
+1. Open the sidebar version button so `['version', cluster]` polls.
+2. Stub `getVersion` to return a different `gitVersion` on the second call.
+3. **Bug present:** the toast fires from inside `queryFn` and may use a stale previous value.
+4. **After fix:** exactly one toast per real change, computed in `useEffect`.
 
-**Test coverage:** ❌ No test.
+**Test coverage:** ❌ None.
 
 ---
 
-### 🟡 BUG #15 — MEDIUM: Stale `queryKey` memo drops `cluster` and `queryParams`
+## Lower-impact Bugs (verified)
 
-**File:** `lib/k8s/api/v2/hooks.ts:131-136`
-**Code:**
+### 🟡 BUG #8 — `AdvancedSearch` surfaces no error when discovery fails *(claim corrected)*
+
+**File:** `components/advancedSearch/AdvancedSearch.tsx:73`
+
 ```typescript
-const queryKey = useMemo(
-  () => kubeObjectQueryKey({ cluster, name, namespace, endpoint, queryParams: cleanedUpQueryParams }),
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  [endpoint, namespace, name]
-);
+const { data: resources, isLoading } = useQuery({
+  queryFn: () => apiDiscovery([...selectedClusters]),
+  queryKey: ['api-discovery', ...selectedClusters],
+});
 ```
 
-**Problem:** The key is computed from `cluster`, `endpoint`, `namespace`, `name`, **and** `cleanedUpQueryParams`, but the `useMemo` dependency array only lists `[endpoint, namespace, name]`. If `cluster` or `queryParams` change while `endpoint/namespace/name` stay constant, the memoized `queryKey` does **not** update — so the query reads/writes the wrong cache entry. The `exhaustive-deps` disable hides this.
+**Problem:** Only `data` and `isLoading` are read; `error`/`isError` are ignored.
 
-**Impact:** Stale or cross-cluster data for single-object fetches when only the cluster or query params change. Also propagates to the WebSocket `setQueryData` calls (#13), which write to the stale key.
+**Correction to the earlier draft:** the previous report said this causes an "infinite loading spinner". That is **wrong**. The loader is gated on `if (isLoading)` at `:128`, and React Query sets `isLoading` to `false` once the query settles into the `error` state (after the default 3 retries, ≈7s). The component then renders normally with `resources ?? emptyList` (an empty list) and the `{resources && …}` blocks simply don't render. So the real defect is a **silent empty page with no error feedback**, not a hang.
+
+**Impact:** On discovery failure the user sees an empty resource picker with no indication that anything failed or how to retry.
 
 **Manual test steps:**
-1. Run `npm start`. Add a temporary `console.log('queryKey', queryKey)` next to the `useMemo` in `hooks.ts`.
-2. Render a single-object view, then change **only** the `cluster` (or a query param) while keeping `endpoint`, `namespace`, and `name` the same — e.g. view the same-named resource in another cluster.
-3. **Expected (bug present):** the logged `queryKey` does **not** change (the `useMemo` deps omit `cluster`/`queryParams`), so the query reads/writes the wrong cache entry and may display the previous cluster's object.
-4. **Expected (after fix, full deps):** the `queryKey` updates whenever `cluster` or query params change.
+1. Open Advanced Search; in DevTools → Network, fail the `/api` + `/apis` discovery requests.
+2. Select a cluster to trigger the query.
+3. **Bug present:** after the retries the spinner clears and an empty list is shown with no error message.
+4. **After fix:** an error state is rendered.
 
-**Test coverage:** ❌ No test.
+**Test coverage:** ❌ None.
 
 ---
 
-### 🟡 BUG #16 — MEDIUM: Inconsistent, non-shared RBAC/auth query keys
+### 🟡 BUG #9 — `AdvancedSearch` updates state during render from query data *(new)*
+
+**File:** `components/advancedSearch/AdvancedSearch.tsx:79–81`
+
+```typescript
+if (selectedResources === undefined && selectedResourcesState === 'all' && resources) {
+  setSelectedResources(new Set(resources.map(resource => apiResourceId(resource))));
+}
+```
+
+**Problem:** When the `resources` query resolves, this calls the `setSelectedResources` state setter **directly in the render body** (not in an effect or event handler). React's documented contract is that calling a setter during render is only safe for the *currently rendering* component when guarded to converge; here it is driven by external (query) data and an unrelated localStorage value, which is exactly the "cascading/derived-state-during-render" anti-pattern. It schedules an extra render whenever the query produces data while `selectedResources` is still `undefined`.
+
+**Impact:** Avoidable re-render churn tied to query resolution; brittle if the guard conditions change. Belongs in a `useEffect` keyed on `resources`/`selectedResourcesState`.
+
+**Manual test steps:**
+1. Set the `resources` localStorage value to `all` and clear `selectedResources`.
+2. Add a `console.count('render')` at the top of `AdvancedSearch`.
+3. Load the page so the discovery query resolves.
+4. **Bug present:** an extra render is triggered from the render-phase `setSelectedResources` when `resources` arrives.
+5. **After fix:** the selection is derived/initialised in an effect; no render-phase setState.
+
+**Test coverage:** ❌ None.
+
+---
+
+### 🟡 BUG #10 — Unsorted spread array in the `api-discovery` key
+
+**File:** `AdvancedSearch.tsx:75` and `sources.tsx:142`
+
+```typescript
+queryKey: ['api-discovery', ...selectedClusters]
+```
+
+**Problem:** Spreading `selectedClusters` makes the key order-sensitive. `['api-discovery', 'b', 'a']` and `['api-discovery', 'a', 'b']` are distinct cache entries for identical data. Both files share this key (and the same `queryFn`), so they benefit from cache sharing — which makes a consistent ordering more important, not less.
+
+**Impact:** Duplicate cache entries and redundant discovery requests when the same clusters are selected in a different order, or if the two call sites ever order the array differently.
+
+**Fix:** `queryKey: ['api-discovery', [...selectedClusters].sort()]` in both files.
+
+**Manual test steps:**
+1. Two clusters configured; DevTools → Network filtered to `/api`+`/apis`.
+2. Select A then B (one request, then cached).
+3. Clear, select B then A.
+4. **Bug present:** a second discovery request fires for the same set.
+5. **After fix (sorted key):** the cached result is reused regardless of order.
+
+**Test coverage:** ❌ None.
+
+---
+
+### 🟡 BUG #11 — `logout()` removes auth queries for *all* clusters
+
+**File:** `lib/auth.ts:142`
+
+```typescript
+queryClient.removeQueries({ queryKey: ['auth'], exact: false });
+```
+
+**Problem:** `exact: false` removes every query whose key starts with `['auth']` — `['auth', 'cluster-1']`, `['auth', 'cluster-2']`, … So logging out of one cluster clears cached auth checks for **all** clusters. It also clears only the `['auth', …]` shape; `authVisible`, `scaleMultiple:auth`, and `clusterMe` entries survive logout (see #12).
+
+**Impact:** In multi-cluster setups, one logout forces re-auth checks for every cluster.
+
+**Manual test steps:**
+1. Two token-auth clusters A and B; log in to both so each has an `['auth', cluster]` entry (use React Query DevTools).
+2. Log out of A only.
+3. **Bug present:** B's `['auth', 'B']` entry is also removed.
+4. **After fix (`exact: true` / scoped key):** only A's entry is removed.
+
+**Test coverage:** ⚠️ `auth.test.ts` exists but does not cover the React Query cleanup.
+
+---
+
+### 🟡 BUG #12 — Four unrelated RBAC/auth key shapes; logout clears only one
 
 **Files:** `RouteSwitcher.tsx:170`, `AuthVisible.tsx:68`, `ScaleMultipleButton.tsx:88`, `TopBar.tsx:299`, `auth.ts`
 
-**Problem:** The app performs auth/RBAC lookups under at least four unrelated key shapes:
+The app answers "what can this user do" under four unrelated key shapes:
+
 - `['auth', cluster]` (RouteSwitcher)
-- `['authVisible', name, apiName, apiVersion, verb, subresource, namespace]` (AuthVisible — no cluster, see #12)
+- `['authVisible', name, apiName, apiVersion, verb, subresource, namespace]` (AuthVisible — no cluster, see #2)
 - `['scaleMultiple:auth', cluster, namespace, name, kind]` (ScaleMultipleButton)
 - `['clusterMe', clusterName]` (TopBar / auth.ts)
 
-These overlap conceptually (all are "what can this user do") but share no cache and follow no common key convention. `logout()`'s `removeQueries({ queryKey: ['auth'], exact: false })` (BUG #5) only clears the first shape — `authVisible`, `scaleMultiple:auth`, and `clusterMe` entries survive a logout.
+**Problem:** These overlap conceptually but share no cache and follow no convention, so identical permission questions are fetched repeatedly through different components, and `logout()`'s `removeQueries({ queryKey: ['auth'], exact: false })` clears only the first shape — the rest linger after logout.
 
-**Impact:** Redundant RBAC requests for the same resource viewed through different components; stale authorization data lingering in the cache after logout. A consistent key convention (e.g. `['auth', cluster, ...]`) would enable cache sharing and make invalidation reliable.
+**Impact:** Redundant RBAC requests and stale authorization data surviving logout.
 
 **Manual test steps:**
-1. Run `npm start` and open React Query DevTools (or log query keys).
-2. View a single resource that triggers an `AuthVisible` check, and also open a list/scale view that triggers `ScaleMultipleButton`'s `['scaleMultiple:auth', ...]` check, plus the top-bar `['clusterMe', ...]` query.
-3. **Expected (bug present):** several distinct cache entries (`authVisible`, `scaleMultiple:auth`, `clusterMe`, `auth`) exist for what is conceptually the same "what can this user do" question — no sharing.
-4. Now log out and re-inspect the cache.
-5. **Expected (bug present):** only `['auth', ...]` entries are cleared by `removeQueries({ queryKey: ['auth'], exact: false })`; `authVisible`/`scaleMultiple:auth`/`clusterMe` entries survive logout.
-6. **Expected (after fix, unified convention):** RBAC entries share keys where possible and are all cleared on logout.
+1. Open React Query DevTools; trigger an `AuthVisible` check, a `ScaleMultipleButton` view, and the top-bar `clusterMe` query.
+2. **Bug present:** four distinct cache shapes exist for the same conceptual question.
+3. Log out and re-inspect.
+4. **Bug present:** `authVisible`/`scaleMultiple:auth`/`clusterMe` entries survive; only `['auth', …]` is cleared.
+5. **After fix (shared convention):** RBAC entries share keys where possible and are all cleared on logout.
 
-**Test coverage:** ❌ No test covers cross-component auth cache behavior.
+**Test coverage:** ❌ None.
 
 ---
 
-### 🟡 BUG #17 — MEDIUM: `AuthVisible` `queryFn` swallows errors into `undefined`
+## Non-issues & minor observations
 
-**File:** `components/common/Resource/AuthVisible.tsx:79-91`
-**Code:**
-```typescript
-queryFn: async () => {
-  try {
-    return await item!.getAuthorization(authVerb, { subresource, namespace }, (item as any).cluster);
-  } catch (e: any) {
-    onError?.(e);          // calls back, then implicitly returns undefined
-  }
-},
-```
+These were either re-classified after verification or are low enough to be noise; listed for completeness so future readers don't re-file them as bugs.
 
-**Problem:** On failure the `catch` calls `onError` and returns `undefined`. React Query therefore treats the query as **successful** with `data === undefined`, so `isError`/`error` are never set and the query is cached as a successful empty result. The component falls through to `visible = false` (hides children), conflating "explicitly denied" with "the check failed". Calling `onError` inside `queryFn` is also a side effect (same anti-pattern as #1/#14).
-
-**Impact:** Auth-check failures are silently treated as "not allowed" and cached as success, so React Query won't retry them as errors. Users may have UI hidden due to a transient network error with no error surfaced.
-
-**Manual test steps:**
-1. Run `npm start` and open a view that renders `AuthVisible`-gated children.
-2. In DevTools → Network, block (or fail) the `getAuthorization`/SelfSubjectAccessReview request so it rejects.
-3. Pass an `onError` callback and observe it firing.
-4. **Expected (bug present):** despite the failure, the query reports success with `data === undefined`, `isError` stays `false`, the gated children are hidden (treated as "denied"), and React Query does not retry it as an error.
-5. **Expected (after fix):** the error propagates (`isError`/`error` set), the failure is distinguishable from an explicit deny, and retries apply.
-
-**Test coverage:** ❌ No test.
-
----
-
-### 🟢 BUG #18 — LOW: `Link.tsx` prefetch can write to the wrong key
-
-**File:** `components/common/Link.tsx:65-82`
-**Code:**
-```typescript
-const { endpoint } = useEndpoints(kubeObject._class().apiEndpoint.apiInfo, kubeObject.cluster);
-// …
-const key = kubeObjectQueryKey({ cluster: kubeObject.cluster, endpoint, namespace, name });
-client.setQueryData(key, kubeObject);
-client.invalidateQueries({ queryKey: key });
-```
-
-**Problem:** When the resource has multiple candidate endpoints, `useEndpoints` resolves `endpoint` asynchronously (BUG context: `enabled: endpoints.length > 1`). If the user clicks the link before probing finishes, `endpoint` is `undefined` and `key` differs from the key the detail page will actually use — so the prefetch is wasted and `invalidateQueries` targets a phantom entry. Combined with #13, an object whose `cluster` was dropped by a WebSocket update would also produce a mismatched key here.
-
-**Impact:** Lost prefetch optimization (extra fetch on the detail page) in the multi-endpoint case. Low severity — purely a performance optimization that silently no-ops.
-
-**Manual test steps:**
-1. Run `npm start` and open a list of a resource type that has **multiple candidate endpoints** (so `useEndpoints` must probe; `enabled: endpoints.length > 1`).
-2. In DevTools → Network, throttle to "Slow 3G" so endpoint probing is still in flight, then **immediately** click a `KubeObjectLink` for one of the items.
-3. Watch the Network tab on the detail page.
-4. **Expected (bug present):** because `endpoint` was still `undefined` at click time, the prefetch wrote to a mismatched key and the detail page issues its own GET anyway (prefetch wasted); `invalidateQueries` targeted a phantom key.
-5. **Expected (after fix):** the prefetch key matches the detail page's key, so no redundant fetch occurs.
-
-**Test coverage:** ❌ No test.
+- **`enabled` guard for empty clusters — not a network bug.** `AdvancedSearch`/`sources` call `apiDiscovery([...selectedClusters])` without `enabled: selectedClusters.length > 0`. Verified against `apiDiscovery` (`lib/k8s/api/v2/apiDiscovery.tsx:133`): with an empty array the `for…of` body never runs and it resolves to `[]` **with no network request**. The only effect is an empty resolved cache entry, so the earlier "wasted network request" claim is overstated. Adding `enabled` is a tidy-up, not a fix.
+- **Mixed `invalidateQueries` vs `removeQueries` (`auth.ts:125,127`) — intentional.** Setting a token invalidates (refetch user info); clearing a token removes it (no data to show). This asymmetry is the correct behavior, not a defect.
+- **`dispatch` captured in the Layout `queryFn` closure.** `dispatch` from `useDispatch()` is stable; this is a symptom of #6 (side effects in `queryFn`), not a separate bug.
+- **Global singleton `QueryClient` (`lib/queryClient.ts:19`, provided in `App.tsx:68`).** Shared across the app and across any test that renders through the singleton. Mitigated in practice — `RouteSwitcher.test.tsx` and `useKubeObjectList.test.tsx` create their own clients. Real but low risk.
+- **No explicit `gcTime`.** Uses the 5-minute default; negligible memory overhead. Not worth changing without evidence.
+- **`staleTime: 3 * 60_000`.** Affects only the few RQ-managed queries (`cluster-fetch`, `auth`, `api-discovery`, `clusterMe`); real-time resource lists use WebSockets and are unaffected. This looks deliberate.
+- **`Link.tsx` prefetch can write a mismatched key (`:65–82`).** If the user clicks before `useEndpoints` resolves (`enabled: endpoints.length > 1`, `hooks.ts:277`), `endpoint` is `undefined` and the prefetch key won't match the detail page's key, so the optimization silently no-ops. Purely a lost optimization (and a downstream symptom of #1 when `cluster` is dropped). Low priority.
 
 ---
 
 ## The Two-State-Store Problem
 
-The most important structural finding is not any single bug but a pattern: **Headlamp maintains two independent client-side state stores that hold overlapping data — Redux and the React Query cache — with no single source of truth.**
+The most important structural finding is a pattern, not a single bug: **Headlamp keeps overlapping data in two independent client-side stores — Redux and the React Query cache — with no single source of truth.**
 
-### Where the two stores overlap
+### Where they overlap
 
-- **Cluster config** lives in Redux (`config` reducer, `reducers.tsx:44`) *and* is the payload of the `['cluster-fetch']` React Query (`Layout.tsx:216`). The query's `queryFn` (`fetchConfig`) doesn't just return data — it `dispatch`es `setConfig`/`applyBackendThemeConfig` into Redux (`Layout.tsx:153-182`) and reads `store.getState().config` directly (`Layout.tsx:138-139`).
-- **Theme** lives in Redux (`theme` reducer) but is mutated from the same config `queryFn`.
-- **Kubernetes objects/lists** live in the React Query cache (`lib/k8s/api/v2`), while UI concerns about them (filters, selected namespaces, resource-table state) live in Redux (`filter`, `resourceTable`, `graphView` reducers).
+- **Cluster config** lives in Redux (`config` reducer) *and* is the payload of the `['cluster-fetch']` query (`Layout.tsx:216`). The query's `queryFn` (`fetchConfig`) both `dispatch`es into Redux and reads `store.getState().config` directly (`Layout.tsx:137–193`).
+- **Theme** lives in Redux but is mutated from the same config `queryFn` (`applyBackendThemeConfig`).
+- **Kubernetes objects/lists** live in the React Query cache (`lib/k8s/api/v2`), while UI concerns about them (filters, selected namespaces, table state) live in Redux.
 
-### Why two stores cause problems
+### Why two stores cause the bugs above
 
-1. **No single source of truth.** For cluster config, Redux is authoritative but React Query also caches the same payload. The two can diverge — e.g. if a `dispatch` is skipped (the `configDifferent` short-circuit at `Layout.tsx:156-172` only dispatches on change) while React Query still holds the full fetched object. Consumers reading `state.config` vs the query's `data` can see different values.
+1. **No single source of truth.** For config, Redux is authoritative but RQ also caches the payload; the two can diverge (BUG #6).
+2. **`queryFn` becomes a write path.** Because the only way to get data *into* Redux is to fetch it, the fetch is forced to perform `dispatch`/snackbar/`onError` side effects (BUGs #4, #6, #7). Every poll and every retry re-runs them.
+3. **Invalidation must be done twice.** Logout has to clear Redux *and* the RQ cache (`auth.ts:142–143`), and the two are not symmetric (BUGs #11, #12).
+4. **Dependency tracking is bypassed.** RQ can't see Redux as a dependency; `fetchConfig` reading `store.getState()` and the stale `queryKey` memo (#5) both stem from data flowing through Redux that RQ can't react to. The code "works" only because of the polling interval.
+5. **Cross-store races.** WebSocket updates write directly to the RQ cache (BUG #1) while Redux-driven re-renders touch the same components, producing ordering-dependent UI.
 
-2. **`queryFn` becomes a write path, not a read path.** Because the only way to get data *into* Redux is to fetch it, the fetch function is forced to perform `dispatch` side effects (BUG #1, #14, #17). This breaks React Query's mental model: `queryFn` should be pure. Every refetch on the 10s interval re-dispatches, every retry re-dispatches, and tests can't exercise the fetch without a Redux store.
+### Direction (observation only — no change proposed here)
 
-3. **Invalidation has to be done twice.** Logout must clear Redux *and* the React Query cache (`auth.ts:142-143`), and the two cleanups are not symmetric (BUG #5, #6). Forgetting one leaves the app in a half-logged-out state.
+Picking **one** owner per piece of state would dissolve this whole class of bug:
 
-4. **Dependency tracking is bypassed.** React Query can't see Redux as a dependency. `fetchConfig` reading `store.getState()` (BUG #7) and the stale `queryKey` memo (BUG #15) both stem from data flowing through Redux that React Query has no way to react to. The code "works" only because of the polling interval.
-
-5. **Cross-store races.** WebSocket updates write directly to the React Query cache (`setQueryData`, BUG #13) while Redux-driven filters/selections re-render the same components, creating ordering-dependent UI states that are hard to reason about and test.
-
-### Direction (not a change request — observation only)
-
-Most of the high/critical bugs in this report are symptoms of this overlap. Picking **one** owner per piece of state would dissolve the class of bug:
-- Treat the React Query cache as the source of truth for *server* state (config, version, objects, lists, RBAC), and let components select from it directly instead of mirroring into Redux.
+- Treat the React Query cache as the source of truth for *server* state (config, version, objects, lists, RBAC); let components select from it instead of mirroring into Redux.
 - Keep Redux for *client/UI* state only (filters, sidebar, selected namespaces, drawer mode).
-- Make every `queryFn` pure; move `dispatch`/snackbar side effects into `useEffect`s keyed on the query result.
-
-This report stops at documenting the problem; no code change is proposed here.
-
----
-
-## Shared Query Key: `['api-discovery', ...selectedClusters]`
-
-**Files:** `AdvancedSearch.tsx:75` and `sources.tsx:142`
-
-**Analysis:** Both files use the **exact same query key and query function** (`apiDiscovery([...selectedClusters])`). This means they **intentionally share the cache** — React Query deduplicates the request. This is actually **correct behavior**, not a cache collision bug. Both components need the same data and benefit from sharing the cache entry.
-
-**However**, the shared key makes the array-order bug (#4) doubly important: if one component sorts clusters differently than the other, they'll create duplicate cache entries.
+- Make every `queryFn` pure; move `dispatch`/snackbar/`onError` side effects into `useEffect`s keyed on the query result.
 
 ---
 
 ## Test Coverage Summary
 
-| # | File | Query Key | Has Test? | Test File | Notes |
-|---|------|-----------|-----------|-----------|-------|
-| 1 | `Layout.tsx` | `['cluster-fetch']` | ❌ | — | No test at all for Layout |
-| 2 | `RouteSwitcher.tsx` | `['auth', cluster]` | ✅ | `RouteSwitcher.test.tsx` | Tests auth query with proper QueryClient isolation |
-| 3 | `TopBar.tsx` | `['clusterMe', name]` | ⚠️ | `TopBar.stories.tsx` | Storybook only; story comments note cache issues between stories |
-| 4 | `AdvancedSearch.tsx` | `['api-discovery', ...]` | ❌ | — | No test for the query |
-| 5 | `sources.tsx` | `['api-discovery', ...]` | ❌ | — | No test or story |
-| 6 | `queryClient.ts` | N/A (config) | ❌ | — | No test for config |
-| 7 | `auth.ts` | `['clusterMe']`, `['auth']` | ⚠️ | `auth.test.ts` | Tests exist but don't cover React Query interactions |
-| 8 | `authchooser/index.tsx` | `['clusterMe']` | ❌ | — | Storybook stories exist but don't test query invalidation |
-| 9 | `hooks.ts` (useGet/useWatch) | `kubeObjectQueryKey(...)` | ⚠️ | `hooks.test.tsx` | Tests exist; do not cover WebSocket `setQueryData` cluster propagation (#13) or the stale key memo (#15) |
-| 10 | `hooks.ts` (useEndpoints) | `['endpoints', ...]` | ⚠️ | `hooks.test.tsx` | Partial |
-| 11 | `useKubeObjectList.ts` | `kubeObjectListQuery(...)` | ✅ | `useKubeObjectList.test.tsx` | Creates its own QueryClient; good isolation |
-| 12 | `VersionButton.tsx` | `['version', cluster]` | ❌ | — | No test for snackbar side effect / self-referential closure |
-| 13 | `AuthVisible.tsx` | `['authVisible', ...]` | ❌ | — | No test; cluster missing from key (#12), conditional hook (#11), swallowed errors (#17) |
-| 14 | `ScaleMultipleButton.tsx` | `['scaleMultiple:auth', ...]` | ❌ | — | No test for per-item RBAC query |
-| 15 | `Link.tsx` | `kubeObjectQueryKey(...)` | ❌ | — | No test for prefetch key correctness (#18) |
+| # | Site | Has Test? | Test File | Notes |
+|---|------|-----------|-----------|-------|
+| 1 | `Layout.tsx` `['cluster-fetch']` | ❌ | — | No test for the config poll (#6) |
+| 2 | `RouteSwitcher.tsx` `['auth', cluster]` | ✅ | `RouteSwitcher.test.tsx` | Proper `QueryClient` isolation |
+| 3 | `TopBar.tsx` `['clusterMe']` | ⚠️ | `TopBar.stories.tsx` | Storybook only |
+| 4 | `AdvancedSearch.tsx` `['api-discovery']` | ❌ | — | No test (#8, #9, #10) |
+| 5 | `sources.tsx` `['api-discovery']` | ❌ | — | No test/story |
+| 6 | `queryClient.ts` / `App.tsx` | ❌ | — | No config test |
+| 7 | `auth.ts` `['clusterMe']`,`['auth']` | ⚠️ | `auth.test.ts` | Doesn't cover RQ cleanup (#11, #12) |
+| 8 | `authchooser/index.tsx` `['clusterMe']` | ❌ | — | Stories exist; don't test invalidation |
+| 9 | `hooks.ts` (useGet/useWatch) | ⚠️ | `hooks.test.tsx` | Misses WS cluster propagation (#1) and stale key (#5) |
+| 10 | `hooks.ts` (useEndpoints) | ⚠️ | `hooks.test.tsx` | Partial |
+| 11 | `useKubeObjectList.ts` | ✅ | `useKubeObjectList.test.tsx` | Own `QueryClient`; good isolation |
+| 12 | `VersionButton.tsx` `['version']` | ❌ | — | No test (#7) |
+| 13 | `AuthVisible.tsx` `['authVisible']` | ❌ | — | No test (#2, #3, #4) |
+| 14 | `ScaleMultipleButton.tsx` | ❌ | — | No test |
+| 15 | `Link.tsx` prefetch | ❌ | — | No test |
 
-**Coverage rate:** 2 out of 13 query usage sites have proper test coverage (`RouteSwitcher.test.tsx`, `useKubeObjectList.test.tsx`). `hooks.ts` has partial coverage that misses the WebSocket/cluster-key bugs. TopBar has partial coverage via Storybook stories only.
+**Coverage:** 2 of 15 sites have proper, isolated query tests (`RouteSwitcher.test.tsx`, `useKubeObjectList.test.tsx`). `hooks.ts` has partial coverage that misses the cluster/stale-key bugs.
 
 ---
 
-## Recommendations (Priority Order)
+## Recommendations (priority order)
 
-1. **Layout.tsx queryFn side effects (Bug #1):** Extract dispatch logic into a `useEffect` that watches the query's `data` value. Make `queryFn` return data only.
-2. **AdvancedSearch.tsx error handling (Bug #2):** Destructure and display `error`/`isError` from the query result.
-3. **Add `enabled` guards (Bug #3):** Add `enabled: selectedClusters.length > 0` to both AdvancedSearch and sources.tsx queries.
-4. **Sort cluster arrays in query keys (Bug #4):** Use `[...selectedClusters].sort()` in query keys.
-5. **Fix broad auth removal (Bug #5):** Change `exact: false` to `exact: true` or use a more targeted key prefix.
-6. **Add tests:** Prioritize Layout.tsx and AdvancedSearch.tsx query behavior tests.
-7. **Add `cluster` to the `authVisible` key (Bug #12)** and **pass `cluster` to WebSocket-side `setQueryData` (Bug #13)** — both are correctness bugs affecting multi-cluster use.
-8. **Fix the conditional hook in `AuthVisible` (Bug #11)** and the **stale `queryKey` memo in `hooks.ts` (Bug #15)** rather than suppressing the lint rules that flag them.
-9. **Pick one owner per piece of state (Two-State-Store Problem):** make `queryFn`s pure and move `dispatch`/snackbar side effects (Bugs #1, #14, #17) into `useEffect`s keyed on query results.
+1. **Pass `cluster` to the WebSocket `setQueryData` constructors** in `hooks.ts:172,193` (#1) and **add `cluster` to the `authVisible` key** (#2) — both are multi-cluster correctness bugs.
+2. **Fix the conditional hook in `AuthVisible`** (#3) and the **stale `queryKey` memo** in `hooks.ts` (#5) instead of suppressing the lint rules that flag them.
+3. **Stop swallowing errors** in the `AuthVisible` `queryFn` (#4); let `isError`/`error` surface.
+4. **Make polling `queryFn`s pure:** move Redux dispatch (#6) and the version snackbar (#7) into `useEffect`s keyed on the query `data`.
+5. **AdvancedSearch:** surface `error`/`isError` (#8) and move the render-phase `setSelectedResources` into an effect (#9).
+6. **Sort the `api-discovery` key array** (#10); **scope logout's auth removal** (`exact: true`) (#11) and converge on a shared RBAC key convention (#12).
+7. **Add query-behavior tests** for Layout, AdvancedSearch, AuthVisible, and the `hooks.ts` WebSocket update path — the highest-impact untested areas.
