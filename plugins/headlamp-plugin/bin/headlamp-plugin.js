@@ -797,6 +797,77 @@ function runScriptOnPackages(packageFolder, scriptName, cmdLine, env) {
 }
 
 /**
+ * Brotli-compress all compressible files in a directory, writing <file>.br
+ * sidecars alongside each asset. Stale sidecars for ineligible files are
+ * removed so the server cannot serve mismatched bytes on incremental builds.
+ * Uses only Node.js built-ins (no extra dependencies).
+ *
+ * @param {string} dir - directory to walk (typically the plugin dist/ folder)
+ */
+async function brotliCompressDist(dir) {
+  const zlib = require('zlib');
+  const MIN_BYTES = 1024;
+  const COMPRESSIBLE = new Set([
+    '.js',
+    '.mjs',
+    '.cjs',
+    '.css',
+    '.json',
+    '.map',
+    '.svg',
+    '.txt',
+    '.xml',
+    '.wasm',
+  ]);
+
+  function* walk(d) {
+    for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+      const full = path.join(d, entry.name);
+      if (entry.isDirectory()) yield* walk(full);
+      else if (entry.isFile()) yield full;
+    }
+  }
+
+  if (!fs.existsSync(dir)) return;
+
+  for (const file of walk(dir)) {
+    if (file.endsWith('.br') || file.endsWith('.gz')) continue;
+
+    const sidecar = file + '.br';
+    const stat = fs.statSync(file);
+    const ext = path.extname(file).toLowerCase();
+
+    if (stat.size < MIN_BYTES || !COMPRESSIBLE.has(ext)) {
+      // Remove any stale sidecar so the server cannot serve mismatched bytes.
+      try {
+        fs.unlinkSync(sidecar);
+      } catch (e) {
+        if (e.code !== 'ENOENT') throw e;
+      }
+      continue;
+    }
+
+    const data = fs.readFileSync(file);
+    const br = zlib.brotliCompressSync(data, {
+      params: {
+        [zlib.constants.BROTLI_PARAM_QUALITY]: 11,
+        [zlib.constants.BROTLI_PARAM_SIZE_HINT]: data.length,
+      },
+    });
+
+    if (br.length < data.length) {
+      fs.writeFileSync(sidecar, br);
+    } else {
+      try {
+        fs.unlinkSync(sidecar);
+      } catch (e) {
+        if (e.code !== 'ENOENT') throw e;
+      }
+    }
+  }
+}
+
+/**
  * Build the plugin package or folder of packages for production.
  *
  * @param packageFolder {string} - folder where the package, or folder of packages is.
@@ -848,6 +919,10 @@ async function build(packageFolder) {
 
       // Copy extra dist files after successful build
       await copyExtraDistFiles('.');
+
+      // Brotli-compress all compressible files in dist/ so the Headlamp backend
+      // can serve .br sidecars without on-the-fly compression.
+      await brotliCompressDist(path.join(folder, 'dist'));
 
       console.log(`Finished building "${folder}" for production.`);
     } catch (e) {
