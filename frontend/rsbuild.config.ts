@@ -43,6 +43,8 @@ export default defineConfig({
           '/api',
           '/clusters',
           '/plugins',
+          '/user-plugins',
+          '/static-plugins',
           '/config',
           '/auth',
           '/oidc',
@@ -56,6 +58,19 @@ export default defineConfig({
         ],
         target: backendTarget,
         changeOrigin: true,
+        on: {
+          error: (err, req, res) => {
+            const msg = 'code' in err ? (err as NodeJS.ErrnoException).code : err.message;
+            console.warn(`[proxy] ${req.url}: ${msg}`);
+            if (res && 'writeHead' in res) {
+              const httpRes = res as import('http').ServerResponse;
+              if (!httpRes.writableEnded) {
+                httpRes.writeHead(502, { 'Content-Type': 'text/plain' });
+                httpRes.end(`Backend not reachable (${msg})`);
+              }
+            }
+          },
+        },
       },
       {
         pathFilter: ['/wsMultiplexer'],
