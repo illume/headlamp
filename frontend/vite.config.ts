@@ -28,7 +28,7 @@ const underTest = process.env.UNDER_TEST === 'true' || process.env.VITEST === 't
 // Shared proxy error handler to avoid repeated [http-proxy-middleware] noise
 // when the backend server is not yet running.
 function proxyErrorHandler(proxy: any) {
-  proxy.on('error', (err: NodeJS.ErrnoException, _req: any, res: any) => {
+  proxy.on('error', (err: NodeJS.ErrnoException, _req: unknown, res: import('http').ServerResponse) => {
     const msg = err.code || err.message;
     if (res && typeof res.writeHead === 'function' && !res.writableEnded) {
       res.writeHead(502, { 'Content-Type': 'text/plain' });
