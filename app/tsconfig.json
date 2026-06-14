@@ -9,10 +9,13 @@
     "strict": true,
     "forceConsistentCasingInFileNames": true,
     "module": "ESNext",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noFallthroughCasesInSwitch": true,
     "outDir": "electron/",
-    "noEmit": true
+    "noEmit": true,
+    "paths": {
+      "@langchain/core/dist/tools/index": ["./node_modules/@langchain/core/dist/tools/index"]
+    }
   },
   "include": ["electron/**/*"],
   "exclude": []

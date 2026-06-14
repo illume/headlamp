@@ -1,0 +1,46 @@
+{
+  "name": "cluster-exploration",
+  "description": "Simulates an agent exploring cluster state — lists nodes, namespaces, and workloads.",
+  "question": "what is running in my cluster",
+  "steps": [
+    { "phase": "init", "label": "Model: gpt-4o", "durationMs": 150 },
+    { "phase": "init", "label": "Toolset: kubernetes-tools loaded", "durationMs": 100 },
+    { "phase": "planning", "label": "List cluster nodes and their status", "durationMs": 80 },
+    { "phase": "planning", "label": "List namespaces", "durationMs": 80 },
+    { "phase": "planning", "label": "List workloads across namespaces", "durationMs": 80 },
+    {
+      "phase": "executing",
+      "label": "Running kubectl get nodes",
+      "toolCall": {
+        "tool": "call_kubectl",
+        "input": "get nodes -o wide",
+        "output": "NAME     STATUS   ROLES           AGE   VERSION\nnode-0   Ready    control-plane   7d    v1.32.0\nnode-1   Ready    worker          7d    v1.32.0\nnode-2   Ready    worker          7d    v1.32.0",
+        "durationMs": 200
+      },
+      "durationMs": 200
+    },
+    {
+      "phase": "executing",
+      "label": "Running kubectl get namespaces",
+      "toolCall": {
+        "tool": "call_kubectl",
+        "input": "get namespaces",
+        "output": "NAME              STATUS   AGE\ndefault           Active   7d\nkube-system       Active   7d\nkube-public       Active   7d\nmonitoring        Active   3d",
+        "durationMs": 150
+      },
+      "durationMs": 150
+    },
+    {
+      "phase": "executing",
+      "label": "Running kubectl get deployments",
+      "toolCall": {
+        "tool": "call_kubectl",
+        "input": "get deployments -A",
+        "output": "NAMESPACE      NAME                  READY   AGE\ndefault        nginx-deployment      3/3     2d\nkube-system    coredns               2/2     7d\nmonitoring     prometheus-server      1/1     3d",
+        "durationMs": 200
+      },
+      "durationMs": 200
+    }
+  ],
+  "answer": "Here's an overview of your cluster:\n\n## Nodes (3)\n\n| Name | Status | Roles | Version |\n|------|--------|-------|---------|\n| node-0 | Ready | control-plane | v1.32.0 |\n| node-1 | Ready | worker | v1.32.0 |\n| node-2 | Ready | worker | v1.32.0 |\n\nAll nodes are healthy and running Kubernetes v1.32.0.\n\n## Namespaces (4)\n\n`default`, `kube-system`, `kube-public`, `monitoring`\n\n## Workloads\n\n| Namespace | Deployment | Ready |\n|-----------|-----------|-------|\n| default | nginx-deployment | 3/3 |\n| kube-system | coredns | 2/2 |\n| monitoring | prometheus-server | 1/1 |\n\nEverything looks healthy — all deployments have their desired replica count."
+}
