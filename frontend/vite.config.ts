@@ -25,18 +25,6 @@ const backendPort = process.env.HEADLAMP_PORT || '4466';
 const backendTarget = `http://localhost:${backendPort}`;
 const underTest = process.env.UNDER_TEST === 'true' || process.env.VITEST === 'true';
 
-// Shared proxy error handler to avoid repeated [http-proxy-middleware] noise
-// when the backend server is not yet running.
-function proxyErrorHandler(proxy: any) {
-  proxy.on('error', (err: NodeJS.ErrnoException, _req: unknown, res: import('http').ServerResponse) => {
-    const msg = err.code || err.message;
-    if (res && typeof res.writeHead === 'function' && !res.writableEnded) {
-      res.writeHead(502, { 'Content-Type': 'text/plain' });
-      res.end(`Backend not reachable (${msg})`);
-    }
-  });
-}
-
 export default defineConfig({
   define: {
     global: 'globalThis',
@@ -50,83 +38,59 @@ export default defineConfig({
       '/api': {
         target: backendTarget,
         changeOrigin: true,
-        configure: proxyErrorHandler,
       },
       '/clusters': {
         target: backendTarget,
         changeOrigin: true,
-        configure: proxyErrorHandler,
       },
       '/plugins': {
         target: backendTarget,
         changeOrigin: true,
-        configure: proxyErrorHandler,
-      },
-      '/user-plugins': {
-        target: backendTarget,
-        changeOrigin: true,
-        configure: proxyErrorHandler,
-      },
-      '/static-plugins': {
-        target: backendTarget,
-        changeOrigin: true,
-        configure: proxyErrorHandler,
       },
       '/config': {
         target: backendTarget,
         changeOrigin: true,
-        configure: proxyErrorHandler,
       },
       '/auth': {
         target: backendTarget,
         changeOrigin: true,
-        configure: proxyErrorHandler,
       },
       '/oidc': {
         target: backendTarget,
         changeOrigin: true,
-        configure: proxyErrorHandler,
       },
       '/oidc-callback': {
         target: backendTarget,
         changeOrigin: true,
-        configure: proxyErrorHandler,
       },
       '/wsMultiplexer': {
         target: backendTarget,
         changeOrigin: true,
         ws: true,
-        configure: proxyErrorHandler,
       },
       '/externalproxy': {
         target: backendTarget,
         changeOrigin: true,
-        configure: proxyErrorHandler,
       },
       '/drain-node': {
         target: backendTarget,
         changeOrigin: true,
-        configure: proxyErrorHandler,
       },
       '/drain-node-status': {
         target: backendTarget,
         changeOrigin: true,
-        configure: proxyErrorHandler,
       },
       '/parseKubeConfig': {
         target: backendTarget,
         changeOrigin: true,
-        configure: proxyErrorHandler,
       },
       '/cluster': {
         target: backendTarget,
         changeOrigin: true,
-        configure: proxyErrorHandler,
       },
       '/metrics': {
         target: backendTarget,
         changeOrigin: true,
-        configure: proxyErrorHandler,
       },
     },
     cors: true,
