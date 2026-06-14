@@ -58,6 +58,16 @@ export default defineConfig({
         ],
         target: backendTarget,
         changeOrigin: true,
+        on: {
+          error: (err, req, res) => {
+            const msg = 'code' in err ? (err as NodeJS.ErrnoException).code : err.message;
+            console.warn(`[proxy] ${req.url}: ${msg}`);
+            if (res && 'writeHead' in res && !('writableEnded' in res && (res as any).writableEnded)) {
+              (res as any).writeHead(502, { 'Content-Type': 'text/plain' });
+              (res as any).end(`Backend not reachable (${msg})`);
+            }
+          },
+        },
       },
       {
         pathFilter: ['/wsMultiplexer'],
