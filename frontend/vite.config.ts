@@ -47,6 +47,14 @@ export default defineConfig({
         target: backendTarget,
         changeOrigin: true,
       },
+      '/user-plugins': {
+        target: backendTarget,
+        changeOrigin: true,
+      },
+      '/static-plugins': {
+        target: backendTarget,
+        changeOrigin: true,
+      },
       '/config': {
         target: backendTarget,
         changeOrigin: true,

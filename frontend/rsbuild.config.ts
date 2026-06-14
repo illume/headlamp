@@ -43,6 +43,8 @@ export default defineConfig({
           '/api',
           '/clusters',
           '/plugins',
+          '/user-plugins',
+          '/static-plugins',
           '/config',
           '/auth',
           '/oidc',
