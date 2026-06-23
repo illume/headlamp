@@ -21,6 +21,7 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHistory } from 'react-router-dom';
 import { setupBackstageMessageReceiver } from '../../../helpers/backstageMessageReceiver';
+import { useAutoConnectClusters } from '../../../helpers/clusterAutoConnect';
 import { isBackstage } from '../../../helpers/isBackstage';
 import { isElectron } from '../../../helpers/isElectron';
 import { useClustersConf, useClustersVersion } from '../../../lib/k8s';
@@ -81,7 +82,13 @@ function useWarningSettingsPerCluster(clusterNames: string[]) {
     setWarningLabels(currentWarningLabels => {
       const newWarningLabels: { [cluster: string]: string } = {};
       for (const cluster of clusterNames) {
-        newWarningLabels[cluster] = renderWarningsText(warningsMap, cluster);
+        // Keep the last known count while the warnings query has no result yet
+        // ('⋯' means loading or error), e.g. when it re-initialises as another
+        // cluster connects, so connecting a cluster doesn't blank a loaded one.
+        const newLabel = renderWarningsText(warningsMap, cluster);
+        const previousLabel = currentWarningLabels[cluster];
+        newWarningLabels[cluster] =
+          newLabel !== '⋯' || previousLabel === undefined ? newLabel : previousLabel;
       }
       if (!isEqual(newWarningLabels, currentWarningLabels)) {
         return newWarningLabels;
@@ -103,11 +110,28 @@ function HomeComponent(props: HomeComponentProps) {
     getCustomClusterNames(clusters)
   );
   const { t } = useTranslation(['translation', 'glossary']);
-  const [versions, errors] = useClustersVersion(Object.values(clusters || {}));
-  const clusterNames = React.useMemo(
+  // Only poll versions/warnings for auto-connect clusters (recently-used by
+  // default, plus any connected on demand) to avoid a credential/exec process
+  // per cluster on load.
+  const allClusterNames = React.useMemo(
     () => Object.values(customNameClusters).map(c => c.name),
     [customNameClusters]
   );
+  const { connect: handleConnectCluster, connectedClusters } =
+    useAutoConnectClusters(allClusterNames);
+
+  const autoConnectClusters = React.useMemo(
+    () => Object.values(clusters || {}).filter(c => connectedClusters.has(c.name)),
+    [clusters, connectedClusters]
+  );
+
+  const [versions, errors] = useClustersVersion(autoConnectClusters);
+
+  const clusterNames = React.useMemo(
+    () => allClusterNames.filter(name => connectedClusters.has(name)),
+    [allClusterNames, connectedClusters]
+  );
+
   const warningLabels = useWarningSettingsPerCluster(clusterNames);
 
   React.useEffect(() => {
@@ -138,10 +162,20 @@ function HomeComponent(props: HomeComponentProps) {
           errors={errors}
           warningLabels={warningLabels}
           clusters={clusters}
+          connectedClusterNames={connectedClusters}
+          onConnectCluster={handleConnectCluster}
         />
       </>
     ),
-    [customNameClusters, errors, versions, warningLabels, clusters]
+    [
+      customNameClusters,
+      errors,
+      versions,
+      warningLabels,
+      clusters,
+      connectedClusters,
+      handleConnectCluster,
+    ]
   );
 
   return (
