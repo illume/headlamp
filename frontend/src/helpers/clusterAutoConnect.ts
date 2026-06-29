@@ -63,8 +63,12 @@ function addSessionConnectedCluster(clusterName: string) {
  * clusters connected on demand this session. It only grows via connect(), and
  * the session connects are persisted in sessionStorage so the set survives a
  * remount of the Home view rather than resetting to the recent-clusters seed.
+ * This means the key-based remount in Home (triggered by cluster-list changes)
+ * is safe: on-demand connects are never dropped.
  *
- * @param availableClusterNames - Names of all clusters, used to seed the set.
+ * @param availableClusterNames - Names of all clusters used to seed the initial
+ *   connected set. Changes to this array after mount are ignored; callers that
+ *   need to re-seed on list changes should remount the hook (e.g. via a React key).
  */
 export function useAutoConnectClusters(availableClusterNames: string[]) {
   const [connectedClusters, setConnectedClusters] = useState<Set<string>>(
