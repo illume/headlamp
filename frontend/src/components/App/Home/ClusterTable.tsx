@@ -54,7 +54,7 @@ import {
   STATUS_VARIANTS,
 } from './ClusterInventory';
 import { canSelectCluster } from './clusterStatus';
-import { MULTI_HOME_ENABLED } from './config';
+import { CONNECT_ON_CLUSTER_LINK, MULTI_HOME_ENABLED } from './config';
 import { getCustomClusterNames } from './customClusterNames';
 
 /**
@@ -97,7 +97,7 @@ function ClusterStatus({
 
   // Not in the auto-connect set and not yet contacted: show an explicit
   // "not connected" state with a connect action instead of the ambiguous "⋯".
-  if (!isConnected && !error) {
+  if (!isConnected && error === undefined) {
     return (
       <LightTooltip title={t('translation|Not connected. Connect to load this cluster.')}>
         <Box display="flex" alignItems="center" justifyContent="center" width="fit-content">
@@ -322,7 +322,14 @@ export default function ClusterTable({
                     onClickCapture on the wrapper keeps the Link's native
                     navigation (and works for keyboard activation) while the Link
                     would disable navigation if given an onClick. */}
-                <span onClickCapture={() => setRecentCluster(original.name)}>
+                <span
+                  onClickCapture={() => {
+                    setRecentCluster(original.name);
+                    if (CONNECT_ON_CLUSTER_LINK) {
+                      onConnectCluster?.(original.name);
+                    }
+                  }}
+                >
                   <Link routeName="cluster" params={{ cluster: original.name }}>
                     <ClusterBadge
                       name={original.name}
