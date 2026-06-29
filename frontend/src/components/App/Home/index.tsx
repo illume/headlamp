@@ -69,6 +69,9 @@ interface HomeComponentProps {
 const maxWarnings = 50;
 
 function renderWarningsText(warnings: ReturnType<typeof useEventWarningList>, clusterName: string) {
+  // Returns '⋯' for both "not fetched yet" (warnings[clusterName] === undefined)
+  // and "query error". Callers that need to distinguish the two cases must check
+  // warnings[clusterName] directly.
   const numWarnings = warnings[clusterName]?.error
     ? -1
     : warnings[clusterName]?.warnings?.length ?? -1;
@@ -95,8 +98,12 @@ function useWarningSettingsPerCluster(clusterNames: string[]) {
         // cluster connects, so connecting a cluster doesn't blank a loaded one.
         const newLabel = renderWarningsText(warningsMap, cluster);
         const previousLabel = currentWarningLabels[cluster];
-        newWarningLabels[cluster] =
-          newLabel !== '⋯' || previousLabel === undefined ? newLabel : previousLabel;
+        // Preserve the previous count only while loading (no result yet), so
+        // connecting a cluster doesn't blank an already-loaded one. On error,
+        // show '⋯' rather than leaving a stale count.
+        const isLoading = warningsMap[cluster] === undefined;
+        const preserve = newLabel === '⋯' && isLoading && previousLabel !== undefined;
+        newWarningLabels[cluster] = preserve ? previousLabel : newLabel;
       }
       if (!isEqual(newWarningLabels, currentWarningLabels)) {
         return newWarningLabels;
