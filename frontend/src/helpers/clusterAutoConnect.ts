@@ -46,9 +46,14 @@ function getSessionConnectedClusters(): string[] {
 }
 
 function addSessionConnectedCluster(clusterName: string) {
-  const connected = new Set(getSessionConnectedClusters());
-  connected.add(clusterName);
-  sessionStorage.setItem(sessionConnectedStorageKey, JSON.stringify([...connected]));
+  try {
+    const connected = new Set(getSessionConnectedClusters());
+    connected.add(clusterName);
+    sessionStorage.setItem(sessionConnectedStorageKey, JSON.stringify([...connected]));
+  } catch {
+    // sessionStorage unavailable (e.g. private browsing with strict settings).
+    // The cluster is still added to React state; it just won't survive a remount.
+  }
 }
 
 /**

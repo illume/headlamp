@@ -58,6 +58,7 @@ function renderHome() {
 describe('Home auto-connect gating', () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     vi.clearAllMocks();
     (useClustersConf as Mock).mockReturnValue({
       c1: { name: 'c1' },
