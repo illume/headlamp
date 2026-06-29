@@ -49,7 +49,15 @@ export default function Home() {
   return (
     <HomeComponent
       clusters={clusters}
-      key={'home-component-' + Object.keys(clusters || {}).join('')}
+      // Key forces a remount when the cluster list changes so HomeComponent
+      // re-evaluates which clusters to connect. On-demand connected clusters
+      // are preserved across remounts via sessionStorage in useAutoConnectClusters.
+      key={
+        'home-component-' +
+        Object.keys(clusters || {})
+          .sort()
+          .join(',')
+      }
     />
   );
 }
