@@ -1,5 +1,11 @@
 # end to end tests with playwright and minikube
 
+## Test Coverage
+
+See [E2E_TEST_COVERAGE.md](./E2E_TEST_COVERAGE.md) for a comprehensive checklist of which pages have e2e tests and which still need testing.
+
+## Setup
+
 ```
 npx playwright install
 ```
