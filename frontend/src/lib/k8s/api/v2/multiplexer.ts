@@ -108,7 +108,9 @@ export const WebSocketManager = {
       let socket: WebSocket;
       try {
         const backendTokenProtocol = getHeadlampWebSocketProtocol();
-        socket = backendTokenProtocol ? new WebSocket(wsUrl, backendTokenProtocol) : new WebSocket(wsUrl);
+        socket = backendTokenProtocol
+          ? new WebSocket(wsUrl, backendTokenProtocol)
+          : new WebSocket(wsUrl);
       } catch (e) {
         this.connecting = false;
         reject(e instanceof Error ? e : new Error(String(e)));
