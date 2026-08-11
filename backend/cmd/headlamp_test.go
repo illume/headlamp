@@ -1313,6 +1313,8 @@ func TestDeletePlugin(t *testing.T) {
 // TestRestrictedEndpointsRequireToken is the canary for the backend-token gate:
 // dropping checkHeadlampBackendToken from any listed route would fail here.
 // PUT /cluster/{name} (renameCluster) is omitted because it isn't gated yet.
+//
+//nolint:funlen
 func TestRestrictedEndpointsRequireToken(t *testing.T) {
 	const validToken = "valid-token-for-test"
 
@@ -1392,12 +1394,11 @@ func TestRestrictedEndpointsRequireToken(t *testing.T) {
 	}
 }
 
+//nolint:funlen
 func TestProtectClusterAPIWebSocketProtocol(t *testing.T) {
-	const (
-		validToken    = "desktop-token"
-		encodedToken  = "ZGVza3RvcC10b2tlbg"
-		tokenProtocol = backendTokenProtocolPrefix + encodedToken
-	)
+	const validToken = "desktop-token"
+
+	tokenProtocol := backendTokenProtocolPrefix + base64.RawURLEncoding.EncodeToString([]byte(validToken))
 
 	t.Setenv("HEADLAMP_BACKEND_TOKEN", validToken)
 
@@ -1468,18 +1469,23 @@ func TestProtectClusterAPIWebSocketProtocol(t *testing.T) {
 				assert.Equal(t, tt.wantTokenDownstream, r.Header.Get("X-HEADLAMP_BACKEND-TOKEN"))
 				w.WriteHeader(http.StatusNoContent)
 			})
-			req := httptest.NewRequest(http.MethodGet, "/clusters/test/api/v1/pods", nil)
+			req := httptest.NewRequestWithContext(
+				context.Background(), http.MethodGet, "/clusters/test/api/v1/pods", nil)
+
 			if tt.tokenHeader != "" {
 				req.Header.Set("X-HEADLAMP_BACKEND-TOKEN", tt.tokenHeader)
 			}
+
 			for _, protocolHeader := range tt.protocolHeaders {
 				req.Header.Add("Sec-WebSocket-Protocol", protocolHeader)
 			}
+
 			recorder := httptest.NewRecorder()
 
 			config.protectClusterAPI(next).ServeHTTP(recorder, req)
 
 			assert.Equal(t, tt.wantStatus, recorder.Code)
+
 			if tt.wantStatus == http.StatusForbidden {
 				assert.NotContains(t, recorder.Body.String(), validToken)
 			}
@@ -3586,6 +3592,7 @@ func TestHandleClusterServiceProxy(t *testing.T) {
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet,
 			"/clusters/"+cluster+"/serviceproxy/"+ns+"/"+svc+"?request=/healthz", nil)
 		req.Header.Set("X-HEADLAMP_BACKEND-TOKEN", backendToken)
+
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)

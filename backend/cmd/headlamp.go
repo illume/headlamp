@@ -678,26 +678,34 @@ func createHeadlampHandler(ctx context.Context, config *HeadlampConfig) http.Han
 	addPluginRoutes(config, r)
 
 	// Setup port forwarding handlers.
-	r.Handle("/clusters/{clusterName}/portforward", config.protectClusterAPI(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		portforward.StartPortForward(
-			config.KubeConfigStore,
-			config.Cache,
-			config.shouldUseUnsafeServiceAccountToken(),
-			w,
-			r,
-		)
-	}))).Methods("POST")
+	r.Handle("/clusters/{clusterName}/portforward", config.protectClusterAPI(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			portforward.StartPortForward(
+				config.KubeConfigStore,
+				config.Cache,
+				config.shouldUseUnsafeServiceAccountToken(),
+				w,
+				r,
+			)
+		},
+	))).Methods("POST")
 
-	r.Handle("/clusters/{clusterName}/portforward", config.protectClusterAPI(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		portforward.StopOrDeletePortForward(config.Cache, w, r)
-	}))).Methods("DELETE")
+	r.Handle("/clusters/{clusterName}/portforward", config.protectClusterAPI(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			portforward.StopOrDeletePortForward(config.Cache, w, r)
+		},
+	))).Methods("DELETE")
 
-	r.Handle("/clusters/{clusterName}/portforward/list", config.protectClusterAPI(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		portforward.GetPortForwards(config.Cache, w, r)
-	})))
-	r.Handle("/clusters/{clusterName}/portforward", config.protectClusterAPI(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		portforward.GetPortForwardByID(config.Cache, w, r)
-	}))).Methods("GET")
+	r.Handle("/clusters/{clusterName}/portforward/list", config.protectClusterAPI(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			portforward.GetPortForwards(config.Cache, w, r)
+		},
+	)))
+	r.Handle("/clusters/{clusterName}/portforward", config.protectClusterAPI(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			portforward.GetPortForwardByID(config.Cache, w, r)
+		},
+	))).Methods("GET")
 
 	// Expose user info so the frontend can show the current user in the top bar using the per-cluster auth cookie.
 	r.Handle("/clusters/{clusterName}/me", config.protectClusterAPI(
@@ -1617,6 +1625,7 @@ func consumeBackendTokenProtocol(r *http.Request) error {
 		}
 
 		encodedToken := strings.TrimPrefix(protocol, backendTokenProtocolPrefix)
+
 		decodedToken, err := base64.RawURLEncoding.DecodeString(encodedToken)
 		if err != nil || len(decodedToken) == 0 {
 			return errors.New("invalid backend token protocol")
@@ -1634,6 +1643,7 @@ func consumeBackendTokenProtocol(r *http.Request) error {
 	}
 
 	r.Header.Set("X-HEADLAMP_BACKEND-TOKEN", backendToken)
+
 	if len(protocols) == 0 {
 		r.Header.Del("Sec-WebSocket-Protocol")
 	} else {
