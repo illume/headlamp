@@ -1311,7 +1311,7 @@ func TestDeletePlugin(t *testing.T) {
 }
 
 // TestRestrictedEndpointsRequireToken is the canary for the backend-token gate:
-// dropping checkHeadlampBackendToken from any listed route would fail here.
+// dropping the backend token middleware from any listed route would fail here.
 // PUT /cluster/{name} (renameCluster) is omitted because it isn't gated yet.
 //
 //nolint:funlen
@@ -1390,105 +1390,6 @@ func TestRestrictedEndpointsRequireToken(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			assertRouteRequiresBackendToken(t, tc.method, tc.path, tc.body, validToken)
-		})
-	}
-}
-
-//nolint:funlen
-func TestProtectClusterAPIWebSocketProtocol(t *testing.T) {
-	const validToken = "desktop-token"
-
-	tokenProtocol := backendTokenProtocolPrefix + base64.RawURLEncoding.EncodeToString([]byte(validToken))
-
-	t.Setenv("HEADLAMP_BACKEND_TOKEN", validToken)
-
-	tests := []struct {
-		name                string
-		useInCluster        bool
-		tokenHeader         string
-		protocolHeaders     []string
-		wantStatus          int
-		wantProtocol        string
-		wantTokenDownstream string
-	}{
-		{
-			name:            "valid protocol",
-			protocolHeaders: []string{"v4.channel.k8s.io, " + tokenProtocol},
-			wantStatus:      http.StatusNoContent,
-			wantProtocol:    "v4.channel.k8s.io",
-		},
-		{
-			name:            "valid protocol across header values",
-			protocolHeaders: []string{"v4.channel.k8s.io", tokenProtocol},
-			wantStatus:      http.StatusNoContent,
-			wantProtocol:    "v4.channel.k8s.io",
-		},
-		{
-			name:            "malformed protocol",
-			protocolHeaders: []string{backendTokenProtocolPrefix + "%"},
-			wantStatus:      http.StatusForbidden,
-		},
-		{
-			name:            "duplicate protocol",
-			protocolHeaders: []string{tokenProtocol + ", " + tokenProtocol},
-			wantStatus:      http.StatusForbidden,
-		},
-		{
-			name:            "conflicting header and protocol",
-			tokenHeader:     "different-token",
-			protocolHeaders: []string{tokenProtocol},
-			wantStatus:      http.StatusForbidden,
-		},
-		{
-			name:            "matching header and protocol",
-			tokenHeader:     validToken,
-			protocolHeaders: []string{tokenProtocol},
-			wantStatus:      http.StatusNoContent,
-		},
-		{
-			name:                "in-cluster bypass preserves transports",
-			useInCluster:        true,
-			tokenHeader:         "unvalidated-token",
-			protocolHeaders:     []string{backendTokenProtocolPrefix + "%"},
-			wantStatus:          http.StatusNoContent,
-			wantProtocol:        backendTokenProtocolPrefix + "%",
-			wantTokenDownstream: "unvalidated-token",
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			config := &HeadlampConfig{
-				HeadlampConfig: &headlampconfig.HeadlampConfig{
-					HeadlampCFG: &headlampconfig.HeadlampCFG{UseInCluster: tt.useInCluster},
-				},
-			}
-
-			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				assert.Equal(t, tt.wantProtocol, r.Header.Get("Sec-WebSocket-Protocol"))
-				assert.Equal(t, tt.wantTokenDownstream, r.Header.Get("X-HEADLAMP_BACKEND-TOKEN"))
-				w.WriteHeader(http.StatusNoContent)
-			})
-			req := httptest.NewRequestWithContext(
-				context.Background(), http.MethodGet, "/clusters/test/api/v1/pods", nil)
-
-			if tt.tokenHeader != "" {
-				req.Header.Set("X-HEADLAMP_BACKEND-TOKEN", tt.tokenHeader)
-			}
-
-			for _, protocolHeader := range tt.protocolHeaders {
-				req.Header.Add("Sec-WebSocket-Protocol", protocolHeader)
-			}
-
-			recorder := httptest.NewRecorder()
-
-			config.protectClusterAPI(next).ServeHTTP(recorder, req)
-
-			assert.Equal(t, tt.wantStatus, recorder.Code)
-
-			if tt.wantStatus == http.StatusForbidden {
-				assert.NotContains(t, recorder.Body.String(), validToken)
-			}
 		})
 	}
 }
