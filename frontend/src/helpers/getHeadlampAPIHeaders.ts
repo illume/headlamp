@@ -61,7 +61,7 @@ export function getHeadlampWebSocketProtocol(): string | null {
   }
 
   const bytes = new TextEncoder().encode(backendToken);
-  const encodedToken = btoa(String.fromCharCode(...bytes))
+  const encodedToken = btoa(Array.from(bytes, byte => String.fromCharCode(byte)).join(''))
     .replaceAll('+', '-')
     .replaceAll('/', '_')
     .replace(/=+$/, '');
