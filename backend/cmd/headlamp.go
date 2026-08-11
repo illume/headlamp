@@ -678,7 +678,7 @@ func createHeadlampHandler(ctx context.Context, config *HeadlampConfig) http.Han
 	addPluginRoutes(config, r)
 
 	// Setup port forwarding handlers.
-	r.HandleFunc("/clusters/{clusterName}/portforward", func(w http.ResponseWriter, r *http.Request) {
+	r.Handle("/clusters/{clusterName}/portforward", config.protectClusterAPI(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		portforward.StartPortForward(
 			config.KubeConfigStore,
 			config.Cache,
@@ -686,21 +686,21 @@ func createHeadlampHandler(ctx context.Context, config *HeadlampConfig) http.Han
 			w,
 			r,
 		)
-	}).Methods("POST")
+	}))).Methods("POST")
 
-	r.HandleFunc("/clusters/{clusterName}/portforward", func(w http.ResponseWriter, r *http.Request) {
+	r.Handle("/clusters/{clusterName}/portforward", config.protectClusterAPI(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		portforward.StopOrDeletePortForward(config.Cache, w, r)
-	}).Methods("DELETE")
+	}))).Methods("DELETE")
 
-	r.HandleFunc("/clusters/{clusterName}/portforward/list", func(w http.ResponseWriter, r *http.Request) {
+	r.Handle("/clusters/{clusterName}/portforward/list", config.protectClusterAPI(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		portforward.GetPortForwards(config.Cache, w, r)
-	})
-	r.HandleFunc("/clusters/{clusterName}/portforward", func(w http.ResponseWriter, r *http.Request) {
+	})))
+	r.Handle("/clusters/{clusterName}/portforward", config.protectClusterAPI(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		portforward.GetPortForwardByID(config.Cache, w, r)
-	}).Methods("GET")
+	}))).Methods("GET")
 
 	// Expose user info so the frontend can show the current user in the top bar using the per-cluster auth cookie.
-	r.HandleFunc("/clusters/{clusterName}/me",
+	r.Handle("/clusters/{clusterName}/me", config.protectClusterAPI(
 		auth.HandleMe(auth.MeHandlerOptions{
 			UsernamePaths:           config.MeUsernamePaths,
 			EmailPaths:              config.MeEmailPaths,
@@ -711,7 +711,7 @@ func createHeadlampHandler(ctx context.Context, config *HeadlampConfig) http.Han
 			ProxyAuthGroupHeader:    config.ProxyAuthGroupHeader,
 			ProxyAuthEmailHeader:    config.ProxyAuthEmailHeader,
 		}),
-	).Methods("GET")
+	)).Methods("GET")
 
 	config.handleClusterRequests(r)
 
@@ -852,7 +852,9 @@ func createHeadlampHandler(ctx context.Context, config *HeadlampConfig) http.Han
 
 	// Websocket connections
 	if config.Multiplexer != nil {
-		r.HandleFunc("/wsMultiplexer", config.Multiplexer.HandleClientWebSocket)
+		r.Handle("/wsMultiplexer", config.protectClusterAPI(
+			http.HandlerFunc(config.Multiplexer.HandleClientWebSocket),
+		))
 	}
 
 	config.addClusterSetupRoute(r)
@@ -1590,44 +1592,112 @@ func (c *HeadlampConfig) checkHeadlampBackendToken(w http.ResponseWriter, r *htt
 	return nil
 }
 
+const backendTokenProtocolPrefix = "base64url.headlamp.backend.authorization.k8s.io." // #nosec G101
+
+func consumeBackendTokenProtocol(r *http.Request) error {
+	protocolHeader := strings.Join(r.Header.Values("Sec-WebSocket-Protocol"), ",")
+	if protocolHeader == "" {
+		return nil
+	}
+
+	var (
+		backendToken string
+		protocols    []string
+	)
+
+	for _, protocol := range strings.Split(protocolHeader, ",") {
+		protocol = strings.TrimSpace(protocol)
+		if !strings.HasPrefix(protocol, backendTokenProtocolPrefix) {
+			protocols = append(protocols, protocol)
+			continue
+		}
+
+		if backendToken != "" {
+			return errors.New("multiple backend token protocols")
+		}
+
+		encodedToken := strings.TrimPrefix(protocol, backendTokenProtocolPrefix)
+		decodedToken, err := base64.RawURLEncoding.DecodeString(encodedToken)
+		if err != nil || len(decodedToken) == 0 {
+			return errors.New("invalid backend token protocol")
+		}
+
+		backendToken = string(decodedToken)
+	}
+
+	if backendToken == "" {
+		return nil
+	}
+
+	if headerToken := r.Header.Get("X-HEADLAMP_BACKEND-TOKEN"); headerToken != "" && headerToken != backendToken {
+		return errors.New("conflicting backend token transports")
+	}
+
+	r.Header.Set("X-HEADLAMP_BACKEND-TOKEN", backendToken)
+	if len(protocols) == 0 {
+		r.Header.Del("Sec-WebSocket-Protocol")
+	} else {
+		r.Header.Set("Sec-WebSocket-Protocol", strings.Join(protocols, ", "))
+	}
+
+	return nil
+}
+
+func (c *HeadlampConfig) protectClusterAPI(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if c.UseInCluster {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		if err := consumeBackendTokenProtocol(r); err != nil {
+			http.Error(w, "access denied", http.StatusForbidden)
+			return
+		}
+
+		if err := c.checkHeadlampBackendToken(w, r); err != nil {
+			return
+		}
+
+		r.Header.Del("X-HEADLAMP_BACKEND-TOKEN")
+		next.ServeHTTP(w, r)
+	})
+}
+
 // handleClusterServiceProxy registers a new route for the path serviceproxy/{namespace}/{name}
 // to proxy requests to in-cluster services.
 func handleClusterServiceProxy(c *HeadlampConfig, router *mux.Router) {
-	router.HandleFunc("/clusters/{clusterName}/serviceproxy/{namespace}/{name}",
-		func(w http.ResponseWriter, r *http.Request) {
+	router.Handle("/clusters/{clusterName}/serviceproxy/{namespace}/{name}",
+		c.protectClusterAPI(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			serviceproxy.RequestHandler(c.KubeConfigStore, c.shouldUseUnsafeServiceAccountToken(), w, r)
-		}).Queries("request", "{request}").
+		}))).Queries("request", "{request}").
 		Methods("GET")
 }
 
 func handleClusterHelm(c *HeadlampConfig, router *mux.Router) {
-	router.PathPrefix("/clusters/{clusterName}/helm/{.*}").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		ctx := r.Context()
-		path := r.URL.Path
-		clusterName := mux.Vars(r)["clusterName"]
+	router.PathPrefix("/clusters/{clusterName}/helm/{.*}").Handler(c.protectClusterAPI(http.HandlerFunc(
+		func(w http.ResponseWriter, r *http.Request) {
+			ctx := r.Context()
+			path := r.URL.Path
+			clusterName := mux.Vars(r)["clusterName"]
 
-		_, span := telemetry.CreateSpan(ctx, r, "helm", "handleClusterHelm",
-			attribute.String("cluster", clusterName),
-		)
+			_, span := telemetry.CreateSpan(ctx, r, "helm", "handleClusterHelm",
+				attribute.String("cluster", clusterName),
+			)
 
-		c.TelemetryHandler.RecordEvent(span, "Starting Helm operation request")
-		defer span.End()
+			c.TelemetryHandler.RecordEvent(span, "Starting Helm operation request")
+			defer span.End()
 
-		c.TelemetryHandler.RecordRequestCount(ctx, r, attribute.String("cluster", clusterName))
+			c.TelemetryHandler.RecordRequestCount(ctx, r, attribute.String("cluster", clusterName))
 
-		if err := c.checkHeadlampBackendToken(w, r); err != nil {
-			c.handleError(w, ctx, span, err, "failed to check headlamp backend token", http.StatusForbidden)
-			return
-		}
+			helmHandler, err := getHelmHandler(c, w, r)
+			if err != nil {
+				c.handleError(w, ctx, span, err, "failed to get helm handler", http.StatusForbidden)
+				return
+			}
 
-		helmHandler, err := getHelmHandler(c, w, r)
-		if err != nil {
-			c.handleError(w, ctx, span, err, "failed to get helm handler", http.StatusForbidden)
-			return
-		}
-
-		c.dispatchHelmRoute(ctx, span, w, r, path, clusterName, helmHandler)
-	})
+			c.dispatchHelmRoute(ctx, span, w, r, path, clusterName, helmHandler)
+		})))
 }
 
 func (c *HeadlampConfig) helmRouteReleaseHandler(
@@ -1891,14 +1961,15 @@ func clusterRequestHandler(c *HeadlampConfig) http.Handler { //nolint:funlen
 // It parses the request and creates a proxy request to the cluster.
 // That proxy is saved in the cache with the context key.
 func handleClusterAPI(c *HeadlampConfig, router *mux.Router) {
-	router.HandleFunc("/clusters/{clusterName}/set-token", c.handleSetToken).Methods("POST")
+	router.Handle("/clusters/{clusterName}/set-token",
+		c.protectClusterAPI(http.HandlerFunc(c.handleSetToken))).Methods("POST")
 
 	handler := clusterRequestHandler(c)
 	if c.CacheEnabled {
 		handler = CacheMiddleWare(c)(handler)
 	}
 
-	router.PathPrefix("/clusters/{clusterName}/{api:.*}").Handler(handler)
+	router.PathPrefix("/clusters/{clusterName}/{api:.*}").Handler(c.protectClusterAPI(handler))
 }
 
 func recordRequestCompletion(c *HeadlampConfig, ctx context.Context,

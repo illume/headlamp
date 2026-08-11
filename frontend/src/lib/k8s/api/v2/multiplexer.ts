@@ -15,6 +15,7 @@
  */
 
 import { useCallback, useEffect, useMemo } from 'react';
+import { getHeadlampWebSocketProtocol } from '../../../../helpers/getHeadlampAPIHeaders';
 import { getUserIdFromLocalStorage } from '../../../../stateless/getUserIdFromLocalStorage';
 import { getBaseWsUrl } from './webSocket';
 
@@ -106,7 +107,8 @@ export const WebSocketManager = {
     return new Promise((resolve, reject) => {
       let socket: WebSocket;
       try {
-        socket = new WebSocket(wsUrl);
+        const backendTokenProtocol = getHeadlampWebSocketProtocol();
+        socket = backendTokenProtocol ? new WebSocket(wsUrl, backendTokenProtocol) : new WebSocket(wsUrl);
       } catch (e) {
         this.connecting = false;
         reject(e instanceof Error ? e : new Error(String(e)));

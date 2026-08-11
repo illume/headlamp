@@ -1353,11 +1353,136 @@ func TestRestrictedEndpointsRequireToken(t *testing.T) {
 			path:   "/clusters/" + minikubeName + "/helm/releases",
 			body:   nil,
 		},
+		{
+			name:   "GET /clusters/{name}/portforward/list",
+			method: http.MethodGet,
+			path:   "/clusters/" + minikubeName + "/portforward/list",
+			body:   nil,
+		},
+		{
+			name:   "GET /clusters/{name}/me",
+			method: http.MethodGet,
+			path:   "/clusters/" + minikubeName + "/me",
+			body:   nil,
+		},
+		{
+			name:   "GET /clusters/{name}/serviceproxy/{namespace}/{name}",
+			method: http.MethodGet,
+			path:   "/clusters/" + minikubeName + "/serviceproxy/default/test?request=/",
+			body:   nil,
+		},
+		{
+			name:   "POST /clusters/{name}/set-token",
+			method: http.MethodPost,
+			path:   "/clusters/" + minikubeName + "/set-token",
+			body:   nil,
+		},
+		{
+			name:   "GET /clusters/{name}/{api}",
+			method: http.MethodGet,
+			path:   "/clusters/" + minikubeName + "/api/v1/pods",
+			body:   nil,
+		},
 	}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			assertRouteRequiresBackendToken(t, tc.method, tc.path, tc.body, validToken)
+		})
+	}
+}
+
+func TestProtectClusterAPIWebSocketProtocol(t *testing.T) {
+	const (
+		validToken    = "desktop-token"
+		encodedToken  = "ZGVza3RvcC10b2tlbg"
+		tokenProtocol = backendTokenProtocolPrefix + encodedToken
+	)
+
+	t.Setenv("HEADLAMP_BACKEND_TOKEN", validToken)
+
+	tests := []struct {
+		name                string
+		useInCluster        bool
+		tokenHeader         string
+		protocolHeaders     []string
+		wantStatus          int
+		wantProtocol        string
+		wantTokenDownstream string
+	}{
+		{
+			name:            "valid protocol",
+			protocolHeaders: []string{"v4.channel.k8s.io, " + tokenProtocol},
+			wantStatus:      http.StatusNoContent,
+			wantProtocol:    "v4.channel.k8s.io",
+		},
+		{
+			name:            "valid protocol across header values",
+			protocolHeaders: []string{"v4.channel.k8s.io", tokenProtocol},
+			wantStatus:      http.StatusNoContent,
+			wantProtocol:    "v4.channel.k8s.io",
+		},
+		{
+			name:            "malformed protocol",
+			protocolHeaders: []string{backendTokenProtocolPrefix + "%"},
+			wantStatus:      http.StatusForbidden,
+		},
+		{
+			name:            "duplicate protocol",
+			protocolHeaders: []string{tokenProtocol + ", " + tokenProtocol},
+			wantStatus:      http.StatusForbidden,
+		},
+		{
+			name:            "conflicting header and protocol",
+			tokenHeader:     "different-token",
+			protocolHeaders: []string{tokenProtocol},
+			wantStatus:      http.StatusForbidden,
+		},
+		{
+			name:            "matching header and protocol",
+			tokenHeader:     validToken,
+			protocolHeaders: []string{tokenProtocol},
+			wantStatus:      http.StatusNoContent,
+		},
+		{
+			name:                "in-cluster bypass preserves transports",
+			useInCluster:        true,
+			tokenHeader:         "unvalidated-token",
+			protocolHeaders:     []string{backendTokenProtocolPrefix + "%"},
+			wantStatus:          http.StatusNoContent,
+			wantProtocol:        backendTokenProtocolPrefix + "%",
+			wantTokenDownstream: "unvalidated-token",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			config := &HeadlampConfig{
+				HeadlampConfig: &headlampconfig.HeadlampConfig{
+					HeadlampCFG: &headlampconfig.HeadlampCFG{UseInCluster: tt.useInCluster},
+				},
+			}
+
+			next := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				assert.Equal(t, tt.wantProtocol, r.Header.Get("Sec-WebSocket-Protocol"))
+				assert.Equal(t, tt.wantTokenDownstream, r.Header.Get("X-HEADLAMP_BACKEND-TOKEN"))
+				w.WriteHeader(http.StatusNoContent)
+			})
+			req := httptest.NewRequest(http.MethodGet, "/clusters/test/api/v1/pods", nil)
+			if tt.tokenHeader != "" {
+				req.Header.Set("X-HEADLAMP_BACKEND-TOKEN", tt.tokenHeader)
+			}
+			for _, protocolHeader := range tt.protocolHeaders {
+				req.Header.Add("Sec-WebSocket-Protocol", protocolHeader)
+			}
+			recorder := httptest.NewRecorder()
+
+			config.protectClusterAPI(next).ServeHTTP(recorder, req)
+
+			assert.Equal(t, tt.wantStatus, recorder.Code)
+			if tt.wantStatus == http.StatusForbidden {
+				assert.NotContains(t, recorder.Body.String(), validToken)
+			}
 		})
 	}
 }
@@ -1439,9 +1564,6 @@ func assertRouteRequiresBackendToken(t *testing.T, method, path string, body int
 					method, path, av.name)
 			} else {
 				assert.NotEqual(t, http.StatusForbidden, rr.Code,
-					"%s %s with a valid token must NOT be rejected by the backend-token gate",
-					method, path)
-				assert.NotEqual(t, http.StatusUnauthorized, rr.Code,
 					"%s %s with a valid token must NOT be rejected by the backend-token gate",
 					method, path)
 			}
@@ -1553,6 +1675,9 @@ func TestRestrictedEndpointsBypassedInCluster(t *testing.T) {
 }
 
 func TestHandleClusterAPI_XForwardedHost(t *testing.T) {
+	const backendToken = "test-backend-token"
+	t.Setenv("HEADLAMP_BACKEND_TOKEN", backendToken)
+
 	// Create a new server for testing
 	proxyServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Verify that X-Forwarded-Host is set to r.Host
@@ -1596,6 +1721,7 @@ func TestHandleClusterAPI_XForwardedHost(t *testing.T) {
 	ctx := context.Background()
 	req, err := http.NewRequestWithContext(ctx, "GET", "/clusters/test/version", nil)
 	require.NoError(t, err)
+	req.Header.Set("X-HEADLAMP_BACKEND-TOKEN", backendToken)
 
 	// Create a response recorder to capture the response
 	rr := httptest.NewRecorder()
@@ -3364,6 +3490,9 @@ func TestCacheMiddleware_CacheInvalidation_RealK8s(t *testing.T) {
 
 //nolint:funlen
 func TestHandleClusterServiceProxy(t *testing.T) {
+	const backendToken = "test-backend-token"
+	t.Setenv("HEADLAMP_BACKEND_TOKEN", backendToken)
+
 	cfg := &HeadlampConfig{
 		HeadlampConfig: &headlampconfig.HeadlampConfig{
 			HeadlampCFG:      &headlampconfig.HeadlampCFG{KubeConfigStore: kubeconfig.NewContextStore()},
@@ -3456,6 +3585,7 @@ func TestHandleClusterServiceProxy(t *testing.T) {
 	{
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet,
 			"/clusters/"+cluster+"/serviceproxy/"+ns+"/"+svc+"?request=/healthz", nil)
+		req.Header.Set("X-HEADLAMP_BACKEND-TOKEN", backendToken)
 		rr := httptest.NewRecorder()
 		router.ServeHTTP(rr, req)
 		assert.Equal(t, http.StatusUnauthorized, rr.Code)
@@ -3468,6 +3598,7 @@ func TestHandleClusterServiceProxy(t *testing.T) {
 	{
 		req := httptest.NewRequestWithContext(context.Background(), http.MethodGet,
 			"/clusters/"+cluster+"/serviceproxy/"+ns+"/"+svc+"?request=/healthz", nil)
+		req.Header.Set("X-HEADLAMP_BACKEND-TOKEN", backendToken)
 		req.Header.Set("Authorization", "Bearer test-token")
 
 		rr := httptest.NewRecorder()
@@ -3849,6 +3980,9 @@ func TestClusterRequestHandlerUsesServiceAccountToken(t *testing.T) { //nolint:f
 }
 
 func TestClusterRequestHandlerStripsProxyAuthTokenHeader(t *testing.T) {
+	const backendToken = "test-backend-token"
+	t.Setenv("HEADLAMP_BACKEND_TOKEN", backendToken)
+
 	const cluster, proxyAuthTokenHeader = "main", "Impersonate-User"
 
 	var receivedAuth, receivedProxyAuthToken string
@@ -3889,6 +4023,7 @@ func TestClusterRequestHandlerStripsProxyAuthTokenHeader(t *testing.T) {
 	handleClusterAPI(c, router)
 
 	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/clusters/main/api/v1/pods", nil)
+	req.Header.Set("X-HEADLAMP_BACKEND-TOKEN", backendToken)
 	req.Header.Set(proxyAuthTokenHeader, "proxy-token")
 
 	rr := httptest.NewRecorder()

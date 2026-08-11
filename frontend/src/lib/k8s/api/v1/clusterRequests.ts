@@ -20,6 +20,7 @@ import type { OpPatch } from 'json-patch';
 import { addBackstageAuthHeaders } from '../../../../helpers/addBackstageAuthHeaders';
 import { isDebugVerbose } from '../../../../helpers/debugVerbose';
 import { getAppUrl } from '../../../../helpers/getAppUrl';
+import { getHeadlampAPIHeaders } from '../../../../helpers/getHeadlampAPIHeaders';
 import { isBackstage } from '../../../../helpers/isBackstage';
 import store from '../../../../redux/stores/store';
 import { findKubeconfigByClusterName } from '../../../../stateless/findKubeconfigByClusterName';
@@ -151,6 +152,7 @@ export async function clusterRequest(
       opts.headers['KUBECONFIG'] = kubeconfig;
       opts.headers['X-HEADLAMP-USER-ID'] = userID;
     }
+    Object.assign(opts.headers, getHeadlampAPIHeaders());
 
     fullPath = combinePath(`/${CLUSTERS_PREFIX}/${cluster}`, path);
   }
