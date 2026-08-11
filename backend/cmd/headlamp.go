@@ -696,16 +696,19 @@ func createHeadlampHandler(ctx context.Context, config *HeadlampConfig) http.Han
 		},
 	))).Methods("DELETE")
 
-	r.Handle("/clusters/{clusterName}/portforward/list", auth.NewBackendTokenMiddleware(config.UseInCluster)(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
-			portforward.GetPortForwards(config.Cache, w, r)
-		},
-	)))
+	r.Handle(
+		"/clusters/{clusterName}/portforward/list",
+		auth.NewBackendTokenMiddleware(config.UseInCluster)(http.HandlerFunc(
+			func(w http.ResponseWriter, r *http.Request) {
+				portforward.GetPortForwards(config.Cache, w, r)
+			},
+		)),
+	)
 	r.Handle("/clusters/{clusterName}/portforward", auth.NewBackendTokenMiddleware(config.UseInCluster)(http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			portforward.GetPortForwardByID(config.Cache, w, r)
-		},
-	))).Methods("GET")
+		})),
+	).Methods("GET")
 
 	// Expose user info so the frontend can show the current user in the top bar using the per-cluster auth cookie.
 	r.Handle("/clusters/{clusterName}/me", auth.NewBackendTokenMiddleware(config.UseInCluster)(
@@ -1013,9 +1016,11 @@ func createHeadlampHandler(ctx context.Context, config *HeadlampConfig) http.Han
 		http.Redirect(w, r, authURL, http.StatusFound)
 	}).Queries("cluster", "{cluster}")
 
-	r.HandleFunc("/drain-node", config.handleNodeDrain).Methods("POST")
-	r.HandleFunc("/drain-node-status",
-		config.handleNodeDrainStatus).Methods("GET").Queries("cluster", "{cluster}", "nodeName", "{node}")
+	r.Handle("/drain-node",
+		auth.NewBackendTokenMiddleware(config.UseInCluster)(http.HandlerFunc(config.handleNodeDrain))).Methods("POST")
+	r.Handle("/drain-node-status",
+		auth.NewBackendTokenMiddleware(config.UseInCluster)(http.HandlerFunc(
+			config.handleNodeDrainStatus))).Methods("GET").Queries("cluster", "{cluster}", "nodeName", "{node}")
 
 	r.HandleFunc("/oidc-callback", func(w http.ResponseWriter, r *http.Request) {
 		// Shadow createHeadlampHandler's outer-scope err so any log call in
@@ -1592,8 +1597,8 @@ func handleClusterServiceProxy(c *HeadlampConfig, router *mux.Router) {
 }
 
 func handleClusterHelm(c *HeadlampConfig, router *mux.Router) {
-	router.PathPrefix("/clusters/{clusterName}/helm/{.*}").Handler(auth.NewBackendTokenMiddleware(c.UseInCluster)(http.HandlerFunc(
-		func(w http.ResponseWriter, r *http.Request) {
+	router.PathPrefix("/clusters/{clusterName}/helm/{.*}").Handler(
+		auth.NewBackendTokenMiddleware(c.UseInCluster)(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			ctx := r.Context()
 			path := r.URL.Path
 			clusterName := mux.Vars(r)["clusterName"]
@@ -2776,7 +2781,8 @@ func (c *HeadlampConfig) addClusterSetupRoute(r *mux.Router) {
 	r.HandleFunc("/cluster/{name}", c.deleteCluster).Methods("DELETE")
 
 	// Rename a cluster
-	r.HandleFunc("/cluster/{name}", c.renameCluster).Methods("PUT")
+	r.Handle("/cluster/{name}",
+		auth.NewBackendTokenMiddleware(c.UseInCluster)(http.HandlerFunc(c.renameCluster))).Methods("PUT")
 }
 
 /*

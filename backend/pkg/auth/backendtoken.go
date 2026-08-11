@@ -25,7 +25,7 @@ import (
 )
 
 const (
-	backendTokenHeader         = "X-HEADLAMP_BACKEND-TOKEN"
+	backendTokenHeader         = "X-HEADLAMP_BACKEND-TOKEN"                         // #nosec G101
 	backendTokenProtocolPrefix = "base64url.headlamp.backend.authorization.k8s.io." // #nosec G101
 )
 

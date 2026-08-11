@@ -15,9 +15,12 @@
  */
 
 import { renderHook, waitFor } from '@testing-library/react';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, Mock, vi } from 'vitest';
 import WS from 'vitest-websocket-mock';
-import { useWebSockets } from './webSocket';
+import { setBackendToken } from '../../../../helpers/getHeadlampAPIHeaders';
+import { findKubeconfigByClusterName } from '../../../../stateless/findKubeconfigByClusterName';
+import { getUserIdFromLocalStorage } from '../../../../stateless/getUserIdFromLocalStorage';
+import { openWebSocket, useWebSockets } from './webSocket';
 import { BASE_WS_URL } from './webSocket';
 
 vi.mock('../../../cluster', () => ({
@@ -35,6 +38,52 @@ vi.mock('../../../../stateless/getUserIdFromLocalStorage', () => ({
 describe('useWebSockets', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  describe('openWebSocket protocols', () => {
+    afterEach(() => {
+      setBackendToken(null);
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    });
+
+    it.each([
+      {
+        name: 'with a backend token',
+        token: 'desktop-token',
+        backendProtocol: 'base64url.headlamp.backend.authorization.k8s.io.ZGVza3RvcC10b2tlbg',
+      },
+      { name: 'without a backend token', token: null, backendProtocol: null },
+    ])('preserves Kubernetes, caller, and stateless protocols $name', async testCase => {
+      const socket = {
+        addEventListener: vi.fn(),
+        binaryType: '',
+      };
+      const WebSocketMock = vi.fn(function () {
+        return socket;
+      });
+      vi.stubGlobal('WebSocket', WebSocketMock);
+      (findKubeconfigByClusterName as Mock).mockResolvedValue({});
+      (getUserIdFromLocalStorage as Mock).mockReturnValue('stateless-user');
+      setBackendToken(testCase.token);
+
+      await openWebSocket('/api/v1/pods', {
+        cluster: 'test-cluster',
+        protocols: ['caller.protocol'],
+        type: 'binary',
+        onMessage: vi.fn(),
+      });
+
+      expect(WebSocketMock).toHaveBeenCalledWith(
+        expect.stringContaining('/clusters/test-cluster/api/v1/pods'),
+        [
+          'base64.binary.k8s.io',
+          'caller.protocol',
+          ...(testCase.backendProtocol ? [testCase.backendProtocol] : []),
+          'base64url.headlamp.authorization.k8s.io.stateless-user',
+        ]
+      );
+    });
   });
 
   afterEach(() => {

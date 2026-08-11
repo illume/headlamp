@@ -15,201 +15,113 @@
  */
 
 import { expect, test } from '@playwright/test';
-import { createHash } from 'crypto';
+import { execFileSync } from 'child_process';
 import fs from 'fs';
-import { createServer, Server } from 'http';
-import { AddressInfo, Socket } from 'net';
 import os from 'os';
 import path from 'path';
 import { _electron, Page } from 'playwright';
-import { HeadlampPage } from './headlampPage';
-import { NamespacesPage } from './namespacesPage';
 
+const clusterName = `headlamp-token-${process.pid}`;
+const watchNamespace = `headlamp-token-watch-${process.pid}`;
+const testDir = path.join(os.tmpdir(), `headlamp-e2e-backend-token-${process.pid}`);
+const minikubeKubeconfig = path.join(testDir, 'minikube.kubeconfig');
+const appKubeconfig = path.join(testDir, 'app.kubeconfig');
+const isolatedConfigDir = path.join(testDir, 'config');
 const electronExecutable = process.platform === 'win32' ? 'electron.cmd' : 'electron';
 const electronPath = path.resolve(__dirname, `../../node_modules/.bin/${electronExecutable}`);
 const appPath = path.resolve(__dirname, '../../');
-const isolatedKubeconfig = path.join(
-  os.tmpdir(),
-  `headlamp-e2e-backend-token-${process.pid}.kubeconfig`,
-);
-const isolatedConfigDir = path.join(
-  os.tmpdir(),
-  `headlamp-e2e-backend-token-config-${process.pid}`,
-);
 
 let electronApp: Awaited<ReturnType<typeof _electron.launch>>;
 let electronPage: Page;
-let kubernetesServer: Server;
-const kubernetesSockets = new Set<Socket>();
 
-function isNamespacesRequest(url: string): boolean {
-  return new URL(url).pathname === '/clusters/minikube/api/v1/namespaces';
+function run(
+  command: string,
+  args: string[],
+  ignoreFailure = false,
+  env: NodeJS.ProcessEnv = process.env
+): string {
+  try {
+    return execFileSync(command, args, {
+      encoding: 'utf8',
+      env,
+      stdio: ['ignore', 'pipe', 'inherit'],
+    }).trim();
+  } catch (error) {
+    if (ignoreFailure) {
+      return '';
+    }
+    throw error;
+  }
+}
+
+function setupCertificateBackedCluster(): void {
+  fs.mkdirSync(isolatedConfigDir, { recursive: true, mode: 0o700 });
+  run('minikube', ['start', '--profile', clusterName], false, {
+    ...process.env,
+    KUBECONFIG: minikubeKubeconfig,
+  });
+
+  const kubeconfig = run('kubectl', [
+    '--kubeconfig',
+    minikubeKubeconfig,
+    '--context',
+    clusterName,
+    'config',
+    'view',
+    '--minify',
+    '--raw',
+    '--flatten',
+  ]);
+  if (
+    !kubeconfig.includes('certificate-authority-data:') ||
+    !kubeconfig.includes('client-certificate-data:')
+  ) {
+    throw new Error('Expected minikube to produce a certificate-backed kubeconfig');
+  }
+  fs.writeFileSync(appKubeconfig, kubeconfig, { mode: 0o600 });
 }
 
 function getBackendPort(): Promise<number | undefined> {
   return electronPage.evaluate(
-    () => (window as Window & { headlampBackendPort?: number }).headlampBackendPort,
+    () => (window as Window & { headlampBackendPort?: number }).headlampBackendPort
   );
 }
 
-function withTimeout<T>(promise: Promise<T>, message: string): Promise<T> {
-  let timeout: ReturnType<typeof setTimeout>;
-  const timeoutPromise = new Promise<never>((_, reject) => {
-    timeout = setTimeout(() => reject(new Error(message)), 5000);
-  });
+function getBackendToken(): Promise<string> {
+  return electronPage.evaluate(
+    () =>
+      new Promise<string>((resolve, reject) => {
+        const desktopApi = (
+          window as Window & {
+            desktopApi?: {
+              send: (channel: string, data?: unknown) => void;
+              receive: (
+                channel: string,
+                callback: (token: string) => void
+              ) => (() => void) | undefined;
+            };
+          }
+        ).desktopApi;
+        if (!desktopApi) {
+          reject(new Error('Desktop API is unavailable'));
+          return;
+        }
 
-  return Promise.race([promise, timeoutPromise]).finally(() => clearTimeout(timeout));
+        let unsubscribe: (() => void) | undefined;
+        unsubscribe = desktopApi.receive('backend-token', token => {
+          unsubscribe?.();
+          resolve(token);
+        });
+        desktopApi.send('request-backend-token');
+      })
+  );
 }
 
 test.beforeAll(async () => {
   test.skip(process.env.PLAYWRIGHT_TEST_MODE !== 'app', 'These tests only run in app mode');
+  test.setTimeout(4 * 60 * 1000);
 
-  kubernetesServer = createServer((request, response) => {
-    const pathname = new URL(request.url ?? '/', 'http://127.0.0.1').pathname;
-    let body: object;
-
-    switch (pathname) {
-      case '/version':
-        body = {
-          major: '1',
-          minor: '34',
-          gitVersion: 'v1.34.0',
-          gitCommit: 'headlamp-e2e',
-          gitTreeState: 'clean',
-          buildDate: '2026-01-01T00:00:00Z',
-          goVersion: 'go1.24.0',
-          compiler: 'gc',
-          platform: 'linux/amd64',
-        };
-        break;
-      case '/api':
-        body = {
-          apiVersion: 'v1',
-          kind: 'APIVersions',
-          versions: ['v1'],
-          serverAddressByClientCIDRs: [],
-        };
-        break;
-      case '/apis':
-        body = { apiVersion: 'v1', kind: 'APIGroupList', groups: [] };
-        break;
-      case '/api/v1':
-        body = {
-          apiVersion: 'v1',
-          kind: 'APIResourceList',
-          groupVersion: 'v1',
-          resources: [
-            {
-              name: 'namespaces',
-              singularName: '',
-              namespaced: false,
-              kind: 'Namespace',
-              verbs: ['get', 'list', 'watch'],
-            },
-          ],
-        };
-        break;
-      case '/api/v1/namespaces':
-        body = {
-          apiVersion: 'v1',
-          kind: 'NamespaceList',
-          metadata: { resourceVersion: '1' },
-          items: [],
-        };
-        break;
-      case '/apis/authorization.k8s.io/v1/selfsubjectrulesreviews':
-        body = {
-          apiVersion: 'authorization.k8s.io/v1',
-          kind: 'SelfSubjectRulesReview',
-          status: {
-            resourceRules: [{ verbs: ['*'], apiGroups: ['*'], resources: ['*'] }],
-            nonResourceRules: [{ verbs: ['*'], nonResourceURLs: ['*'] }],
-            incomplete: false,
-          },
-        };
-        break;
-      case '/apis/authorization.k8s.io/v1/selfsubjectaccessreviews':
-        body = {
-          apiVersion: 'authorization.k8s.io/v1',
-          kind: 'SelfSubjectAccessReview',
-          status: { allowed: true },
-        };
-        break;
-      case '/apis/authentication.k8s.io/v1/selfsubjectreviews':
-        body = {
-          apiVersion: 'authentication.k8s.io/v1',
-          kind: 'SelfSubjectReview',
-          status: { userInfo: { username: 'headlamp-e2e', groups: ['system:masters'] } },
-        };
-        break;
-      default:
-        response.statusCode = 404;
-        body = {
-          apiVersion: 'v1',
-          kind: 'Status',
-          status: 'Failure',
-          reason: 'NotFound',
-          code: 404,
-        };
-    }
-
-    response.setHeader('Content-Type', 'application/json');
-    response.end(JSON.stringify(body));
-  });
-  kubernetesServer.on('upgrade', (request, socket) => {
-    const websocketKey = request.headers['sec-websocket-key'];
-    if (typeof websocketKey !== 'string') {
-      socket.destroy();
-      return;
-    }
-
-    const accept = createHash('sha1')
-      .update(websocketKey + '258EAFA5-E914-47DA-95CA-C5AB0DC85B11')
-      .digest('base64');
-    const protocol = request.headers['sec-websocket-protocol']?.split(',')[0]?.trim();
-    const responseHeaders = [
-      'HTTP/1.1 101 Switching Protocols',
-      'Upgrade: websocket',
-      'Connection: Upgrade',
-      `Sec-WebSocket-Accept: ${accept}`,
-    ];
-    if (protocol) {
-      responseHeaders.push(`Sec-WebSocket-Protocol: ${protocol}`);
-    }
-
-    socket.write(responseHeaders.join('\r\n') + '\r\n\r\n');
-    kubernetesSockets.add(socket);
-    socket.on('close', () => kubernetesSockets.delete(socket));
-  });
-  await new Promise<void>((resolve, reject) => {
-    kubernetesServer.once('error', reject);
-    kubernetesServer.listen(0, '127.0.0.1', resolve);
-  });
-
-  const kubernetesPort = (kubernetesServer.address() as AddressInfo).port;
-  fs.mkdirSync(isolatedConfigDir, { recursive: true, mode: 0o700 });
-  fs.writeFileSync(
-    isolatedKubeconfig,
-    `apiVersion: v1
-kind: Config
-clusters:
-- name: minikube
-  cluster:
-    server: http://127.0.0.1:${kubernetesPort}
-contexts:
-- name: minikube
-  context:
-    cluster: minikube
-    user: minikube
-current-context: minikube
-users:
-- name: minikube
-  user:
-    token: headlamp-e2e
-`,
-    { mode: 0o600 },
-  );
-
+  setupCertificateBackedCluster();
   electronApp = await _electron.launch({
     cwd: appPath,
     executablePath: electronPath,
@@ -218,38 +130,38 @@ users:
       ...process.env,
       NODE_ENV: 'development',
       ELECTRON_DEV: 'true',
-      KUBECONFIG: isolatedKubeconfig,
+      KUBECONFIG: appKubeconfig,
       XDG_CONFIG_HOME: isolatedConfigDir,
     },
   });
   electronPage = await electronApp.firstWindow();
+  await electronPage.waitForLoadState('load');
 });
 
 test.afterAll(async () => {
-  await electronApp?.close();
-  for (const socket of kubernetesSockets) {
-    socket.destroy();
-  }
-  if (kubernetesServer) {
-    await new Promise<void>((resolve, reject) => {
-      kubernetesServer.close(error => (error ? reject(error) : resolve()));
-    });
-  }
-  fs.rmSync(isolatedKubeconfig, { force: true });
-  fs.rmSync(isolatedConfigDir, { force: true, recursive: true });
-});
+  test.setTimeout(2 * 60 * 1000);
 
-test.beforeEach(async ({ page }) => {
-  test.skip(process.env.PLAYWRIGHT_TEST_MODE !== 'app', 'These tests only run in app mode');
-  await page.close();
+  await electronApp?.close();
+  if (fs.existsSync(appKubeconfig)) {
+    run(
+      'kubectl',
+      ['--kubeconfig', appKubeconfig, 'delete', 'namespace', watchNamespace, '--ignore-not-found'],
+      true
+    );
+  }
+  run('minikube', ['delete', '--profile', clusterName], true, {
+    ...process.env,
+    KUBECONFIG: minikubeKubeconfig,
+  });
+  fs.rmSync(testDir, { force: true, recursive: true });
 });
 
 test.describe('desktop backend token', () => {
-  test('rejects tokenless cluster HTTP and multiplexer WebSocket requests', async () => {
+  test('rejects tokenless cluster REST and multiplexer requests', async () => {
     await expect.poll(getBackendPort).toBeGreaterThan(0);
     const backendPort = (await getBackendPort())!;
 
-    const response = await fetch(`http://localhost:${backendPort}/clusters/minikube/version`);
+    const response = await fetch(`http://localhost:${backendPort}/clusters/${clusterName}/version`);
     expect(response.status).toBe(403);
 
     const websocketOpened = await electronPage.evaluate(
@@ -271,64 +183,126 @@ test.describe('desktop backend token', () => {
             resolve(false);
           });
         }),
-      backendPort,
+      backendPort
     );
     expect(websocketOpened).toBe(false);
   });
 
-  test('authorizes renderer cluster HTTP and WebSocket requests', async () => {
-    const headlampPage = new HeadlampPage(electronPage);
-    const namespacesPage = new NamespacesPage(electronPage);
-    await headlampPage.authenticate();
+  test('authorizes certificate-backed REST and multiplexer watch updates', async () => {
+    test.setTimeout(2 * 60 * 1000);
+    await expect.poll(getBackendPort).toBeGreaterThan(0);
+    const backendPort = (await getBackendPort())!;
 
-    const cdpSession = await electronPage.context().newCDPSession(electronPage);
-    await cdpSession.send('Network.enable');
-
-    const namespaceWebsocketRequestIds = new Set<string>();
-    cdpSession.on('Network.webSocketCreated', event => {
-      if (isNamespacesRequest(event.url)) {
-        namespaceWebsocketRequestIds.add(event.requestId);
-      }
+    const namespacesPath = `/clusters/${clusterName}/api/v1/namespaces`;
+    const responsePromise = electronPage.waitForResponse(response => {
+      const url = new URL(response.url());
+      return url.pathname === namespacesPath && url.searchParams.get('watch') !== '1';
     });
-    const websocketProtocolPromise = new Promise<boolean>(resolve => {
-      cdpSession.on('Network.webSocketWillSendHandshakeRequest', event => {
-        if (namespaceWebsocketRequestIds.has(event.requestId)) {
-          resolve(
-            Object.entries(event.request.headers).some(
-              ([name, value]) =>
-                name.toLowerCase() === 'sec-websocket-protocol' &&
-                String(value).includes('base64url.headlamp.backend.authorization.k8s.io.'),
-            ),
-          );
-        }
-      });
-    });
-    const websocketStatusPromise = new Promise<number>(resolve => {
-      cdpSession.on('Network.webSocketHandshakeResponseReceived', event => {
-        if (namespaceWebsocketRequestIds.has(event.requestId)) {
-          resolve(event.response.status);
-        }
-      });
-    });
-    const responsePromise = electronPage.waitForResponse(response =>
-      isNamespacesRequest(response.url()),
-    );
-    const websocketPromise = electronPage.waitForEvent('websocket', websocket =>
-      isNamespacesRequest(websocket.url()),
-    );
-
-    await namespacesPage.navigateToNamespaces();
+    await electronPage.evaluate(name => {
+      window.location.hash = `#/c/${name}`;
+    }, clusterName);
+    await electronPage.waitForURL(new RegExp(`/c/${clusterName}`));
+    await electronPage.getByText('Namespaces', { exact: true }).click();
 
     const response = await responsePromise;
     expect(response.status()).toBe(200);
-    expect(Boolean(response.request().headers()['x-headlamp_backend-token'])).toBe(true);
+    expect(response.request().headers()['x-headlamp_backend-token']).toBeTruthy();
 
-    await websocketPromise;
-    expect(
-      await withTimeout(websocketProtocolPromise, 'Namespace WebSocket protocol was not captured'),
-    ).toBe(true);
-    expect(
-      await withTimeout(websocketStatusPromise, 'Namespace WebSocket handshake was not captured'),
-    ).toBe(101);
+    const backendToken = await getBackendToken();
+    const backendProtocol =
+      'base64url.headlamp.backend.authorization.k8s.io.' +
+      Buffer.from(backendToken).toString('base64url');
+
+    await electronPage.evaluate(
+      ({ port, protocol, cluster, namespace }) =>
+        new Promise<void>((resolve, reject) => {
+          type WatchWindow = Window & {
+            backendTokenWatch?: Promise<string>;
+            backendTokenWatchSocket?: WebSocket;
+          };
+          const watchWindow = window as WatchWindow;
+          const socket = new WebSocket(`ws://localhost:${port}/wsMultiplexer`, protocol);
+          watchWindow.backendTokenWatchSocket = socket;
+
+          let resolveWatch: (data: string) => void = () => {};
+          let rejectWatch: (error: Error) => void = () => {};
+          watchWindow.backendTokenWatch = new Promise<string>((watchResolve, watchReject) => {
+            resolveWatch = watchResolve;
+            rejectWatch = watchReject;
+          });
+
+          const timeout = window.setTimeout(() => {
+            const error = new Error('Timed out waiting for a multiplexer watch update');
+            rejectWatch(error);
+            reject(error);
+            socket.close();
+          }, 30000);
+
+          socket.addEventListener('open', () => {
+            socket.send(
+              JSON.stringify({
+                clusterId: cluster,
+                path: '/api/v1/namespaces',
+                query: 'watch=1',
+                userId: 'desktop-e2e',
+                type: 'REQUEST',
+              })
+            );
+          });
+          socket.addEventListener('message', event => {
+            const message = JSON.parse(String(event.data));
+            if (message.type === 'ERROR') {
+              const error = new Error(message.data || 'Multiplexer returned an error');
+              window.clearTimeout(timeout);
+              rejectWatch(error);
+              reject(error);
+              socket.close();
+              return;
+            }
+            if (message.type === 'STATUS' && JSON.parse(message.data).state === 'connected') {
+              resolve();
+              return;
+            }
+            if (message.type === 'DATA') {
+              const data = message.binary ? atob(message.data) : message.data;
+              if (data.includes(namespace)) {
+                window.clearTimeout(timeout);
+                resolveWatch(data);
+              }
+            }
+          });
+          socket.addEventListener('error', () => {
+            const error = new Error('Multiplexer WebSocket failed');
+            window.clearTimeout(timeout);
+            rejectWatch(error);
+            reject(error);
+          });
+        }),
+      {
+        port: backendPort,
+        protocol: backendProtocol,
+        cluster: clusterName,
+        namespace: watchNamespace,
+      }
+    );
+
+    run('kubectl', ['--kubeconfig', appKubeconfig, 'create', 'namespace', watchNamespace]);
+    const watchData = await electronPage.evaluate(
+      () =>
+        (
+          window as Window & {
+            backendTokenWatch?: Promise<string>;
+          }
+        ).backendTokenWatch
+    );
+
+    expect(watchData).toContain(watchNamespace);
+    await electronPage.evaluate(() => {
+      (
+        window as Window & {
+          backendTokenWatchSocket?: WebSocket;
+        }
+      ).backendTokenWatchSocket?.close();
+    });
   });
 });

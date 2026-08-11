@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 */
 
-package auth
+package auth_test
 
 import (
 	"context"
@@ -23,7 +23,13 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/kubernetes-sigs/headlamp/backend/pkg/auth"
 	"github.com/stretchr/testify/assert"
+)
+
+const (
+	backendTokenHeader         = "X-HEADLAMP_BACKEND-TOKEN"                         // #nosec G101
+	backendTokenProtocolPrefix = "base64url.headlamp.backend.authorization.k8s.io." // #nosec G101
 )
 
 func TestCheckBackendToken(t *testing.T) {
@@ -69,9 +75,10 @@ func TestCheckBackendToken(t *testing.T) {
 
 			req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
 			req.Header.Set(backendTokenHeader, tt.headerToken)
+
 			recorder := httptest.NewRecorder()
 
-			err := CheckBackendToken(tt.useInCluster, recorder, req)
+			err := auth.CheckBackendToken(tt.useInCluster, recorder, req)
 
 			assert.Equal(t, tt.wantError, err != nil)
 			assert.Equal(t, tt.wantStatus, recorder.Code)
@@ -178,7 +185,7 @@ func TestNewBackendTokenMiddleware(t *testing.T) {
 			}
 
 			recorder := httptest.NewRecorder()
-			NewBackendTokenMiddleware(tt.useInCluster)(next).ServeHTTP(recorder, req)
+			auth.NewBackendTokenMiddleware(tt.useInCluster)(next).ServeHTTP(recorder, req)
 
 			assert.Equal(t, tt.wantStatus, recorder.Code)
 

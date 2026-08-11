@@ -142,7 +142,11 @@ export async function clusterRequest(
   } = params;
 
   const userID = getUserIdFromLocalStorage();
-  const opts: { headers: RequestHeaders } = Object.assign({ headers: {} }, otherParams);
+  const headers: RequestHeaders = {};
+  new Headers(otherParams.headers).forEach((value, key) => {
+    headers[key] = value;
+  });
+  const opts = { ...otherParams, headers };
   const cluster = paramsCluster || '';
 
   let fullPath = path;
@@ -192,7 +196,7 @@ export async function clusterRequest(
 
   if (!response.ok) {
     const { status, statusText } = response;
-    if (autoLogoutOnAuthError && status === 401 && opts.headers.Authorization) {
+    if (autoLogoutOnAuthError && status === 401 && opts.headers.authorization) {
       console.error('Logging out due to auth error', { status, statusText, path });
       logout(cluster);
     }

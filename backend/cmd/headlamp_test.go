@@ -1312,7 +1312,6 @@ func TestDeletePlugin(t *testing.T) {
 
 // TestRestrictedEndpointsRequireToken is the canary for the backend-token gate:
 // dropping the backend token middleware from any listed route would fail here.
-// PUT /cluster/{name} (renameCluster) is omitted because it isn't gated yet.
 //
 //nolint:funlen
 func TestRestrictedEndpointsRequireToken(t *testing.T) {
@@ -1344,6 +1343,24 @@ func TestRestrictedEndpointsRequireToken(t *testing.T) {
 			body:   nil,
 		},
 		{
+			name:   "PUT /cluster/{name} (renameCluster)",
+			method: http.MethodPut,
+			path:   "/cluster/" + minikubeName,
+			body:   nil,
+		},
+		{
+			name:   "POST /drain-node",
+			method: http.MethodPost,
+			path:   "/drain-node",
+			body:   nil,
+		},
+		{
+			name:   "GET /drain-node-status",
+			method: http.MethodGet,
+			path:   "/drain-node-status?cluster=" + minikubeName + "&nodeName=test-node",
+			body:   nil,
+		},
+		{
 			name:   "DELETE /plugins/{name} (deletePlugin)",
 			method: http.MethodDelete,
 			path:   "/plugins/test-plugin",
@@ -1359,6 +1376,24 @@ func TestRestrictedEndpointsRequireToken(t *testing.T) {
 			name:   "GET /clusters/{name}/portforward/list",
 			method: http.MethodGet,
 			path:   "/clusters/" + minikubeName + "/portforward/list",
+			body:   nil,
+		},
+		{
+			name:   "POST /clusters/{name}/portforward",
+			method: http.MethodPost,
+			path:   "/clusters/" + minikubeName + "/portforward",
+			body:   nil,
+		},
+		{
+			name:   "DELETE /clusters/{name}/portforward",
+			method: http.MethodDelete,
+			path:   "/clusters/" + minikubeName + "/portforward",
+			body:   nil,
+		},
+		{
+			name:   "GET /clusters/{name}/portforward",
+			method: http.MethodGet,
+			path:   "/clusters/" + minikubeName + "/portforward",
 			body:   nil,
 		},
 		{
