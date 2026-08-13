@@ -2861,7 +2861,15 @@ func httpRequestWithContext(ctx context.Context, url string, method string) (*ht
 		return nil, err
 	}
 
+	addBackendTokenHeader(req)
+
 	return http.DefaultClient.Do(req)
+}
+
+func addBackendTokenHeader(req *http.Request) {
+	if token := os.Getenv("HEADLAMP_BACKEND_TOKEN"); token != "" {
+		req.Header.Set("X-HEADLAMP_BACKEND-TOKEN", token)
+	}
 }
 
 const istrue = true
@@ -3185,6 +3193,7 @@ func newRealK8sHeadlampConfig(t *testing.T) (*HeadlampConfig, string) {
 	t.Helper()
 
 	resetCacheMiddlewareTestState()
+	t.Setenv("HEADLAMP_BACKEND_TOKEN", "integration-test-token")
 
 	kubeConfigPath := os.Getenv("KUBECONFIG")
 	if kubeConfigPath == "" {
@@ -3373,6 +3382,7 @@ func TestCacheMiddleware_CacheInvalidation_RealK8s(t *testing.T) {
 	createReq, err := http.NewRequestWithContext(ctx, "POST", ts.URL+listPath, bytes.NewReader(cmBody))
 	require.NoError(t, err)
 	createReq.Header.Set("Content-Type", "application/json")
+	addBackendTokenHeader(createReq)
 
 	createResp, err := http.DefaultClient.Do(createReq)
 	require.NoError(t, err)
@@ -3382,6 +3392,7 @@ func TestCacheMiddleware_CacheInvalidation_RealK8s(t *testing.T) {
 
 	t.Cleanup(func() {
 		delReq, _ := http.NewRequestWithContext(context.Background(), "DELETE", ts.URL+cmPath, nil)
+		addBackendTokenHeader(delReq)
 		resp, _ := http.DefaultClient.Do(delReq)
 
 		if resp != nil {

@@ -107,6 +107,8 @@ spec:
         env:
         - name: KUBECONFIG
           value: "/home/headlamp/.config/Headlamp/kubeconfigs/config"
+        - name: HEADLAMP_BACKEND_TOKEN
+          value: "${HEADLAMP_TEST_TOKEN}"
         ports:
         - name: http
           containerPort: 4466

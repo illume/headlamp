@@ -17,6 +17,8 @@
 import type { PlaywrightTestConfig } from '@playwright/test';
 import { devices } from '@playwright/test';
 
+const backendToken = process.env.HEADLAMP_TEST_TOKEN;
+
 /**
  * Read environment variables from file.
  * https://github.com/motdotla/dotenv
@@ -53,6 +55,11 @@ const config: PlaywrightTestConfig = {
     actionTimeout: 0,
     /* Base URL to use in actions like `await page.goto('/')`. */
     baseURL: process.env.HEADLAMP_TEST_URL || 'http://localhost:3000',
+    extraHTTPHeaders: backendToken
+      ? {
+          'X-HEADLAMP_BACKEND-TOKEN': backendToken,
+        }
+      : undefined,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
