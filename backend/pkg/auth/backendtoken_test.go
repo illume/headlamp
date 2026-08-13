@@ -86,6 +86,23 @@ func TestCheckBackendToken(t *testing.T) {
 	}
 }
 
+func TestCheckBackendTokenRejectsDuplicateHeaders(t *testing.T) {
+	const validToken = "desktop-token"
+
+	t.Setenv("HEADLAMP_BACKEND_TOKEN", validToken)
+
+	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
+	req.Header.Add(backendTokenHeader, validToken)
+	req.Header.Add(backendTokenHeader, validToken)
+	recorder := httptest.NewRecorder()
+
+	err := auth.CheckBackendToken(false, recorder, req)
+
+	assert.Error(t, err)
+	assert.Equal(t, http.StatusForbidden, recorder.Code)
+	assert.NotContains(t, recorder.Body.String(), validToken)
+}
+
 //nolint:funlen
 func TestNewBackendTokenMiddleware(t *testing.T) {
 	const validToken = "desktop-token"
@@ -97,6 +114,7 @@ func TestNewBackendTokenMiddleware(t *testing.T) {
 		useInCluster        bool
 		configuredToken     string
 		tokenHeader         string
+		extraTokenHeaders   []string
 		protocolHeaders     []string
 		wantStatus          int
 		wantProtocol        string
@@ -133,6 +151,14 @@ func TestNewBackendTokenMiddleware(t *testing.T) {
 			configuredToken: validToken,
 			protocolHeaders: []string{tokenProtocol + ", " + tokenProtocol},
 			wantStatus:      http.StatusForbidden,
+		},
+		{
+			name:              "duplicate header with protocol",
+			configuredToken:   validToken,
+			tokenHeader:       validToken,
+			extraTokenHeaders: []string{validToken},
+			protocolHeaders:   []string{tokenProtocol},
+			wantStatus:        http.StatusForbidden,
 		},
 		{
 			name:            "conflicting header and protocol",
@@ -178,6 +204,10 @@ func TestNewBackendTokenMiddleware(t *testing.T) {
 
 			if tt.tokenHeader != "" {
 				req.Header.Set(backendTokenHeader, tt.tokenHeader)
+			}
+
+			for _, tokenHeader := range tt.extraTokenHeaders {
+				req.Header.Add(backendTokenHeader, tokenHeader)
 			}
 
 			for _, protocolHeader := range tt.protocolHeaders {

@@ -35,10 +35,10 @@ func CheckBackendToken(useInCluster bool, w http.ResponseWriter, r *http.Request
 		return nil
 	}
 
-	backendToken := r.Header.Get(backendTokenHeader)
+	backendTokens := r.Header.Values(backendTokenHeader)
 	backendTokenEnv := os.Getenv("HEADLAMP_BACKEND_TOKEN")
 
-	if backendToken != backendTokenEnv || backendTokenEnv == "" {
+	if len(backendTokens) != 1 || backendTokens[0] != backendTokenEnv || backendTokenEnv == "" {
 		http.Error(w, "access denied", http.StatusForbidden)
 		return errors.New("X-HEADLAMP_BACKEND-TOKEN does not match HEADLAMP_BACKEND_TOKEN")
 	}
@@ -53,6 +53,11 @@ func NewBackendTokenMiddleware(useInCluster bool) func(http.Handler) http.Handle
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			if useInCluster {
 				next.ServeHTTP(w, r)
+				return
+			}
+
+			if len(r.Header.Values(backendTokenHeader)) > 1 {
+				http.Error(w, "access denied", http.StatusForbidden)
 				return
 			}
 
