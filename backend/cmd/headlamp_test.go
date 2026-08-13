@@ -877,7 +877,7 @@ func TestDrainAndCordonNode(t *testing.T) { //nolint:funlen
 		drainNodePayload.Cluster = minikubeName
 		drainNodePayload.NodeName = minikubeName
 
-		rr, err := getResponse(tc.handler, "POST", "/drain-node", drainNodePayload)
+		rr, err := getResponseFromRestrictedEndpoint(tc.handler, "POST", "/drain-node", drainNodePayload)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -901,7 +901,7 @@ func TestDrainAndCordonNode(t *testing.T) { //nolint:funlen
 			drainNodePayload.Cluster, drainNodePayload.NodeName,
 		)
 
-		rr, err = getResponse(tc.handler, "GET", url, nil)
+		rr, err = getResponseFromRestrictedEndpoint(tc.handler, "GET", url, nil)
 		if err != nil {
 			t.Fatal(err)
 		}

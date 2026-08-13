@@ -94,6 +94,7 @@ func TestCheckBackendTokenRejectsDuplicateHeaders(t *testing.T) {
 	req := httptest.NewRequestWithContext(context.Background(), http.MethodGet, "/", nil)
 	req.Header.Add(backendTokenHeader, validToken)
 	req.Header.Add(backendTokenHeader, validToken)
+
 	recorder := httptest.NewRecorder()
 
 	err := auth.CheckBackendToken(false, recorder, req)
