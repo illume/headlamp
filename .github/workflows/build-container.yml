@@ -26,6 +26,8 @@ jobs:
   build:
     runs-on: ubuntu-22.04
     name: build discover and deploy
+    env:
+      HEADLAMP_BACKEND_TOKEN: headlamp-e2e-backend-token
     permissions:
       actions: write # needed to upload artifacts
     steps:
@@ -133,6 +135,7 @@ jobs:
       if: steps.cache-image-restore2.outputs.cache-hit != 'true'
       run: |
         export SHELL=/bin/bash
+        printf 'REACT_APP_HEADLAMP_BACKEND_TOKEN=%s\n' "$HEADLAMP_BACKEND_TOKEN" > frontend/.env.production.local
         DOCKER_IMAGE_VERSION=latest make image
         DOCKER_IMAGE_VERSION=latest DOCKER_PLUGINS_IMAGE_NAME=headlamp-plugins-test make build-plugins-container
         echo -n "verifying images:"

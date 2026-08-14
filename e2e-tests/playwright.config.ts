@@ -17,7 +17,7 @@
 import type { PlaywrightTestConfig } from '@playwright/test';
 import { devices } from '@playwright/test';
 
-const backendToken = process.env.HEADLAMP_TEST_TOKEN;
+const backendToken = process.env.HEADLAMP_BACKEND_TOKEN;
 
 /**
  * Read environment variables from file.

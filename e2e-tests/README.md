@@ -47,8 +47,11 @@ used as an init container by the manifest below:
 
 ```bash
 # from the repository root
+export HEADLAMP_BACKEND_TOKEN=headlamp-e2e-backend-token
+printf 'REACT_APP_HEADLAMP_BACKEND_TOKEN=%s\n' "$HEADLAMP_BACKEND_TOKEN" > frontend/.env.production.local
 DOCKER_IMAGE_VERSION=latest make image
 DOCKER_IMAGE_VERSION=latest DOCKER_PLUGINS_IMAGE_NAME=headlamp-plugins-test make build-plugins-container
+rm frontend/.env.production.local
 
 kind load docker-image ghcr.io/headlamp-k8s/headlamp:latest --name test
 kind load docker-image ghcr.io/headlamp-k8s/headlamp-plugins-test:latest --name test
@@ -75,6 +78,7 @@ Finally, export the URL and the tokens the specs read:
 
 ```bash
 export HEADLAMP_TEST_URL="http://<address of the headlamp Service>"
+export HEADLAMP_BACKEND_TOKEN=headlamp-e2e-backend-token
 export HEADLAMP_TEST_TOKEN=$(kubectl --context=test  create token headlamp-admin --duration 24h -n kube-system)
 export HEADLAMP_TEST2_TOKEN=$(kubectl --context=test2 create token headlamp-admin --duration 24h -n kube-system)
 ```
