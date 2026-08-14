@@ -30,6 +30,7 @@ const isolatedConfigDir = path.join(testDir, 'config');
 const electronExecutable = process.platform === 'win32' ? 'electron.cmd' : 'electron';
 const electronPath = path.resolve(__dirname, `../../node_modules/.bin/${electronExecutable}`);
 const appPath = path.resolve(__dirname, '../../');
+const backendProtocolPrefix = 'base64url.headlamp.backend.authorization.k8s.io.';
 
 let electronApp: Awaited<ReturnType<typeof _electron.launch>>;
 let electronPage: Page;
@@ -157,41 +158,61 @@ test.afterAll(async () => {
 });
 
 test.describe('desktop backend token', () => {
-  test('rejects tokenless cluster REST and multiplexer requests', async () => {
+  test('rejects missing and wrong tokens for cluster REST and multiplexer requests', async () => {
     await expect.poll(getBackendPort).toBeGreaterThan(0);
     const backendPort = (await getBackendPort())!;
 
-    const response = await fetch(`http://localhost:${backendPort}/clusters/${clusterName}/version`);
+    const clusterURL = `http://localhost:${backendPort}/clusters/${clusterName}/version`;
+    const response = await fetch(clusterURL);
     expect(response.status).toBe(403);
 
-    const websocketOpened = await electronPage.evaluate(
-      port =>
-        new Promise<boolean>(resolve => {
-          const socket = new WebSocket(`ws://localhost:${port}/wsMultiplexer`);
-          const timeout = window.setTimeout(() => {
-            socket.close();
-            resolve(false);
-          }, 5000);
+    const wrongTokenResponse = await fetch(clusterURL, {
+      headers: { 'X-HEADLAMP_BACKEND-TOKEN': 'wrong-token' },
+    });
+    expect(wrongTokenResponse.status).toBe(403);
 
-          socket.addEventListener('open', () => {
-            window.clearTimeout(timeout);
-            socket.close();
-            resolve(true);
-          });
-          socket.addEventListener('error', () => {
-            window.clearTimeout(timeout);
-            resolve(false);
-          });
-        }),
-      backendPort
-    );
-    expect(websocketOpened).toBe(false);
+    const websocketOpened = (protocol?: string) =>
+      electronPage.evaluate(
+        ({ port, protocol }) =>
+          new Promise<boolean>(resolve => {
+            const socket = new WebSocket(`ws://localhost:${port}/wsMultiplexer`, protocol);
+            const timeout = window.setTimeout(() => {
+              socket.close();
+              resolve(false);
+            }, 5000);
+
+            socket.addEventListener('open', () => {
+              window.clearTimeout(timeout);
+              socket.close();
+              resolve(true);
+            });
+            socket.addEventListener('error', () => {
+              window.clearTimeout(timeout);
+              resolve(false);
+            });
+          }),
+        { port: backendPort, protocol }
+      );
+    await expect(websocketOpened()).resolves.toBe(false);
+
+    const wrongTokenProtocol =
+      backendProtocolPrefix + Buffer.from('wrong-token').toString('base64url');
+    await expect(websocketOpened(wrongTokenProtocol)).resolves.toBe(false);
   });
 
   test('authorizes certificate-backed REST and multiplexer watch updates', async () => {
     test.setTimeout(2 * 60 * 1000);
     await expect.poll(getBackendPort).toBeGreaterThan(0);
     const backendPort = (await getBackendPort())!;
+    const backendToken = await getBackendToken();
+
+    const helperResponse = await fetch(
+      `http://localhost:${backendPort}/clusters/${clusterName}/portforward/list`,
+      {
+        headers: { 'X-HEADLAMP_BACKEND-TOKEN': backendToken },
+      }
+    );
+    expect(helperResponse.status).toBe(200);
 
     const namespacesPath = `/clusters/${clusterName}/api/v1/namespaces`;
     const responsePromise = electronPage.waitForResponse(response => {
@@ -208,10 +229,7 @@ test.describe('desktop backend token', () => {
     expect(response.status()).toBe(200);
     expect(response.request().headers()['x-headlamp_backend-token']).toBeTruthy();
 
-    const backendToken = await getBackendToken();
-    const backendProtocol =
-      'base64url.headlamp.backend.authorization.k8s.io.' +
-      Buffer.from(backendToken).toString('base64url');
+    const backendProtocol = backendProtocolPrefix + Buffer.from(backendToken).toString('base64url');
 
     await electronPage.evaluate(
       ({ port, protocol, cluster, namespace }) =>

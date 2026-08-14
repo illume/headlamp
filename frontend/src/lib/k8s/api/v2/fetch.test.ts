@@ -72,6 +72,20 @@ describe('clusterFetch', () => {
     expect(responseBody).toEqual(mockResponse);
   });
 
+  it('does not add backend credentials to non-cluster requests', async () => {
+    let backendTokenHeader: string | string[] | undefined;
+    nock(BASE_HTTP_URL)
+      .get(testUrl)
+      .reply(function () {
+        backendTokenHeader = this.req.headers['x-headlamp_backend-token'];
+        return [200, mockResponse];
+      });
+
+    await clusterFetch(testUrl, { cluster: '' });
+
+    expect(backendTokenHeader).toBeUndefined();
+  });
+
   it('Sets KUBECONFIG and X-HEADLAMP-USER-ID headers if kubeconfig exists', async () => {
     nock(BASE_HTTP_URL)
       .get(`/clusters/${clusterName}${testUrl}`)

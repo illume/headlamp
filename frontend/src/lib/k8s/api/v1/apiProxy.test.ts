@@ -101,6 +101,21 @@ describe('apiProxy', () => {
       expect(response).toEqual(mockResponse);
     });
 
+    it('does not add backend credentials to non-cluster requests', async () => {
+      let backendTokenHeader: string | string[] | undefined;
+      setBackendToken('desktop-token');
+      nock(baseApiUrl)
+        .get(testPath)
+        .reply(function () {
+          backendTokenHeader = this.req.headers['x-headlamp_backend-token'];
+          return [200, mockResponse];
+        });
+
+      await apiProxy.clusterRequest(testPath);
+
+      expect(backendTokenHeader).toBeUndefined();
+    });
+
     it('Successfully handles clusterRequest with status 401', async () => {
       expect.assertions(1);
 

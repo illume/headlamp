@@ -182,7 +182,8 @@ jobs:
         export TEST_SERVER="https://$(kubectl get nodes -o=jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}'):6443"
         kubectl create serviceaccount headlamp-admin --namespace kube-system
         kubectl create clusterrolebinding headlamp-admin --serviceaccount=kube-system:headlamp-admin --clusterrole=cluster-admin
-        echo "HEADLAMP_TEST_TOKEN=$(kubectl create token headlamp-admin --duration 24h -n kube-system)" >> $GITHUB_ENV
+        export HEADLAMP_TEST_TOKEN="$(kubectl create token headlamp-admin --duration 24h -n kube-system)"
+        echo "HEADLAMP_TEST_TOKEN=${HEADLAMP_TEST_TOKEN}" >> $GITHUB_ENV
 
         # Use Cluster 2 context
         kubectl config use-context test2
@@ -190,7 +191,8 @@ jobs:
         export TEST2_SERVER="https://$(kubectl get nodes -o=jsonpath='{.items[0].status.addresses[?(@.type=="InternalIP")].address}'):6443"
         kubectl create serviceaccount headlamp-admin --namespace kube-system
         kubectl create clusterrolebinding headlamp-admin --serviceaccount=kube-system:headlamp-admin --clusterrole=cluster-admin
-        echo "HEADLAMP_TEST2_TOKEN=$(kubectl create token headlamp-admin --duration 24h -n kube-system)" >> $GITHUB_ENV
+        export HEADLAMP_TEST2_TOKEN="$(kubectl create token headlamp-admin --duration 24h -n kube-system)"
+        echo "HEADLAMP_TEST2_TOKEN=${HEADLAMP_TEST2_TOKEN}" >> $GITHUB_ENV
 
         envsubst < e2e-tests/kubernetes-headlamp-ci.yaml | kubectl --context=test apply -f -
     - name: Run e2e tests

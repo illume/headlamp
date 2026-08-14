@@ -1420,6 +1420,12 @@ func TestRestrictedEndpointsRequireToken(t *testing.T) {
 			path:   "/clusters/" + minikubeName + "/api/v1/pods",
 			body:   nil,
 		},
+		{
+			name:   "GET /wsMultiplexer",
+			method: http.MethodGet,
+			path:   "/wsMultiplexer",
+			body:   nil,
+		},
 	}
 
 	for _, tc := range cases {
@@ -1449,6 +1455,7 @@ func newRestrictedEndpointsHandler(t *testing.T) http.Handler {
 	require.NoError(t, err)
 	require.NoError(t, f.Close())
 
+	kubeConfigStore := kubeconfig.NewContextStore()
 	c := HeadlampConfig{
 		HeadlampConfig: &headlampconfig.HeadlampConfig{
 			HeadlampCFG: &headlampconfig.HeadlampCFG{
@@ -1458,9 +1465,10 @@ func newRestrictedEndpointsHandler(t *testing.T) http.Handler {
 				EnableHelm:            true,
 				PluginDir:             devPluginDir,
 				UserPluginDir:         userPluginDir,
-				KubeConfigStore:       kubeconfig.NewContextStore(),
+				KubeConfigStore:       kubeConfigStore,
 			},
 			Cache:            cache.New[interface{}](),
+			Multiplexer:      NewMultiplexer(kubeConfigStore, false),
 			TelemetryConfig:  GetDefaultTestTelemetryConfig(),
 			TelemetryHandler: &telemetry.RequestHandler{},
 		},
