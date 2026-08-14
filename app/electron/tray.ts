@@ -149,6 +149,7 @@ export function createHeadlampTray(options: HeadlampTrayOptions): boolean {
 
 export async function getClusterStatuses(options: HeadlampTrayOptions): Promise<ClusterStatus[]> {
   try {
+    // Keep the app token separate from Authorization, which cluster routes reserve for Kubernetes credentials.
     const configResponse = await fetch(`http://localhost:${options.getBackendPort()}/config`, {
       headers: { 'X-HEADLAMP_BACKEND-TOKEN': options.backendToken },
     });
