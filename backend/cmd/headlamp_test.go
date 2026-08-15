@@ -2585,6 +2585,22 @@ func GetDefaultTestTelemetryConfig() config.Config {
 	}
 }
 
+func TestInitTelemetrySkipsDisabledProviders(t *testing.T) {
+	cfg := &HeadlampConfig{
+		HeadlampConfig: &headlampconfig.HeadlampConfig{
+			HeadlampCFG:     &headlampconfig.HeadlampCFG{},
+			TelemetryConfig: GetDefaultTestTelemetryConfig(),
+		},
+	}
+
+	tel, err := initTelemetry(cfg)
+	require.NoError(t, err)
+	assert.Nil(t, tel)
+	assert.Nil(t, cfg.Telemetry)
+	assert.Nil(t, cfg.Metrics)
+	assert.Nil(t, cfg.TelemetryHandler)
+}
+
 //nolint:funlen
 func TestProcessWebSocketProtocolHeader(t *testing.T) {
 	tests := []struct {

@@ -1387,14 +1387,16 @@ func StartHeadlampServer(config *HeadlampConfig) {
 		os.Exit(1)
 	}
 
-	defer func() {
-		shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
+	if tel != nil {
+		defer func() {
+			shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+			defer cancel()
 
-		if err := tel.Shutdown(shutdownCtx); err != nil {
-			logger.Log(logger.LevelError, nil, err, "Failed to properly shutdown telemetry")
-		}
-	}()
+			if err := tel.Shutdown(shutdownCtx); err != nil {
+				logger.Log(logger.LevelError, nil, err, "Failed to properly shutdown telemetry")
+			}
+		}()
+	}
 
 	router := mux.NewRouter()
 
@@ -1456,6 +1458,17 @@ func runServer(config *HeadlampConfig, cancel context.CancelFunc, handler http.H
 
 // initTelemetry initializes telemetry and metrics for the server.
 func initTelemetry(config *HeadlampConfig) (*telemetry.Telemetry, error) {
+	tracingEnabled := config.TelemetryConfig.TracingEnabled != nil && *config.TelemetryConfig.TracingEnabled
+	metricsEnabled := config.TelemetryConfig.MetricsEnabled != nil && *config.TelemetryConfig.MetricsEnabled
+
+	if !tracingEnabled && !metricsEnabled {
+		config.Telemetry = nil
+		config.Metrics = nil
+		config.TelemetryHandler = nil
+
+		return nil, nil
+	}
+
 	tel, err := telemetry.NewTelemetry(config.TelemetryConfig)
 	if err != nil {
 		logger.Log(logger.LevelError, nil, err, "Failed to initialize telemetry")
