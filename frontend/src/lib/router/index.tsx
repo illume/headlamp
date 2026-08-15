@@ -141,10 +141,10 @@ export type { Route, RouteURLProps };
 
 export { getDefaultRoutes, getRouteUseClusterURL, getRoutePath, getRoute, createRouteURL };
 
+// Keep infrequently visited route modules out of the initial renderer heap.
 const LazyGraphView = React.lazy(() =>
   import('../../components/resourceMap/GraphView').then(it => ({ default: it.GraphView }))
 );
-// Keep infrequently visited route modules out of the initial renderer heap.
 const CronJobDetails = React.lazy(() => import('../../components/cronjob/Details'));
 const CronJobList = React.lazy(() => import('../../components/cronjob/List'));
 const KubeConfigLoader = React.lazy(() => import('../../components/cluster/KubeConfigLoader'));
