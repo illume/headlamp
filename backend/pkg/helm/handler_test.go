@@ -19,6 +19,8 @@ package helm //nolint:testpackage
 import (
 	"context"
 	"errors"
+	"path/filepath"
+	"sync"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -52,11 +54,26 @@ func fakeClientConfig() clientcmd.ClientConfig {
 }
 
 func TestNewHandler(t *testing.T) {
+	originalSettings := defaultSettings
+	defaultSettings = sync.OnceValue(cli.New)
+
+	t.Cleanup(func() {
+		defaultSettings = originalSettings
+	})
+
+	repositoryConfig := filepath.Join(t.TempDir(), "repositories.yaml")
+	t.Setenv("HELM_REPOSITORY_CONFIG", repositoryConfig)
+
 	c := newTestCache()
 	h, err := NewHandler(c)
 	require.NoError(t, err)
 	assert.NotNil(t, h)
 	assert.Equal(t, c, h.Cache)
+	assert.Equal(t, repositoryConfig, h.RepositoryConfig)
+
+	otherHandler, err := NewHandler(c)
+	require.NoError(t, err)
+	assert.Same(t, h.EnvSettings, otherHandler.EnvSettings)
 }
 
 func TestNewHandlerWithSettings(t *testing.T) {

@@ -20,6 +20,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/kubernetes-sigs/headlamp/backend/pkg/cache"
@@ -38,7 +39,7 @@ import (
 
 var (
 	_                  genericclioptions.RESTClientGetter = &restConfigGetter{}
-	settings                                              = cli.New()
+	defaultSettings                                       = sync.OnceValue(cli.New)
 	statusCacheTimeout                                    = 20 * time.Minute
 )
 
@@ -68,7 +69,7 @@ func NewActionConfig(clientConfig clientcmd.ClientConfig, namespace string) (*ac
 
 func NewHandler(cache cache.Cache[interface{}],
 ) (*Handler, error) {
-	return NewHandlerWithSettings(cache, settings)
+	return NewHandlerWithSettings(cache, defaultSettings())
 }
 
 func NewHandlerWithSettings(cache cache.Cache[interface{}], settings *cli.EnvSettings) (*Handler, error) {
