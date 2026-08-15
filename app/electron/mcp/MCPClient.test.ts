@@ -148,6 +148,26 @@ describe('MCPClient', () => {
     expect(infoSpy).toHaveBeenCalledWith('MCPClient: initialized');
   });
 
+  it('does not load the MCP adapter when no servers are configured', async () => {
+    const adapterFactory = vi.fn(() => ({
+      MultiServerMCPClient: vi.fn(),
+    }));
+
+    vi.resetModules();
+    vi.doMock('@langchain/mcp-adapters', adapterFactory);
+    vi.doMock('./MCPSettings', () => ({
+      makeMcpServersFromSettings: vi.fn().mockReturnValue({}),
+      hasClusterDependentServers: vi.fn().mockReturnValue(false),
+    }));
+
+    const { default: MCPClient } = await import('./MCPClient');
+    const client = new MCPClient(cfgPath, settingsPath);
+
+    await client.initialize();
+
+    expect(adapterFactory).not.toHaveBeenCalled();
+  });
+
   it('initialize constructs MCP client and caches tools when servers exist', async () => {
     const fakeTools = [{ name: 't1' }, { name: 't2' }];
     const getTools = vi.fn().mockResolvedValue(fakeTools);
