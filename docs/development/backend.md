@@ -140,7 +140,6 @@ expiration.
 | 4 | Cache only the Kubernetes authorization client instead of a full clientset | Removes unused typed clients from each token cache entry | Narrows the internal cache API |
 | 5 | Initialize proxy transports only when a context is first used | Saves per-context TLS and transport state for unused contexts | Adds synchronization to the first request |
 | 6 | Lower `GOGC` for the desktop backend | About 2–4.5 MiB in measured idle/request workloads | More frequent GC and modestly higher CPU use |
-| 7 | Skip telemetry setup when tracing and metrics are disabled | 2,432 bytes and 25 startup allocations in an isolated benchmark | None; providers are still initialized when either feature is enabled |
 
 The desktop launcher defaults its bundled backend to `GOGC=25`, while preserving
 an explicitly configured `GOGC`. In isolated measurements, `GOGC=50` reduced
@@ -185,8 +184,7 @@ Go plugins are not a portable memory-saving mechanism for the backend. They are
 unsupported on Windows, must match the main binary's toolchain and dependencies,
 cannot be unloaded, and therefore retain their memory after first use. Splitting
 optional features into helper processes would also add another Go runtime and IPC
-complexity. Headlamp instead avoids initializing disabled telemetry and keeps its
-portable, statically linked backend.
+complexity.
 
 ## Fuzz Testing
 
