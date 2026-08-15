@@ -310,7 +310,7 @@ func RunInformerToWatch(gvrList []schema.GroupVersionResource,
 		informer := factory.ForResource(gvr).Informer()
 		if err := informer.SetTransform(metadataOnly); err != nil {
 			logger.Log(logger.LevelError, nil, err, "failed to set informer transform for resource: "+gvr.Resource)
-			return
+			continue
 		}
 
 		// hasSynced gates cache invalidation so that events from the informer's
