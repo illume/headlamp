@@ -140,6 +140,7 @@
     },
     "files": [
       "build/main.js",
+      "build/mcp/MCPAdapter.js",
       "build/preload.js"
     ],
     "extraResources": [

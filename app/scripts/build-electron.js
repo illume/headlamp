@@ -5,6 +5,16 @@ const path = require('node:path');
 
 const isWatch = process.argv.includes('--watch');
 const isDev = process.argv.includes('--dev');
+const mcpAdapterEntry = path.resolve(__dirname, '../electron/mcp/MCPAdapter.ts');
+const mcpAdapterExternalPlugin = {
+  name: 'externalize-mcp-adapter',
+  setup(build) {
+    build.onResolve({ filter: /^\.\/MCPAdapter$/ }, () => ({
+      path: './mcp/MCPAdapter.js',
+      external: true,
+    }));
+  },
+};
 
 const commonOptions = {
   bundle: true,
@@ -24,10 +34,15 @@ const entryPoints = [
   {
     entryPoints: [path.resolve(__dirname, '../electron/main.ts')],
     outfile: path.resolve(__dirname, '../build/main.js'),
+    plugins: [mcpAdapterExternalPlugin],
   },
   {
     entryPoints: [path.resolve(__dirname, '../electron/preload.ts')],
     outfile: path.resolve(__dirname, '../build/preload.js'),
+  },
+  {
+    entryPoints: [mcpAdapterEntry],
+    outfile: path.resolve(__dirname, '../build/mcp/MCPAdapter.js'),
   },
 ];
 

@@ -15,8 +15,8 @@
  */
 
 import type { DynamicStructuredTool } from '@langchain/core/dist/tools/index';
-import type { MultiServerMCPClient } from '@langchain/mcp-adapters';
 import { type BrowserWindow, dialog, ipcMain } from 'electron';
+import type { MultiServerMCPClient } from './MCPAdapter';
 import {
   hasClusterDependentServers,
   loadMCPSettings,
@@ -148,7 +148,7 @@ export default class MCPClient {
           Object.keys(mcpServers)
         );
       }
-      const { MultiServerMCPClient } = await import('@langchain/mcp-adapters');
+      const { MultiServerMCPClient } = await import('./MCPAdapter');
       this.client = new MultiServerMCPClient({
         throwOnLoadError: false, // Don't throw on load error to allow partial initialization
         prefixToolNameWithServerName: true, // Prefix to avoid name conflicts
