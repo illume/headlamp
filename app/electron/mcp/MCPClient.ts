@@ -88,8 +88,7 @@ export default class MCPClient {
       return;
     }
     this.mcpToolState = new MCPToolStateStore(this.configPath);
-
-    await this.initializeClient();
+    await this.mcpToolState.initialize();
 
     this.initialized = true;
 
@@ -236,9 +235,10 @@ export default class MCPClient {
 
     const oldClusters = this.currentClusters;
     this.currentClusters = newClusters;
+    this.clusters = newClusters || [];
 
     // Check if we have any cluster-dependent servers
-    if (!hasClusterDependentServers(this.settingsPath)) {
+    if (!this.client || !hasClusterDependentServers(this.settingsPath)) {
       console.log('No cluster-dependent MCP servers found, skipping restart');
       return;
     }
@@ -260,6 +260,7 @@ export default class MCPClient {
       console.error('Error restarting MCP client for cluster change:', error);
       // Restore previous cluster on error
       this.currentClusters = oldClusters;
+      this.clusters = oldClusters || [];
       throw error;
     }
   }

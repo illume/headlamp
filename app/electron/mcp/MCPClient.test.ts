@@ -124,7 +124,7 @@ describe('MCPClient', () => {
     expect(infoSpy).not.toHaveBeenCalledWith('MCPClient: cleaned up');
   });
 
-  it('initialize marks isInitialized and leaves client null when no servers are configured', async () => {
+  it('initialize leaves the MCP server client dormant', async () => {
     // Mock MCPSettings to return no servers
     vi.doMock('./MCPSettings', () => ({
       makeMcpServersFromSettings: vi.fn().mockReturnValue({}),
@@ -142,13 +142,13 @@ describe('MCPClient', () => {
     const infoSpy = vi.spyOn(console, 'info').mockImplementation(() => {});
     await client.initialize();
 
-    expect((client as any).isInitialized).toBe(true);
+    expect((client as any).isInitialized).toBe(false);
     expect((client as any).client).toBeNull();
     // ensure the public log happened
     expect(infoSpy).toHaveBeenCalledWith('MCPClient: initialized');
   });
 
-  it('does not load the MCP adapter when no servers are configured', async () => {
+  it('does not load the MCP adapter when configured servers are unused', async () => {
     const adapterFactory = vi.fn(() => ({
       MultiServerMCPClient: vi.fn(),
     }));
@@ -156,7 +156,7 @@ describe('MCPClient', () => {
     vi.resetModules();
     vi.doMock('@langchain/mcp-adapters', adapterFactory);
     vi.doMock('./MCPSettings', () => ({
-      makeMcpServersFromSettings: vi.fn().mockReturnValue({}),
+      makeMcpServersFromSettings: vi.fn().mockReturnValue({ serverA: { url: 'http://x' } }),
       hasClusterDependentServers: vi.fn().mockReturnValue(false),
     }));
 
@@ -168,18 +168,22 @@ describe('MCPClient', () => {
     expect(adapterFactory).not.toHaveBeenCalled();
   });
 
-  it('initialize constructs MCP client and caches tools when servers exist', async () => {
-    const fakeTools = [{ name: 't1' }, { name: 't2' }];
+  it('constructs the MCP client when a tool is first used', async () => {
+    const invoke = vi.fn().mockResolvedValue({ ok: true });
+    const fakeTools = [{ name: 'serverA.t1', schema: {}, invoke }];
     const getTools = vi.fn().mockResolvedValue(fakeTools);
     const close = vi.fn().mockResolvedValue(undefined);
     const MultiServerMCPClientMock = vi.fn().mockImplementation(() => ({ getTools, close }));
+    const makeMcpServersFromSettings = vi
+      .fn()
+      .mockReturnValue({ serverA: { url: 'http://x' } });
 
     vi.resetModules();
     vi.doMock('@langchain/mcp-adapters', () => ({
       MultiServerMCPClient: MultiServerMCPClientMock,
     }));
     vi.doMock('./MCPSettings', () => ({
-      makeMcpServersFromSettings: vi.fn().mockReturnValue({ serverA: { url: 'http://x' } }),
+      makeMcpServersFromSettings,
       hasClusterDependentServers: vi.fn().mockReturnValue(false),
     }));
 
@@ -187,13 +191,15 @@ describe('MCPClient', () => {
     const client = new MCPClient(cfgPath, settingsPath);
 
     await client.initialize();
+    expect(MultiServerMCPClientMock).not.toHaveBeenCalled();
+    await client.handleClustersChange(['cluster-a']);
 
-    // Ensure the mock constructor was called to create the client
-    expect(MultiServerMCPClientMock).toHaveBeenCalled();
-    // Ensure tools were cached
+    const result = await (client as any).mcpExecuteTool('serverA.t1', {}, 'call-1');
+
+    expect(makeMcpServersFromSettings).toHaveBeenCalledWith(settingsPath, ['cluster-a']);
+    expect(MultiServerMCPClientMock).toHaveBeenCalledTimes(1);
     expect((client as any).clientTools).toEqual(fakeTools);
-    // Ensure MCPToolStateStore was initialized (non-null)
-    expect((client as any).mcpToolState).not.toBeNull();
+    expect(result).toEqual({ success: true, result: { ok: true }, toolCallId: 'call-1' });
   });
 
   it('handleClustersChange logs and returns early when no cluster-dependent servers', async () => {
@@ -217,6 +223,7 @@ describe('MCPClient', () => {
     const client = new MCPClient(cfgPath, settingsPath);
 
     await client.initialize();
+    await (client as any).initializeClient();
 
     const beforeClient = (client as any).client;
 
@@ -244,6 +251,7 @@ describe('MCPClient', () => {
     const client = new MCPClient(cfgPath, settingsPath);
 
     await client.initialize();
+    await (client as any).initializeClient();
 
     // set currentClusters to a value and call with the same value
     (client as any).currentClusters = ['same-cluster'];
@@ -287,6 +295,7 @@ describe('MCPClient', () => {
 
     vi.spyOn(console, 'log').mockImplementation(() => {});
     await client.initialize();
+    await (client as any).initializeClient();
 
     // initial client should be the first instance
     const firstClientRef = (client as any).client;
@@ -352,6 +361,7 @@ describe('MCPClient#mcpExecuteTool', () => {
       }),
       validateToolArgs: vi.fn().mockReturnValue({ valid: true }),
       MCPToolStateStore: vi.fn().mockImplementation(() => ({
+        initialize: vi.fn(),
         // initialize config from client tools is invoked during MCPClient.initialize
         // provide a no-op mock so tests that don't assert this behavior don't fail
         initConfigFromClientTools: vi.fn(),
@@ -400,6 +410,7 @@ describe('MCPClient#mcpExecuteTool', () => {
         .mockReturnValue({ serverName: 'serverA', toolName: 'tool1' }),
       validateToolArgs: vi.fn().mockReturnValue({ valid: false, error: 'bad-params' }),
       MCPToolStateStore: vi.fn().mockImplementation(() => ({
+        initialize: vi.fn(),
         initConfigFromClientTools: vi.fn(),
       })),
     }));
