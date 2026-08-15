@@ -237,8 +237,13 @@ export default class MCPClient {
     this.currentClusters = newClusters;
     this.clusters = newClusters || [];
 
+    if (!this.client) {
+      console.log('MCP client not yet started, skipping cluster-change restart');
+      return;
+    }
+
     // Check if we have any cluster-dependent servers
-    if (!this.client || !hasClusterDependentServers(this.settingsPath)) {
+    if (!hasClusterDependentServers(this.settingsPath)) {
       console.log('No cluster-dependent MCP servers found, skipping restart');
       return;
     }
