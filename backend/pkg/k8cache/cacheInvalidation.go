@@ -308,6 +308,8 @@ func RunInformerToWatch(gvrList []schema.GroupVersionResource,
 ) {
 	for _, gvr := range gvrList {
 		informer := factory.ForResource(gvr).Informer()
+		// Invalidation only needs object identity. Dropping specs and status before
+		// informer storage avoids retaining full Kubernetes objects for every watch.
 		if err := informer.SetTransform(metadataOnly); err != nil {
 			logger.Log(logger.LevelError, nil, err, "failed to set informer transform for resource: "+gvr.Resource)
 			continue

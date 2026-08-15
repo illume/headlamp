@@ -85,7 +85,8 @@ export default class MCPClient {
   }
 
   /**
-   * Initialize the MCP client.
+   * Initialize lightweight MCP state only. The adapter and configured servers
+   * stay out of memory until the first tool execution.
    */
   async initialize(): Promise<void> {
     if (this.initialized) {
@@ -153,6 +154,7 @@ export default class MCPClient {
         );
       }
       this.ensureCertificates();
+      // Importing here keeps the large adapter graph out of startup memory.
       const { MultiServerMCPClient } = await import('./MCPAdapter');
       this.client = new MultiServerMCPClient({
         throwOnLoadError: false, // Don't throw on load error to allow partial initialization
@@ -242,6 +244,7 @@ export default class MCPClient {
     this.currentClusters = newClusters;
     this.clusters = newClusters || [];
 
+    // Recording context must not start configured servers or load the adapter.
     if (!this.client) {
       console.log('MCP client not yet started, skipping cluster-change restart');
       return;

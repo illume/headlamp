@@ -67,6 +67,8 @@ export function getHardwareAccelerationDisableReason(
     return 'known graphical issues in Linux on ARM (use --disable-gpu=false to force it if needed).';
   }
 
+  // Windows VMs normally expose only a virtual display adapter, so avoid the
+  // extra Electron GPU process and its memory unless the user explicitly enables it.
   if (currentPlatform === 'win32' && detectWindowsVM()) {
     return 'running in a Windows virtual machine (use --disable-gpu=false to force it if needed).';
   }

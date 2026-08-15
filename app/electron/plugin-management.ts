@@ -290,6 +290,7 @@ export class PluginManager {
 
       const latestVersion = pluginData.version;
       const currentVersion = packageJson.artifacthub.version;
+      // Keep semver out of the main-process heap until a plugin update is requested.
       const { default: semver } = await import('semver');
 
       if (semver.lte(latestVersion, currentVersion)) {
@@ -512,6 +513,7 @@ async function downloadExtractArchive(
 
   // Check if the plugin is compatible with the current Headlamp version
   if (headlampVersion) {
+    // Compatibility checks are optional, so load semver only when one is required.
     const { default: semver } = await import('semver');
     if (progressCallback) {
       progressCallback({ type: 'info', message: 'Checking compatibility with Headlamp version' });
@@ -800,6 +802,7 @@ async function downloadAndExtractSingleArchive(
     archiveURL.includes('.tar?');
 
   if (isTarGz) {
+    // Keep tar's module graph unloaded until an archive actually needs extraction.
     const tar = await import('tar');
     if (progressCallback) {
       progressCallback({

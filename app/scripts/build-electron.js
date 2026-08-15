@@ -5,6 +5,8 @@ const path = require('node:path');
 
 const isWatch = process.argv.includes('--watch');
 const isDev = process.argv.includes('--dev');
+// CJS bundling would otherwise inline these dynamic imports into main.js.
+// Separate entries keep their module graphs out of startup memory until first use.
 const mcpAdapterEntry = path.resolve(__dirname, '../electron/mcp/MCPAdapter.ts');
 const lazyDependencies = {
   'find-process': './lazy/find-process.js',

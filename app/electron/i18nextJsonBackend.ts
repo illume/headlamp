@@ -18,6 +18,10 @@ import type { BackendModule } from 'i18next';
 import { readFile } from 'node:fs';
 import path from 'node:path';
 
+/**
+ * Loads only Headlamp's JSON locale format, avoiding the generic filesystem
+ * backend's unused format parsers in the Electron startup heap.
+ */
 export function createJsonBackend(localesDir: string): BackendModule {
   return {
     type: 'backend',

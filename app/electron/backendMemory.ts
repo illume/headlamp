@@ -14,6 +14,10 @@
  * limitations under the License.
  */
 
+/**
+ * Collect the bundled backend's Go heap more often to reduce retained memory,
+ * while preserving an explicit user override.
+ */
 export function withBackendMemoryDefaults(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   return {
     ...env,

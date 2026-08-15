@@ -14,4 +14,6 @@
  * limitations under the License.
  */
 
+// Keep the LangChain/LangGraph dependency graph in a first-use chunk rather
+// than retaining it in Electron's startup bundle and heap.
 export { MultiServerMCPClient } from '@langchain/mcp-adapters';

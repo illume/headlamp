@@ -14,4 +14,6 @@
  * limitations under the License.
  */
 
+// This separate entry keeps tar's module graph out of the main-process heap
+// until a plugin archive actually needs extraction.
 export { extract } from 'tar';

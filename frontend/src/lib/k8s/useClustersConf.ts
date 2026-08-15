@@ -23,6 +23,8 @@ import { useTypedSelector } from '../../redux/hooks';
  * when the user changes the configuration. The configuration is stored in
  * the local storage. When stateless clusters are present, it combines the
  * stateless clusters with the clusters from the redux store.
+ * The shallow merge reuses nested values instead of deep-cloning every cluster,
+ * avoiding duplicate long-lived configuration object graphs.
  * @returns the clusters configuration.
  * */
 export function useClustersConf(): ConfigState['allClusters'] {

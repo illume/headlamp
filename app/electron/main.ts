@@ -771,6 +771,8 @@ async function isPortAvailable(port: number): Promise<boolean> {
 async function findAvailablePort(startPort: number): Promise<number> {
   for (let i = 0; i < MAX_PORT_ATTEMPTS; i++) {
     const port = startPort + i;
+    // Probe the socket first so normal startup does not load and retain the
+    // process-inspection dependency when the preferred port is free.
     const available = await isPortAvailable(port);
 
     if (available) {
@@ -1314,6 +1316,7 @@ function menusToTemplate(mainWindow: BrowserWindow | null, menusFromPlugins: App
 }
 
 async function getRunningHeadlampPIDs() {
+  // Process inspection is only needed during cleanup, not normal startup.
   const { default: findProcess } = await import('find-process');
   const processes = await findProcess('name', 'headlamp-server.*');
   // Only consider processes owned by the current user: on shared machines
@@ -1334,6 +1337,7 @@ async function getRunningHeadlampPIDs() {
 async function getHeadlampPIDsOnPort(port: number): Promise<number[] | null> {
   try {
     // Get all Headlamp processes
+    // Keep process inspection unloaded unless a port is actually occupied.
     const { default: findProcess } = await import('find-process');
     const headlampProcesses = await findProcess('name', 'headlamp-server');
     if (headlampProcesses.length === 0) {

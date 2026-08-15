@@ -45,6 +45,8 @@ export interface CertificateSettings {
 
 /**
  * Creates a function that initializes certificate trust on first use.
+ * Deferring CA enumeration and parsing avoids retaining certificate material
+ * when no plugin or MCP network request is made.
  */
 export function createCertificateSetup(settings: CertificateSettings = {}): () => void {
   let initialized = false;

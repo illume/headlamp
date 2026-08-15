@@ -63,6 +63,7 @@ import MutatingWebhookConfigList from '../../webhookconfiguration/MutatingWebhoo
 import ValidatingWebhookConfigurationDetails from '../../webhookconfiguration/ValidatingWebhookConfigDetails';
 import WorkloadDetails from '../../workload/Details';
 
+// Avoid retaining the CronJob detail module unless the selected resource needs it.
 const CronJobDetails = lazy(() => import('../../cronjob/Details'));
 
 const kindComponentMap: Record<
