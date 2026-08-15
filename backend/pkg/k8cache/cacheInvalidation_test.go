@@ -529,14 +529,23 @@ func TestRunInformerToWatch_InvalidatesListNamedAndAllNamespaceCacheKeys(t *test
 		return true
 	}, 2*time.Second, 50*time.Millisecond, "informer should evict list, all-namespace, and named GET keys")
 
+	assertInformerStoresMetadataOnly(t, factory, gvr)
+
+	close(stopCh)
+}
+
+func assertInformerStoresMetadataOnly(t *testing.T, factory dynamicinformer.DynamicSharedInformerFactory,
+	gvr schema.GroupVersionResource,
+) {
+	t.Helper()
+
 	stored := factory.ForResource(gvr).Informer().GetStore().List()
 	require.Len(t, stored, 1)
+
 	metadata, ok := stored[0].(*metav1.PartialObjectMetadata)
 	require.True(t, ok)
 	assert.Equal(t, "test-pod", metadata.Name)
 	assert.Equal(t, "default", metadata.Namespace)
-
-	close(stopCh)
 }
 
 // TestGetKindAndVerb_NoMuxVars exercises the early-return path where the
