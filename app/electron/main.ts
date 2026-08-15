@@ -40,6 +40,7 @@ import url from 'url';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { setupCustomCAs, setupSystemCAs } from './certificates';
+import { getHardwareAccelerationDisableReason } from './hardwareAcceleration';
 import i18n from './i18next.config';
 import MCPClient from './mcp/MCPClient';
 import { filterUserOwnedPids } from './ownedProcesses';
@@ -184,7 +185,7 @@ if ('remote-debugging-port' in args) {
 }
 
 const isHeadlessMode = args.headless === true;
-let disableGPU = args['disable-gpu'] === true;
+const disableGPU = args['disable-gpu'];
 const defaultPort = args.port || 4466;
 let actualPort = defaultPort; // Will be updated when backend starts
 const MAX_PORT_ATTEMPTS = Math.abs(Number(process.env.HEADLAMP_MAX_PORT_ATTEMPTS) || 100); // Maximum number of ports to try
@@ -1847,20 +1848,9 @@ function startElectron() {
     }
   }
 
-  if (disableGPU) {
-    console.info('Disabling GPU hardware acceleration. Reason: related flag is set.');
-  } else if (
-    disableGPU === undefined &&
-    process.platform === 'linux' &&
-    ['arm', 'arm64'].includes(process.arch)
-  ) {
-    console.info(
-      'Disabling GPU hardware acceleration. Reason: known graphical issues in Linux on ARM (use --disable-gpu=false to force it if needed).'
-    );
-    disableGPU = true;
-  }
-
-  if (disableGPU) {
+  const disableGPUReason = getHardwareAccelerationDisableReason(disableGPU);
+  if (disableGPUReason) {
+    console.info(`Disabling GPU hardware acceleration. Reason: ${disableGPUReason}`);
     app.disableHardwareAcceleration();
   }
 
