@@ -39,7 +39,7 @@ import path from 'path';
 import url from 'url';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
-import { setupCustomCAs, setupSystemCAs } from './certificates';
+import { createCertificateSetup } from './certificates';
 import { getHardwareAccelerationDisableReason } from './hardwareAcceleration';
 import i18n from './i18next.config';
 import MCPClient from './mcp/MCPClient';
@@ -94,11 +94,7 @@ const ENABLE_MCP = process.env.HEADLAMP_MCP_ENABLE !== 'false';
 dotenv.config({ path: path.join(process.resourcesPath, '.env') });
 
 const settings = loadSettings(SETTINGS_PATH);
-setupSystemCAs(settings);
-
-if (settings.customCAPath) {
-  setupCustomCAs(settings.customCAPath);
-}
+const ensureCertificates = createCertificateSetup(settings);
 
 const isDev = !!process.env.ELECTRON_DEV;
 let frontendPath = '';
@@ -351,6 +347,7 @@ class PluginManagerEventListeners {
 
     let pluginInfo: ArtifactHubHeadlampPkg | undefined = undefined;
     try {
+      ensureCertificates();
       pluginInfo = await PluginManager.fetchPluginInfo(URL, { signal: controller.signal });
     } catch (error) {
       console.error('Error fetching plugin info:', error);
@@ -446,6 +443,7 @@ class PluginManagerEventListeners {
       controller,
     };
 
+    ensureCertificates();
     PluginManager.update(
       pluginName,
       destinationFolder,
@@ -1842,7 +1840,7 @@ function startElectron() {
     if (ENABLE_MCP) {
       const configPath = path.join(app.getPath('userData'), 'mcp-tools-config.json');
       const settingsPath = path.join(app.getPath('userData'), 'mcp-tools-settings.json');
-      mcpClient = new MCPClient(configPath, settingsPath);
+      mcpClient = new MCPClient(configPath, settingsPath, ensureCertificates);
       await mcpClient.initialize();
       mcpClient.setMainWindow(mainWindow);
     }

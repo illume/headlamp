@@ -74,7 +74,11 @@ export default class MCPClient {
   private currentClusters: string[] | null = null;
   private oldClusters: string[] | null = null;
 
-  constructor(configPath: string, settingsPath: string) {
+  constructor(
+    configPath: string,
+    settingsPath: string,
+    private readonly ensureCertificates: () => void = () => {}
+  ) {
     this.configPath = configPath;
     this.settingsPath = settingsPath;
     this.setupIpcHandlers();
@@ -148,6 +152,7 @@ export default class MCPClient {
           Object.keys(mcpServers)
         );
       }
+      this.ensureCertificates();
       const { MultiServerMCPClient } = await import('./MCPAdapter');
       this.client = new MultiServerMCPClient({
         throwOnLoadError: false, // Don't throw on load error to allow partial initialization

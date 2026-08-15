@@ -149,6 +149,7 @@ describe('MCPClient', () => {
   });
 
   it('does not load the MCP adapter when configured servers are unused', async () => {
+    const ensureCertificates = vi.fn();
     const adapterFactory = vi.fn(() => ({
       MultiServerMCPClient: vi.fn(),
     }));
@@ -161,14 +162,16 @@ describe('MCPClient', () => {
     }));
 
     const { default: MCPClient } = await import('./MCPClient');
-    const client = new MCPClient(cfgPath, settingsPath);
+    const client = new MCPClient(cfgPath, settingsPath, ensureCertificates);
 
     await client.initialize();
 
     expect(adapterFactory).not.toHaveBeenCalled();
+    expect(ensureCertificates).not.toHaveBeenCalled();
   });
 
   it('constructs the MCP client when a tool is first used', async () => {
+    const ensureCertificates = vi.fn();
     const invoke = vi.fn().mockResolvedValue({ ok: true });
     const fakeTools = [{ name: 'serverA.t1', schema: {}, invoke }];
     const getTools = vi.fn().mockResolvedValue(fakeTools);
@@ -186,7 +189,7 @@ describe('MCPClient', () => {
     }));
 
     const { default: MCPClient } = await import('./MCPClient');
-    const client = new MCPClient(cfgPath, settingsPath);
+    const client = new MCPClient(cfgPath, settingsPath, ensureCertificates);
 
     await client.initialize();
     expect(MultiServerMCPClientMock).not.toHaveBeenCalled();
@@ -196,6 +199,7 @@ describe('MCPClient', () => {
 
     expect(makeMcpServersFromSettings).toHaveBeenCalledWith(settingsPath, ['cluster-a']);
     expect(MultiServerMCPClientMock).toHaveBeenCalledTimes(1);
+    expect(ensureCertificates).toHaveBeenCalledTimes(1);
     expect((client as any).clientTools).toEqual(fakeTools);
     expect(result).toEqual({ success: true, result: { ok: true }, toolCallId: 'call-1' });
   });

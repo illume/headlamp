@@ -44,6 +44,25 @@ export interface CertificateSettings {
 }
 
 /**
+ * Creates a function that initializes certificate trust on first use.
+ */
+export function createCertificateSetup(settings: CertificateSettings = {}): () => void {
+  let initialized = false;
+
+  return () => {
+    if (initialized) {
+      return;
+    }
+
+    setupSystemCAs(settings);
+    if (settings.customCAPath) {
+      setupCustomCAs(settings.customCAPath);
+    }
+    initialized = true;
+  };
+}
+
+/**
  * Merges system CA certificates with Node's bundled CA list.
  *
  * This function attempts to retrieve system CA certificates and merge them
