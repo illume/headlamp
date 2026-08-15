@@ -174,9 +174,7 @@ describe('MCPClient', () => {
     const getTools = vi.fn().mockResolvedValue(fakeTools);
     const close = vi.fn().mockResolvedValue(undefined);
     const MultiServerMCPClientMock = vi.fn().mockImplementation(() => ({ getTools, close }));
-    const makeMcpServersFromSettings = vi
-      .fn()
-      .mockReturnValue({ serverA: { url: 'http://x' } });
+    const makeMcpServersFromSettings = vi.fn().mockReturnValue({ serverA: { url: 'http://x' } });
 
     vi.resetModules();
     vi.doMock('@langchain/mcp-adapters', () => ({

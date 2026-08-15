@@ -29,7 +29,6 @@ import {
   shell,
 } from 'electron';
 import { IpcMainEvent, MenuItemConstructorOptions } from 'electron/main';
-import find_process from 'find-process';
 import * as fsPromises from 'fs/promises';
 import * as net from 'net';
 import fs from 'node:fs';
@@ -772,6 +771,15 @@ async function isPortAvailable(port: number): Promise<boolean> {
 async function findAvailablePort(startPort: number): Promise<number> {
   for (let i = 0; i < MAX_PORT_ATTEMPTS; i++) {
     const port = startPort + i;
+    const available = await isPortAvailable(port);
+
+    if (available) {
+      if (port !== startPort) {
+        console.info(`Port ${startPort} is in use, using port ${port} instead`);
+      }
+      return port;
+    }
+
     // Skip ports already used by another Headlamp instance.
     const headlampPIDs = await getHeadlampPIDsOnPort(port);
     if (headlampPIDs && headlampPIDs.length > 0) {
@@ -781,14 +789,6 @@ async function findAvailablePort(startPort: number): Promise<number> {
         )}, trying next port...`
       );
       continue;
-    }
-    const available = await isPortAvailable(port);
-
-    if (available) {
-      if (port !== startPort) {
-        console.info(`Port ${startPort} is in use, using port ${port} instead`);
-      }
-      return port;
     }
 
     console.info(`Port ${port} is occupied by another process, trying next port...`);
@@ -1316,7 +1316,8 @@ function menusToTemplate(mainWindow: BrowserWindow | null, menusFromPlugins: App
 }
 
 async function getRunningHeadlampPIDs() {
-  const processes = await find_process('name', 'headlamp-server.*');
+  const { default: findProcess } = await import('find-process');
+  const processes = await findProcess('name', 'headlamp-server.*');
   // Only consider processes owned by the current user: on shared machines
   // (e.g. Windows remote desktop servers) other users run their own
   // headlamp-server and we must never touch those.
@@ -1335,7 +1336,8 @@ async function getRunningHeadlampPIDs() {
 async function getHeadlampPIDsOnPort(port: number): Promise<number[] | null> {
   try {
     // Get all Headlamp processes
-    const headlampProcesses = await find_process('name', 'headlamp-server');
+    const { default: findProcess } = await import('find-process');
+    const headlampProcesses = await findProcess('name', 'headlamp-server');
     if (headlampProcesses.length === 0) {
       return null;
     }

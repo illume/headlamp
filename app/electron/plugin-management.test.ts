@@ -34,6 +34,27 @@ const TEST_DATA_BASE_DIR = path.join(os.tmpdir(), 'headlamp-test-data');
 const PLUGIN_DEST_BASE_DIR = path.join(os.tmpdir(), 'headlamp-test-plugins');
 const HEADLAMP_VERSION = '0.30.0';
 
+describe('plugin management loading', () => {
+  it('defers installation-only dependencies', async () => {
+    const tarFactory = vi.fn(() => ({}));
+    const semverFactory = vi.fn(() => ({}));
+
+    vi.resetModules();
+    vi.doMock('tar', tarFactory);
+    vi.doMock('semver', semverFactory);
+
+    try {
+      await import('./plugin-management');
+
+      expect(tarFactory).not.toHaveBeenCalled();
+      expect(semverFactory).not.toHaveBeenCalled();
+    } finally {
+      vi.doUnmock('tar');
+      vi.doUnmock('semver');
+    }
+  });
+});
+
 /**
  * Creates a unique test directory for a test
  * @param basePath Base directory path
