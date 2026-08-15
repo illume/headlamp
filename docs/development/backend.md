@@ -140,6 +140,7 @@ expiration.
 | 4 | Cache only the Kubernetes authorization client instead of a full clientset | Removes unused typed clients from each token cache entry | Narrows the internal cache API |
 | 5 | Initialize proxy transports only when a context is first used | Saves per-context TLS and transport state for unused contexts | Adds synchronization to the first request |
 | 6 | Lower `GOGC` for the desktop backend | About 2–4.5 MiB in measured idle/request workloads | More frequent GC and modestly higher CPU use |
+| 7 | Skip telemetry setup when tracing and metrics are disabled | 2,432 bytes and 25 startup allocations in an isolated benchmark | None; providers are still initialized when either feature is enabled |
 
 The desktop launcher defaults its bundled backend to `GOGC=50`, while preserving
 an explicitly configured `GOGC`. In isolated measurements, this reduced median
@@ -152,6 +153,40 @@ roughly 85–90% of a container's memory limit, leaving room for the executable,
 stacks, and non-Go allocations. Limits between 20 MiB and 64 MiB did not
 consistently reduce the small desktop startup workload, so the app does not force
 a fixed value. Re-profile under production load before setting either variable.
+
+### Evaluated compiler and runtime options
+
+The following medians are from three Linux amd64 runs of 20,000 local `/config`
+requests with Go 1.26.5. Private dirty memory is reported instead of total RSS
+because demand-paged executable mappings varied substantially with link layout.
+These are directional results from a small workload, not production defaults.
+
+| Runtime configuration | Private dirty after requests | Backend CPU | Result |
+| --- | ---: | ---: | --- |
+| `GOGC=100` | 17.2 MiB | 3.26 s | Go default and comparison baseline |
+| `GOGC=50` | 14.8 MiB | 3.37 s | Current desktop default; saves 2.4 MiB |
+| `GOGC=25` | 12.7 MiB | 3.73 s | Saves another 2.1 MiB, but used about 11% more CPU than `GOGC=50` |
+| `GOGC=50 GOMEMLIMIT=64MiB` | 14.8 MiB | 3.43 s | No measurable saving in this workload |
+| `GOGC=50 GODEBUG=disablethp=1` | 11.7 MiB | 3.44 s | Linux-only saving on this host; not used because the compatibility setting is scheduled for removal |
+| `GOGC=50 GOMAXPROCS=1` | 13.2 MiB | 2.32 s | Not used because serializing execution can hurt concurrent workloads |
+
+Compiler experiments used the same workload with `GOGC=50`:
+
+| Build option | Binary size | Private dirty | Backend CPU | Result |
+| --- | ---: | ---: | ---: | --- |
+| Default | 114.4 MiB | 14.8 MiB | 3.37 s | Baseline |
+| `-trimpath -ldflags="-s -w"` | 81.4 MiB | 14.5 MiB | 3.38 s | Saves 28.8% on disk, but no meaningful runtime memory |
+| `-gcflags=all=-l` | 103.5 MiB | 12.8 MiB | 4.21 s | About 2 MiB less memory at roughly 25% more CPU; not selected |
+| `GOAMD64=v3` | 114.4 MiB | 14.9 MiB | 3.41 s | No memory saving and reduces CPU compatibility |
+| `-buildmode=pie` | 120.9 MiB | 19.1 MiB | 3.45 s | Increased private memory |
+| `GOEXPERIMENT=greenteagc` | 114.4 MiB | 14.7 MiB | 3.47 s | No meaningful saving in this workload |
+
+Go plugins are not a portable memory-saving mechanism for the backend. They are
+unsupported on Windows, must match the main binary's toolchain and dependencies,
+cannot be unloaded, and therefore retain their memory after first use. Splitting
+optional features into helper processes would also add another Go runtime and IPC
+complexity. Headlamp instead avoids initializing disabled telemetry and keeps its
+portable, statically linked backend.
 
 ## Fuzz Testing
 
