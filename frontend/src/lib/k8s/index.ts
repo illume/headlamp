@@ -15,9 +15,7 @@
  */
 
 import _ from 'lodash';
-import React, { useMemo } from 'react';
-import { ConfigState } from '../../redux/configSlice';
-import { useTypedSelector } from '../../redux/hooks';
+import React from 'react';
 import { getCluster } from '../cluster';
 import { clusterRequest } from './api/v1/clusterRequests';
 import { ApiError } from './api/v2/ApiError';
@@ -113,34 +111,9 @@ export const ResourceClasses = {
   UDPRoute,
 };
 
-/** Hook for getting or fetching the clusters configuration.
- * This gets the clusters from the redux store. The redux store is updated
- * when the user changes the configuration. The configuration is stored in
- * the local storage. When stateless clusters are present, it combines the
- * stateless clusters with the clusters from the redux store.
- * @returns the clusters configuration.
- * */
-export function useClustersConf(): ConfigState['allClusters'] {
-  const state = useTypedSelector(state => state.config);
-  const clusters = _.cloneDeep(state.clusters || {});
-  const allClusters = _.cloneDeep(state.allClusters || {});
-  Object.assign(allClusters, clusters);
-
-  if (state.statelessClusters) {
-    // Combine statelessClusters with clusters
-    const statelessClusters = _.cloneDeep(state.statelessClusters || {});
-    Object.assign(allClusters, statelessClusters);
-  }
-
-  return useMemo(
-    () => (state.clusters === null ? null : allClusters),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [state.clusters === null, Object.keys(allClusters).join(',')]
-  );
-}
-
 export { useCluster, useConnectApi, useSelectedClusters } from './api/v1/hooks';
 export type { CancellablePromise } from './api/v1/hooks';
+export { useClustersConf } from './useClustersConf';
 
 /**
  * Gets the version of the cluster given by the parameter.
