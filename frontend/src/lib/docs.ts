@@ -18,14 +18,16 @@
  * This module was taken from the k8dash project.
  */
 
-import Swagger from '@apidevtools/swagger-parser';
 import type { OpenAPIV2 } from 'openapi-types';
 import { request } from './k8s/api/v1/clusterRequests';
 
 let docsPromise: ReturnType<typeof getDocs> | null = null;
 
 async function getDocs() {
-  const docs = await request('/openapi/v2');
+  const [docs, { default: Swagger }] = await Promise.all([
+    request('/openapi/v2'),
+    import('@apidevtools/swagger-parser'),
+  ]);
   return Swagger.dereference(docs);
 }
 
