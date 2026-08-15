@@ -21,7 +21,7 @@ describe('withBackendMemoryDefaults', () => {
   it('uses a lower GC target for the bundled backend', () => {
     expect(withBackendMemoryDefaults({ PATH: '/bin' })).toEqual({
       PATH: '/bin',
-      GOGC: '50',
+      GOGC: '25',
     });
   });
 

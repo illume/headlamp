@@ -17,6 +17,6 @@
 export function withBackendMemoryDefaults(env: NodeJS.ProcessEnv): NodeJS.ProcessEnv {
   return {
     ...env,
-    GOGC: env.GOGC || '50',
+    GOGC: env.GOGC || '25',
   };
 }

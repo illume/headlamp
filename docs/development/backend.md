@@ -142,11 +142,11 @@ expiration.
 | 6 | Lower `GOGC` for the desktop backend | About 2–4.5 MiB in measured idle/request workloads | More frequent GC and modestly higher CPU use |
 | 7 | Skip telemetry setup when tracing and metrics are disabled | 2,432 bytes and 25 startup allocations in an isolated benchmark | None; providers are still initialized when either feature is enabled |
 
-The desktop launcher defaults its bundled backend to `GOGC=50`, while preserving
-an explicitly configured `GOGC`. In isolated measurements, this reduced median
-startup RSS from 82,384 KiB to 80,492 KiB. After 20,000 `/config` requests,
-private dirty memory fell from 19,744 KiB to 15,160 KiB, with a 0.35% wall-time
-increase and about 2.4% more backend CPU.
+The desktop launcher defaults its bundled backend to `GOGC=25`, while preserving
+an explicitly configured `GOGC`. In isolated measurements, `GOGC=50` reduced
+median startup RSS from 82,384 KiB to 80,492 KiB. Lowering it to `GOGC=25`
+saved another 2.1 MiB of private dirty memory after 20,000 `/config` requests,
+with about 11% more backend CPU than `GOGC=50`.
 
 `GOMEMLIMIT` is a soft runtime limit rather than a live-heap target. Set it to
 roughly 85–90% of a container's memory limit, leaving room for the executable,
@@ -159,13 +159,13 @@ a fixed value. Re-profile under production load before setting either variable.
 The following medians are from three Linux amd64 runs of 20,000 local `/config`
 requests with Go 1.26.5. Private dirty memory is reported instead of total RSS
 because demand-paged executable mappings varied substantially with link layout.
-These are directional results from a small workload, not production defaults.
+These are directional results from a small workload.
 
 | Runtime configuration | Private dirty after requests | Backend CPU | Result |
 | --- | ---: | ---: | --- |
 | `GOGC=100` | 17.2 MiB | 3.26 s | Go default and comparison baseline |
-| `GOGC=50` | 14.8 MiB | 3.37 s | Current desktop default; saves 2.4 MiB |
-| `GOGC=25` | 12.7 MiB | 3.73 s | Saves another 2.1 MiB, but used about 11% more CPU than `GOGC=50` |
+| `GOGC=50` | 14.8 MiB | 3.37 s | Saves 2.4 MiB over the Go default |
+| `GOGC=25` | 12.7 MiB | 3.73 s | Current desktop default; saves another 2.1 MiB with about 11% more CPU than `GOGC=50` |
 | `GOGC=50 GOMEMLIMIT=64MiB` | 14.8 MiB | 3.43 s | No measurable saving in this workload |
 | `GOGC=50 GODEBUG=disablethp=1` | 11.7 MiB | 3.44 s | Linux-only saving on this host; not used because the compatibility setting is scheduled for removal |
 | `GOGC=50 GOMAXPROCS=1` | 13.2 MiB | 2.32 s | Not used because serializing execution can hurt concurrent workloads |
@@ -175,7 +175,7 @@ Compiler experiments used the same workload with `GOGC=50`:
 | Build option | Binary size | Private dirty | Backend CPU | Result |
 | --- | ---: | ---: | ---: | --- |
 | Default | 114.4 MiB | 14.8 MiB | 3.37 s | Baseline |
-| `-trimpath -ldflags="-s -w"` | 81.4 MiB | 14.5 MiB | 3.38 s | Saves 28.8% on disk, but no meaningful runtime memory |
+| `-trimpath -ldflags="-s -w"` | 81.4 MiB | 14.5 MiB | 3.38 s | Current backend build default; saves 28.8% on disk, but no meaningful runtime memory |
 | `-gcflags=all=-l` | 103.5 MiB | 12.8 MiB | 4.21 s | About 2 MiB less memory at roughly 25% more CPU; not selected |
 | `GOAMD64=v3` | 114.4 MiB | 14.9 MiB | 3.41 s | No memory saving and reduces CPU compatibility |
 | `-buildmode=pie` | 120.9 MiB | 19.1 MiB | 3.45 s | Increased private memory |
