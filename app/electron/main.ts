@@ -39,6 +39,7 @@ import path from 'path';
 import url from 'url';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
+import { withBackendMemoryDefaults } from './backendMemory';
 import { createCertificateSetup } from './certificates';
 import { getHardwareAccelerationDisableReason } from './hardwareAcceleration';
 import i18n from './i18next.config';
@@ -870,9 +871,7 @@ async function startServer(flags: string[] = []): Promise<ChildProcessWithoutNul
   const options = {
     detached: true,
     windowsHide: true,
-    env: {
-      ...extendedEnv,
-    },
+    env: withBackendMemoryDefaults(extendedEnv),
   };
 
   return spawn(serverFilePath, serverArgs, options);

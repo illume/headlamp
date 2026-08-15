@@ -31,8 +31,8 @@ import (
 	"github.com/kubernetes-sigs/headlamp/backend/pkg/cache"
 	"github.com/kubernetes-sigs/headlamp/backend/pkg/kubeconfig"
 	"github.com/kubernetes-sigs/headlamp/backend/pkg/logger"
+	"k8s.io/apimachinery/pkg/api/meta"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/client-go/discovery"
 	"k8s.io/client-go/dynamic"
@@ -308,6 +308,10 @@ func RunInformerToWatch(gvrList []schema.GroupVersionResource,
 ) {
 	for _, gvr := range gvrList {
 		informer := factory.ForResource(gvr).Informer()
+		if err := informer.SetTransform(metadataOnly); err != nil {
+			logger.Log(logger.LevelError, nil, err, "failed to set informer transform for resource: "+gvr.Resource)
+			return
+		}
 
 		// hasSynced gates cache invalidation so that events from the informer's
 		// initial list-and-watch sync do not trigger unnecessary evictions.
@@ -332,6 +336,22 @@ func RunInformerToWatch(gvrList []schema.GroupVersionResource,
 	}
 }
 
+func metadataOnly(obj interface{}) (interface{}, error) {
+	accessor, err := meta.Accessor(obj)
+	if err != nil {
+		return nil, err
+	}
+
+	return &metav1.PartialObjectMetadata{
+		ObjectMeta: metav1.ObjectMeta{
+			Name:            accessor.GetName(),
+			Namespace:       accessor.GetNamespace(),
+			UID:             accessor.GetUID(),
+			ResourceVersion: accessor.GetResourceVersion(),
+		},
+	}, nil
+}
+
 // handleKeyGenerationAndDeletion generates a cache key from the GVR and deletes
 // the corresponding entry from the cache so that stale data is not served.
 //
@@ -340,15 +360,12 @@ func RunInformerToWatch(gvrList []schema.GroupVersionResource,
 func handleKeyGenerationAndDeletion(obj interface{}, gvr schema.GroupVersionResource,
 	contextKey string, k8scache cache.Cache[string], hasSynced func() bool,
 ) {
-	unstructuredObj, ok := obj.(*unstructured.Unstructured)
-	if !ok {
-		// Handle tombstones for Delete events where the object is unknown.
-		if tombstone, isTombstone := obj.(watchCache.DeletedFinalStateUnknown); isTombstone {
-			unstructuredObj, ok = tombstone.Obj.(*unstructured.Unstructured)
-		}
+	if tombstone, ok := obj.(watchCache.DeletedFinalStateUnknown); ok {
+		obj = tombstone.Obj
 	}
 
-	if !ok {
+	accessor, err := meta.Accessor(obj)
+	if err != nil {
 		logger.Log(logger.LevelError, nil, nil, "unexpected object type")
 		return
 	}
@@ -361,8 +378,8 @@ func handleKeyGenerationAndDeletion(obj interface{}, gvr schema.GroupVersionReso
 
 	invalidateCacheKeysForResourceEvent(
 		gvr,
-		unstructuredObj.GetNamespace(),
-		unstructuredObj.GetName(),
+		accessor.GetNamespace(),
+		accessor.GetName(),
 		contextKey,
 		k8scache,
 	)

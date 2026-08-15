@@ -529,6 +529,13 @@ func TestRunInformerToWatch_InvalidatesListNamedAndAllNamespaceCacheKeys(t *test
 		return true
 	}, 2*time.Second, 50*time.Millisecond, "informer should evict list, all-namespace, and named GET keys")
 
+	stored := factory.ForResource(gvr).Informer().GetStore().List()
+	require.Len(t, stored, 1)
+	metadata, ok := stored[0].(*metav1.PartialObjectMetadata)
+	require.True(t, ok)
+	assert.Equal(t, "test-pod", metadata.Name)
+	assert.Equal(t, "default", metadata.Namespace)
+
 	close(stopCh)
 }
 
