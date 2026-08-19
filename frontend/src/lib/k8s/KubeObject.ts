@@ -393,13 +393,14 @@ export class KubeObject<T extends KubeObjectInterface | KubeEvent = any> {
   ) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const fallbackClusters = useSelectedClusters();
-    const clusterList = cluster
-      ? [cluster]
-      : clusters || (fallbackClusters.length === 0 ? [''] : fallbackClusters);
 
     // Create requests for each cluster and namespace
     // eslint-disable-next-line react-hooks/rules-of-hooks
-    const requests = useMemo(() => {
+    const { requests, emptyWhenNoRequests } = useMemo(() => {
+      const clusterList = cluster
+        ? [cluster]
+        : clusters || (fallbackClusters.length === 0 ? [''] : fallbackClusters);
+
       const namespacesFromParams =
         typeof namespace === 'string'
           ? [namespace]
@@ -407,13 +408,18 @@ export class KubeObject<T extends KubeObjectInterface | KubeEvent = any> {
           ? namespace
           : undefined;
 
-      return makeListRequests(
+      const requests = makeListRequests(
         clusterList,
         getAllowedNamespaces,
         this.isNamespaced,
         namespacesFromParams,
         hasAllowedNamespacesRestriction
       );
+      return {
+        requests,
+        emptyWhenNoRequests:
+          requests.length === 0 && clusterList.some(hasAllowedNamespacesRestriction),
+      };
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [cluster, clusters, fallbackClusters, namespace, this.isNamespaced]);
 
@@ -422,8 +428,7 @@ export class KubeObject<T extends KubeObjectInterface | KubeEvent = any> {
       queryParams: queryParams,
       kubeObjectClass: this,
       requests,
-      emptyWhenNoRequests:
-        requests.length === 0 && clusterList.some(hasAllowedNamespacesRestriction),
+      emptyWhenNoRequests,
       refetchInterval,
     });
 
