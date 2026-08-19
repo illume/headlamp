@@ -398,6 +398,7 @@ describe('useKubeObjectList', () => {
         useKubeObjectList({
           kubeObjectClass: mockClass,
           requests: [],
+          emptyWhenNoRequests: true,
         }),
       { wrapper: queryClientWrapper(new QueryClient()) }
     );

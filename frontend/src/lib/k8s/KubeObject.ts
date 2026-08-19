@@ -393,14 +393,13 @@ export class KubeObject<T extends KubeObjectInterface | KubeEvent = any> {
   ) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const fallbackClusters = useSelectedClusters();
+    const clusterList = cluster
+      ? [cluster]
+      : clusters || (fallbackClusters.length === 0 ? [''] : fallbackClusters);
 
     // Create requests for each cluster and namespace
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const requests = useMemo(() => {
-      const clusterList = cluster
-        ? [cluster]
-        : clusters || (fallbackClusters.length === 0 ? [''] : fallbackClusters);
-
       const namespacesFromParams =
         typeof namespace === 'string'
           ? [namespace]
@@ -423,6 +422,8 @@ export class KubeObject<T extends KubeObjectInterface | KubeEvent = any> {
       queryParams: queryParams,
       kubeObjectClass: this,
       requests,
+      emptyWhenNoRequests:
+        requests.length === 0 && clusterList.some(hasAllowedNamespacesRestriction),
       refetchInterval,
     });
 

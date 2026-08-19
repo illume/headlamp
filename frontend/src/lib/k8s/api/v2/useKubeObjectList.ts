@@ -603,6 +603,7 @@ export function useKubeObjectList<K extends KubeObject>({
   queryParams,
   watch = true,
   refetchInterval,
+  emptyWhenNoRequests = false,
 }: {
   requests: Array<{ cluster: string; namespaces?: string[] }>;
   /** Class to instantiate the object with */
@@ -612,6 +613,8 @@ export function useKubeObjectList<K extends KubeObject>({
   watch?: boolean;
   /** How often to refetch the list. Won't refetch by default. Disables watching if set. */
   refetchInterval?: number;
+  /** Return an empty list instead of a loading state when requests were intentionally suppressed. */
+  emptyWhenNoRequests?: boolean;
 }): [Array<K> | null, ApiError | null] &
   QueryListResponse<Array<ListResponse<K> | undefined | null>, K, ApiError> {
   const maybeNamespace = requests.find(it => it.namespaces)?.namespaces?.[0];
@@ -693,7 +696,9 @@ export function useKubeObjectList<K extends KubeObject>({
           return acc;
         }, {} as Record<string, QueryListResponse<any, K, ApiError>>),
         items:
-          results.length > 0 && results.every(result => result.data === null)
+          emptyWhenNoRequests && results.length === 0
+            ? []
+            : results.every(result => result.data === null)
             ? null
             : results.flatMap(result => result?.data?.list?.items ?? []),
         errors: results.map(result => result.error).filter(Boolean),
