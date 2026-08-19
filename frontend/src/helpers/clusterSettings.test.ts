@@ -247,6 +247,11 @@ describe('clusterSettings', () => {
       expect(hasAllowedNamespacesRestriction('prod')).toBe(false);
     });
 
+    it('is true when allowed namespaces are configured explicitly', () => {
+      storeClusterSettings('prod', { allowedNamespaces: ['team-a'] });
+      expect(hasAllowedNamespacesRestriction('prod')).toBe(true);
+    });
+
     it('is true when a selector is configured but resolves to no namespaces', () => {
       storeClusterSettings('prod', { allowedNamespacesSelector: 'team=frontend' });
       storeResolvedAllowedNamespaces('prod', 'team=frontend', []);
