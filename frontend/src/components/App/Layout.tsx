@@ -23,7 +23,7 @@ import Link from '@mui/material/Link';
 import { styled } from '@mui/material/styles';
 import { Dispatch, UnknownAction } from '@reduxjs/toolkit';
 import { useQuery } from '@tanstack/react-query';
-import { Fragment, ReactNode, useCallback, useEffect, useState } from 'react';
+import { cloneElement, ReactElement, useCallback, useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { loadClusterSettings, loadResolvedAllowedNamespaces } from '../../helpers/clusterSettings';
@@ -238,7 +238,7 @@ function AllowedNamespacesSelectorGate({
   children,
 }: {
   clusters: string[];
-  children: ReactNode;
+  children: ReactElement<{ namespaceResolutionKey?: string }>;
 }) {
   const { t } = useTranslation();
   const [resolutions, setResolutions] = useState<Record<string, SelectorResolution>>({});
@@ -278,7 +278,7 @@ function AllowedNamespacesSelectorGate({
       {waiting ? (
         <Loader title={t('Loading')} />
       ) : (
-        <Fragment key={resolutionKey}>{children}</Fragment>
+        cloneElement(children, { namespaceResolutionKey: resolutionKey })
       )}
     </>
   );

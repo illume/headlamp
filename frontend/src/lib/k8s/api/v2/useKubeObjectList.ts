@@ -17,7 +17,10 @@
 import type { QueryObserverOptions } from '@tanstack/react-query';
 import { useQueries, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { loadClusterSettings } from '../../../../helpers/clusterSettings';
+import {
+  getCombinedAllowedNamespaces,
+  hasAllowedNamespacesRestriction,
+} from '../../../../helpers/clusterSettings';
 import type { KubeObject, KubeObjectClass } from '../../KubeObject';
 import type { QueryParameters } from '../v1/queryParameters';
 import { ApiError } from './ApiError';
@@ -73,7 +76,7 @@ function allowedNamespaceListQuery<K extends KubeObject>(
   cluster: string,
   refetchInterval?: number
 ): QueryObserverOptions<ListResponse<K> | undefined | null, ApiError> {
-  const allowedNamespaces = loadClusterSettings(cluster).allowedNamespaces ?? [];
+  const allowedNamespaces = getCombinedAllowedNamespaces(cluster);
 
   return {
     placeholderData: null,
@@ -145,7 +148,8 @@ export function kubeObjectListQuery<K extends KubeObject>(
 ): QueryObserverOptions<ListResponse<K> | undefined | null, ApiError> {
   if (
     kubeObjectClass.kind === 'Namespace' &&
-    (loadClusterSettings(cluster).allowedNamespaces?.length ?? 0) > 0
+    !queryParams.labelSelector &&
+    hasAllowedNamespacesRestriction(cluster)
   ) {
     return allowedNamespaceListQuery<K>(kubeObjectClass, cluster, refetchInterval);
   }
@@ -532,6 +536,9 @@ export function makeListRequests(
 
     if (allowedNamespaces.length) {
       namespaces = namespaces.filter(ns => allowedNamespaces.includes(ns));
+      if (isResourceNamespaced && namespaces.length === 0) {
+        return [];
+      }
     }
 
     return { cluster, namespaces: isResourceNamespaced ? namespaces : undefined };

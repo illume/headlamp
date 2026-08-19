@@ -34,7 +34,10 @@ import ErrorBoundary from '../common/ErrorBoundary';
 import ErrorComponent from '../common/ErrorPage';
 import { useSidebarItem } from '../Sidebar';
 
-export default function RouteSwitcher(props: { requiresToken: () => boolean }) {
+export default function RouteSwitcher(props: {
+  requiresToken: () => boolean;
+  namespaceResolutionKey?: string;
+}) {
   // The NotFoundRoute always has to be evaluated in the last place.
   const routes = useTypedSelector(state => state.routes.routes);
   const routeFilters = useTypedSelector(state => state.routes.routeFilters);
