@@ -23,7 +23,7 @@ import Link from '@mui/material/Link';
 import { styled } from '@mui/material/styles';
 import { Dispatch, UnknownAction } from '@reduxjs/toolkit';
 import { useQuery } from '@tanstack/react-query';
-import { cloneElement, ReactElement, useCallback, useEffect, useState } from 'react';
+import { ReactNode, useCallback, useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { loadClusterSettings, loadResolvedAllowedNamespaces } from '../../helpers/clusterSettings';
@@ -31,6 +31,7 @@ import { getCluster } from '../../lib/cluster';
 import { getSelectedClusters } from '../../lib/cluster';
 import { useCluster, useClustersConf, useSelectedClusters } from '../../lib/k8s';
 import { useAllowedNamespacesFromSelector } from '../../lib/k8s/allowedNamespaces';
+import { AllowedNamespacesResolutionContext } from '../../lib/k8s/allowedNamespacesContext';
 import { request } from '../../lib/k8s/api/v1/clusterRequests';
 import { Cluster } from '../../lib/k8s/cluster';
 import { getSavedNamespaces } from '../../lib/storage';
@@ -238,7 +239,7 @@ function AllowedNamespacesSelectorGate({
   children,
 }: {
   clusters: string[];
-  children: ReactElement<{ namespaceResolutionKey?: string }>;
+  children: ReactNode;
 }) {
   const { t } = useTranslation();
   const [resolutions, setResolutions] = useState<Record<string, SelectorResolution>>({});
@@ -278,7 +279,9 @@ function AllowedNamespacesSelectorGate({
       {waiting ? (
         <Loader title={t('Loading')} />
       ) : (
-        cloneElement(children, { namespaceResolutionKey: resolutionKey })
+        <AllowedNamespacesResolutionContext.Provider value={resolutionKey}>
+          {children}
+        </AllowedNamespacesResolutionContext.Provider>
       )}
     </>
   );

@@ -25,6 +25,7 @@ import {
 import { formatClusterPathParam, getCluster, getSelectedClusters } from '../cluster';
 import { createRouteURL } from '../router/createRouteURL';
 import { timeAgo } from '../util';
+import { AllowedNamespacesResolutionContext } from './allowedNamespacesContext';
 import { post } from './api/v1/clusterRequests';
 import type { DeleteParameters } from './api/v1/deleteParameters';
 import type {
@@ -393,6 +394,8 @@ export class KubeObject<T extends KubeObjectInterface | KubeEvent = any> {
   ) {
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const fallbackClusters = useSelectedClusters();
+    // eslint-disable-next-line react-hooks/rules-of-hooks
+    const allowedNamespacesResolutionKey = React.useContext(AllowedNamespacesResolutionContext);
 
     // Create requests for each cluster and namespace
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -421,7 +424,14 @@ export class KubeObject<T extends KubeObjectInterface | KubeEvent = any> {
           requests.length === 0 && clusterList.some(hasAllowedNamespacesRestriction),
       };
       // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [cluster, clusters, fallbackClusters, namespace, this.isNamespaced]);
+    }, [
+      cluster,
+      clusters,
+      fallbackClusters,
+      namespace,
+      this.isNamespaced,
+      allowedNamespacesResolutionKey,
+    ]);
 
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const result = useKubeObjectList<K>({

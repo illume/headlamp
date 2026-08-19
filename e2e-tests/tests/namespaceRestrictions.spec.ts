@@ -262,6 +262,7 @@ test('all selected cluster selectors start resolving before routes render', asyn
 });
 
 test('a selector refresh preserves routed page state', async ({ page }) => {
+  const podRequests: string[] = [];
   let releaseSelector!: () => void;
   const selectorReleased = new Promise<void>(resolve => {
     releaseSelector = resolve;
@@ -285,8 +286,11 @@ test('a selector refresh preserves routed page state', async ({ page }) => {
     await selectorReleased;
     return ['fresh'];
   });
-  await page.route('**/clusters/test/api/v1/namespaces/stale/pods**', route =>
-    route.fulfill({
+  await page.route('**/clusters/test/api/v1/namespaces/*/pods**', route => {
+    const namespace = new URL(route.request().url()).pathname
+      .split('/namespaces/')[1]
+      .split('/')[0];
+    return route.fulfill({
       json: {
         apiVersion: 'v1',
         kind: 'PodList',
@@ -296,8 +300,8 @@ test('a selector refresh preserves routed page state', async ({ page }) => {
             apiVersion: 'v1',
             kind: 'Pod',
             metadata: {
-              name: 'keep-state-visible',
-              namespace: 'stale',
+              name: `keep-state-visible-${namespace}`,
+              namespace,
               resourceVersion: '1',
               creationTimestamp: '2026-01-01T00:00:00Z',
             },
@@ -306,8 +310,14 @@ test('a selector refresh preserves routed page state', async ({ page }) => {
           },
         ],
       },
-    })
-  );
+    });
+  });
+  page.on('request', request => {
+    const url = new URL(request.url());
+    if (/\/api\/v1\/namespaces\/[^/]+\/pods$/.test(url.pathname)) {
+      podRequests.push(`${url.pathname}${url.search}`);
+    }
+  });
 
   try {
     await page.goto('/c/test/pods', { waitUntil: 'domcontentloaded' });
@@ -325,6 +335,11 @@ test('a selector refresh preserves routed page state', async ({ page }) => {
         })
       )
       .toEqual(['fresh']);
+    await expect
+      .poll(() =>
+        podRequests.some(request => request.includes('/clusters/test/api/v1/namespaces/fresh/pods'))
+      )
+      .toBe(true);
     await expect(search).toHaveValue('keep this filter');
   } finally {
     releaseSelector();

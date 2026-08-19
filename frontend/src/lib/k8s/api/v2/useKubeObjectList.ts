@@ -20,6 +20,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   getCombinedAllowedNamespaces,
   hasAllowedNamespacesRestriction,
+  loadClusterSettings,
 } from '../../../../helpers/clusterSettings';
 import type { KubeObject, KubeObjectClass } from '../../KubeObject';
 import type { QueryParameters } from '../v1/queryParameters';
@@ -146,9 +147,14 @@ export function kubeObjectListQuery<K extends KubeObject>(
   queryParams: QueryParameters,
   refetchInterval?: number
 ): QueryObserverOptions<ListResponse<K> | undefined | null, ApiError> {
+  const configuredSelector =
+    loadClusterSettings(cluster).allowedNamespacesSelector?.trim() || undefined;
+  const isResolvingAllowedNamespaces =
+    configuredSelector !== undefined && queryParams.labelSelector?.trim() === configuredSelector;
+
   if (
     kubeObjectClass.kind === 'Namespace' &&
-    !queryParams.labelSelector &&
+    !isResolvingAllowedNamespaces &&
     hasAllowedNamespacesRestriction(cluster)
   ) {
     return allowedNamespaceListQuery<K>(kubeObjectClass, cluster, refetchInterval);

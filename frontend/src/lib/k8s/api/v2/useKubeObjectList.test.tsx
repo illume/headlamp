@@ -609,6 +609,39 @@ describe('useKubeObjectList', () => {
     );
   });
 
+  it('does not use a cluster-wide query for an unrelated namespace selector', async () => {
+    const namespaceClass = class {
+      static apiVersion = 'v1';
+      static apiName = 'namespaces';
+      static kind = 'Namespace';
+
+      constructor(public jsonData: any) {}
+    } as any;
+    localStorage.setItem(
+      'cluster_settings.restricted',
+      JSON.stringify({
+        allowedNamespaces: ['manual'],
+        allowedNamespacesSelector: 'team=frontend',
+      })
+    );
+    mockClusterFetch.mockResolvedValueOnce({
+      json: () => Promise.resolve({ metadata: { name: 'manual' } }),
+    } as Response);
+
+    const query = kubeObjectListQuery(
+      namespaceClass,
+      { version: 'v1', resource: 'namespaces' },
+      undefined,
+      'restricted',
+      { labelSelector: 'headlamp.dev/project-id' }
+    );
+    await (query.queryFn as any)();
+
+    expect(mockClusterFetch).toHaveBeenCalledWith('api/v1/namespaces/manual', {
+      cluster: 'restricted',
+    });
+  });
+
   it('does not watch the synthesized allowed namespace list', async () => {
     const namespaceClass = class {
       static apiVersion = 'v1';
