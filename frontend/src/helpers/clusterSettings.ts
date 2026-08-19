@@ -224,3 +224,11 @@ export function getCombinedAllowedNamespaces(cluster: string): string[] {
   const resolved = cache && cache.selector === selector ? cache.namespaces : [];
   return [...new Set([...(settings.allowedNamespaces || []), ...resolved])].sort();
 }
+
+export function hasAllowedNamespacesRestriction(cluster: string): boolean {
+  const settings = loadClusterSettings(cluster);
+  return (
+    (settings.allowedNamespaces?.length ?? 0) > 0 ||
+    Boolean(settings.allowedNamespacesSelector?.trim())
+  );
+}

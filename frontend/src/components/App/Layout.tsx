@@ -23,7 +23,7 @@ import Link from '@mui/material/Link';
 import { styled } from '@mui/material/styles';
 import { Dispatch, UnknownAction } from '@reduxjs/toolkit';
 import { useQuery } from '@tanstack/react-query';
-import { useEffect } from 'react';
+import { Fragment, ReactNode, useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
 import { loadClusterSettings, loadResolvedAllowedNamespaces } from '../../helpers/clusterSettings';
@@ -203,9 +203,58 @@ const disableBackendLoader = true;
  * namespaces label selector. Rendered once per selected cluster so the resolution
  * (which relies on a hook) runs for every cluster whose resources may be listed.
  */
-function AllowedNamespacesSelectorSync({ cluster }: { cluster: string }) {
-  useAllowedNamespacesFromSelector(cluster, loadClusterSettings(cluster).allowedNamespacesSelector);
-  return null;
+function AllowedNamespacesSelectorGate({
+  clusters,
+  children,
+}: {
+  clusters: string[];
+  children: ReactNode;
+}) {
+  const cluster = clusters[0];
+  const remainingClusters = clusters.slice(1);
+  const { t } = useTranslation();
+  const selector = (loadClusterSettings(cluster).allowedNamespacesSelector || '').trim();
+  const resolution = useAllowedNamespacesFromSelector(cluster, selector);
+  const resultKey = resolution.error
+    ? JSON.stringify(['error', resolution.error.message])
+    : resolution.isSuccess
+    ? JSON.stringify(['success', resolution.namespaces])
+    : '';
+  const [processedResultKey, setProcessedResultKey] = useState('');
+
+  useEffect(() => {
+    if (selector && resultKey) {
+      setProcessedResultKey(resultKey);
+    }
+  }, [selector, resultKey]);
+
+  const cache = selector ? loadResolvedAllowedNamespaces(cluster) : null;
+  const cachedResultKey =
+    cache?.selector === selector ? JSON.stringify(['success', cache.namespaces]) : '';
+  const waiting = Boolean(
+    selector &&
+      (resultKey
+        ? processedResultKey !== resultKey || (!resolution.error && cachedResultKey !== resultKey)
+        : !cache)
+  );
+
+  if (waiting) {
+    return <Loader title={t('Loading')} />;
+  }
+
+  const content =
+    remainingClusters.length > 0 ? (
+      <AllowedNamespacesSelectorGate clusters={remainingClusters}>
+        {children}
+      </AllowedNamespacesSelectorGate>
+    ) : (
+      children
+    );
+  const resolutionKey = `${cluster}:${selector}:${
+    resolution.error && processedResultKey === resultKey ? resultKey : cachedResultKey
+  }`;
+
+  return <Fragment key={resolutionKey}>{content}</Fragment>;
 }
 
 export default function Layout({}: LayoutProps) {
@@ -247,29 +296,8 @@ export default function Layout({}: LayoutProps) {
     }
   }, [cluster, dispatch]);
 
-  // Keep the namespaces resolved from each selected cluster's label selector (if
-  // any) in sync so getCombinedAllowedNamespaces stays up to date. Resource lists
-  // span every selected cluster, so we resolve them all, not just the active one.
   const selectedClusters = useSelectedClusters();
-
-  // Resolve the active cluster's selector directly (the other selected clusters
-  // are synced by the components below). We use its state to gate the resource
-  // routes on the first resolution.
-  const activeSelector = (
-    loadClusterSettings(cluster || '').allowedNamespacesSelector || ''
-  ).trim();
-  const activeResolution = useAllowedNamespacesFromSelector(cluster || '', activeSelector);
-  const activeResolvedCache = activeSelector ? loadResolvedAllowedNamespaces(cluster || '') : null;
-  // Wait for the first resolution before rendering resource routes, so views build
-  // their requests from the resolved namespaces instead of a not-yet-populated
-  // cache (which would otherwise fall back to cluster-wide requests). Steady state
-  // (cache already present for this selector) and clusters without a selector
-  // never wait.
-  const waitingForAllowedNamespaces =
-    !!activeSelector &&
-    !(activeResolvedCache && activeResolvedCache.selector === activeSelector) &&
-    !activeResolution.isSuccess &&
-    !activeResolution.error;
+  const clustersToResolve = [...new Set([cluster || '', ...selectedClusters].filter(Boolean))];
 
   const urlClusters = getSelectedClusters();
   const clustersNotInURL =
@@ -337,11 +365,6 @@ export default function Layout({}: LayoutProps) {
       >
         {t('Skip to main content')}
       </Link>
-      {selectedClusters
-        .filter(clusterName => clusterName && clusterName !== cluster)
-        .map(clusterName => (
-          <AllowedNamespacesSelectorSync key={clusterName} cluster={clusterName} />
-        ))}
       <VersionDialog />
       <ShortcutsSettings />
       <CssBaseline enableColorScheme />
@@ -392,8 +415,16 @@ export default function Layout({}: LayoutProps) {
                 <Container {...containerProps} sx={{ height: '100%' }}>
                   <NavigationTabs />
                   {arePluginsLoaded &&
-                    (waitingForAllowedNamespaces ? (
-                      <Loader title={t('Loading')} />
+                    (clustersToResolve.length > 0 ? (
+                      <AllowedNamespacesSelectorGate clusters={clustersToResolve}>
+                        <RouteSwitcher
+                          requiresToken={() => {
+                            const clusterName = getCluster() || '';
+                            const cluster = clusters ? clusters[clusterName] : undefined;
+                            return cluster?.useToken === undefined || cluster?.useToken;
+                          }}
+                        />
+                      </AllowedNamespacesSelectorGate>
                     ) : (
                       <RouteSwitcher
                         requiresToken={() => {

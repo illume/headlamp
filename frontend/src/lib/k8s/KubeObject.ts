@@ -18,7 +18,10 @@ import { JSONPath } from 'jsonpath-plus';
 import cloneDeep from 'lodash/cloneDeep';
 import unset from 'lodash/unset';
 import React, { useMemo } from 'react';
-import { getCombinedAllowedNamespaces } from '../../helpers/clusterSettings';
+import {
+  getCombinedAllowedNamespaces,
+  hasAllowedNamespacesRestriction,
+} from '../../helpers/clusterSettings';
 import { formatClusterPathParam, getCluster, getSelectedClusters } from '../cluster';
 import { createRouteURL } from '../router/createRouteURL';
 import { timeAgo } from '../util';
@@ -409,7 +412,8 @@ export class KubeObject<T extends KubeObjectInterface | KubeEvent = any> {
         clusterList,
         getAllowedNamespaces,
         this.isNamespaced,
-        namespacesFromParams
+        namespacesFromParams,
+        hasAllowedNamespacesRestriction
       );
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [cluster, clusters, fallbackClusters, namespace, this.isNamespaced]);

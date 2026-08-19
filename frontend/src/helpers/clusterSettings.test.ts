@@ -19,6 +19,7 @@ import {
   clearResolvedAllowedNamespaces,
   ClusterSettings,
   getCombinedAllowedNamespaces,
+  hasAllowedNamespacesRestriction,
   isResolvedAllowedNamespacesStale,
   loadClusterSettings,
   loadResolvedAllowedNamespaces,
@@ -237,6 +238,19 @@ describe('clusterSettings', () => {
       storeClusterSettings('prod', { allowedNamespaces: ['a'] });
       storeResolvedAllowedNamespaces('prod', 'team=frontend', ['x', 'y']);
       expect(getCombinedAllowedNamespaces('prod')).toEqual(['a']);
+    });
+  });
+
+  describe('hasAllowedNamespacesRestriction', () => {
+    it('is false when no allowed namespaces are configured', () => {
+      storeClusterSettings('prod', { allowedNamespaces: [] });
+      expect(hasAllowedNamespacesRestriction('prod')).toBe(false);
+    });
+
+    it('is true when a selector is configured but resolves to no namespaces', () => {
+      storeClusterSettings('prod', { allowedNamespacesSelector: 'team=frontend' });
+      storeResolvedAllowedNamespaces('prod', 'team=frontend', []);
+      expect(hasAllowedNamespacesRestriction('prod')).toBe(true);
     });
   });
 

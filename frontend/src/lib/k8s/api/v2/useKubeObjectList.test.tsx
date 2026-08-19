@@ -66,6 +66,28 @@ describe('makeListRequests', () => {
       expect(requests).toEqual([{ cluster: 'default', namespaces: [] }]);
     });
 
+    it('should not make a cluster-wide request when a namespace restriction resolves empty', () => {
+      const requests = makeListRequests(
+        ['default'],
+        () => [],
+        true,
+        [],
+        () => true
+      );
+      expect(requests).toEqual([]);
+    });
+
+    it('should reject requested namespaces when a namespace restriction resolves empty', () => {
+      const requests = makeListRequests(
+        ['default'],
+        () => [],
+        true,
+        ['namespace-a'],
+        () => true
+      );
+      expect(requests).toEqual([]);
+    });
+
     it('should make requests for allowed namespaces only', () => {
       const requests = makeListRequests(['default'], () => ['namespace-a'], true);
       expect(requests).toEqual([{ cluster: 'default', namespaces: ['namespace-a'] }]);
@@ -368,6 +390,20 @@ describe('useKubeObjectList', () => {
     vi.stubEnv('REACT_APP_ENABLE_WEBSOCKET_MULTIPLEXER', 'false');
     vi.clearAllMocks();
     localStorage.clear();
+  });
+
+  it('returns an empty result without fetching when no list requests are allowed', () => {
+    const result = renderHook(
+      () =>
+        useKubeObjectList({
+          kubeObjectClass: mockClass,
+          requests: [],
+        }),
+      { wrapper: queryClientWrapper(new QueryClient()) }
+    );
+
+    expect(result.result.current.items).toEqual([]);
+    expect(mockClusterFetch).not.toHaveBeenCalled();
   });
 
   it('fetches allowed namespaces individually without starting a cluster-wide watch', async () => {

@@ -514,10 +514,19 @@ export function makeListRequests(
   clusters: string[],
   getAllowedNamespaces: (cluster: string | null) => string[],
   isResourceNamespaced: boolean,
-  requestedNamespaces: string[] = []
+  requestedNamespaces: string[] = [],
+  hasAllowedNamespacesRestriction: (cluster: string) => boolean = () => false
 ): Array<{ cluster: string; namespaces?: string[] }> {
-  return clusters.map(cluster => {
+  return clusters.flatMap(cluster => {
     const allowedNamespaces = getAllowedNamespaces(cluster);
+
+    if (
+      isResourceNamespaced &&
+      allowedNamespaces.length === 0 &&
+      hasAllowedNamespacesRestriction(cluster)
+    ) {
+      return [];
+    }
 
     let namespaces = requestedNamespaces.length > 0 ? requestedNamespaces : allowedNamespaces;
 
@@ -683,9 +692,10 @@ export function useKubeObjectList<K extends KubeObject>({
           }
           return acc;
         }, {} as Record<string, QueryListResponse<any, K, ApiError>>),
-        items: results.every(result => result.data === null)
-          ? null
-          : results.flatMap(result => result?.data?.list?.items ?? []),
+        items:
+          results.length > 0 && results.every(result => result.data === null)
+            ? null
+            : results.flatMap(result => result?.data?.list?.items ?? []),
         errors: results.map(result => result.error).filter(Boolean),
         isError: results.some(result => result.isError),
         isLoading: results.some(result => result.isLoading),
