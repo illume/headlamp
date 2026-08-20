@@ -37,6 +37,7 @@ import url from 'url';
 import yargs from 'yargs';
 import { hideBin } from 'yargs/helpers';
 import { withBackendMemoryDefaults } from './backendMemory';
+import { createBackendTokenRequestHandler } from './backendTokenRequest';
 import { createCertificateSetup } from './certificates';
 import { startWindowsVMDetection, waitForWindowsVMDetection } from './hardwareAcceleration';
 import i18n from './i18next.config';
@@ -1575,6 +1576,10 @@ function startElectron() {
         preload: `${__dirname}/preload.js`,
       },
     });
+
+    mainWindow.webContents.session.webRequest.onBeforeSendHeaders(
+      createBackendTokenRequestHandler(`http://localhost:${actualPort}`, backendToken)
+    );
 
     applyZoom();
 
