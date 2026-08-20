@@ -418,6 +418,32 @@ describe('useKubeObjectList', () => {
     expect(mockClusterFetch).not.toHaveBeenCalled();
   });
 
+  it('does not probe endpoints when no list requests are allowed', async () => {
+    const multiVersionClass = class {
+      static apiVersion = 'v1';
+      static apiName = 'ingresses';
+      static apiEndpoint = {
+        apiInfo: [
+          { group: 'networking.k8s.io', resource: 'ingresses', version: 'v1' },
+          { group: 'extensions', resource: 'ingresses', version: 'v1beta1' },
+        ],
+      };
+    } as any;
+
+    renderHook(
+      () =>
+        useKubeObjectList({
+          kubeObjectClass: multiVersionClass,
+          requests: [],
+          emptyWhenNoRequests: true,
+        }),
+      { wrapper: queryClientWrapper(new QueryClient()) }
+    );
+
+    await new Promise(resolve => setTimeout(resolve, 0));
+    expect(mockClusterFetch).not.toHaveBeenCalled();
+  });
+
   it('fetches allowed namespaces individually without starting a cluster-wide watch', async () => {
     const namespaceClass = class {
       static apiVersion = 'v1';

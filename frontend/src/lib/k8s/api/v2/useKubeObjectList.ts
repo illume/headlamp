@@ -635,7 +635,7 @@ export function useKubeObjectList<K extends KubeObject>({
   // Get working endpoint from the first cluster
   // Now if clusters have different apiVersions for the same resource for example, this will not work
   const { endpoint, error: endpointError } = useEndpoints(
-    kubeObjectClass.apiEndpoint.apiInfo,
+    requests.length === 0 ? [] : kubeObjectClass.apiEndpoint.apiInfo,
     requests[0]?.cluster,
     maybeNamespace
   );
