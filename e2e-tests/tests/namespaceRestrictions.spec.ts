@@ -95,6 +95,31 @@ async function mockHeadlamp(
       return;
     }
 
+    const projectSelector = url.searchParams.get('labelSelector');
+    if (
+      clusterPath === '/api/v1/namespaces' &&
+      projectSelector?.startsWith('headlamp.dev/project-id=')
+    ) {
+      const project = projectSelector.slice('headlamp.dev/project-id='.length);
+      await route.fulfill({
+        json: {
+          ...namespaceList([`${project}-namespace`]),
+          items: [
+            {
+              apiVersion: 'v1',
+              kind: 'Namespace',
+              metadata: {
+                name: `${project}-namespace`,
+                labels: { 'headlamp.dev/project-id': project },
+                resourceVersion: '1',
+              },
+            },
+          ],
+        },
+      });
+      return;
+    }
+
     await route.fulfill({
       json: {
         apiVersion: 'v1',
@@ -259,6 +284,26 @@ test('all selected cluster selectors start resolving before routes render', asyn
     )
     .toBe(true);
   await expect(page).toHaveTitle(/Pods/);
+});
+
+test('a global project route resolves configured cluster selectors', async ({ page }) => {
+  const selectorRequests = new Set<string>();
+
+  await page.addInitScript(selector => {
+    localStorage.setItem(
+      'cluster_settings.test',
+      JSON.stringify({ allowedNamespacesSelector: selector })
+    );
+  }, selector);
+  await mockHeadlamp(page, ['test'], async cluster => {
+    selectorRequests.add(cluster);
+    return ['project-namespace'];
+  });
+
+  await page.goto('/project/example');
+
+  await expect.poll(() => [...selectorRequests], { timeout: 10_000 }).toEqual(['test']);
+  await expect(page).toHaveTitle(/Project Details/);
 });
 
 test('a selector refresh preserves routed page state', async ({ page }) => {

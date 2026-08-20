@@ -201,7 +201,7 @@ const disableBackendLoader = true;
 
 /**
  * Resolves and caches the namespaces matching a single cluster's allowed
- * namespaces label selector. Rendered once per selected cluster so the resolution
+ * namespaces label selector. Rendered once per configured cluster so the resolution
  * (which relies on a hook) runs for every cluster whose resources may be listed.
  */
 interface SelectorResolution {
@@ -327,7 +327,11 @@ export default function Layout({}: LayoutProps) {
   }, [cluster, dispatch]);
 
   const selectedClusters = useSelectedClusters();
-  const clustersToResolve = [...new Set([cluster || '', ...selectedClusters].filter(Boolean))];
+  const clustersToResolve = [
+    ...new Set(
+      [...Object.keys(allClusters || {}), cluster || '', ...selectedClusters].filter(Boolean)
+    ),
+  ];
 
   const urlClusters = getSelectedClusters();
   const clustersNotInURL =
