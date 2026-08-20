@@ -396,6 +396,7 @@ export class KubeObject<T extends KubeObjectInterface | KubeEvent = any> {
     const fallbackClusters = useSelectedClusters();
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const allowedNamespacesResolutionKey = React.useContext(AllowedNamespacesResolutionContext);
+    const isNamespaced = this.isNamespaced;
 
     // Create requests for each cluster and namespace
     // eslint-disable-next-line react-hooks/rules-of-hooks
@@ -414,7 +415,7 @@ export class KubeObject<T extends KubeObjectInterface | KubeEvent = any> {
       const requests = makeListRequests(
         clusterList,
         getAllowedNamespaces,
-        this.isNamespaced,
+        isNamespaced,
         namespacesFromParams,
         hasAllowedNamespacesRestriction
       );
@@ -429,7 +430,7 @@ export class KubeObject<T extends KubeObjectInterface | KubeEvent = any> {
       clusters,
       fallbackClusters,
       namespace,
-      this.isNamespaced,
+      isNamespaced,
       allowedNamespacesResolutionKey,
     ]);
 
