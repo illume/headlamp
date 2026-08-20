@@ -440,8 +440,7 @@ describe('useKubeObjectList', () => {
       { wrapper: queryClientWrapper(new QueryClient()) }
     );
 
-    await new Promise(resolve => setTimeout(resolve, 0));
-    expect(mockClusterFetch).not.toHaveBeenCalled();
+    await waitFor(() => expect(mockClusterFetch).not.toHaveBeenCalled());
   });
 
   it('fetches allowed namespaces individually without starting a cluster-wide watch', async () => {
