@@ -10,6 +10,7 @@ const isDev = process.argv.includes('--dev');
 const mcpAdapterEntry = path.resolve(__dirname, '../electron/mcp/MCPAdapter.ts');
 const lazyDependencies = {
   'find-process': './lazy/find-process.js',
+  semver: './lazy/semver.js',
   tar: './lazy/tar.js',
 };
 const mcpAdapterExternalPlugin = {
@@ -24,7 +25,7 @@ const mcpAdapterExternalPlugin = {
 const lazyDependenciesExternalPlugin = {
   name: 'externalize-lazy-dependencies',
   setup(build) {
-    build.onResolve({ filter: /^(find-process|tar)$/ }, args => ({
+    build.onResolve({ filter: /^(find-process|semver|tar)$/ }, args => ({
       path: lazyDependencies[args.path],
       external: true,
     }));
@@ -62,6 +63,10 @@ const entryPoints = [
   {
     entryPoints: [require.resolve('find-process')],
     outfile: path.resolve(__dirname, '../build/lazy/find-process.js'),
+  },
+  {
+    entryPoints: [require.resolve('semver')],
+    outfile: path.resolve(__dirname, '../build/lazy/semver.js'),
   },
   {
     entryPoints: [path.resolve(__dirname, '../electron/lazy/tar.ts')],

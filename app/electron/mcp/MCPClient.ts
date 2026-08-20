@@ -414,16 +414,19 @@ export default class MCPClient {
       console.log('Updating MCP configuration with user confirmation...');
       saveMCPSettings(this.settingsPath, mcpSettings);
 
-      // Reset and reinitialize client with new config
+      const wasActive = this.client !== null;
       if (this.client && typeof this.client.close === 'function') {
         await this.client.close();
       }
       this.client = null;
+      this.clientTools = [];
       this.isInitialized = false;
       this.initializationPromise = null;
 
-      // Re-initialize with new config
-      await this.initializeClient();
+      // Keep unused servers out of memory; only reconnect a client that was already active.
+      if (wasActive) {
+        await this.initializeClient();
+      }
 
       console.log('MCP configuration updated successfully');
       return { success: true };

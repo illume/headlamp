@@ -204,6 +204,39 @@ describe('MCPClient', () => {
     expect(result).toEqual({ success: true, result: { ok: true }, toolCallId: 'call-1' });
   });
 
+  it('keeps a newly configured MCP server dormant', async () => {
+    const ensureCertificates = vi.fn();
+    const adapterFactory = vi.fn(() => ({
+      MultiServerMCPClient: vi.fn(),
+    }));
+    const saveMCPSettings = vi.fn();
+
+    vi.resetModules();
+    vi.doMock('@langchain/mcp-adapters', adapterFactory);
+    vi.doMock('./MCPSettings', () => ({
+      loadMCPSettings: vi.fn().mockReturnValue({ enabled: false, servers: [] }),
+      saveMCPSettings,
+      showSettingsChangeDialog: vi.fn().mockResolvedValue(true),
+      makeMcpServersFromSettings: vi.fn().mockReturnValue({ serverA: { url: 'http://x' } }),
+      hasClusterDependentServers: vi.fn().mockReturnValue(false),
+    }));
+
+    const { default: MCPClient } = await import('./MCPClient');
+    const client = new MCPClient(cfgPath, settingsPath, ensureCertificates);
+    const settings = { enabled: true, servers: [] };
+
+    await client.initialize();
+    client.setMainWindow({} as Electron.BrowserWindow);
+    const result = await (client as any).mcpUpdateConfig(settings);
+
+    expect(result).toEqual({ success: true });
+    expect(saveMCPSettings).toHaveBeenCalledWith(settingsPath, settings);
+    expect(adapterFactory).not.toHaveBeenCalled();
+    expect(ensureCertificates).not.toHaveBeenCalled();
+    expect((client as any).client).toBeNull();
+    expect((client as any).isInitialized).toBe(false);
+  });
+
   it('handleClustersChange logs and returns early when no cluster-dependent servers', async () => {
     const getTools = vi.fn().mockResolvedValue([]);
     const close = vi.fn().mockResolvedValue(undefined);
