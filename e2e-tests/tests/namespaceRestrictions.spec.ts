@@ -290,20 +290,46 @@ test('a global project route resolves configured cluster selectors', async ({ pa
   const selectorRequests = new Set<string>();
 
   await page.addInitScript(selector => {
-    localStorage.setItem(
-      'cluster_settings.test',
-      JSON.stringify({ allowedNamespacesSelector: selector })
-    );
+    for (const cluster of ['test', 'test2']) {
+      localStorage.setItem(
+        `cluster_settings.${cluster}`,
+        JSON.stringify({ allowedNamespacesSelector: selector })
+      );
+    }
   }, selector);
-  await mockHeadlamp(page, ['test'], async cluster => {
+  await mockHeadlamp(page, ['test', 'test2'], async cluster => {
     selectorRequests.add(cluster);
     return ['project-namespace'];
   });
 
   await page.goto('/project/example');
 
-  await expect.poll(() => [...selectorRequests], { timeout: 10_000 }).toEqual(['test']);
+  await expect
+    .poll(() => [...selectorRequests].sort(), { timeout: 10_000 })
+    .toEqual(['test', 'test2']);
   await expect(page).toHaveTitle(/Project Details/);
+});
+
+test('a cluster route does not resolve unselected cluster selectors', async ({ page }) => {
+  const selectorRequests = new Set<string>();
+
+  await page.addInitScript(selector => {
+    for (const cluster of ['test', 'test2']) {
+      localStorage.setItem(
+        `cluster_settings.${cluster}`,
+        JSON.stringify({ allowedNamespacesSelector: selector })
+      );
+    }
+  }, selector);
+  await mockHeadlamp(page, ['test', 'test2'], async cluster => {
+    selectorRequests.add(cluster);
+    return [];
+  });
+
+  await page.goto('/c/test/pods');
+
+  await expect(page).toHaveTitle(/Pods/);
+  expect([...selectorRequests]).toEqual(['test']);
 });
 
 test('a selector refresh preserves routed page state', async ({ page }) => {

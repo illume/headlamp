@@ -26,6 +26,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ReactNode, useCallback, useEffect, useState } from 'react';
 import { Trans, useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
+import { useLocation } from 'react-router-dom';
 import { loadClusterSettings, loadResolvedAllowedNamespaces } from '../../helpers/clusterSettings';
 import { getCluster } from '../../lib/cluster';
 import { getSelectedClusters } from '../../lib/cluster';
@@ -201,7 +202,7 @@ const disableBackendLoader = true;
 
 /**
  * Resolves and caches the namespaces matching a single cluster's allowed
- * namespaces label selector. Rendered once per configured cluster so the resolution
+ * namespaces label selector. Rendered once per relevant cluster so the resolution
  * (which relies on a hook) runs for every cluster whose resources may be listed.
  */
 interface SelectorResolution {
@@ -327,10 +328,10 @@ export default function Layout({}: LayoutProps) {
   }, [cluster, dispatch]);
 
   const selectedClusters = useSelectedClusters();
+  const { pathname } = useLocation();
+  const configuredClusters = pathname.startsWith('/project/') ? Object.keys(allClusters || {}) : [];
   const clustersToResolve = [
-    ...new Set(
-      [...Object.keys(allClusters || {}), cluster || '', ...selectedClusters].filter(Boolean)
-    ),
+    ...new Set([...configuredClusters, cluster || '', ...selectedClusters].filter(Boolean)),
   ];
 
   const urlClusters = getSelectedClusters();
