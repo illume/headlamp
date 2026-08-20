@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+// Keep this spelling in sync with backend/pkg/auth/backendtoken.go.
 const BACKEND_TOKEN_HEADER = 'X-HEADLAMP_BACKEND-TOKEN';
 
 type RequestDetails = {
