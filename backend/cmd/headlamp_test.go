@@ -1349,6 +1349,18 @@ func TestRestrictedEndpointsRequireToken(t *testing.T) {
 			body:   nil,
 		},
 		{
+			name:   "POST /parseKubeConfig",
+			method: http.MethodPost,
+			path:   "/parseKubeConfig",
+			body:   KubeconfigRequest{Kubeconfigs: []string{kubeConfigB64}},
+		},
+		{
+			name:   "POST /auth/set-token",
+			method: http.MethodPost,
+			path:   "/auth/set-token",
+			body:   nil,
+		},
+		{
 			name:   "POST /drain-node",
 			method: http.MethodPost,
 			path:   "/drain-node",

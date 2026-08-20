@@ -84,6 +84,32 @@ describe('useWebSockets', () => {
         ]
       );
     });
+
+    it('uses default protocols without a cluster', async () => {
+      const listeners: Record<string, EventListener> = {};
+      const socket = {
+        addEventListener: vi.fn((type: string, listener: EventListener) => {
+          listeners[type] = listener;
+        }),
+        binaryType: '',
+      };
+      const WebSocketMock = vi.fn(function () {
+        return socket;
+      });
+      vi.stubGlobal('WebSocket', WebSocketMock);
+      const onMessage = vi.fn();
+
+      await openWebSocket('/api/v1/pods', {
+        type: 'binary',
+        onMessage,
+      });
+      listeners.message(new MessageEvent('message', { data: 'binary-data' }));
+
+      expect(WebSocketMock).toHaveBeenCalledWith(expect.not.stringContaining('/clusters/'), [
+        'base64.binary.k8s.io',
+      ]);
+      expect(onMessage).toHaveBeenCalledWith('binary-data');
+    });
   });
 
   afterEach(() => {

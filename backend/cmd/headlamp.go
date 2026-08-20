@@ -859,7 +859,8 @@ func createHeadlampHandler(ctx context.Context, config *HeadlampConfig) http.Han
 	r.HandleFunc("/config", config.getConfig).Methods("GET")
 
 	// Auth token management
-	r.HandleFunc("/auth/set-token", config.handleSetToken).Methods("POST")
+	r.Handle("/auth/set-token", auth.NewBackendTokenMiddleware(config.UseInCluster)(
+		http.HandlerFunc(config.handleSetToken))).Methods("POST")
 
 	// Websocket connections
 	if config.Multiplexer != nil {
@@ -2772,7 +2773,8 @@ func (c *HeadlampConfig) addClusterSetupRoute(r *mux.Router) {
 		return
 	}
 	// Get stateless cluster
-	r.HandleFunc("/parseKubeConfig", c.parseKubeConfig).Methods("POST")
+	r.Handle("/parseKubeConfig", auth.NewBackendTokenMiddleware(c.UseInCluster)(
+		http.HandlerFunc(c.parseKubeConfig))).Methods("POST")
 
 	// POST a cluster
 	r.HandleFunc("/cluster", c.addCluster).Methods("POST")

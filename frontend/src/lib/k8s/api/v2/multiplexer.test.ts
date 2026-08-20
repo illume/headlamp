@@ -139,6 +139,21 @@ describe('WebSocket Multiplexer', () => {
       await connection;
     });
 
+    it('clears the connecting state when socket construction fails', async () => {
+      const error = new Error('socket construction failed');
+      const WebSocketMock = vi.fn(function () {
+        throw error;
+      });
+      Object.assign(WebSocketMock, {
+        CONNECTING: WebSocket.CONNECTING,
+        OPEN: WebSocket.OPEN,
+      });
+      vi.stubGlobal('WebSocket', WebSocketMock);
+
+      await expect(WebSocketManager.connect()).rejects.toThrow(error);
+      expect(WebSocketManager.connecting).toBe(false);
+    });
+
     it('should establish connection and handle messages', async () => {
       const path = '/api/v1/pods';
       const query = 'watch=true';

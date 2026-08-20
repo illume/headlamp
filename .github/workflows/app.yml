@@ -49,6 +49,12 @@ jobs:
         make app-linux
     - name: Verify Linux build
       run: npm run app:verify-build-linux
+    - name: Test desktop backend token
+      run: |
+        cd app/e2e-tests
+        npm ci
+        npx playwright install --with-deps chromium
+        xvfb-run npm run test-app -- tests/backendToken.spec.ts
   build-windows:
     strategy:
       matrix:
