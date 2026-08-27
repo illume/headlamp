@@ -94,6 +94,31 @@ See the [plugins repo](https://github.com/headlamp-k8s/plugins) for some officia
 If you are interested in tweaking Headlamp to fit your use-cases, you can check out
 our [plugin development guide](https://headlamp.dev/docs/latest/development/plugins/).
 
+## Development
+
+If you are interested in contributing to Headlamp or building it from source, check out the following resources:
+
+### Documentation
+
+- [Development Guide](https://headlamp.dev/docs/latest/development/) - Quickstart guide for building and running Headlamp
+- [Architecture](./docs/development/architecture.md) - Overview of Headlamp's architecture
+- [Testing](./docs/development/testing.md) - Information about running tests
+- [Backend Development](./docs/development/backend.md) - Backend development documentation
+- [Frontend Development](./docs/development/frontend.md) - Frontend development documentation
+- [Plugin Development](./docs/development/plugins/) - Detailed plugin development documentation
+- [i18n Contributing](./docs/development/i18n/contributing.md) - Internationalization contribution guide
+
+### Component READMEs
+
+- [Backend](./backend/README.md) - Backend quickstart and documentation
+- [Frontend](./frontend/README.md) - Frontend documentation
+- [Desktop App](./app/README.md) - Desktop application development
+- [Plugins](./plugins/README.md) - Plugin examples and documentation
+- [Docker Extension](./docker-extension/README.md) - Docker Desktop extension
+- [E2E Tests](./e2e-tests/README.md) - End-to-end testing with Playwright
+- [ESLint Config](./eslint-config/README.md) - Shared ESLint/Prettier/TS config
+- [i18n Tool](./tools/i18n/README.md) - Internationalization tools
+- [Backstage Integration Testing](./backstage-test/README.md) - Testing Backstage integration
 
 ## Get involved
 
