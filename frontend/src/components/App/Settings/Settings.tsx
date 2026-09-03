@@ -21,6 +21,7 @@ import Typography from '@mui/material/Typography';
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useDispatch } from 'react-redux';
+import { isDevMode } from '../../../helpers/isDevMode';
 import { isElectron } from '../../../helpers/isElectron';
 import LocaleSelect from '../../../i18n/LocaleSelect/LocaleSelect';
 import { setAppSettings } from '../../../redux/configSlice';
@@ -39,7 +40,13 @@ import NumRowsInput from './NumRowsInput';
 import { ShortcutsList } from './ShortcutsSettings';
 import { ThemePreview } from './ThemePreview';
 
-export default function Settings() {
+export interface SettingsProps {
+  showDevelopmentPluginsSetting?: boolean;
+}
+
+export default function Settings({
+  showDevelopmentPluginsSetting = isElectron() && !isDevMode(),
+}: SettingsProps = {}) {
   const { t } = useTranslation(['translation']);
   const theme = useTheme();
   const settingsObj = useSettings();
@@ -55,6 +62,7 @@ export default function Settings() {
   const [expandGraph, setExpandGraph] = useState<boolean>(expandLargeGraph);
   const [useEvict, setUseEvict] = useState<boolean>(storedUseEvict);
   const [trayIcon, setTrayIcon] = useState<boolean>(true);
+  const [developmentPlugins, setDevelopmentPlugins] = useState<boolean>(false);
   const dispatch = useDispatch();
   const themeName = useTypedSelector(state => state.theme.name);
   const appThemes = useAppThemes();
@@ -109,20 +117,35 @@ export default function Settings() {
     const handler = (enabled: boolean) => setTrayIcon(enabled);
     const unsubscribe = window.desktopApi?.receive('tray-icon', handler);
     window.desktopApi?.send('request-tray-icon');
+    let unsubscribeDevelopmentPlugins: (() => void) | undefined;
+    if (showDevelopmentPluginsSetting) {
+      unsubscribeDevelopmentPlugins = window.desktopApi?.receive(
+        'development-plugins',
+        setDevelopmentPlugins
+      );
+      window.desktopApi?.send('request-development-plugins');
+    }
 
     return () => {
       unsubscribe?.();
+      unsubscribeDevelopmentPlugins?.();
     };
-  }, []);
+  }, [showDevelopmentPluginsSetting]);
 
   function handleTrayIconChange(enabled: boolean) {
     setTrayIcon(enabled);
     window.desktopApi?.send('set-tray-icon', enabled);
   }
 
+  function handleDevelopmentPluginsChange(enabled: boolean) {
+    setDevelopmentPlugins(enabled);
+    window.desktopApi?.send('set-development-plugins', enabled);
+  }
+
   const sidebarLabelID = 'sort-sidebar-label';
   const evictLabelID = 'use-evict-label';
   const trayIconLabelID = 'tray-icon-label';
+  const developmentPluginsLabelID = 'development-plugins-label';
   const tableRowsLabelID = 'rows-per-page-label';
   const timezoneLabelID = 'timezone-label';
   const expandGraphID = 'expand-graph-label';
@@ -221,6 +244,24 @@ export default function Settings() {
                   ),
                   nameID: trayIconLabelID,
                 },
+                ...(showDevelopmentPluginsSetting
+                  ? [
+                      {
+                        name: t('translation|Development Mode'),
+                        value: (
+                          <Switch
+                            color="primary"
+                            checked={developmentPlugins}
+                            onChange={e => handleDevelopmentPluginsChange(e.target.checked)}
+                            inputProps={{
+                              'aria-labelledby': developmentPluginsLabelID,
+                            }}
+                          />
+                        ),
+                        nameID: developmentPluginsLabelID,
+                      },
+                    ]
+                  : []),
               ]
             : []),
           {

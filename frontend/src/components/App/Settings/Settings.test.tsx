@@ -17,9 +17,12 @@
 import { createTheme, ThemeProvider } from '@mui/material/styles';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { ReactNode } from 'react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import App from '../../../App';
+import * as devModeHelpers from '../../../helpers/isDevMode';
+import * as electronHelpers from '../../../helpers/isElectron';
 import { createMuiTheme } from '../../../lib/themes';
 import { HeadlampEventType } from '../../../redux/headlampEventSlice';
 import store from '../../../redux/stores/store';
@@ -33,6 +36,7 @@ import SettingsCluster from './SettingsCluster';
 const _dont_delete_me = App;
 
 const theme = createMuiTheme({ name: 'Light', base: 'light' });
+const originalDesktopApi = window.desktopApi;
 
 function renderWithProviders(children: ReactNode) {
   return render(
@@ -47,6 +51,45 @@ function renderWithProviders(children: ReactNode) {
 describe('Settings theme', () => {
   afterEach(() => {
     window.history.pushState({}, '', '/');
+    window.desktopApi = originalDesktopApi;
+    vi.restoreAllMocks();
+  });
+
+  it('requests and enables development plugins in Electron', async () => {
+    vi.spyOn(electronHelpers, 'isElectron').mockReturnValue(true);
+    vi.spyOn(devModeHelpers, 'isDevMode').mockReturnValue(false);
+    const handlers = new Map<string, (enabled: boolean) => void>();
+    const send = vi.fn();
+    window.desktopApi = {
+      receive: vi.fn((channel: string, handler: (enabled: boolean) => void) => {
+        handlers.set(channel, handler);
+        return vi.fn();
+      }),
+      send,
+    } as any;
+
+    renderWithProviders(<Settings />);
+
+    expect(send).toHaveBeenCalledWith('request-development-plugins');
+    handlers.get('development-plugins')!(false);
+    const developmentMode = screen.getByRole('checkbox', { name: 'Development Mode' });
+    expect(developmentMode).not.toBeChecked();
+
+    await userEvent.click(developmentMode);
+
+    expect(send).toHaveBeenCalledWith('set-development-plugins', true);
+  });
+
+  it('hides the Development Mode setting in Electron development builds', () => {
+    vi.spyOn(electronHelpers, 'isElectron').mockReturnValue(true);
+    vi.spyOn(devModeHelpers, 'isDevMode').mockReturnValue(true);
+    const send = vi.fn();
+    window.desktopApi = { receive: vi.fn(() => vi.fn()), send } as any;
+
+    renderWithProviders(<Settings />);
+
+    expect(screen.queryByRole('checkbox', { name: 'Development Mode' })).not.toBeInTheDocument();
+    expect(send).not.toHaveBeenCalledWith('request-development-plugins');
   });
 
   it('resolves the theme-picker grid breakpoint from the live theme, not a static import', async () => {

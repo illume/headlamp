@@ -15,8 +15,43 @@
  */
 
 import { Meta, StoryFn } from '@storybook/react';
+import { useEffect } from 'react';
+import { expect, fn, userEvent, waitFor } from 'storybook/test';
 import { TestContext } from '../../../test';
 import Settings from '.';
+
+const desktopSend = fn();
+
+function WithPackagedDesktop({ children }: { children: React.ReactNode }) {
+  const previousDesktopApi = window.desktopApi;
+  const previousProcess = window.process;
+  Object.defineProperty(window, 'process', {
+    configurable: true,
+    value: { type: 'renderer' },
+  });
+  window.desktopApi = {
+    receive: (channel: string, handler: (enabled: boolean) => void) => {
+      if (channel === 'development-plugins') {
+        handler(false);
+      }
+      return () => {};
+    },
+    send: desktopSend,
+  } as any;
+
+  useEffect(
+    () => () => {
+      window.desktopApi = previousDesktopApi;
+      Object.defineProperty(window, 'process', {
+        configurable: true,
+        value: previousProcess,
+      });
+    },
+    [previousDesktopApi, previousProcess]
+  );
+
+  return <>{children}</>;
+}
 
 export default {
   title: 'Settings',
@@ -38,3 +73,17 @@ const Template: StoryFn = () => {
 };
 
 export const General = Template.bind({});
+
+export const PackagedDesktopDevelopmentMode: StoryFn = () => (
+  <WithPackagedDesktop>
+    <Settings showDevelopmentPluginsSetting />
+  </WithPackagedDesktop>
+);
+
+PackagedDesktopDevelopmentMode.play = async ({ canvas }) => {
+  desktopSend.mockClear();
+  const developmentMode = await canvas.findByRole('checkbox', { name: 'Development Mode' });
+  expect(developmentMode).not.toBeChecked();
+  await userEvent.click(developmentMode);
+  await waitFor(() => expect(desktopSend).toHaveBeenCalledWith('set-development-plugins', true));
+};
