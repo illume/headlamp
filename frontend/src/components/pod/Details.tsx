@@ -76,9 +76,9 @@ interface PodLogViewerProps extends Omit<LogViewerProps, 'logs'> {
 
 export function PodLogViewer(props: PodLogViewerProps) {
   const { item, onClose, open, initialContainer, ...other } = props;
-  const [container, setContainer] = React.useState(() =>
-    resolveContainerName(item, initialContainer)
-  );
+  const [containers, setContainers] = React.useState(() => [
+    resolveContainerName(item, initialContainer),
+  ]);
   const [showPrevious, setShowPrevious] = React.useState<boolean>(false);
   const [showTimestamps, setShowTimestamps] = useLocalStorageState<boolean>(
     'headlamp.logs.showTimestamps',
@@ -97,7 +97,7 @@ export function PodLogViewer(props: PodLogViewerProps) {
     lastLineShown: -1,
   });
   const [showReconnectButton, setShowReconnectButton] = React.useState(false);
-  const [cancelLogsStream, setCancelLogsStream] = React.useState<(() => void) | null>(null);
+  const [reconnect, setReconnect] = React.useState(0);
   const xtermRef = React.useRef<XTerminal | null>(null);
   const { t } = useTranslation();
   const [selectedSeverities, setSelectedSeverities] = useLocalStorageState<LogSeverity[]>(
@@ -134,14 +134,16 @@ export function PodLogViewer(props: PodLogViewerProps) {
   function setLogsDebounced({
     logs: logLines,
     hasJsonLogs,
+    replace,
   }: {
     logs: string[];
     hasJsonLogs: boolean;
+    replace?: boolean;
   }) {
     setHasJsonLogs(hasJsonLogs);
 
     setLogs(current => {
-      if (current.lastLineShown >= logLines.length) {
+      if (replace || current.lastLineShown >= logLines.length) {
         // Full re-render
         const displayLogs = logLines.map(logEntry => {
           if (prettifyLogs && hasJsonLogs) {
@@ -186,54 +188,87 @@ export function PodLogViewer(props: PodLogViewerProps) {
     }
   }
 
-  const debouncedSetState = _.debounce(setLogsDebounced, 500, options);
   React.useEffect(() => {
     const next = getDefaultContainer(item);
-    if (next && !container) {
-      setContainer(next);
+    if (next && containers.length === 0) {
+      setContainers([next]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item?.status]);
 
   React.useEffect(
     () => {
-      let callback: any = null;
+      const callbacks: Array<() => void> = [];
+      const debouncedCallbacks: Array<ReturnType<typeof _.debounce>> = [];
 
       if (props.open) {
         xtermRef.current?.clear();
         setLogs({ logs: [], lastLineShown: -1 });
         setHasJsonLogs(false);
 
-        callback = item.getLogs(container, debouncedSetState, {
-          tailLines: lines,
-          showPrevious,
-          showTimestamps,
-          follow,
-          prettifyLogs,
-          formatJsonValues,
-          /**
-           * When the connection is lost, show the reconnect button.
-           * This will stop the current log stream.
-           */
-          onReconnectStop: () => {
-            setShowReconnectButton(true);
-          },
+        const logsByContainer = new Map<string, { logs: string[]; hasJsonLogs: boolean }>();
+        containers.forEach(container => {
+          const onLogs = _.debounce(
+            ({ logs, hasJsonLogs }: { logs: string[]; hasJsonLogs: boolean }) => {
+              logsByContainer.set(container, { logs, hasJsonLogs });
+              setLogsDebounced({
+                logs: containers.flatMap(name => logsByContainer.get(name)?.logs ?? []),
+                hasJsonLogs: containers.some(
+                  name => logsByContainer.get(name)?.hasJsonLogs ?? false
+                ),
+                replace: containers.length > 1,
+              });
+            },
+            500,
+            options
+          );
+          debouncedCallbacks.push(onLogs);
+          callbacks.push(
+            item.getLogs(container, onLogs, {
+              tailLines: lines,
+              showPrevious,
+              showTimestamps,
+              follow,
+              prettifyLogs,
+              formatJsonValues,
+              /**
+               * When the connection is lost, show the reconnect button.
+               * This will stop the current log stream.
+               */
+              onReconnectStop: () => {
+                setShowReconnectButton(true);
+              },
+            })
+          );
         });
       }
 
       return function cleanup() {
-        if (callback) {
-          callback();
-        }
+        debouncedCallbacks.forEach(callback => callback.cancel());
+        callbacks.forEach(callback => callback());
       };
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [container, lines, open, showPrevious, showTimestamps, follow, prettifyLogs, formatJsonValues]
+    [
+      containers,
+      lines,
+      open,
+      showPrevious,
+      showTimestamps,
+      follow,
+      prettifyLogs,
+      formatJsonValues,
+      reconnect,
+    ]
   );
 
   function handleContainerChange(event: any) {
-    setContainer(event.target.value);
-    setHasJsonLogs(false);
+    const value = event.target.value;
+    const selectedContainers = typeof value === 'string' ? value.split(',') : value;
+    if (selectedContainers.length > 0) {
+      setContainers(selectedContainers);
+      setHasJsonLogs(false);
+    }
   }
 
   function handleLinesChange(event: any) {
@@ -245,14 +280,12 @@ export function PodLogViewer(props: PodLogViewerProps) {
   }
 
   function hasContainerRestarted() {
-    const cont = item?.status?.containerStatuses?.find(
-      (c: KubeContainerStatus) => c.name === container
-    );
-    if (!cont) {
-      return false;
-    }
-
-    return cont.restartCount > 0;
+    return containers.every(container => {
+      const cont = item?.status?.containerStatuses?.find(
+        (c: KubeContainerStatus) => c.name === container
+      );
+      return !!cont && cont.restartCount > 0;
+    });
   }
 
   function handleTimestampsChange() {
@@ -276,39 +309,14 @@ export function PodLogViewer(props: PodLogViewerProps) {
    * This will start a new log stream and hide the reconnect button.
    */
   function handleReconnect() {
-    // If there's an existing log stream, cancel it
-    if (cancelLogsStream) {
-      cancelLogsStream();
-    }
-
-    // Start a new log stream
-    const newCancelLogsStream = item.getLogs(container, debouncedSetState, {
-      tailLines: lines,
-      showPrevious,
-      showTimestamps,
-      follow,
-      prettifyLogs,
-      formatJsonValues,
-      /**
-       * When the connection is lost, show the reconnect button.
-       * This will stop the current log stream.
-       */
-      onReconnectStop: () => {
-        setShowReconnectButton(true);
-      },
-    });
-
-    // Set the cancelLogsStream function to the new one
-    setCancelLogsStream(() => newCancelLogsStream);
-
-    // Hide the reconnect button
     setShowReconnectButton(false);
+    setReconnect(value => value + 1);
   }
 
   return (
     <LogViewer
       title={t('glossary|Logs: {{ itemName }}', { itemName: item.getName() })}
-      downloadName={`${item.getName()}_${container}`}
+      downloadName={`${item.getName()}_${containers.join('_')}`}
       open={open}
       onClose={onClose}
       logs={logs.logs}
@@ -318,13 +326,15 @@ export function PodLogViewer(props: PodLogViewerProps) {
       topActions={[
         <FormControl sx={{ minWidth: '11rem' }}>
           <InputLabel shrink id="container-name-chooser-label">
-            {t('glossary|Container')}
+            {t('glossary|Containers')}
           </InputLabel>
           <Select
             labelId="container-name-chooser-label"
             id="container-name-chooser"
-            value={container}
+            multiple
+            value={containers}
             onChange={handleContainerChange}
+            renderValue={selected => selected.join(', ')}
           >
             {item?.spec?.containers && (
               <MenuItem disabled value="">
@@ -333,7 +343,8 @@ export function PodLogViewer(props: PodLogViewerProps) {
             )}
             {item?.spec?.containers.map(({ name }) => (
               <MenuItem value={name} key={name}>
-                {name}
+                <Checkbox checked={containers.includes(name)} size="small" />
+                <ListItemText primary={name} />
               </MenuItem>
             ))}
             {item?.spec?.initContainers && (
@@ -343,7 +354,8 @@ export function PodLogViewer(props: PodLogViewerProps) {
             )}
             {item.spec.initContainers?.map(({ name }) => (
               <MenuItem value={name} key={`init_container_${name}`}>
-                {name}
+                <Checkbox checked={containers.includes(name)} size="small" />
+                <ListItemText primary={name} />
               </MenuItem>
             ))}
             {item?.spec?.ephemeralContainers && (
@@ -353,7 +365,8 @@ export function PodLogViewer(props: PodLogViewerProps) {
             )}
             {item.spec.ephemeralContainers?.map(({ name }) => (
               <MenuItem value={name} key={`eph_container_${name}`}>
-                {name}
+                <Checkbox checked={containers.includes(name)} size="small" />
+                <ListItemText primary={name} />
               </MenuItem>
             ))}
           </Select>

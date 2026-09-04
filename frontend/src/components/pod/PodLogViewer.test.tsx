@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { render } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { TestContext } from '../../test';
 import { PodLogViewer } from './Details';
@@ -108,5 +108,29 @@ describe('PodLogViewer', () => {
 
       expect(getLogs).toHaveBeenCalledWith('nginx', expect.any(Function), expect.any(Object));
     });
+  });
+
+  it('streams logs for each selected container', async () => {
+    const cancelLogs = vi.fn();
+    const getLogs = vi.fn(() => cancelLogs);
+    render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={makeMockPod(getLogs)} onClose={() => {}} />
+      </TestContext>
+    );
+
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Containers' }));
+    fireEvent.click(screen.getByRole('option', { name: 'sidecar' }));
+
+    await waitFor(() => {
+      expect(getLogs).toHaveBeenCalledWith('nginx', expect.any(Function), expect.any(Object));
+      expect(getLogs).toHaveBeenCalledWith('sidecar', expect.any(Function), expect.any(Object));
+    });
+
+    const callsBeforeFiltering = getLogs.mock.calls.length;
+    fireEvent.click(screen.getByRole('option', { name: 'nginx' }));
+    await waitFor(() => expect(getLogs).toHaveBeenCalledTimes(callsBeforeFiltering + 1));
+    expect(getLogs).toHaveBeenLastCalledWith('sidecar', expect.any(Function), expect.any(Object));
+    expect(cancelLogs).toHaveBeenCalled();
   });
 });
