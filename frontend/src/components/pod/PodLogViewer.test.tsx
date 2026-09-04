@@ -108,6 +108,32 @@ describe('PodLogViewer', () => {
 
       expect(getLogs).toHaveBeenCalledWith('nginx', expect.any(Function), expect.any(Object));
     });
+
+    it('selects the default container when pod status becomes available', async () => {
+      const getLogs = vi.fn(() => () => {});
+      const pod = makeMockPod(getLogs);
+      pod.spec.containers = [];
+      pod.status = {};
+      const { rerender } = render(
+        <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+          <PodLogViewer open item={pod} onClose={() => {}} />
+        </TestContext>
+      );
+
+      pod.spec.containers = [{ name: 'nginx' }];
+      pod.status = {
+        containerStatuses: [{ name: 'nginx', state: { running: {} }, restartCount: 0 }],
+      };
+      rerender(
+        <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+          <PodLogViewer open item={pod} onClose={() => {}} />
+        </TestContext>
+      );
+
+      await waitFor(() =>
+        expect(getLogs).toHaveBeenCalledWith('nginx', expect.any(Function), expect.any(Object))
+      );
+    });
   });
 
   it('streams logs for each selected container', async () => {

@@ -190,7 +190,7 @@ export function PodLogViewer(props: PodLogViewerProps) {
 
   React.useEffect(() => {
     const next = getDefaultContainer(item);
-    if (next && containers.length === 0) {
+    if (next && (containers.length === 0 || (containers.length === 1 && !containers[0]))) {
       setContainers([next]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -268,6 +268,9 @@ export function PodLogViewer(props: PodLogViewerProps) {
     const selectedContainers = typeof value === 'string' ? value.split(',') : value;
     if (selectedContainers.length > 0) {
       setContainers(selectedContainers);
+      if (!haveContainersRestarted(selectedContainers)) {
+        setShowPrevious(false);
+      }
       setHasJsonLogs(false);
     }
   }
@@ -280,8 +283,8 @@ export function PodLogViewer(props: PodLogViewerProps) {
     setShowPrevious(previous => !previous);
   }
 
-  function hasContainerRestarted() {
-    return containers.every(container => {
+  function haveContainersRestarted(containerNames = containers) {
+    return containerNames.every(container => {
       const cont = item?.status?.containerStatuses?.find(
         (c: KubeContainerStatus) => c.name === container
       );
@@ -392,7 +395,7 @@ export function PodLogViewer(props: PodLogViewerProps) {
         </FormControl>,
         <LightTooltip
           title={
-            hasContainerRestarted()
+            haveContainersRestarted()
               ? t('translation|Show logs for previous instances of this container.')
               : t(
                   'translation|You can only select this option for containers that have been restarted.'
@@ -401,7 +404,7 @@ export function PodLogViewer(props: PodLogViewerProps) {
         >
           <PaddedFormControlLabel
             label={t('translation|Previous')}
-            disabled={!hasContainerRestarted()}
+            disabled={!haveContainersRestarted()}
             control={
               <Switch
                 checked={showPrevious}
