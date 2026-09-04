@@ -271,6 +271,7 @@ export function PodListRenderer(props: PodListProps) {
   return (
     <ResourceListView
       title={t('Pods')}
+      resourceClass={Pod}
       headerProps={{
         noNamespaceFilter,
         titleSideActions: hideCreateButton

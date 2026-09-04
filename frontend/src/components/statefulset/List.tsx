@@ -66,6 +66,7 @@ export function StatefulSetsListRenderer(props: StatefulSetsListRendererProps) {
 
   const commonProps: Omit<ResourceListViewProps<StatefulSet>, 'data'> = {
     title: t('Stateful Sets'),
+    resourceClass: StatefulSet,
     headerProps: {
       noNamespaceFilter,
       titleSideActions: hideCreateButton

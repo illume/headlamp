@@ -20,7 +20,11 @@ import { BackLinkProps } from '../BackLink';
 import { CreateResourceButton } from '../CreateResourceButton';
 import SectionBox from '../SectionBox';
 import SectionFilterHeader, { SectionFilterHeaderProps } from '../SectionFilterHeader';
-import ResourceTable, { ResourceTableProps } from './ResourceTable';
+import ResourceInfoButton from './ResourceInfoButton';
+import ResourceTable, {
+  ResourceTableFromResourceClassProps,
+  ResourceTableProps,
+} from './ResourceTable';
 
 export interface ResourceListViewProps<Item extends KubeObject>
   extends PropsWithChildren<Omit<ResourceTableProps<Item>, 'data'>> {
@@ -29,6 +33,8 @@ export interface ResourceListViewProps<Item extends KubeObject>
   backLink?: BackLinkProps['to'] | boolean;
   headerProps?: Omit<SectionFilterHeaderProps, 'title'>;
   data: Item[] | null;
+  /** Resource class used to show documentation when data is supplied by the caller. */
+  resourceClass?: KubeObjectClass;
 }
 
 export interface ResourceListViewWithResourceClassProps<ItemClass extends KubeObjectClass>
@@ -49,10 +55,20 @@ export default function ResourceListView<Item extends KubeObject<any>>(
 export default function ResourceListView(
   props: ResourceListViewProps<any> | ResourceListViewWithResourceClassProps<any>
 ) {
-  const { title, children, backLink, headerProps, ...tableProps } = props;
-  const withNamespaceFilter = 'resourceClass' in props && props.resourceClass?.isNamespaced;
-  const resourceClass = (props as ResourceListViewWithResourceClassProps<any>)
-    .resourceClass as KubeObjectClass;
+  const { title, children, backLink, headerProps, resourceClass, ...tableProps } = props;
+  const withNamespaceFilter = resourceClass?.isNamespaced;
+  const titleSideActions = [
+    ...(headerProps?.titleSideActions ||
+      (resourceClass
+        ? [<CreateResourceButton key="create-resource" resourceClass={resourceClass} />]
+        : [])),
+  ];
+
+  if (resourceClass) {
+    titleSideActions.push(
+      <ResourceInfoButton key="resource-information" resourceClass={resourceClass} />
+    );
+  }
 
   return (
     <SectionBox
@@ -62,22 +78,28 @@ export default function ResourceListView(
           <SectionFilterHeader
             title={title}
             noNamespaceFilter={!withNamespaceFilter}
-            titleSideActions={
-              headerProps?.titleSideActions ||
-              (resourceClass ? [<CreateResourceButton resourceClass={resourceClass} />] : undefined)
-            }
             {...headerProps}
+            titleSideActions={titleSideActions}
           />
         ) : (
           title
         )
       }
     >
-      <ResourceTable
-        {...tableProps}
-        enableRowActions={tableProps.enableRowActions ?? true}
-        enableRowSelection={tableProps.enableRowSelection ?? true}
-      />
+      {'data' in props ? (
+        <ResourceTable<any>
+          {...(tableProps as ResourceTableProps<any>)}
+          enableRowActions={tableProps.enableRowActions ?? true}
+          enableRowSelection={tableProps.enableRowSelection ?? true}
+        />
+      ) : (
+        <ResourceTable<any>
+          {...(tableProps as Omit<ResourceTableFromResourceClassProps<any>, 'resourceClass'>)}
+          resourceClass={resourceClass!}
+          enableRowActions={tableProps.enableRowActions ?? true}
+          enableRowSelection={tableProps.enableRowSelection ?? true}
+        />
+      )}
       {children}
     </SectionBox>
   );

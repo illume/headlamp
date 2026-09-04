@@ -24,6 +24,7 @@ import { useTranslation } from 'react-i18next';
 import getDocDefinitions from '../../../lib/docs';
 import Empty from '../EmptyContent';
 import Loader from '../Loader';
+import LightTooltip from '../Tooltip/TooltipLight';
 
 export interface DocsViewerProps {
   docSpecs: { apiVersion?: string; kind: string }[];
@@ -82,13 +83,24 @@ function DocsViewer(props: DocsViewerProps) {
   }, [docSpecs]);
 
   function makeItems(name: string, value: any, key: string) {
+    const nameLabel = (
+      <Typography component="span" display="inline" tabIndex={value.description ? 0 : undefined}>
+        {name}
+      </Typography>
+    );
+
     return (
       <TreeItem
         key={key}
         nodeId={`${key}`}
         label={
           <div>
-            <Typography display="inline">{name}</Typography>&nbsp;
+            {value.description ? (
+              <LightTooltip title={value.description}>{nameLabel}</LightTooltip>
+            ) : (
+              nameLabel
+            )}
+            &nbsp;
             <Typography display="inline" color="textSecondary" variant="caption">
               ({value.type})
             </Typography>
@@ -135,6 +147,9 @@ function DocsViewer(props: DocsViewerProps) {
                     docsType: docSpec.kind.trim(),
                   })}
                 </Typography>
+                {docSpec.data.description && (
+                  <Typography color="textSecondary">{docSpec.data.description}</Typography>
+                )}
                 <TreeView
                   sx={{ flexGrow: 1, maxWidth: 400 }}
                   defaultCollapseIcon={<Icon icon="mdi:chevron-down" />}
