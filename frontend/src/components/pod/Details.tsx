@@ -30,7 +30,11 @@ import _ from 'lodash';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useParams } from 'react-router-dom';
-import { getDefaultContainer, resolveContainerName } from '../../helpers/podContainer';
+import {
+  getAllContainers,
+  getDefaultContainer,
+  resolveContainerName,
+} from '../../helpers/podContainer';
 import { KubeContainerStatus } from '../../lib/k8s/cluster';
 import Pod from '../../lib/k8s/pod';
 import { localeDate } from '../../lib/util';
@@ -88,12 +92,21 @@ interface PodLogUpdate {
   replace?: boolean;
 }
 
-/** Latest cumulative result received from one container log stream. */
-interface ContainerLogSnapshot {
-  /** Snapshot of the container's cumulative log lines. */
-  logs: string[];
-  /** Whether this container's stream contains JSON log entries. */
+/** State retained for one active container log stream. */
+interface ActiveContainerLogStream {
+  cancel?: () => void;
+  onLogs?: ReturnType<typeof _.debounce>;
+  previousLogs?: string[];
+  logCount: number;
   hasJsonLogs: boolean;
+  reconnectStopped: boolean;
+  active: boolean;
+}
+
+/** A log line tagged with its source stream for selection updates. */
+interface ContainerLogEntry {
+  container: string;
+  log: string;
 }
 
 /**
@@ -127,6 +140,14 @@ export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
   const [showReconnectButton, setShowReconnectButton] = React.useState(false);
   const [reconnect, setReconnect] = React.useState(0);
   const xtermRef = React.useRef<XTerminal | null>(null);
+  const activeStreamsRef = React.useRef<Map<string, ActiveContainerLogStream>>(new Map());
+  const combinedLogEntriesRef = React.useRef<ContainerLogEntry[]>([]);
+  const streamConfigRef = React.useRef('');
+  const podIdentity = `${item.cluster ?? ''}/${item.getNamespace?.() ?? ''}/${
+    item.metadata?.uid ?? item.getName()
+  }`;
+  const selectionPodIdentityRef = React.useRef(podIdentity);
+  const streamPodIdentityRef = React.useRef(podIdentity);
   const { t } = useTranslation();
   const [selectedSeverities, setSelectedSeverities] = useLocalStorageState<LogSeverity[]>(
     'headlamp.logs.severityFilter',
@@ -216,92 +237,193 @@ export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
   }
 
   React.useEffect(() => {
-    const next = getDefaultContainer(item);
-    if (next && (containers.length === 0 || (containers.length === 1 && !containers[0]))) {
-      setContainers([next]);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item?.status]);
+    const knownContainers = new Set(getAllContainers(item).map(container => container.name));
+    setContainers(current => {
+      if (selectionPodIdentityRef.current !== podIdentity) {
+        selectionPodIdentityRef.current = podIdentity;
+        const next = resolveContainerName(item, initialContainer);
+        return next ? [next] : [];
+      }
+
+      const validContainers = current.filter(name => knownContainers.has(name));
+      if (validContainers.length > 0) {
+        return validContainers.length === current.length ? current : validContainers;
+      }
+
+      const next = getDefaultContainer(item);
+      return next ? [next] : [];
+    });
+  }, [initialContainer, item, item?.spec, item?.status, podIdentity]);
+
+  React.useEffect(() => {
+    const activeStreams = activeStreamsRef.current;
+    return () => {
+      activeStreams.forEach(stream => {
+        stream.active = false;
+        stream.onLogs?.cancel();
+        stream.cancel?.();
+      });
+      activeStreams.clear();
+    };
+  }, []);
 
   React.useEffect(
     () => {
-      const callbacks: Array<() => void> = [];
-      const debouncedCallbacks: Array<ReturnType<typeof _.debounce>> = [];
-      let isSubscribed = true;
+      const activeStreams = activeStreamsRef.current;
+      const knownContainers = new Set(getAllContainers(item).map(container => container.name));
+      const selectedContainers = containers.filter(
+        container => container && knownContainers.has(container)
+      );
+      const streamConfig = [
+        podIdentity,
+        lines,
+        showPrevious,
+        showTimestamps,
+        follow,
+        prettifyLogs,
+        formatJsonValues,
+        reconnect,
+      ].join('|');
 
-      if (props.open) {
+      const stopStream = (container: string) => {
+        const stream = activeStreams.get(container);
+        if (!stream) {
+          return;
+        }
+        stream.active = false;
+        stream.onLogs?.cancel();
+        stream.cancel?.();
+        activeStreams.delete(container);
+      };
+      const stopAllStreams = () => {
+        [...activeStreams.keys()].forEach(stopStream);
+      };
+      const updateReconnectButton = () => {
+        setShowReconnectButton([...activeStreams.values()].some(stream => stream.reconnectStopped));
+      };
+      const resetLogs = () => {
+        combinedLogEntriesRef.current = [];
         xtermRef.current?.clear();
         setLogs({ logs: [], lastLineShown: -1 });
         setHasJsonLogs(false);
+      };
 
-        // Each Kubernetes stream emits its full history. Snapshots let us append only each
-        // container's delta while retaining a complete download buffer.
-        const logsByContainer = new Map<string, ContainerLogSnapshot>();
-        let combinedLogs: string[] = [];
-        containers.filter(Boolean).forEach(container => {
-          const onLogs = _.debounce(
-            ({ logs, hasJsonLogs }: { logs: string[]; hasJsonLogs: boolean }) => {
-              if (!isSubscribed) {
-                return;
-              }
-
-              const previousLogs = logsByContainer.get(container)?.logs ?? [];
-              const previousLogCount = previousLogs.length;
-              const streamRestarted =
-                logs.length < previousLogCount ||
-                previousLogs.some((log, index) => logs[index] !== log);
-              logsByContainer.set(container, { logs: [...logs], hasJsonLogs });
-
-              if (streamRestarted) {
-                combinedLogs = containers.flatMap(name => logsByContainer.get(name)?.logs ?? []);
-              } else {
-                const newLogs = logs.slice(previousLogCount);
-                if (newLogs.length === 0) {
-                  return;
-                }
-                combinedLogs = combinedLogs.concat(newLogs);
-              }
-
-              applyLogs({
-                logs: combinedLogs,
-                hasJsonLogs: containers.some(
-                  name => logsByContainer.get(name)?.hasJsonLogs ?? false
-                ),
-                replace: streamRestarted,
-              });
-            },
-            500,
-            options
-          );
-          debouncedCallbacks.push(onLogs);
-          const callback = item.getLogs(container, onLogs, {
-            tailLines: lines,
-            showPrevious,
-            showTimestamps,
-            follow,
-            prettifyLogs,
-            formatJsonValues,
-            /**
-             * When the connection is lost, show the reconnect button.
-             * This will stop the current log stream.
-             */
-            onReconnectStop: () => {
-              if (isSubscribed) {
-                setShowReconnectButton(true);
-              }
-            },
-          });
-          if (callback) {
-            callbacks.push(callback);
-          }
-        });
+      if (!open) {
+        stopAllStreams();
+        streamConfigRef.current = '';
+        resetLogs();
+        setShowReconnectButton(false);
+        return;
       }
 
-      return function cleanup() {
-        isSubscribed = false;
-        debouncedCallbacks.forEach(callback => callback.cancel());
-        callbacks.forEach(callback => callback());
-      };
+      if (streamPodIdentityRef.current !== podIdentity) {
+        streamPodIdentityRef.current = podIdentity;
+        stopAllStreams();
+        streamConfigRef.current = streamConfig;
+        resetLogs();
+        setShowReconnectButton(false);
+        return;
+      }
+
+      if (streamConfigRef.current !== streamConfig) {
+        stopAllStreams();
+        streamConfigRef.current = streamConfig;
+        resetLogs();
+        setShowReconnectButton(false);
+      }
+
+      const selectedSet = new Set(selectedContainers);
+      let selectionRemoved = false;
+      [...activeStreams.keys()].forEach(container => {
+        if (!selectedSet.has(container)) {
+          stopStream(container);
+          selectionRemoved = true;
+        }
+      });
+
+      if (selectionRemoved) {
+        combinedLogEntriesRef.current = combinedLogEntriesRef.current.filter(entry =>
+          selectedSet.has(entry.container)
+        );
+        applyLogs({
+          logs: combinedLogEntriesRef.current.map(entry => entry.log),
+          hasJsonLogs: [...activeStreams.values()].some(stream => stream.hasJsonLogs),
+          replace: true,
+        });
+        updateReconnectButton();
+      }
+
+      selectedContainers.forEach(container => {
+        if (activeStreams.has(container)) {
+          return;
+        }
+
+        const streamState: ActiveContainerLogStream = {
+          logCount: 0,
+          hasJsonLogs: false,
+          reconnectStopped: false,
+          active: true,
+        };
+        const onLogs = _.debounce(
+          ({ logs, hasJsonLogs }: { logs: string[]; hasJsonLogs: boolean }) => {
+            if (!streamState.active || activeStreamsRef.current.get(container) !== streamState) {
+              return;
+            }
+
+            const streamRestarted =
+              logs.length < streamState.logCount ||
+              (streamState.previousLogs !== undefined &&
+                streamState.previousLogs !== logs &&
+                streamState.previousLogs.some((log, index) => logs[index] !== log));
+            const firstNewLog = streamRestarted ? 0 : streamState.logCount;
+            streamState.previousLogs = logs;
+            streamState.logCount = logs.length;
+            streamState.hasJsonLogs = hasJsonLogs;
+
+            if (streamRestarted) {
+              combinedLogEntriesRef.current = combinedLogEntriesRef.current.filter(
+                entry => entry.container !== container
+              );
+            }
+
+            const newLogs = logs.slice(firstNewLog);
+            if (newLogs.length > 0) {
+              combinedLogEntriesRef.current = combinedLogEntriesRef.current.concat(
+                newLogs.map(log => ({ container, log }))
+              );
+            }
+            if (!streamRestarted && newLogs.length === 0) {
+              return;
+            }
+
+            applyLogs({
+              logs: combinedLogEntriesRef.current.map(entry => entry.log),
+              hasJsonLogs: [...activeStreamsRef.current.values()].some(
+                stream => stream.hasJsonLogs
+              ),
+              replace: streamRestarted,
+            });
+          },
+          500,
+          options
+        );
+        streamState.onLogs = onLogs;
+        activeStreams.set(container, streamState);
+        streamState.cancel = item.getLogs(container, onLogs, {
+          tailLines: lines,
+          showPrevious,
+          showTimestamps,
+          follow,
+          prettifyLogs,
+          formatJsonValues,
+          onReconnectStop: () => {
+            if (streamState.active && activeStreamsRef.current.get(container) === streamState) {
+              streamState.reconnectStopped = true;
+              updateReconnectButton();
+            }
+          },
+        });
+      });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [
@@ -314,6 +436,7 @@ export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
       prettifyLogs,
       formatJsonValues,
       reconnect,
+      podIdentity,
     ]
   );
 
@@ -330,7 +453,6 @@ export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
       if (!haveContainersRestarted(selectedContainers)) {
         setShowPrevious(false);
       }
-      setHasJsonLogs(false);
     }
   }
 
@@ -361,10 +483,17 @@ export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
       containerNames.length > 0 &&
       containerNames.every(container => {
         const cont = containerStatuses.find((c: KubeContainerStatus) => c.name === container);
-        return !!cont && cont.restartCount > 0;
+        return !!cont?.lastState?.terminated?.containerID;
       })
     );
   }
+
+  React.useEffect(() => {
+    if (showPrevious && !haveContainersRestarted()) {
+      setShowPrevious(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [containers, item?.status, showPrevious]);
 
   function handleTimestampsChange() {
     setShowTimestamps(prev => !prev);

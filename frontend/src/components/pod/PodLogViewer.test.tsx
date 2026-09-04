@@ -172,9 +172,89 @@ describe('PodLogViewer', () => {
 
     const callsBeforeFiltering = getLogs.mock.calls.length;
     selectContainer('nginx');
-    await waitFor(() => expect(getLogs).toHaveBeenCalledTimes(callsBeforeFiltering + 1));
-    expect(getLogs).toHaveBeenLastCalledWith('sidecar', expect.any(Function), expect.any(Object));
-    expect(cancelLogs).toHaveBeenCalled();
+    await waitFor(() => expect(cancelLogs).toHaveBeenCalled());
+    expect(getLogs).toHaveBeenCalledTimes(callsBeforeFiltering);
+  });
+
+  it('keeps unchanged streams and their logs when the selection changes', async () => {
+    const callbacks = new Map<string, (result: any) => void>();
+    const cancelByContainer = new Map<string, ReturnType<typeof vi.fn>>();
+    const getLogs = vi.fn((container, callback) => {
+      callbacks.set(container, callback);
+      const cancel = vi.fn();
+      cancelByContainer.set(container, cancel);
+      return cancel;
+    });
+    render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={makeMockPod(getLogs)} onClose={() => {}} />
+      </TestContext>
+    );
+
+    act(() => callbacks.get('nginx')!({ logs: ['nginx-1\n'], hasJsonLogs: false }));
+    selectContainer('sidecar');
+
+    await waitFor(() => expect(callbacks.has('sidecar')).toBe(true));
+    expect(getLogs.mock.calls.filter(([name]) => name === 'nginx')).toHaveLength(1);
+    expect(cancelByContainer.get('nginx')).not.toHaveBeenCalled();
+    expect(screen.getByTestId('logs')).toHaveTextContent('nginx-1');
+
+    act(() => callbacks.get('sidecar')!({ logs: ['sidecar-1\n'], hasJsonLogs: false }));
+    expect(screen.getByTestId('logs')).toHaveTextContent('nginx-1 sidecar-1');
+
+    selectContainer('nginx');
+    await waitFor(() => expect(cancelByContainer.get('nginx')).toHaveBeenCalledTimes(1));
+    expect(cancelByContainer.get('sidecar')).not.toHaveBeenCalled();
+    expect(getLogs.mock.calls.filter(([name]) => name === 'sidecar')).toHaveLength(1);
+    expect(screen.getByTestId('logs')).toHaveTextContent('sidecar-1');
+    expect(screen.getByTestId('logs')).not.toHaveTextContent('nginx-1');
+  });
+
+  it('keeps pending updates from an unchanged stream when another is selected', async () => {
+    const callbacks = new Map<string, (result: any) => void>();
+    const getLogs = vi.fn((container, callback) => {
+      callbacks.set(container, callback);
+      return vi.fn();
+    });
+    render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={makeMockPod(getLogs)} onClose={() => {}} />
+      </TestContext>
+    );
+
+    act(() => {
+      callbacks.get('nginx')!({ logs: ['nginx-1\n'], hasJsonLogs: false });
+      callbacks.get('nginx')!({
+        logs: ['nginx-1\n', 'nginx-pending\n'],
+        hasJsonLogs: false,
+      });
+    });
+    selectContainer('sidecar');
+
+    await waitFor(() =>
+      expect(screen.getByTestId('logs')).toHaveTextContent('nginx-1 nginx-pending')
+    );
+    expect(getLogs.mock.calls.filter(([name]) => name === 'nginx')).toHaveLength(1);
+  });
+
+  it('keeps JSON controls when a newly selected stream has not emitted logs', async () => {
+    const callbacks = new Map<string, (result: any) => void>();
+    const getLogs = vi.fn((container, callback) => {
+      callbacks.set(container, callback);
+      return vi.fn();
+    });
+    render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={makeMockPod(getLogs)} onClose={() => {}} />
+      </TestContext>
+    );
+
+    act(() => callbacks.get('nginx')!({ logs: ['{"message":"nginx"}\n'], hasJsonLogs: true }));
+    expect(screen.getByRole('checkbox', { name: 'Prettify' })).toBeInTheDocument();
+
+    selectContainer('sidecar');
+
+    expect(screen.getByRole('checkbox', { name: 'Prettify' })).toBeInTheDocument();
   });
 
   it('combines selected container logs without duplicates and removes deselected logs', async () => {
@@ -189,13 +269,8 @@ describe('PodLogViewer', () => {
       </TestContext>
     );
 
-    const staleNginxCallback = callbacks.get('nginx')!;
     selectContainer('sidecar');
     await waitFor(() => expect(callbacks.has('sidecar')).toBe(true));
-    act(() => {
-      staleNginxCallback({ logs: ['stale-nginx\n'], hasJsonLogs: false });
-    });
-    expect(screen.getByTestId('logs')).toBeEmptyDOMElement();
 
     act(() => {
       callbacks.get('sidecar')!({ logs: ['sidecar-1\n'], hasJsonLogs: false });
@@ -238,12 +313,39 @@ describe('PodLogViewer', () => {
     expect(screen.getByTestId('logs')).not.toHaveTextContent('sidecar-reconnected');
 
     selectContainer('nginx');
-    await waitFor(() => expect(screen.getByTestId('logs')).toBeEmptyDOMElement());
+    await waitFor(() => expect(screen.getByTestId('logs')).toHaveTextContent('sidecar-replaced'));
+    expect(screen.getByTestId('logs')).not.toHaveTextContent('nginx-1');
     act(() => {
       callbacks.get('sidecar')!({ logs: ['sidecar-only\n'], hasJsonLogs: false });
     });
-    expect(screen.getByTestId('logs')).toHaveTextContent('sidecar-only');
+    await waitFor(() => expect(screen.getByTestId('logs')).toHaveTextContent('sidecar-only'));
     expect(screen.getByTestId('logs')).not.toHaveTextContent('nginx');
+  });
+
+  it('replaces a changed cumulative prefix even when its last old line is unchanged', async () => {
+    let onLogs: (result: any) => void;
+    const getLogs = vi.fn((_container, callback) => {
+      onLogs = callback;
+      return vi.fn();
+    });
+    render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={makeMockPod(getLogs)} onClose={() => {}} />
+      </TestContext>
+    );
+
+    act(() => onLogs({ logs: ['old-prefix\n', 'same-boundary\n'], hasJsonLogs: false }));
+    act(() =>
+      onLogs({
+        logs: ['new-prefix\n', 'same-boundary\n', 'new-tail\n'],
+        hasJsonLogs: false,
+      })
+    );
+
+    await waitFor(() =>
+      expect(screen.getByTestId('logs')).toHaveTextContent('new-prefix same-boundary new-tail')
+    );
+    expect(screen.getByTestId('logs')).not.toHaveTextContent('old-prefix');
   });
 
   it('does not allow the last selected container to be removed', () => {
@@ -298,12 +400,12 @@ describe('PodLogViewer', () => {
       </TestContext>
     );
     selectContainer('sidecar');
-    await waitFor(() => expect(getLogs).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(getLogs).toHaveBeenCalledTimes(2));
 
     fireEvent.click(screen.getByRole('button', { name: 'Reconnect' }));
 
-    await waitFor(() => expect(getLogs).toHaveBeenCalledTimes(5));
-    expect(cancelByContainer.nginx).toHaveBeenCalledTimes(2);
+    await waitFor(() => expect(getLogs).toHaveBeenCalledTimes(4));
+    expect(cancelByContainer.nginx).toHaveBeenCalledTimes(1);
     expect(cancelByContainer.sidecar).toHaveBeenCalledTimes(1);
   });
 
@@ -317,21 +419,21 @@ describe('PodLogViewer', () => {
       </TestContext>
     );
     selectContainer('sidecar');
-    await waitFor(() => expect(getLogs).toHaveBeenCalledTimes(3));
+    await waitFor(() => expect(getLogs).toHaveBeenCalledTimes(2));
 
     rerender(
       <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
         <PodLogViewer open={false} item={pod} onClose={() => {}} />
       </TestContext>
     );
-    expect(cancelLogs).toHaveBeenCalledTimes(3);
+    expect(cancelLogs).toHaveBeenCalledTimes(2);
 
     rerender(
       <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
         <PodLogViewer open item={pod} onClose={() => {}} />
       </TestContext>
     );
-    await waitFor(() => expect(getLogs).toHaveBeenCalledTimes(5));
+    await waitFor(() => expect(getLogs).toHaveBeenCalledTimes(4));
   });
 
   it('ignores reconnect failures from a stream after it is closed', () => {
@@ -355,6 +457,142 @@ describe('PodLogViewer', () => {
     act(() => staleReconnect());
 
     expect(screen.getByTestId('reconnect-visible')).toHaveTextContent('false');
+  });
+
+  it('clears a reconnect failure when the failed container is deselected', async () => {
+    const reconnectByContainer = new Map<string, () => void>();
+    const getLogs = vi.fn((container, _callback, options) => {
+      reconnectByContainer.set(container, options.onReconnectStop);
+      return vi.fn();
+    });
+    render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={makeMockPod(getLogs)} onClose={() => {}} />
+      </TestContext>
+    );
+
+    selectContainer('sidecar');
+    act(() => reconnectByContainer.get('nginx')!());
+    expect(screen.getByTestId('reconnect-visible')).toHaveTextContent('true');
+
+    selectContainer('nginx');
+    await waitFor(() => expect(screen.getByTestId('reconnect-visible')).toHaveTextContent('false'));
+  });
+
+  it('starts a reopened viewer without a stale reconnect failure', () => {
+    let onReconnectStop = () => {};
+    const getLogs = vi.fn((_container, _callback, options) => {
+      onReconnectStop = options.onReconnectStop;
+      return vi.fn();
+    });
+    const pod = makeMockPod(getLogs);
+    const { rerender } = render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={pod} onClose={() => {}} />
+      </TestContext>
+    );
+    act(() => onReconnectStop());
+    expect(screen.getByTestId('reconnect-visible')).toHaveTextContent('true');
+
+    rerender(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open={false} item={pod} onClose={() => {}} />
+      </TestContext>
+    );
+    rerender(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={pod} onClose={() => {}} />
+      </TestContext>
+    );
+
+    expect(screen.getByTestId('reconnect-visible')).toHaveTextContent('false');
+  });
+
+  it('replaces streams when the viewed Pod UID changes', async () => {
+    const firstCancel = vi.fn();
+    let firstCallback: (result: any) => void;
+    const firstGetLogs = vi.fn((_container, callback) => {
+      firstCallback = callback;
+      return firstCancel;
+    });
+    const secondGetLogs = vi.fn(() => vi.fn());
+    const firstPod = makeMockPod(firstGetLogs);
+    const secondPod = makeMockPod(secondGetLogs);
+    secondPod.metadata = { ...secondPod.metadata, name: 'replacement-pod', uid: 'replacement-uid' };
+    secondPod.getName = () => 'replacement-pod';
+    const { rerender } = render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={firstPod} onClose={() => {}} />
+      </TestContext>
+    );
+
+    rerender(
+      <TestContext routerMap={{ namespace: 'default', name: 'replacement-pod' }}>
+        <PodLogViewer open item={secondPod} onClose={() => {}} />
+      </TestContext>
+    );
+
+    await waitFor(() =>
+      expect(secondGetLogs).toHaveBeenCalledWith('nginx', expect.any(Function), expect.any(Object))
+    );
+    expect(firstCancel).toHaveBeenCalled();
+    act(() => firstCallback({ logs: ['stale-first-pod\n'], hasJsonLogs: false }));
+    expect(screen.getByTestId('logs')).not.toHaveTextContent('stale-first-pod');
+  });
+
+  it('does not open the old selection while switching to a new Pod', async () => {
+    const firstGetLogs = vi.fn(() => vi.fn());
+    const secondGetLogs = vi.fn(() => vi.fn());
+    const firstPod = makeMockPod(firstGetLogs);
+    const secondPod = makeMockPod(secondGetLogs);
+    secondPod.metadata = { ...secondPod.metadata, name: 'replacement-pod', uid: 'replacement-uid' };
+    secondPod.getName = () => 'replacement-pod';
+    const { rerender } = render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={firstPod} onClose={() => {}} />
+      </TestContext>
+    );
+    selectContainer('sidecar');
+    selectContainer('nginx');
+
+    rerender(
+      <TestContext routerMap={{ namespace: 'default', name: 'replacement-pod' }}>
+        <PodLogViewer open item={secondPod} onClose={() => {}} />
+      </TestContext>
+    );
+
+    await waitFor(() =>
+      expect(secondGetLogs).toHaveBeenCalledWith('nginx', expect.any(Function), expect.any(Object))
+    );
+    expect(
+      (secondGetLogs.mock.calls as unknown as Array<[string]>).some(([name]) => name === 'sidecar')
+    ).toBe(false);
+  });
+
+  it('falls back when the selected container disappears from the Pod spec', async () => {
+    const getLogs = vi.fn(() => vi.fn());
+    const pod = makeMockPod(getLogs);
+    const { rerender } = render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={pod} onClose={() => {}} />
+      </TestContext>
+    );
+    selectContainer('sidecar');
+    selectContainer('nginx');
+    expect(screen.getByRole('combobox', { name: 'Containers' })).toHaveTextContent('sidecar');
+
+    const updatedPod = makeMockPod(getLogs);
+    updatedPod.spec.containers = [{ name: 'nginx' }];
+    rerender(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={updatedPod} onClose={() => {}} />
+      </TestContext>
+    );
+
+    await waitFor(() =>
+      expect(screen.getByRole('combobox', { name: 'Containers' })).toHaveTextContent('nginx')
+    );
+    expect(screen.getByRole('combobox', { name: 'Containers' })).not.toHaveTextContent('sidecar');
   });
 
   it('can select init and ephemeral container logs', async () => {
@@ -417,13 +655,20 @@ describe('PodLogViewer', () => {
     }
   });
 
-  it('enables previous logs for restarted init and ephemeral containers', async () => {
+  it('enables previous logs for regular and init containers with a previous instance', async () => {
     const getLogs = vi.fn(() => vi.fn());
     const pod = makeMockPod(getLogs);
     pod.spec.initContainers = [{ name: 'setup' }];
-    pod.spec.ephemeralContainers = [{ name: 'debugger' }];
-    pod.status.initContainerStatuses = [{ name: 'setup', restartCount: 1 }];
-    pod.status.ephemeralContainerStatuses = [{ name: 'debugger', restartCount: 1 }];
+    pod.status.containerStatuses[0].lastState = {
+      terminated: { containerID: 'containerd://previous-nginx' },
+    };
+    pod.status.initContainerStatuses = [
+      {
+        name: 'setup',
+        restartCount: 1,
+        lastState: { terminated: { containerID: 'containerd://previous-setup' } },
+      },
+    ];
     render(
       <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
         <PodLogViewer open item={pod} onClose={() => {}} />
@@ -431,8 +676,6 @@ describe('PodLogViewer', () => {
     );
 
     selectContainer('setup');
-    selectContainer('debugger');
-    selectContainer('nginx');
     const previousLogs = screen.getByRole('checkbox', {
       name: 'Show logs for previous instances of this container.',
     });
@@ -445,11 +688,6 @@ describe('PodLogViewer', () => {
         expect.any(Function),
         expect.objectContaining({ showPrevious: true })
       );
-      expect(getLogs).toHaveBeenCalledWith(
-        'debugger',
-        expect.any(Function),
-        expect.objectContaining({ showPrevious: true })
-      );
     });
   });
 
@@ -457,6 +695,9 @@ describe('PodLogViewer', () => {
     const getLogs = vi.fn(() => vi.fn());
     const pod = makeMockPod(getLogs);
     pod.status.containerStatuses[0].restartCount = 1;
+    pod.status.containerStatuses[0].lastState = {
+      terminated: { containerID: 'containerd://previous-nginx' },
+    };
     render(
       <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
         <PodLogViewer open item={pod} onClose={() => {}} />
@@ -484,5 +725,88 @@ describe('PodLogViewer', () => {
       )
     );
     expect(previousLogs).toBeDisabled();
+  });
+
+  it('uses the last terminated state to detect available previous logs', () => {
+    const getLogs = vi.fn(() => vi.fn());
+    const pod = makeMockPod(getLogs);
+    pod.status.containerStatuses[0] = {
+      name: 'nginx',
+      restartCount: 0,
+      state: { running: {} },
+      lastState: { terminated: { containerID: 'containerd://previous' } },
+    };
+    render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={pod} onClose={() => {}} />
+      </TestContext>
+    );
+
+    expect(
+      screen.getByRole('checkbox', {
+        name: 'Show logs for previous instances of this container.',
+      })
+    ).toBeEnabled();
+  });
+
+  it('does not infer previous-log availability from restart count alone', () => {
+    const getLogs = vi.fn(() => vi.fn());
+    const pod = makeMockPod(getLogs);
+    pod.status.containerStatuses[0] = {
+      name: 'nginx',
+      restartCount: 1,
+      state: { running: {} },
+      lastState: {},
+    };
+    render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={pod} onClose={() => {}} />
+      </TestContext>
+    );
+
+    expect(
+      screen.getByRole('checkbox', {
+        name: 'You can only select this option for containers that have been restarted.',
+      })
+    ).toBeDisabled();
+  });
+
+  it('turns off previous logs when updated status loses the previous instance', async () => {
+    const getLogs = vi.fn(() => vi.fn());
+    const pod = makeMockPod(getLogs);
+    pod.status.containerStatuses[0].lastState = {
+      terminated: { containerID: 'containerd://previous-nginx' },
+    };
+    const { rerender } = render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={pod} onClose={() => {}} />
+      </TestContext>
+    );
+    const previousLogs = screen.getByRole('checkbox', {
+      name: 'Show logs for previous instances of this container.',
+    });
+    fireEvent.click(previousLogs);
+    await waitFor(() =>
+      expect(getLogs).toHaveBeenLastCalledWith(
+        'nginx',
+        expect.any(Function),
+        expect.objectContaining({ showPrevious: true })
+      )
+    );
+
+    const updatedPod = makeMockPod(getLogs);
+    rerender(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={updatedPod} onClose={() => {}} />
+      </TestContext>
+    );
+
+    await waitFor(() => expect(previousLogs).toBeDisabled());
+    expect(previousLogs).not.toBeChecked();
+    expect(getLogs).toHaveBeenLastCalledWith(
+      'nginx',
+      expect.any(Function),
+      expect.objectContaining({ showPrevious: false })
+    );
   });
 });
