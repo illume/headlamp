@@ -286,7 +286,9 @@ export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
              * This will stop the current log stream.
              */
             onReconnectStop: () => {
-              setShowReconnectButton(true);
+              if (isSubscribed) {
+                setShowReconnectButton(true);
+              }
             },
           });
           if (callback) {

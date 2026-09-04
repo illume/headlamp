@@ -28,9 +28,10 @@ vi.mock('../globalSearch/useLocalStorageState', () => ({
 }));
 
 vi.mock('../common/LogViewer', () => ({
-  LogViewer: ({ logs, topActions, handleReconnect }: any) => (
+  LogViewer: ({ logs, topActions, handleReconnect, showReconnectButton }: any) => (
     <div>
       <div data-testid="logs">{logs.join('')}</div>
+      <div data-testid="reconnect-visible">{String(showReconnectButton)}</div>
       <div>{React.Children.toArray(topActions)}</div>
       <button onClick={handleReconnect}>Reconnect</button>
     </div>
@@ -331,6 +332,29 @@ describe('PodLogViewer', () => {
       </TestContext>
     );
     await waitFor(() => expect(getLogs).toHaveBeenCalledTimes(5));
+  });
+
+  it('ignores reconnect failures from a stream after it is closed', () => {
+    let staleReconnect = () => {};
+    const getLogs = vi.fn((_container, _callback, options) => {
+      staleReconnect = options.onReconnectStop;
+      return vi.fn();
+    });
+    const pod = makeMockPod(getLogs);
+    const { rerender } = render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={pod} onClose={() => {}} />
+      </TestContext>
+    );
+
+    rerender(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open={false} item={pod} onClose={() => {}} />
+      </TestContext>
+    );
+    act(() => staleReconnect());
+
+    expect(screen.getByTestId('reconnect-visible')).toHaveTextContent('false');
   });
 
   it('can select init and ephemeral container logs', async () => {
