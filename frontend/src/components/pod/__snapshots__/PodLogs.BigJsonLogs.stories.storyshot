@@ -104,6 +104,7 @@
                   >
                     <div
                       aria-controls=":mock-test-id:"
+                      aria-describedby="container-name-chooser-help"
                       aria-expanded="false"
                       aria-haspopup="listbox"
                       aria-labelledby="container-name-chooser-label container-name-chooser"
@@ -133,6 +134,12 @@
                       />
                     </svg>
                   </div>
+                  <p
+                    class="MuiFormHelperText-root MuiFormHelperText-sizeMedium MuiFormHelperText-filled css-nnd8o8-MuiFormHelperText-root"
+                    id="container-name-chooser-help"
+                  >
+                    At least one container must remain selected.
+                  </p>
                 </div>
               </div>
               <div

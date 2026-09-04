@@ -18,6 +18,7 @@ import { Icon } from '@iconify/react';
 import Checkbox from '@mui/material/Checkbox';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import FormHelperText from '@mui/material/FormHelperText';
 import InputLabel from '@mui/material/InputLabel';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
@@ -208,19 +209,37 @@ export function PodLogViewer(props: PodLogViewerProps) {
         setHasJsonLogs(false);
 
         const logsByContainer = new Map<string, { logs: string[]; hasJsonLogs: boolean }>();
+        let combinedLogs: string[] = [];
         containers.filter(Boolean).forEach(container => {
           const onLogs = _.debounce(
             ({ logs, hasJsonLogs }: { logs: string[]; hasJsonLogs: boolean }) => {
               if (!isSubscribed) {
                 return;
               }
-              logsByContainer.set(container, { logs, hasJsonLogs });
+
+              const previousLogs = logsByContainer.get(container)?.logs ?? [];
+              const previousLogCount = previousLogs.length;
+              const streamRestarted =
+                logs.length < previousLogCount ||
+                previousLogs.some((log, index) => logs[index] !== log);
+              logsByContainer.set(container, { logs: [...logs], hasJsonLogs });
+
+              if (streamRestarted) {
+                combinedLogs = containers.flatMap(name => logsByContainer.get(name)?.logs ?? []);
+              } else {
+                const newLogs = logs.slice(previousLogCount);
+                if (newLogs.length === 0) {
+                  return;
+                }
+                combinedLogs = combinedLogs.concat(newLogs);
+              }
+
               setLogsDebounced({
-                logs: containers.flatMap(name => logsByContainer.get(name)?.logs ?? []),
+                logs: combinedLogs,
                 hasJsonLogs: containers.some(
                   name => logsByContainer.get(name)?.hasJsonLogs ?? false
                 ),
-                replace: containers.length > 1,
+                replace: streamRestarted,
               });
             },
             500,
@@ -289,12 +308,15 @@ export function PodLogViewer(props: PodLogViewerProps) {
   }
 
   function haveContainersRestarted(containerNames = containers) {
+    const containerStatuses = [
+      ...(item?.status?.containerStatuses ?? []),
+      ...(item?.status?.initContainerStatuses ?? []),
+      ...(item?.status?.ephemeralContainerStatuses ?? []),
+    ];
     return (
       containerNames.length > 0 &&
       containerNames.every(container => {
-        const cont = item?.status?.containerStatuses?.find(
-          (c: KubeContainerStatus) => c.name === container
-        );
+        const cont = containerStatuses.find((c: KubeContainerStatus) => c.name === container);
         return !!cont && cont.restartCount > 0;
       })
     );
@@ -347,41 +369,69 @@ export function PodLogViewer(props: PodLogViewerProps) {
             value={containers}
             onChange={handleContainerChange}
             renderValue={selected => selected.join(', ')}
+            inputProps={{ 'aria-describedby': 'container-name-chooser-help' }}
           >
-            {item?.spec?.containers && (
+            {!!item?.spec?.containers?.length && (
               <MenuItem disabled value="">
                 {t('glossary|Containers')}
               </MenuItem>
             )}
             {item?.spec?.containers.map(({ name }) => (
-              <MenuItem value={name} key={name}>
-                <Checkbox checked={containers.includes(name)} size="small" />
+              <MenuItem
+                value={name}
+                key={name}
+                disabled={containers.length === 1 && containers.includes(name)}
+              >
+                <Checkbox
+                  checked={containers.includes(name)}
+                  disabled={containers.length === 1 && containers.includes(name)}
+                  size="small"
+                />
                 <ListItemText primary={name} />
               </MenuItem>
             ))}
-            {item?.spec?.initContainers && (
+            {!!item?.spec?.initContainers?.length && (
               <MenuItem disabled value="">
                 {t('translation|Init Containers')}
               </MenuItem>
             )}
             {item.spec.initContainers?.map(({ name }) => (
-              <MenuItem value={name} key={`init_container_${name}`}>
-                <Checkbox checked={containers.includes(name)} size="small" />
+              <MenuItem
+                value={name}
+                key={`init_container_${name}`}
+                disabled={containers.length === 1 && containers.includes(name)}
+              >
+                <Checkbox
+                  checked={containers.includes(name)}
+                  disabled={containers.length === 1 && containers.includes(name)}
+                  size="small"
+                />
                 <ListItemText primary={name} />
               </MenuItem>
             ))}
-            {item?.spec?.ephemeralContainers && (
+            {!!item?.spec?.ephemeralContainers?.length && (
               <MenuItem disabled value="">
                 {t('glossary|Ephemeral Containers')}
               </MenuItem>
             )}
             {item.spec.ephemeralContainers?.map(({ name }) => (
-              <MenuItem value={name} key={`eph_container_${name}`}>
-                <Checkbox checked={containers.includes(name)} size="small" />
+              <MenuItem
+                value={name}
+                key={`eph_container_${name}`}
+                disabled={containers.length === 1 && containers.includes(name)}
+              >
+                <Checkbox
+                  checked={containers.includes(name)}
+                  disabled={containers.length === 1 && containers.includes(name)}
+                  size="small"
+                />
                 <ListItemText primary={name} />
               </MenuItem>
             ))}
           </Select>
+          <FormHelperText id="container-name-chooser-help">
+            {t('translation|At least one container must remain selected.')}
+          </FormHelperText>
         </FormControl>,
         <FormControl sx={{ minWidth: '6rem' }}>
           <InputLabel shrink id="container-lines-chooser-label">

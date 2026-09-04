@@ -200,7 +200,7 @@ describe('PodLogViewer', () => {
       callbacks.get('sidecar')!({ logs: ['sidecar-1\n'], hasJsonLogs: false });
       callbacks.get('nginx')!({ logs: ['nginx-1\n'], hasJsonLogs: false });
     });
-    expect(screen.getByTestId('logs')).toHaveTextContent('nginx-1 sidecar-1');
+    expect(screen.getByTestId('logs')).toHaveTextContent('sidecar-1 nginx-1');
 
     act(() => {
       callbacks.get('sidecar')!({
@@ -209,8 +209,32 @@ describe('PodLogViewer', () => {
       });
     });
     await waitFor(() =>
-      expect(screen.getByTestId('logs')).toHaveTextContent('nginx-1 sidecar-1 sidecar-2')
+      expect(screen.getByTestId('logs')).toHaveTextContent('sidecar-1 nginx-1 sidecar-2')
     );
+
+    act(() => {
+      callbacks.get('sidecar')!({
+        logs: ['sidecar-1\n', 'sidecar-2\n'],
+        hasJsonLogs: false,
+      });
+    });
+    expect(screen.getByTestId('logs')).toHaveTextContent('sidecar-1 nginx-1 sidecar-2');
+
+    act(() => {
+      callbacks.get('sidecar')!({ logs: ['sidecar-reconnected\n'], hasJsonLogs: false });
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId('logs')).toHaveTextContent('nginx-1 sidecar-reconnected')
+    );
+    expect(screen.getByTestId('logs')).not.toHaveTextContent('sidecar-1');
+
+    act(() => {
+      callbacks.get('sidecar')!({ logs: ['sidecar-replaced\n'], hasJsonLogs: false });
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId('logs')).toHaveTextContent('nginx-1 sidecar-replaced')
+    );
+    expect(screen.getByTestId('logs')).not.toHaveTextContent('sidecar-reconnected');
 
     selectContainer('nginx');
     await waitFor(() => expect(screen.getByTestId('logs')).toBeEmptyDOMElement());
@@ -230,10 +254,35 @@ describe('PodLogViewer', () => {
     );
     const callsBeforeFiltering = getLogs.mock.calls.length;
 
-    selectContainer('nginx');
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Containers' }));
+    const onlySelectedOption = screen.getByRole('option', { name: 'nginx' });
+    expect(onlySelectedOption).toHaveAttribute('aria-disabled', 'true');
+    fireEvent.click(onlySelectedOption);
+    fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' });
 
     expect(screen.getByRole('combobox', { name: 'Containers' })).toHaveTextContent('nginx');
     expect(getLogs).toHaveBeenCalledTimes(callsBeforeFiltering);
+  });
+
+  it('enables selected options for removal after another container is selected', () => {
+    const getLogs = vi.fn(() => vi.fn());
+    render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={makeMockPod(getLogs)} onClose={() => {}} />
+      </TestContext>
+    );
+
+    selectContainer('sidecar');
+    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Containers' }));
+
+    expect(screen.getByRole('option', { name: 'nginx' })).not.toHaveAttribute(
+      'aria-disabled',
+      'true'
+    );
+    expect(screen.getByRole('option', { name: 'sidecar' })).not.toHaveAttribute(
+      'aria-disabled',
+      'true'
+    );
   });
 
   it('restarts and cleans up every selected container stream on reconnect', async () => {
@@ -306,6 +355,78 @@ describe('PodLogViewer', () => {
     expect(screen.getByRole('combobox', { name: 'Containers' })).toHaveTextContent(
       'nginx, setup, debugger'
     );
+  });
+
+  it('exposes an accessible multi-select with disabled group labels', () => {
+    const getLogs = vi.fn(() => vi.fn());
+    const pod = makeMockPod(getLogs);
+    pod.spec.initContainers = [{ name: 'setup' }];
+    pod.spec.ephemeralContainers = [{ name: 'debugger' }];
+    render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={pod} onClose={() => {}} />
+      </TestContext>
+    );
+
+    const containerChooser = screen.getByRole('combobox', { name: 'Containers' });
+    expect(containerChooser).toHaveAttribute('aria-describedby', 'container-name-chooser-help');
+    expect(screen.getByText('At least one container must remain selected.')).toHaveAttribute(
+      'id',
+      'container-name-chooser-help'
+    );
+    fireEvent.mouseDown(containerChooser);
+
+    expect(screen.getByRole('listbox', { name: 'Containers' })).toHaveAttribute(
+      'aria-multiselectable',
+      'true'
+    );
+    expect(screen.getByRole('option', { name: 'nginx' })).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByRole('option', { name: 'sidecar' })).toHaveAttribute(
+      'aria-selected',
+      'false'
+    );
+    for (const groupName of ['Containers', 'Init Containers', 'Ephemeral Containers']) {
+      expect(screen.getByRole('option', { name: groupName })).toHaveAttribute(
+        'aria-disabled',
+        'true'
+      );
+    }
+  });
+
+  it('enables previous logs for restarted init and ephemeral containers', async () => {
+    const getLogs = vi.fn(() => vi.fn());
+    const pod = makeMockPod(getLogs);
+    pod.spec.initContainers = [{ name: 'setup' }];
+    pod.spec.ephemeralContainers = [{ name: 'debugger' }];
+    pod.status.initContainerStatuses = [{ name: 'setup', restartCount: 1 }];
+    pod.status.ephemeralContainerStatuses = [{ name: 'debugger', restartCount: 1 }];
+    render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={pod} onClose={() => {}} />
+      </TestContext>
+    );
+
+    selectContainer('setup');
+    selectContainer('debugger');
+    selectContainer('nginx');
+    const previousLogs = screen.getByRole('checkbox', {
+      name: 'Show logs for previous instances of this container.',
+    });
+    expect(previousLogs).toBeEnabled();
+
+    fireEvent.click(previousLogs);
+    await waitFor(() => {
+      expect(getLogs).toHaveBeenCalledWith(
+        'setup',
+        expect.any(Function),
+        expect.objectContaining({ showPrevious: true })
+      );
+      expect(getLogs).toHaveBeenCalledWith(
+        'debugger',
+        expect.any(Function),
+        expect.objectContaining({ showPrevious: true })
+      );
+    });
   });
 
   it('turns off previous logs when the selection includes a container without restarts', async () => {
