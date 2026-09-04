@@ -563,8 +563,8 @@ test('filters logs from a pod with multiple containers', async ({ page }) => {
     await containerChooser.click();
     await page.getByRole('option', { name: 'main' }).click();
     await page.keyboard.press('Escape');
-    await expect(terminalRows).not.toContainText('main-container-log');
     await expect(terminalRows).toContainText('sidecar-container-log');
+    await expect(terminalRows).not.toContainText('main-container-log');
   } finally {
     await kubectl(
       kubeconfig,
