@@ -22,7 +22,7 @@ import FormHelperText from '@mui/material/FormHelperText';
 import InputLabel from '@mui/material/InputLabel';
 import ListItemText from '@mui/material/ListItemText';
 import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
 import Switch from '@mui/material/Switch';
 import { styled } from '@mui/system';
 import { Terminal as XTerminal } from '@xterm/xterm';
@@ -70,12 +70,39 @@ const PaddedFormControlLabel = styled(FormControlLabel)(({ theme }) => ({
   paddingRight: theme.spacing(1),
 }));
 
+/** Props for the pod-specific log viewer. */
 interface PodLogViewerProps extends Omit<LogViewerProps, 'logs'> {
+  /** Pod whose container logs are streamed. */
   item: Pod;
+  /** Preferred initial container; falls back to the pod's default container when invalid. */
   initialContainer?: string;
 }
 
-export function PodLogViewer(props: PodLogViewerProps) {
+/** A batch of cumulative log lines to apply to the terminal and download buffer. */
+interface PodLogUpdate {
+  /** All raw log lines accumulated for the active streams. */
+  logs: string[];
+  /** Whether at least one active stream contains JSON log entries. */
+  hasJsonLogs: boolean;
+  /** Clear and rebuild the terminal; defaults to incremental rendering when omitted. */
+  replace?: boolean;
+}
+
+/** Latest cumulative result received from one container log stream. */
+interface ContainerLogSnapshot {
+  /** Snapshot of the container's cumulative log lines. */
+  logs: string[];
+  /** Whether this container's stream contains JSON log entries. */
+  hasJsonLogs: boolean;
+}
+
+/**
+ * Streams logs for a non-empty selection of a pod's regular, init, and ephemeral containers.
+ *
+ * @param props - Pod, dialog, and initial-container configuration.
+ * @returns A log viewer with container-selection and stream controls.
+ */
+export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
   const { item, onClose, open, initialContainer, ...other } = props;
   const [containers, setContainers] = React.useState(() => [
     resolveContainerName(item, initialContainer),
@@ -132,15 +159,14 @@ export function PodLogViewer(props: PodLogViewerProps) {
 
   const options = { leading: true, trailing: true, maxWait: 1000 };
 
-  function applyLogs({
-    logs: logLines,
-    hasJsonLogs,
-    replace,
-  }: {
-    logs: string[];
-    hasJsonLogs: boolean;
-    replace?: boolean;
-  }) {
+  /**
+   * Applies a cumulative log update, appending unseen lines unless a stream reset requires a
+   * complete terminal rebuild.
+   *
+   * @param update - Cumulative logs and rendering metadata for the active streams.
+   */
+  function applyLogs(update: PodLogUpdate): void {
+    const { logs: logLines, hasJsonLogs, replace } = update;
     setHasJsonLogs(hasJsonLogs);
 
     setLogs(current => {
@@ -208,7 +234,9 @@ export function PodLogViewer(props: PodLogViewerProps) {
         setLogs({ logs: [], lastLineShown: -1 });
         setHasJsonLogs(false);
 
-        const logsByContainer = new Map<string, { logs: string[]; hasJsonLogs: boolean }>();
+        // Each Kubernetes stream emits its full history. Snapshots let us append only each
+        // container's delta while retaining a complete download buffer.
+        const logsByContainer = new Map<string, ContainerLogSnapshot>();
         let combinedLogs: string[] = [];
         containers.filter(Boolean).forEach(container => {
           const onLogs = _.debounce(
@@ -287,7 +315,12 @@ export function PodLogViewer(props: PodLogViewerProps) {
     ]
   );
 
-  function handleContainerChange(event: any) {
+  /**
+   * Applies a container selection while preserving the invariant that one container remains.
+   *
+   * @param event - MUI select change containing the selected container names.
+   */
+  function handleContainerChange(event: SelectChangeEvent<string[]>): void {
     const value = event.target.value;
     const selectedContainers = typeof value === 'string' ? value.split(',') : value;
     if (selectedContainers.length > 0) {
@@ -307,7 +340,16 @@ export function PodLogViewer(props: PodLogViewerProps) {
     setShowPrevious(previous => !previous);
   }
 
-  function haveContainersRestarted(containerNames = containers) {
+  /**
+   * Checks whether every named container has a previous instance available from Kubernetes.
+   *
+   * Previous logs are requested for every active stream, so a mixed selection is eligible only
+   * when all selected regular, init, or ephemeral containers have restarted.
+   *
+   * @param containerNames - Container names to check; defaults to the active selection.
+   * @returns Whether the selection is non-empty and every container has restarted.
+   */
+  function haveContainersRestarted(containerNames: string[] = containers): boolean {
     const containerStatuses = [
       ...(item?.status?.containerStatuses ?? []),
       ...(item?.status?.initContainerStatuses ?? []),
@@ -339,10 +381,9 @@ export function PodLogViewer(props: PodLogViewerProps) {
   }
 
   /**
-   * Handle the reconnect button being clicked.
-   * This will start a new log stream and hide the reconnect button.
+   * Restarts every selected container stream and hides the reconnect prompt.
    */
-  function handleReconnect() {
+  function handleReconnect(): void {
     setShowReconnectButton(false);
     setReconnect(value => value + 1);
   }
