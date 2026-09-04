@@ -528,7 +528,7 @@ test('filters logs from a pod with multiple containers', async ({ page }) => {
         kind: 'Pod',
         metadata: { name, namespace: 'default' },
         spec: {
-          containers: ['main', 'sidecar'].map(container => ({
+          containers: ['main', 'sidecar', 'auxiliary'].map(container => ({
             name: container,
             image: 'busybox:1.37',
             command: ['sh', '-c', `while true; do echo ${container}-container-log; sleep 1; done`],
@@ -554,17 +554,40 @@ test('filters logs from a pod with multiple containers', async ({ page }) => {
     const terminalRows = page.locator('#xterm-container .xterm-rows');
     await expect(terminalRows).toContainText('main-container-log');
     const containerChooser = page.getByRole('combobox', { name: 'Containers' });
+    await expect(containerChooser).toHaveText('main');
     await containerChooser.click();
     await page.getByRole('option', { name: 'sidecar' }).click();
     await page.keyboard.press('Escape');
     await expect(terminalRows).toContainText('main-container-log');
     await expect(terminalRows).toContainText('sidecar-container-log');
+    await expect(terminalRows).not.toContainText('auxiliary-container-log');
+    await expect(containerChooser).toHaveText('main, sidecar');
+
+    await containerChooser.click();
+    await page.getByRole('option', { name: 'auxiliary' }).click();
+    await page.keyboard.press('Escape');
+    await expect(terminalRows).toContainText('auxiliary-container-log');
 
     await containerChooser.click();
     await page.getByRole('option', { name: 'main' }).click();
     await page.keyboard.press('Escape');
     await expect(terminalRows).toContainText('sidecar-container-log');
+    await expect(terminalRows).toContainText('auxiliary-container-log');
     await expect(terminalRows).not.toContainText('main-container-log');
+    await expect(containerChooser).toHaveText('sidecar, auxiliary');
+
+    await containerChooser.click();
+    await page.getByRole('option', { name: 'sidecar' }).click();
+    await page.keyboard.press('Escape');
+    await expect(terminalRows).toContainText('auxiliary-container-log');
+    await expect(terminalRows).not.toContainText('sidecar-container-log');
+    await expect(containerChooser).toHaveText('auxiliary');
+
+    await containerChooser.click();
+    await page.getByRole('option', { name: 'auxiliary' }).click();
+    await page.keyboard.press('Escape');
+    await expect(containerChooser).toHaveText('auxiliary');
+    await expect(terminalRows).toContainText('auxiliary-container-log');
   } finally {
     await kubectl(
       kubeconfig,

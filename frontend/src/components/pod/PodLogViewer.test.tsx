@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { TestContext } from '../../test';
 import { PodLogViewer } from './Details';
@@ -25,6 +25,16 @@ vi.mock('../../lib/k8s/cluster', () => ({}));
 
 vi.mock('../globalSearch/useLocalStorageState', () => ({
   useLocalStorageState: (_key: string, defaultValue: any) => [defaultValue, vi.fn()],
+}));
+
+vi.mock('../common/LogViewer', () => ({
+  LogViewer: ({ logs, topActions, handleReconnect }: any) => (
+    <div>
+      <div data-testid="logs">{logs.join('')}</div>
+      <div>{React.Children.toArray(topActions)}</div>
+      <button onClick={handleReconnect}>Reconnect</button>
+    </div>
+  ),
 }));
 
 vi.mock('@xterm/xterm', () => ({
@@ -62,6 +72,12 @@ function makeMockPod(getLogs: (...args: any[]) => any) {
     getName: () => 'test-pod',
     getLogs,
   } as any;
+}
+
+function selectContainer(name: string) {
+  fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Containers' }));
+  fireEvent.click(screen.getByRole('option', { name }));
+  fireEvent.keyDown(screen.getByRole('listbox'), { key: 'Escape' });
 }
 
 describe('PodLogViewer', () => {
@@ -119,6 +135,7 @@ describe('PodLogViewer', () => {
           <PodLogViewer open item={pod} onClose={() => {}} />
         </TestContext>
       );
+      expect(getLogs).not.toHaveBeenCalled();
 
       pod.spec.containers = [{ name: 'nginx' }];
       pod.status = {
@@ -145,8 +162,7 @@ describe('PodLogViewer', () => {
       </TestContext>
     );
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Containers' }));
-    fireEvent.click(screen.getByRole('option', { name: 'sidecar' }));
+    selectContainer('sidecar');
 
     await waitFor(() => {
       expect(getLogs).toHaveBeenCalledWith('nginx', expect.any(Function), expect.any(Object));
@@ -154,9 +170,174 @@ describe('PodLogViewer', () => {
     });
 
     const callsBeforeFiltering = getLogs.mock.calls.length;
-    fireEvent.click(screen.getByRole('option', { name: 'nginx' }));
+    selectContainer('nginx');
     await waitFor(() => expect(getLogs).toHaveBeenCalledTimes(callsBeforeFiltering + 1));
     expect(getLogs).toHaveBeenLastCalledWith('sidecar', expect.any(Function), expect.any(Object));
     expect(cancelLogs).toHaveBeenCalled();
+  });
+
+  it('combines selected container logs without duplicates and removes deselected logs', async () => {
+    const callbacks = new Map<string, (result: any) => void>();
+    const getLogs = vi.fn((container, callback) => {
+      callbacks.set(container, callback);
+      return vi.fn();
+    });
+    render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={makeMockPod(getLogs)} onClose={() => {}} />
+      </TestContext>
+    );
+
+    const staleNginxCallback = callbacks.get('nginx')!;
+    selectContainer('sidecar');
+    await waitFor(() => expect(callbacks.has('sidecar')).toBe(true));
+    act(() => {
+      staleNginxCallback({ logs: ['stale-nginx\n'], hasJsonLogs: false });
+    });
+    expect(screen.getByTestId('logs')).toBeEmptyDOMElement();
+
+    act(() => {
+      callbacks.get('sidecar')!({ logs: ['sidecar-1\n'], hasJsonLogs: false });
+      callbacks.get('nginx')!({ logs: ['nginx-1\n'], hasJsonLogs: false });
+    });
+    expect(screen.getByTestId('logs')).toHaveTextContent('nginx-1 sidecar-1');
+
+    act(() => {
+      callbacks.get('sidecar')!({
+        logs: ['sidecar-1\n', 'sidecar-2\n'],
+        hasJsonLogs: false,
+      });
+    });
+    await waitFor(() =>
+      expect(screen.getByTestId('logs')).toHaveTextContent('nginx-1 sidecar-1 sidecar-2')
+    );
+
+    selectContainer('nginx');
+    await waitFor(() => expect(screen.getByTestId('logs')).toBeEmptyDOMElement());
+    act(() => {
+      callbacks.get('sidecar')!({ logs: ['sidecar-only\n'], hasJsonLogs: false });
+    });
+    expect(screen.getByTestId('logs')).toHaveTextContent('sidecar-only');
+    expect(screen.getByTestId('logs')).not.toHaveTextContent('nginx');
+  });
+
+  it('does not allow the last selected container to be removed', () => {
+    const getLogs = vi.fn(() => vi.fn());
+    render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={makeMockPod(getLogs)} onClose={() => {}} />
+      </TestContext>
+    );
+    const callsBeforeFiltering = getLogs.mock.calls.length;
+
+    selectContainer('nginx');
+
+    expect(screen.getByRole('combobox', { name: 'Containers' })).toHaveTextContent('nginx');
+    expect(getLogs).toHaveBeenCalledTimes(callsBeforeFiltering);
+  });
+
+  it('restarts and cleans up every selected container stream on reconnect', async () => {
+    const cancelByContainer = {
+      nginx: vi.fn(),
+      sidecar: vi.fn(),
+    };
+    const getLogs = vi.fn((container: 'nginx' | 'sidecar') => cancelByContainer[container]);
+    render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={makeMockPod(getLogs)} onClose={() => {}} />
+      </TestContext>
+    );
+    selectContainer('sidecar');
+    await waitFor(() => expect(getLogs).toHaveBeenCalledTimes(3));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Reconnect' }));
+
+    await waitFor(() => expect(getLogs).toHaveBeenCalledTimes(5));
+    expect(cancelByContainer.nginx).toHaveBeenCalledTimes(2);
+    expect(cancelByContainer.sidecar).toHaveBeenCalledTimes(1);
+  });
+
+  it('cleans up selected streams when closed and restarts them when reopened', async () => {
+    const cancelLogs = vi.fn();
+    const getLogs = vi.fn(() => cancelLogs);
+    const pod = makeMockPod(getLogs);
+    const { rerender } = render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={pod} onClose={() => {}} />
+      </TestContext>
+    );
+    selectContainer('sidecar');
+    await waitFor(() => expect(getLogs).toHaveBeenCalledTimes(3));
+
+    rerender(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open={false} item={pod} onClose={() => {}} />
+      </TestContext>
+    );
+    expect(cancelLogs).toHaveBeenCalledTimes(3);
+
+    rerender(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={pod} onClose={() => {}} />
+      </TestContext>
+    );
+    await waitFor(() => expect(getLogs).toHaveBeenCalledTimes(5));
+  });
+
+  it('can select init and ephemeral container logs', async () => {
+    const getLogs = vi.fn(() => vi.fn());
+    const pod = makeMockPod(getLogs);
+    pod.spec.initContainers = [{ name: 'setup' }];
+    pod.spec.ephemeralContainers = [{ name: 'debugger' }];
+    render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={pod} onClose={() => {}} />
+      </TestContext>
+    );
+
+    selectContainer('setup');
+    await waitFor(() =>
+      expect(getLogs).toHaveBeenCalledWith('setup', expect.any(Function), expect.any(Object))
+    );
+    selectContainer('debugger');
+    await waitFor(() =>
+      expect(getLogs).toHaveBeenCalledWith('debugger', expect.any(Function), expect.any(Object))
+    );
+    expect(screen.getByRole('combobox', { name: 'Containers' })).toHaveTextContent(
+      'nginx, setup, debugger'
+    );
+  });
+
+  it('turns off previous logs when the selection includes a container without restarts', async () => {
+    const getLogs = vi.fn(() => vi.fn());
+    const pod = makeMockPod(getLogs);
+    pod.status.containerStatuses[0].restartCount = 1;
+    render(
+      <TestContext routerMap={{ namespace: 'default', name: 'test-pod' }}>
+        <PodLogViewer open item={pod} onClose={() => {}} />
+      </TestContext>
+    );
+
+    const previousLogs = screen.getByRole('checkbox', {
+      name: 'Show logs for previous instances of this container.',
+    });
+    fireEvent.click(previousLogs);
+    await waitFor(() =>
+      expect(getLogs).toHaveBeenLastCalledWith(
+        'nginx',
+        expect.any(Function),
+        expect.objectContaining({ showPrevious: true })
+      )
+    );
+
+    selectContainer('sidecar');
+    await waitFor(() =>
+      expect(getLogs).toHaveBeenLastCalledWith(
+        'sidecar',
+        expect.any(Function),
+        expect.objectContaining({ showPrevious: false })
+      )
+    );
+    expect(previousLogs).toBeDisabled();
   });
 });

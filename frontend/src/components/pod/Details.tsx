@@ -200,6 +200,7 @@ export function PodLogViewer(props: PodLogViewerProps) {
     () => {
       const callbacks: Array<() => void> = [];
       const debouncedCallbacks: Array<ReturnType<typeof _.debounce>> = [];
+      let isSubscribed = true;
 
       if (props.open) {
         xtermRef.current?.clear();
@@ -207,9 +208,12 @@ export function PodLogViewer(props: PodLogViewerProps) {
         setHasJsonLogs(false);
 
         const logsByContainer = new Map<string, { logs: string[]; hasJsonLogs: boolean }>();
-        containers.forEach(container => {
+        containers.filter(Boolean).forEach(container => {
           const onLogs = _.debounce(
             ({ logs, hasJsonLogs }: { logs: string[]; hasJsonLogs: boolean }) => {
+              if (!isSubscribed) {
+                return;
+              }
               logsByContainer.set(container, { logs, hasJsonLogs });
               setLogsDebounced({
                 logs: containers.flatMap(name => logsByContainer.get(name)?.logs ?? []),
@@ -245,6 +249,7 @@ export function PodLogViewer(props: PodLogViewerProps) {
       }
 
       return function cleanup() {
+        isSubscribed = false;
         debouncedCallbacks.forEach(callback => callback.cancel());
         callbacks.forEach(callback => callback());
       };
