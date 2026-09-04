@@ -284,12 +284,15 @@ export function PodLogViewer(props: PodLogViewerProps) {
   }
 
   function haveContainersRestarted(containerNames = containers) {
-    return containerNames.every(container => {
-      const cont = item?.status?.containerStatuses?.find(
-        (c: KubeContainerStatus) => c.name === container
-      );
-      return !!cont && cont.restartCount > 0;
-    });
+    return (
+      containerNames.length > 0 &&
+      containerNames.every(container => {
+        const cont = item?.status?.containerStatuses?.find(
+          (c: KubeContainerStatus) => c.name === container
+        );
+        return !!cont && cont.restartCount > 0;
+      })
+    );
   }
 
   function handleTimestampsChange() {
