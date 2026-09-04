@@ -132,7 +132,7 @@ export function PodLogViewer(props: PodLogViewerProps) {
 
   const options = { leading: true, trailing: true, maxWait: 1000 };
 
-  function setLogsDebounced({
+  function applyLogs({
     logs: logLines,
     hasJsonLogs,
     replace,
@@ -234,7 +234,7 @@ export function PodLogViewer(props: PodLogViewerProps) {
                 combinedLogs = combinedLogs.concat(newLogs);
               }
 
-              setLogsDebounced({
+              applyLogs({
                 logs: combinedLogs,
                 hasJsonLogs: containers.some(
                   name => logsByContainer.get(name)?.hasJsonLogs ?? false
