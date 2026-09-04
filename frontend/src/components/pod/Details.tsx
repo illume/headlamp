@@ -223,23 +223,24 @@ export function PodLogViewer(props: PodLogViewerProps) {
             options
           );
           debouncedCallbacks.push(onLogs);
-          callbacks.push(
-            item.getLogs(container, onLogs, {
-              tailLines: lines,
-              showPrevious,
-              showTimestamps,
-              follow,
-              prettifyLogs,
-              formatJsonValues,
-              /**
-               * When the connection is lost, show the reconnect button.
-               * This will stop the current log stream.
-               */
-              onReconnectStop: () => {
-                setShowReconnectButton(true);
-              },
-            })
-          );
+          const callback = item.getLogs(container, onLogs, {
+            tailLines: lines,
+            showPrevious,
+            showTimestamps,
+            follow,
+            prettifyLogs,
+            formatJsonValues,
+            /**
+             * When the connection is lost, show the reconnect button.
+             * This will stop the current log stream.
+             */
+            onReconnectStop: () => {
+              setShowReconnectButton(true);
+            },
+          });
+          if (callback) {
+            callbacks.push(callback);
+          }
         });
       }
 
