@@ -610,7 +610,9 @@ export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
         <LightTooltip
           title={
             haveContainersRestarted()
-              ? t('translation|Show logs for previous instances of this container.')
+              ? containers.length === 1
+                ? t('translation|Show logs for previous instances of this container.')
+                : t('translation|Show logs for previous instances of the selected containers.')
               : t(
                   'translation|You can only select this option for containers that have been restarted.'
                 )

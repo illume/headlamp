@@ -680,7 +680,7 @@ describe('PodLogViewer', () => {
 
     selectContainer('setup');
     const previousLogs = screen.getByRole('checkbox', {
-      name: 'Show logs for previous instances of this container.',
+      name: 'Show logs for previous instances of the selected containers.',
     });
     expect(previousLogs).toBeEnabled();
 
