@@ -21,6 +21,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import FormHelperText from '@mui/material/FormHelperText';
 import InputLabel from '@mui/material/InputLabel';
 import ListItemText from '@mui/material/ListItemText';
+import ListSubheader from '@mui/material/ListSubheader';
 import MenuItem from '@mui/material/MenuItem';
 import Select, { SelectChangeEvent } from '@mui/material/Select';
 import Switch from '@mui/material/Switch';
@@ -103,10 +104,13 @@ interface ActiveContainerLogStream {
   active: boolean;
 }
 
-/** A log line tagged with its source stream for selection updates. */
-interface ContainerLogEntry {
-  container: string;
-  log: string;
+export function normalizeContainerSelection(value: string | string[]): string[] {
+  return typeof value === 'string'
+    ? value
+        .split(',')
+        .map(container => container.trim())
+        .filter(Boolean)
+    : value;
 }
 
 /**
@@ -141,7 +145,8 @@ export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
   const [reconnect, setReconnect] = React.useState(0);
   const xtermRef = React.useRef<XTerminal | null>(null);
   const activeStreamsRef = React.useRef<Map<string, ActiveContainerLogStream>>(new Map());
-  const combinedLogEntriesRef = React.useRef<ContainerLogEntry[]>([]);
+  const combinedLogsRef = React.useRef<string[]>([]);
+  const combinedLogContainersRef = React.useRef<string[]>([]);
   const streamConfigRef = React.useRef('');
   const podIdentity = `${item.cluster ?? ''}/${item.getNamespace?.() ?? ''}/${
     item.metadata?.uid ?? item.getName()
@@ -302,10 +307,23 @@ export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
         setShowReconnectButton([...activeStreams.values()].some(stream => stream.reconnectStopped));
       };
       const resetLogs = () => {
-        combinedLogEntriesRef.current = [];
+        combinedLogsRef.current = [];
+        combinedLogContainersRef.current = [];
         xtermRef.current?.clear();
         setLogs({ logs: [], lastLineShown: -1 });
         setHasJsonLogs(false);
+      };
+      const filterCombinedLogs = (keepContainer: (container: string) => boolean) => {
+        const filteredLogs: string[] = [];
+        const filteredContainers: string[] = [];
+        combinedLogContainersRef.current.forEach((container, index) => {
+          if (keepContainer(container)) {
+            filteredContainers.push(container);
+            filteredLogs.push(combinedLogsRef.current[index]);
+          }
+        });
+        combinedLogsRef.current = filteredLogs;
+        combinedLogContainersRef.current = filteredContainers;
       };
 
       if (!open) {
@@ -342,11 +360,9 @@ export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
       });
 
       if (selectionRemoved) {
-        combinedLogEntriesRef.current = combinedLogEntriesRef.current.filter(entry =>
-          selectedSet.has(entry.container)
-        );
+        filterCombinedLogs(container => selectedSet.has(container));
         applyLogs({
-          logs: combinedLogEntriesRef.current.map(entry => entry.log),
+          logs: combinedLogsRef.current,
           hasJsonLogs: [...activeStreams.values()].some(stream => stream.hasJsonLogs),
           replace: true,
         });
@@ -381,23 +397,20 @@ export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
             streamState.hasJsonLogs = hasJsonLogs;
 
             if (streamRestarted) {
-              combinedLogEntriesRef.current = combinedLogEntriesRef.current.filter(
-                entry => entry.container !== container
-              );
+              filterCombinedLogs(logContainer => logContainer !== container);
             }
 
             const newLogs = logs.slice(firstNewLog);
-            if (newLogs.length > 0) {
-              combinedLogEntriesRef.current = combinedLogEntriesRef.current.concat(
-                newLogs.map(log => ({ container, log }))
-              );
+            for (const log of newLogs) {
+              combinedLogsRef.current.push(log);
+              combinedLogContainersRef.current.push(container);
             }
             if (!streamRestarted && newLogs.length === 0) {
               return;
             }
 
             applyLogs({
-              logs: combinedLogEntriesRef.current.map(entry => entry.log),
+              logs: combinedLogsRef.current,
               hasJsonLogs: [...activeStreamsRef.current.values()].some(
                 stream => stream.hasJsonLogs
               ),
@@ -446,8 +459,7 @@ export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
    * @param event - MUI select change containing the selected container names.
    */
   function handleContainerChange(event: SelectChangeEvent<string[]>): void {
-    const value = event.target.value;
-    const selectedContainers = typeof value === 'string' ? value.split(',') : value;
+    const selectedContainers = normalizeContainerSelection(event.target.value);
     if (selectedContainers.length > 0) {
       setContainers(selectedContainers);
       if (!haveContainersRestarted(selectedContainers)) {
@@ -519,6 +531,17 @@ export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
     setReconnect(value => value + 1);
   }
 
+  function renderContainerOption(name: string, key: string = name): React.ReactElement {
+    const isSelected = containers.includes(name);
+    const isLastSelected = containers.length === 1 && isSelected;
+    return (
+      <MenuItem value={name} key={key} disabled={isLastSelected}>
+        <Checkbox checked={isSelected} disabled={isLastSelected} size="small" />
+        <ListItemText primary={name} />
+      </MenuItem>
+    );
+  }
+
   return (
     <LogViewer
       title={t('glossary|Logs: {{ itemName }}', { itemName: item.getName() })}
@@ -544,62 +567,23 @@ export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
             inputProps={{ 'aria-describedby': 'container-name-chooser-help' }}
           >
             {!!item?.spec?.containers?.length && (
-              <MenuItem disabled value="">
-                {t('glossary|Containers')}
-              </MenuItem>
+              <ListSubheader role="presentation">{t('glossary|Containers')}</ListSubheader>
             )}
-            {item?.spec?.containers.map(({ name }) => (
-              <MenuItem
-                value={name}
-                key={name}
-                disabled={containers.length === 1 && containers.includes(name)}
-              >
-                <Checkbox
-                  checked={containers.includes(name)}
-                  disabled={containers.length === 1 && containers.includes(name)}
-                  size="small"
-                />
-                <ListItemText primary={name} />
-              </MenuItem>
-            ))}
+            {item?.spec?.containers.map(({ name }) => renderContainerOption(name))}
             {!!item?.spec?.initContainers?.length && (
-              <MenuItem disabled value="">
-                {t('translation|Init Containers')}
-              </MenuItem>
+              <ListSubheader role="presentation">{t('translation|Init Containers')}</ListSubheader>
             )}
-            {item.spec.initContainers?.map(({ name }) => (
-              <MenuItem
-                value={name}
-                key={`init_container_${name}`}
-                disabled={containers.length === 1 && containers.includes(name)}
-              >
-                <Checkbox
-                  checked={containers.includes(name)}
-                  disabled={containers.length === 1 && containers.includes(name)}
-                  size="small"
-                />
-                <ListItemText primary={name} />
-              </MenuItem>
-            ))}
+            {item.spec.initContainers?.map(({ name }) =>
+              renderContainerOption(name, `init_container_${name}`)
+            )}
             {!!item?.spec?.ephemeralContainers?.length && (
-              <MenuItem disabled value="">
+              <ListSubheader role="presentation">
                 {t('glossary|Ephemeral Containers')}
-              </MenuItem>
+              </ListSubheader>
             )}
-            {item.spec.ephemeralContainers?.map(({ name }) => (
-              <MenuItem
-                value={name}
-                key={`eph_container_${name}`}
-                disabled={containers.length === 1 && containers.includes(name)}
-              >
-                <Checkbox
-                  checked={containers.includes(name)}
-                  disabled={containers.length === 1 && containers.includes(name)}
-                  size="small"
-                />
-                <ListItemText primary={name} />
-              </MenuItem>
-            ))}
+            {item.spec.ephemeralContainers?.map(({ name }) =>
+              renderContainerOption(name, `eph_container_${name}`)
+            )}
           </Select>
           <FormHelperText id="container-name-chooser-help">
             {t('translation|At least one container must remain selected.')}

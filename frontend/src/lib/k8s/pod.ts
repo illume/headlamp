@@ -252,7 +252,7 @@ class Pod extends KubeObject<KubePod> {
       if (!item) return;
 
       const decodedLog = Base64.decode(item);
-      if (!decodedLog || decodedLog.trim() === '') return;
+      if (!decodedLog) return;
       const trimmedLog = decodedLog.trim();
       const jsonMatch = trimmedLog.match(/(\{.*\})/);
       if (jsonMatch) hasJsonLogs = true;

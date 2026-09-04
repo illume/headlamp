@@ -17,7 +17,7 @@
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import React from 'react';
 import { TestContext } from '../../test';
-import { PodLogViewer } from './Details';
+import { normalizeContainerSelection, PodLogViewer } from './Details';
 
 vi.mock('../../lib/k8s', () => ({}));
 vi.mock('../../lib/k8s/pod', () => ({ default: vi.fn(), __esModule: true }));
@@ -388,6 +388,10 @@ describe('PodLogViewer', () => {
     );
   });
 
+  it('normalizes comma-separated container values from browser autofill', () => {
+    expect(normalizeContainerSelection('nginx, sidecar,')).toEqual(['nginx', 'sidecar']);
+  });
+
   it('restarts and cleans up every selected container stream on reconnect', async () => {
     const cancelByContainer = {
       nginx: vi.fn(),
@@ -619,7 +623,7 @@ describe('PodLogViewer', () => {
     );
   });
 
-  it('exposes an accessible multi-select with disabled group labels', () => {
+  it('exposes an accessible multi-select with dedicated group labels', () => {
     const getLogs = vi.fn(() => vi.fn());
     const pod = makeMockPod(getLogs);
     pod.spec.initContainers = [{ name: 'setup' }];
@@ -648,10 +652,9 @@ describe('PodLogViewer', () => {
       'false'
     );
     for (const groupName of ['Containers', 'Init Containers', 'Ephemeral Containers']) {
-      expect(screen.getByRole('option', { name: groupName })).toHaveAttribute(
-        'aria-disabled',
-        'true'
-      );
+      const groupLabel = screen.getByRole('option', { name: groupName });
+      expect(groupLabel).toHaveClass('MuiListSubheader-root');
+      expect(groupLabel).not.toHaveAttribute('aria-disabled');
     }
   });
 
