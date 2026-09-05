@@ -58,6 +58,8 @@ export * from './MatchExpressions';
 export * from './PortForward';
 export { default as PortForward } from './PortForward';
 export * from './Resource';
+export * from './ResourceInfoButton';
+export { default as ResourceInfoButton } from './ResourceInfoButton';
 export * from './ResourceTable';
 export * from './resourceTableSlice';
 export * from './ResourceTableColumnChooser';
