@@ -555,7 +555,7 @@ test('filters logs from a pod with multiple containers', async ({ page }) => {
     await expect(terminalRows).toContainText('main-container-log');
     const containerChooser = page.getByRole('combobox', { name: 'Containers' });
     await expect(containerChooser).toHaveText('main');
-    await containerChooser.click();
+    await containerChooser.press('Enter');
     await page.getByRole('option', { name: 'sidecar' }).click();
     await page.keyboard.press('Escape');
     await expect(terminalRows).toContainText('main-container-log');
@@ -563,12 +563,12 @@ test('filters logs from a pod with multiple containers', async ({ page }) => {
     await expect(terminalRows).not.toContainText('auxiliary-container-log');
     await expect(containerChooser).toHaveText('main, sidecar');
 
-    await containerChooser.click();
+    await containerChooser.press('Enter');
     await page.getByRole('option', { name: 'auxiliary' }).click();
     await page.keyboard.press('Escape');
     await expect(terminalRows).toContainText('auxiliary-container-log');
 
-    await containerChooser.click();
+    await containerChooser.press('Enter');
     await page.getByRole('option', { name: 'main' }).click();
     await page.keyboard.press('Escape');
     await expect(terminalRows).toContainText('sidecar-container-log');
@@ -576,15 +576,15 @@ test('filters logs from a pod with multiple containers', async ({ page }) => {
     await expect(terminalRows).not.toContainText('main-container-log');
     await expect(containerChooser).toHaveText('sidecar, auxiliary');
 
-    await containerChooser.click();
+    await containerChooser.press('Enter');
     await page.getByRole('option', { name: 'sidecar' }).click();
     await page.keyboard.press('Escape');
     await expect(terminalRows).toContainText('auxiliary-container-log');
     await expect(terminalRows).not.toContainText('sidecar-container-log');
     await expect(containerChooser).toHaveText('auxiliary');
 
-    await containerChooser.click();
-    await page.getByRole('option', { name: 'auxiliary' }).click();
+    await containerChooser.press('Enter');
+    await expect(page.getByRole('option', { name: 'auxiliary' })).toBeDisabled();
     await page.keyboard.press('Escape');
     await expect(containerChooser).toHaveText('auxiliary');
     await expect(terminalRows).toContainText('auxiliary-container-log');
