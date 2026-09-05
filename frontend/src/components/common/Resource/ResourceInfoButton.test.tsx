@@ -47,9 +47,7 @@ describe('ResourceInfoButton', () => {
 
     expect(screen.getByRole('dialog', { name: 'Pod documentation' })).toBeVisible();
     expect(
-      screen.getByText(
-        '[{"apiVersion":"v1","kind":"Pod"},{"apiVersion":"v1beta1","kind":"Pod"}]'
-      )
+      screen.getByText('[{"apiVersion":"v1","kind":"Pod"},{"apiVersion":"v1beta1","kind":"Pod"}]')
     ).toBeVisible();
   });
 });

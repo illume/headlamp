@@ -84,7 +84,12 @@ function DocsViewer(props: DocsViewerProps) {
 
   function makeItems(name: string, value: any, key: string) {
     const nameLabel = (
-      <Typography component="span" display="inline" tabIndex={value.description ? 0 : undefined}>
+      <Typography
+        component="span"
+        display="inline"
+        tabIndex={value.description ? 0 : undefined}
+        aria-label={value.description ? name : undefined}
+      >
         {name}
       </Typography>
     );
