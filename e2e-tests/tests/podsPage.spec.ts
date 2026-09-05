@@ -511,6 +511,97 @@ test('react-hotkey for logs search', async ({ page }) => {
   await expect(searchInput).toBeFocused();
 });
 
+test('filters logs from a pod with multiple containers', async ({ page }) => {
+  test.setTimeout(90000);
+  const name = `headlamp-container-logs-${Date.now()}`;
+  const tempDirectory = await mkdtemp(join(tmpdir(), 'headlamp-e2e-'));
+  const kubeconfig = join(tempDirectory, 'kubeconfig');
+  const manifest = join(tempDirectory, 'pod.json');
+
+  try {
+    const { stdout } = await execFileAsync('kind', ['get', 'kubeconfig', '--name', 'test']);
+    await writeFile(kubeconfig, stdout);
+    await writeFile(
+      manifest,
+      JSON.stringify({
+        apiVersion: 'v1',
+        kind: 'Pod',
+        metadata: { name, namespace: 'default' },
+        spec: {
+          containers: ['main', 'sidecar', 'auxiliary'].map(container => ({
+            name: container,
+            image: 'busybox:1.37',
+            command: ['sh', '-c', `while true; do echo ${container}-container-log; sleep 1; done`],
+          })),
+        },
+      })
+    );
+    await kubectl(kubeconfig, 'apply', '-f', manifest);
+    await kubectl(
+      kubeconfig,
+      '--namespace=default',
+      'wait',
+      '--for=condition=Ready',
+      `pod/${name}`,
+      '--timeout=60s'
+    );
+
+    const headlampPage = new HeadlampPage(page);
+    await headlampPage.navigateToCluster('test', process.env.HEADLAMP_TEST_TOKEN);
+    await headlampPage.navigateTopage(`/c/test/pods/default/${name}?container=main`);
+    await page.getByRole('button', { name: /^Show Logs$/ }).click();
+
+    const terminalRows = page.locator('#xterm-container .xterm-rows');
+    await expect(terminalRows).toContainText('main-container-log');
+    const containerChooser = page.getByRole('combobox', { name: 'Containers' });
+    await expect(containerChooser).toHaveText('main');
+    await containerChooser.press('Enter');
+    await page.getByRole('option', { name: 'sidecar' }).click();
+    await page.keyboard.press('Escape');
+    await expect(terminalRows).toContainText('main-container-log');
+    await expect(terminalRows).toContainText('sidecar-container-log');
+    await expect(terminalRows).not.toContainText('auxiliary-container-log');
+    await expect(containerChooser).toHaveText('main, sidecar');
+
+    await containerChooser.press('Enter');
+    await page.getByRole('option', { name: 'auxiliary' }).click();
+    await page.keyboard.press('Escape');
+    await expect(terminalRows).toContainText('auxiliary-container-log');
+
+    await containerChooser.press('Enter');
+    await page.getByRole('option', { name: 'main' }).click();
+    await page.keyboard.press('Escape');
+    await expect(terminalRows).toContainText('sidecar-container-log');
+    await expect(terminalRows).toContainText('auxiliary-container-log');
+    await expect(terminalRows).not.toContainText('main-container-log');
+    await expect(containerChooser).toHaveText('sidecar, auxiliary');
+
+    await containerChooser.press('Enter');
+    await page.getByRole('option', { name: 'sidecar' }).click();
+    await page.keyboard.press('Escape');
+    await expect(terminalRows).toContainText('auxiliary-container-log');
+    await expect(terminalRows).not.toContainText('sidecar-container-log');
+    await expect(containerChooser).toHaveText('auxiliary');
+
+    await containerChooser.press('Enter');
+    await expect(page.getByRole('option', { name: 'auxiliary' })).toBeDisabled();
+    await page.keyboard.press('Escape');
+    await expect(containerChooser).toHaveText('auxiliary');
+    await expect(terminalRows).toContainText('auxiliary-container-log');
+  } finally {
+    await kubectl(
+      kubeconfig,
+      '--namespace=default',
+      'delete',
+      'pod',
+      name,
+      '--ignore-not-found=true'
+    )
+      .catch(() => undefined)
+      .finally(() => rm(tempDirectory, { recursive: true, force: true }));
+  }
+});
+
 test('opens aggregated logs for a workload', async ({ page }) => {
   const headlampPage = new HeadlampPage(page);
   await headlampPage.navigateToCluster('test', process.env.HEADLAMP_TEST_TOKEN);

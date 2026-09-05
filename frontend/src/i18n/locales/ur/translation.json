@@ -798,6 +798,8 @@
   "Redirecting to main page…": "مرکزی صفحے پر منتقل کیا جا رہا ہے…",
   "Node": "نوڈ",
   "Optional: schedule the pod on a specific node": "اختیاری: پوڈ کو مخصوص نوڈ پر شیڈول کریں",
+  "At least one container must remain selected.": "",
+  "Show logs for previous instances of the selected containers.": "",
   "Prettify": "خوبصورت بنائیں",
   "Show JSON values in plain text by removing escape characters.": "ایسکیپ حروف ہٹا کر JSON ویلیوز کو سادہ متن میں دکھائیں",
   "Format": "فارمیٹ",

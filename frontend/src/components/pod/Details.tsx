@@ -18,10 +18,12 @@ import { Icon } from '@iconify/react';
 import Checkbox from '@mui/material/Checkbox';
 import FormControl from '@mui/material/FormControl';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import FormHelperText from '@mui/material/FormHelperText';
 import InputLabel from '@mui/material/InputLabel';
 import ListItemText from '@mui/material/ListItemText';
+import ListSubheader from '@mui/material/ListSubheader';
 import MenuItem from '@mui/material/MenuItem';
-import Select from '@mui/material/Select';
+import Select, { SelectChangeEvent } from '@mui/material/Select';
 import Switch from '@mui/material/Switch';
 import { styled } from '@mui/system';
 import { Terminal as XTerminal } from '@xterm/xterm';
@@ -29,7 +31,11 @@ import _ from 'lodash';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation, useParams } from 'react-router-dom';
-import { getDefaultContainer, resolveContainerName } from '../../helpers/podContainer';
+import {
+  getAllContainers,
+  getDefaultContainer,
+  resolveContainerName,
+} from '../../helpers/podContainer';
 import { KubeContainerStatus } from '../../lib/k8s/cluster';
 import Pod from '../../lib/k8s/pod';
 import { localeDate } from '../../lib/util';
@@ -69,16 +75,70 @@ const PaddedFormControlLabel = styled(FormControlLabel)(({ theme }) => ({
   paddingRight: theme.spacing(1),
 }));
 
+interface ContainerGroupHeaderProps {
+  label: string;
+  optionIds: string[];
+}
+
+const ContainerGroupHeader = Object.assign(
+  ({ label, optionIds }: ContainerGroupHeaderProps) => (
+    <ListSubheader role="group" aria-label={label} aria-owns={optionIds.join(' ')}>
+      {label}
+    </ListSubheader>
+  ),
+  { muiSkipListHighlight: true }
+);
+
+/** Props for the pod-specific log viewer. */
 interface PodLogViewerProps extends Omit<LogViewerProps, 'logs'> {
+  /** Pod whose container logs are streamed. */
   item: Pod;
+  /** Preferred initial container; falls back to the pod's default container when invalid. */
   initialContainer?: string;
 }
 
-export function PodLogViewer(props: PodLogViewerProps) {
+/** A batch of cumulative log lines to apply to the terminal and download buffer. */
+interface PodLogUpdate {
+  /** All raw log lines accumulated for the active streams. */
+  logs: string[];
+  /** Whether at least one active stream contains JSON log entries. */
+  hasJsonLogs: boolean;
+  /** Clear and rebuild the terminal; defaults to incremental rendering when omitted. */
+  replace?: boolean;
+}
+
+/** State retained for one active container log stream. */
+interface ActiveContainerLogStream {
+  cancel?: () => void;
+  onLogs?: ReturnType<typeof _.debounce>;
+  previousLogs?: string[];
+  logCount: number;
+  hasJsonLogs: boolean;
+  reconnectStopped: boolean;
+  active: boolean;
+}
+
+export function normalizeContainerSelection(value: string | string[]): string[] {
+  return typeof value === 'string'
+    ? value
+        .split(',')
+        .map(container => container.trim())
+        .filter(Boolean)
+    : value;
+}
+
+/**
+ * Streams logs for a non-empty selection of a pod's regular, init, and ephemeral containers.
+ *
+ * @param props - Pod, dialog, and initial-container configuration.
+ * @returns A log viewer with container-selection and stream controls.
+ */
+export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
   const { item, onClose, open, initialContainer, ...other } = props;
-  const [container, setContainer] = React.useState(() =>
-    resolveContainerName(item, initialContainer)
-  );
+  const containerOptionIdPrefix = React.useId();
+  const [containers, setContainers] = React.useState(() => [
+    resolveContainerName(item, initialContainer),
+  ]);
   const [showPrevious, setShowPrevious] = React.useState<boolean>(false);
   const [showTimestamps, setShowTimestamps] = useLocalStorageState<boolean>(
     'headlamp.logs.showTimestamps',
@@ -97,8 +157,17 @@ export function PodLogViewer(props: PodLogViewerProps) {
     lastLineShown: -1,
   });
   const [showReconnectButton, setShowReconnectButton] = React.useState(false);
-  const [cancelLogsStream, setCancelLogsStream] = React.useState<(() => void) | null>(null);
+  const [reconnect, setReconnect] = React.useState(0);
   const xtermRef = React.useRef<XTerminal | null>(null);
+  const activeStreamsRef = React.useRef<Map<string, ActiveContainerLogStream>>(new Map());
+  const combinedLogsRef = React.useRef<string[]>([]);
+  const combinedLogContainersRef = React.useRef<string[]>([]);
+  const streamConfigRef = React.useRef('');
+  const podIdentity = `${item.cluster ?? ''}/${item.getNamespace?.() ?? ''}/${
+    item.metadata?.uid ?? item.getName()
+  }`;
+  const selectionPodIdentityRef = React.useRef(podIdentity);
+  const streamPodIdentityRef = React.useRef(podIdentity);
   const { t } = useTranslation();
   const [selectedSeverities, setSelectedSeverities] = useLocalStorageState<LogSeverity[]>(
     'headlamp.logs.severityFilter',
@@ -131,17 +200,18 @@ export function PodLogViewer(props: PodLogViewerProps) {
 
   const options = { leading: true, trailing: true, maxWait: 1000 };
 
-  function setLogsDebounced({
-    logs: logLines,
-    hasJsonLogs,
-  }: {
-    logs: string[];
-    hasJsonLogs: boolean;
-  }) {
+  /**
+   * Applies a cumulative log update, appending unseen lines unless a stream reset requires a
+   * complete terminal rebuild.
+   *
+   * @param update - Cumulative logs and rendering metadata for the active streams.
+   */
+  function applyLogs(update: PodLogUpdate): void {
+    const { logs: logLines, hasJsonLogs, replace } = update;
     setHasJsonLogs(hasJsonLogs);
 
     setLogs(current => {
-      if (current.lastLineShown >= logLines.length) {
+      if (replace || current.lastLineShown >= logLines.length) {
         // Full re-render
         const displayLogs = logLines.map(logEntry => {
           if (prettifyLogs && hasJsonLogs) {
@@ -186,54 +256,231 @@ export function PodLogViewer(props: PodLogViewerProps) {
     }
   }
 
-  const debouncedSetState = _.debounce(setLogsDebounced, 500, options);
   React.useEffect(() => {
-    const next = getDefaultContainer(item);
-    if (next && !container) {
-      setContainer(next);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [item?.status]);
+    const knownContainers = new Set(getAllContainers(item).map(container => container.name));
+    setContainers(current => {
+      if (selectionPodIdentityRef.current !== podIdentity) {
+        selectionPodIdentityRef.current = podIdentity;
+        const next = resolveContainerName(item, initialContainer);
+        return next ? [next] : [];
+      }
+
+      const validContainers = current.filter(name => knownContainers.has(name));
+      if (validContainers.length > 0) {
+        return validContainers.length === current.length ? current : validContainers;
+      }
+
+      const next = getDefaultContainer(item);
+      return next ? [next] : [];
+    });
+  }, [initialContainer, item, item?.spec, item?.status, podIdentity]);
+
+  React.useEffect(() => {
+    const activeStreams = activeStreamsRef.current;
+    return () => {
+      activeStreams.forEach(stream => {
+        stream.active = false;
+        stream.onLogs?.cancel();
+        stream.cancel?.();
+      });
+      activeStreams.clear();
+    };
+  }, []);
 
   React.useEffect(
     () => {
-      let callback: any = null;
+      const activeStreams = activeStreamsRef.current;
+      const knownContainers = new Set(getAllContainers(item).map(container => container.name));
+      const selectedContainers = containers.filter(
+        container => container && knownContainers.has(container)
+      );
+      const streamConfig = [
+        podIdentity,
+        lines,
+        showPrevious,
+        showTimestamps,
+        follow,
+        prettifyLogs,
+        formatJsonValues,
+        reconnect,
+      ].join('|');
 
-      if (props.open) {
+      const stopStream = (container: string) => {
+        const stream = activeStreams.get(container);
+        if (!stream) {
+          return;
+        }
+        stream.active = false;
+        stream.onLogs?.cancel();
+        stream.cancel?.();
+        activeStreams.delete(container);
+      };
+      const stopAllStreams = () => {
+        [...activeStreams.keys()].forEach(stopStream);
+      };
+      const updateReconnectButton = () => {
+        setShowReconnectButton([...activeStreams.values()].some(stream => stream.reconnectStopped));
+      };
+      const resetLogs = () => {
+        combinedLogsRef.current = [];
+        combinedLogContainersRef.current = [];
         xtermRef.current?.clear();
         setLogs({ logs: [], lastLineShown: -1 });
         setHasJsonLogs(false);
+      };
+      const filterCombinedLogs = (keepContainer: (container: string) => boolean) => {
+        const filteredLogs: string[] = [];
+        const filteredContainers: string[] = [];
+        combinedLogContainersRef.current.forEach((container, index) => {
+          if (keepContainer(container)) {
+            filteredContainers.push(container);
+            filteredLogs.push(combinedLogsRef.current[index]);
+          }
+        });
+        combinedLogsRef.current = filteredLogs;
+        combinedLogContainersRef.current = filteredContainers;
+      };
 
-        callback = item.getLogs(container, debouncedSetState, {
+      if (!open) {
+        stopAllStreams();
+        streamConfigRef.current = '';
+        resetLogs();
+        setShowReconnectButton(false);
+        return;
+      }
+
+      if (streamPodIdentityRef.current !== podIdentity) {
+        streamPodIdentityRef.current = podIdentity;
+        stopAllStreams();
+        streamConfigRef.current = streamConfig;
+        resetLogs();
+        setShowReconnectButton(false);
+        return;
+      }
+
+      if (streamConfigRef.current !== streamConfig) {
+        stopAllStreams();
+        streamConfigRef.current = streamConfig;
+        resetLogs();
+        setShowReconnectButton(false);
+      }
+
+      const selectedSet = new Set(selectedContainers);
+      let selectionRemoved = false;
+      [...activeStreams.keys()].forEach(container => {
+        if (!selectedSet.has(container)) {
+          stopStream(container);
+          selectionRemoved = true;
+        }
+      });
+
+      if (selectionRemoved) {
+        filterCombinedLogs(container => selectedSet.has(container));
+        applyLogs({
+          logs: combinedLogsRef.current,
+          hasJsonLogs: [...activeStreams.values()].some(stream => stream.hasJsonLogs),
+          replace: true,
+        });
+        updateReconnectButton();
+      }
+
+      selectedContainers.forEach(container => {
+        if (activeStreams.has(container)) {
+          return;
+        }
+
+        const streamState: ActiveContainerLogStream = {
+          logCount: 0,
+          hasJsonLogs: false,
+          reconnectStopped: false,
+          active: true,
+        };
+        const onLogs = _.debounce(
+          ({ logs, hasJsonLogs }: { logs: string[]; hasJsonLogs: boolean }) => {
+            if (!streamState.active || activeStreamsRef.current.get(container) !== streamState) {
+              return;
+            }
+
+            const streamRestarted =
+              logs.length < streamState.logCount ||
+              (streamState.previousLogs !== undefined &&
+                streamState.previousLogs !== logs &&
+                streamState.previousLogs.some((log, index) => logs[index] !== log));
+            const firstNewLog = streamRestarted ? 0 : streamState.logCount;
+            streamState.previousLogs = logs;
+            streamState.logCount = logs.length;
+            streamState.hasJsonLogs = hasJsonLogs;
+
+            if (streamRestarted) {
+              filterCombinedLogs(logContainer => logContainer !== container);
+            }
+
+            const newLogs = logs.slice(firstNewLog);
+            for (const log of newLogs) {
+              combinedLogsRef.current.push(log);
+              combinedLogContainersRef.current.push(container);
+            }
+            if (!streamRestarted && newLogs.length === 0) {
+              return;
+            }
+
+            applyLogs({
+              logs: combinedLogsRef.current,
+              hasJsonLogs: [...activeStreamsRef.current.values()].some(
+                stream => stream.hasJsonLogs
+              ),
+              replace: streamRestarted,
+            });
+          },
+          500,
+          options
+        );
+        streamState.onLogs = onLogs;
+        activeStreams.set(container, streamState);
+        streamState.cancel = item.getLogs(container, onLogs, {
           tailLines: lines,
           showPrevious,
           showTimestamps,
           follow,
           prettifyLogs,
           formatJsonValues,
-          /**
-           * When the connection is lost, show the reconnect button.
-           * This will stop the current log stream.
-           */
           onReconnectStop: () => {
-            setShowReconnectButton(true);
+            if (streamState.active && activeStreamsRef.current.get(container) === streamState) {
+              streamState.reconnectStopped = true;
+              updateReconnectButton();
+            }
           },
         });
-      }
-
-      return function cleanup() {
-        if (callback) {
-          callback();
-        }
-      };
+      });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [container, lines, open, showPrevious, showTimestamps, follow, prettifyLogs, formatJsonValues]
+    [
+      containers,
+      lines,
+      open,
+      showPrevious,
+      showTimestamps,
+      follow,
+      prettifyLogs,
+      formatJsonValues,
+      reconnect,
+      podIdentity,
+    ]
   );
 
-  function handleContainerChange(event: any) {
-    setContainer(event.target.value);
-    setHasJsonLogs(false);
+  /**
+   * Applies a container selection while preserving the invariant that one container remains.
+   *
+   * @param event - MUI select change containing the selected container names.
+   */
+  function handleContainerChange(event: SelectChangeEvent<string[]>): void {
+    const selectedContainers = normalizeContainerSelection(event.target.value);
+    if (selectedContainers.length > 0) {
+      setContainers(selectedContainers);
+      if (!haveContainersRestarted(selectedContainers)) {
+        setShowPrevious(false);
+      }
+    }
   }
 
   function handleLinesChange(event: any) {
@@ -244,16 +491,36 @@ export function PodLogViewer(props: PodLogViewerProps) {
     setShowPrevious(previous => !previous);
   }
 
-  function hasContainerRestarted() {
-    const cont = item?.status?.containerStatuses?.find(
-      (c: KubeContainerStatus) => c.name === container
+  /**
+   * Checks whether every named container has a previous instance available from Kubernetes.
+   *
+   * Previous logs are requested for every active stream, so a mixed selection is eligible only
+   * when all selected regular, init, or ephemeral containers have restarted.
+   *
+   * @param containerNames - Container names to check; defaults to the active selection.
+   * @returns Whether the selection is non-empty and every container has restarted.
+   */
+  function haveContainersRestarted(containerNames: string[] = containers): boolean {
+    const containerStatuses = [
+      ...(item?.status?.containerStatuses ?? []),
+      ...(item?.status?.initContainerStatuses ?? []),
+      ...(item?.status?.ephemeralContainerStatuses ?? []),
+    ];
+    return (
+      containerNames.length > 0 &&
+      containerNames.every(container => {
+        const cont = containerStatuses.find((c: KubeContainerStatus) => c.name === container);
+        return !!cont?.lastState?.terminated?.containerID;
+      })
     );
-    if (!cont) {
-      return false;
-    }
-
-    return cont.restartCount > 0;
   }
+
+  React.useEffect(() => {
+    if (showPrevious && !haveContainersRestarted()) {
+      setShowPrevious(false);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [containers, item?.status, showPrevious]);
 
   function handleTimestampsChange() {
     setShowTimestamps(prev => !prev);
@@ -272,43 +539,41 @@ export function PodLogViewer(props: PodLogViewerProps) {
   }
 
   /**
-   * Handle the reconnect button being clicked.
-   * This will start a new log stream and hide the reconnect button.
+   * Restarts every selected container stream and hides the reconnect prompt.
    */
-  function handleReconnect() {
-    // If there's an existing log stream, cancel it
-    if (cancelLogsStream) {
-      cancelLogsStream();
-    }
-
-    // Start a new log stream
-    const newCancelLogsStream = item.getLogs(container, debouncedSetState, {
-      tailLines: lines,
-      showPrevious,
-      showTimestamps,
-      follow,
-      prettifyLogs,
-      formatJsonValues,
-      /**
-       * When the connection is lost, show the reconnect button.
-       * This will stop the current log stream.
-       */
-      onReconnectStop: () => {
-        setShowReconnectButton(true);
-      },
-    });
-
-    // Set the cancelLogsStream function to the new one
-    setCancelLogsStream(() => newCancelLogsStream);
-
-    // Hide the reconnect button
+  function handleReconnect(): void {
     setShowReconnectButton(false);
+    setReconnect(value => value + 1);
+  }
+
+  function getContainerOptionId(kind: string, name: string): string {
+    return `${containerOptionIdPrefix}-${kind}-${name}`;
+  }
+
+  function renderContainerOption(
+    name: string,
+    kind: string,
+    key: string = name
+  ): React.ReactElement {
+    const isSelected = containers.includes(name);
+    const isLastSelected = containers.length === 1 && isSelected;
+    return (
+      <MenuItem
+        id={getContainerOptionId(kind, name)}
+        value={name}
+        key={key}
+        disabled={isLastSelected}
+      >
+        <Checkbox checked={isSelected} disabled={isLastSelected} size="small" />
+        <ListItemText primary={name} />
+      </MenuItem>
+    );
   }
 
   return (
     <LogViewer
       title={t('glossary|Logs: {{ itemName }}', { itemName: item.getName() })}
-      downloadName={`${item.getName()}_${container}`}
+      downloadName={`${item.getName()}_${containers.join('_')}`}
       open={open}
       onClose={onClose}
       logs={logs.logs}
@@ -318,45 +583,52 @@ export function PodLogViewer(props: PodLogViewerProps) {
       topActions={[
         <FormControl sx={{ minWidth: '11rem' }}>
           <InputLabel shrink id="container-name-chooser-label">
-            {t('glossary|Container')}
+            {t('glossary|Containers')}
           </InputLabel>
           <Select
             labelId="container-name-chooser-label"
             id="container-name-chooser"
-            value={container}
+            multiple
+            value={containers}
             onChange={handleContainerChange}
+            renderValue={selected => selected.join(', ')}
+            inputProps={{ 'aria-describedby': 'container-name-chooser-help' }}
           >
-            {item?.spec?.containers && (
-              <MenuItem disabled value="">
-                {t('glossary|Containers')}
-              </MenuItem>
+            {!!item?.spec?.containers?.length && (
+              <ContainerGroupHeader
+                label={t('glossary|Containers')}
+                optionIds={item.spec.containers.map(({ name }) =>
+                  getContainerOptionId('container', name)
+                )}
+              />
             )}
-            {item?.spec?.containers.map(({ name }) => (
-              <MenuItem value={name} key={name}>
-                {name}
-              </MenuItem>
-            ))}
-            {item?.spec?.initContainers && (
-              <MenuItem disabled value="">
-                {t('translation|Init Containers')}
-              </MenuItem>
+            {item?.spec?.containers.map(({ name }) => renderContainerOption(name, 'container'))}
+            {!!item?.spec?.initContainers?.length && (
+              <ContainerGroupHeader
+                label={t('translation|Init Containers')}
+                optionIds={item.spec.initContainers.map(({ name }) =>
+                  getContainerOptionId('init-container', name)
+                )}
+              />
             )}
-            {item.spec.initContainers?.map(({ name }) => (
-              <MenuItem value={name} key={`init_container_${name}`}>
-                {name}
-              </MenuItem>
-            ))}
-            {item?.spec?.ephemeralContainers && (
-              <MenuItem disabled value="">
-                {t('glossary|Ephemeral Containers')}
-              </MenuItem>
+            {item.spec.initContainers?.map(({ name }) =>
+              renderContainerOption(name, 'init-container', `init_container_${name}`)
             )}
-            {item.spec.ephemeralContainers?.map(({ name }) => (
-              <MenuItem value={name} key={`eph_container_${name}`}>
-                {name}
-              </MenuItem>
-            ))}
+            {!!item?.spec?.ephemeralContainers?.length && (
+              <ContainerGroupHeader
+                label={t('glossary|Ephemeral Containers')}
+                optionIds={item.spec.ephemeralContainers.map(({ name }) =>
+                  getContainerOptionId('ephemeral-container', name)
+                )}
+              />
+            )}
+            {item.spec.ephemeralContainers?.map(({ name }) =>
+              renderContainerOption(name, 'ephemeral-container', `eph_container_${name}`)
+            )}
           </Select>
+          <FormHelperText id="container-name-chooser-help">
+            {t('translation|At least one container must remain selected.')}
+          </FormHelperText>
         </FormControl>,
         <FormControl sx={{ minWidth: '6rem' }}>
           <InputLabel shrink id="container-lines-chooser-label">
@@ -378,8 +650,10 @@ export function PodLogViewer(props: PodLogViewerProps) {
         </FormControl>,
         <LightTooltip
           title={
-            hasContainerRestarted()
-              ? t('translation|Show logs for previous instances of this container.')
+            haveContainersRestarted()
+              ? containers.length === 1
+                ? t('translation|Show logs for previous instances of this container.')
+                : t('translation|Show logs for previous instances of the selected containers.')
               : t(
                   'translation|You can only select this option for containers that have been restarted.'
                 )
@@ -387,7 +661,7 @@ export function PodLogViewer(props: PodLogViewerProps) {
         >
           <PaddedFormControlLabel
             label={t('translation|Previous')}
-            disabled={!hasContainerRestarted()}
+            disabled={!haveContainersRestarted()}
             control={
               <Switch
                 checked={showPrevious}

@@ -803,6 +803,8 @@
   "Redirecting to main page…": "Redirection vers la page principale…",
   "Node": "Nœud",
   "Optional: schedule the pod on a specific node": "",
+  "At least one container must remain selected.": "",
+  "Show logs for previous instances of the selected containers.": "",
   "Prettify": "Embellir",
   "Show JSON values in plain text by removing escape characters.": "Afficher les valeurs JSON en texte brut en supprimant les caractères d'échappement.",
   "Format": "Format",

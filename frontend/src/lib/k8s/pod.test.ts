@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { Base64 } from 'js-base64';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import App from '../../App';
 import { post } from './api/v1/clusterRequests';
@@ -25,6 +26,9 @@ const _dont_delete_me = App;
 
 // Module-level capture array for addEphemeralContainer patch tests
 const capturedPatchBodies: any[] = [];
+const streamingApiMocks = vi.hoisted(() => ({
+  onResult: undefined as ((item: string) => void) | undefined,
+}));
 
 vi.mock('./api/v1/clusterRequests', async importOriginal => {
   const actual = await importOriginal<typeof import('./api/v1/clusterRequests')>();
@@ -33,6 +37,18 @@ vi.mock('./api/v1/clusterRequests', async importOriginal => {
     post: vi.fn().mockResolvedValue({}),
     patch: vi.fn(async (_url: string, body: any) => {
       capturedPatchBodies.push(body);
+    }),
+  };
+});
+
+vi.mock('./api/v1/streamingApi', async importOriginal => {
+  const actual = await importOriginal<typeof import('./api/v1/streamingApi')>();
+  return {
+    ...actual,
+    stream: vi.fn((_url, onResult, args) => {
+      streamingApiMocks.onResult = onResult;
+      args.connectCb?.();
+      return { cancel: vi.fn() };
     }),
   };
 });
@@ -73,6 +89,16 @@ describe('Pod class', () => {
       ],
     },
   };
+
+  it('preserves whitespace-only log chunks from Kubernetes', () => {
+    const pod = new Pod(mockPodData as any);
+    const onLogs = vi.fn();
+    pod.getLogs('container-1', onLogs, {});
+
+    streamingApiMocks.onResult!(Base64.encode('\n'));
+
+    expect(onLogs).toHaveBeenCalledWith({ logs: ['\n'], hasJsonLogs: false });
+  });
 
   it('correctly identifies a healthy pod with lowercase condition status in edge cases', () => {
     const data = JSON.parse(JSON.stringify(mockPodData));

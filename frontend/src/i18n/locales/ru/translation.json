@@ -808,6 +808,8 @@
   "Redirecting to main page…": "Перенаправление на главную страницу…",
   "Node": "Узел",
   "Optional: schedule the pod on a specific node": "Необязательно: назначить Под на определённый узел",
+  "At least one container must remain selected.": "",
+  "Show logs for previous instances of the selected containers.": "",
   "Prettify": "Форматировать",
   "Show JSON values in plain text by removing escape characters.": "Показать значения JSON в виде обычного текста, удалив escape-символы.",
   "Format": "Формат",

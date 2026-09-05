@@ -793,6 +793,8 @@
   "Redirecting to main page…": "正在重定向到首頁…",
   "Node": "節點",
   "Optional: schedule the pod on a specific node": "",
+  "At least one container must remain selected.": "",
+  "Show logs for previous instances of the selected containers.": "",
   "Prettify": "美化",
   "Show JSON values in plain text by removing escape characters.": "移除跳脫字元，以純文字顯示 JSON 值。",
   "Format": "格式化",

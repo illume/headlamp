@@ -793,6 +793,8 @@
   "Redirecting to main page…": "Mengalihkan ke halaman utama…",
   "Node": "Node",
   "Optional: schedule the pod on a specific node": "",
+  "At least one container must remain selected.": "",
+  "Show logs for previous instances of the selected containers.": "",
   "Prettify": "Prettify",
   "Show JSON values in plain text by removing escape characters.": "Tampilkan nilai JSON dalam teks biasa dengan menghapus karakter escape.",
   "Format": "Format",

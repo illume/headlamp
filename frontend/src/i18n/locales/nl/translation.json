@@ -798,6 +798,8 @@
   "Redirecting to main page…": "Naar hoofdpagina omleiden...",
   "Node": "Knooppunt",
   "Optional: schedule the pod on a specific node": "",
+  "At least one container must remain selected.": "",
+  "Show logs for previous instances of the selected containers.": "",
   "Prettify": "Prettify",
   "Show JSON values in plain text by removing escape characters.": "JSON-waarden weergeven in tekst zonder opmaak door escape-tekens te verwijderen.",
   "Format": "Indeling",
