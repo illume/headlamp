@@ -53,14 +53,15 @@ describe('DocsViewer', () => {
     expect(screen.queryByTestId('field-documentation-icon')).not.toBeInTheDocument();
 
     await userEvent.hover(field);
-    expect(await screen.findByRole('tooltip')).toHaveTextContent(
-      'Specification of the desired behavior of the Pod.'
-    );
+    const fieldDescription = 'Specification of the desired behavior of the Pod.';
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(fieldDescription);
+    expect(field).toHaveAccessibleName('spec');
+    expect(field).toHaveAccessibleDescription(fieldDescription);
 
     await userEvent.unhover(field);
     act(() => field.focus());
-    expect(await screen.findByRole('tooltip')).toHaveTextContent(
-      'Specification of the desired behavior of the Pod.'
-    );
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(fieldDescription);
+    expect(field).toHaveAccessibleName('spec');
+    expect(field).toHaveAccessibleDescription(fieldDescription);
   });
 });

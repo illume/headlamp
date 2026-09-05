@@ -34,7 +34,7 @@ describe('ResourceInfoButton', () => {
   it('opens accessible documentation for every API version of a resource', async () => {
     const user = userEvent.setup();
     const resourceClass = {
-      apiVersion: 'v1',
+      apiVersion: ['v1', 'v1beta1'],
       kind: 'Pod',
     } as any;
     render(
@@ -46,6 +46,10 @@ describe('ResourceInfoButton', () => {
     await user.click(screen.getByRole('button', { name: 'Learn more about Pod' }));
 
     expect(screen.getByRole('dialog', { name: 'Pod documentation' })).toBeVisible();
-    expect(screen.getByText('[{"apiVersion":"v1","kind":"Pod"}]')).toBeVisible();
+    expect(
+      screen.getByText(
+        '[{"apiVersion":"v1","kind":"Pod"},{"apiVersion":"v1beta1","kind":"Pod"}]'
+      )
+    ).toBeVisible();
   });
 });

@@ -96,7 +96,9 @@ function DocsViewer(props: DocsViewerProps) {
         label={
           <div>
             {value.description ? (
-              <LightTooltip title={value.description}>{nameLabel}</LightTooltip>
+              <LightTooltip title={value.description} describeChild>
+                {nameLabel}
+              </LightTooltip>
             ) : (
               nameLabel
             )}
