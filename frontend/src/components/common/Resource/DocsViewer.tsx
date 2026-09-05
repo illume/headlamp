@@ -83,12 +83,16 @@ function DocsViewer(props: DocsViewerProps) {
   }, [docSpecs]);
 
   function makeItems(name: string, value: any, key: string) {
+    const tooltipDescription =
+      typeof value.description === 'string'
+        ? value.description.replace(/\s+/g, ' ').trim()
+        : value.description;
     const nameLabel = (
       <Typography
         component="span"
         display="inline"
-        tabIndex={value.description ? 0 : undefined}
-        aria-label={value.description ? name : undefined}
+        tabIndex={tooltipDescription ? 0 : undefined}
+        aria-label={tooltipDescription ? name : undefined}
       >
         {name}
       </Typography>
@@ -100,8 +104,8 @@ function DocsViewer(props: DocsViewerProps) {
         nodeId={`${key}`}
         label={
           <div>
-            {value.description ? (
-              <LightTooltip title={value.description} describeChild>
+            {tooltipDescription ? (
+              <LightTooltip title={tooltipDescription} describeChild>
                 {nameLabel}
               </LightTooltip>
             ) : (
