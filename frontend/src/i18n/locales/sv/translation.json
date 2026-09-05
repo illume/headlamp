@@ -798,6 +798,8 @@
   "Redirecting to main page…": "Omdirigerar till huvudsidan...",
   "Node": "Nod",
   "Optional: schedule the pod on a specific node": "",
+  "At least one container must remain selected.": "",
+  "Show logs for previous instances of the selected containers.": "",
   "Prettify": "Snygga till",
   "Show JSON values in plain text by removing escape characters.": "Visa JSON-värden som oformaterad text genom att ta bort escape-tecken.",
   "Format": "Format",

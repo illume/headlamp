@@ -798,6 +798,8 @@
   "Redirecting to main page…": "Redirecting to main page…",
   "Node": "Node",
   "Optional: schedule the pod on a specific node": "Optional: schedule the pod on a specific node",
+  "At least one container must remain selected.": "At least one container must remain selected.",
+  "Show logs for previous instances of the selected containers.": "Show logs for previous instances of the selected containers.",
   "Prettify": "Prettify",
   "Show JSON values in plain text by removing escape characters.": "Show JSON values in plain text by removing escape characters.",
   "Format": "Format",

@@ -798,6 +798,8 @@
   "Redirecting to main page…": "মূল Page এ পুনঃনির্দেশিত হচ্ছে…",
   "Node": "Node",
   "Optional: schedule the pod on a specific node": "ঐচ্ছিক: একটি নির্দিষ্ট নোডে Pod শিডিউল করুন",
+  "At least one container must remain selected.": "",
+  "Show logs for previous instances of the selected containers.": "",
   "Prettify": "সুন্দর করুন",
   "Show JSON values in plain text by removing escape characters.": "এস্কেপ ক্যারেক্টার সরিয়ে প্লেইন টেক্সটে JSON মান দেখান।",
   "Format": "ফরম্যাট",

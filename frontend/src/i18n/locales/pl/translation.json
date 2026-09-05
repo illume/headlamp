@@ -808,6 +808,8 @@
   "Redirecting to main page…": "Trwa przekierowywanie do strony głównej...",
   "Node": "Węzeł",
   "Optional: schedule the pod on a specific node": "",
+  "At least one container must remain selected.": "",
+  "Show logs for previous instances of the selected containers.": "",
   "Prettify": "Prettify",
   "Show JSON values in plain text by removing escape characters.": "Pokaż wartości JSON w postaci zwykłego tekstu, usuwając znaki ucieczki.",
   "Format": "Format",

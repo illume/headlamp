@@ -548,7 +548,7 @@ test('filters logs from a pod with multiple containers', async ({ page }) => {
 
     const headlampPage = new HeadlampPage(page);
     await headlampPage.navigateToCluster('test', process.env.HEADLAMP_TEST_TOKEN);
-    await headlampPage.navigateTopage(`/c/test/pods/default/${name}`);
+    await headlampPage.navigateTopage(`/c/test/pods/default/${name}?container=main`);
     await page.getByRole('button', { name: /^Show Logs$/ }).click();
 
     const terminalRows = page.locator('#xterm-container .xterm-rows');

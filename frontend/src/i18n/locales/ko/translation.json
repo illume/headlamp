@@ -793,6 +793,8 @@
   "Redirecting to main page…": "메인 페이지로 리디렉션 중…",
   "Node": "노드",
   "Optional: schedule the pod on a specific node": "",
+  "At least one container must remain selected.": "",
+  "Show logs for previous instances of the selected containers.": "",
   "Prettify": "",
   "Show JSON values in plain text by removing escape characters.": "",
   "Format": "",
