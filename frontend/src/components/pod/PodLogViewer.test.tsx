@@ -651,11 +651,21 @@ describe('PodLogViewer', () => {
       'aria-selected',
       'false'
     );
-    for (const groupName of ['Containers', 'Init Containers', 'Ephemeral Containers']) {
-      const groupLabel = screen.getByRole('option', { name: groupName });
+    const groups = [
+      ['Containers', ['nginx', 'sidecar']],
+      ['Init Containers', ['setup']],
+      ['Ephemeral Containers', ['debugger']],
+    ] as const;
+    for (const [groupName, optionNames] of groups) {
+      const groupLabel = screen.getByRole('group', { name: groupName });
       expect(groupLabel).toHaveClass('MuiListSubheader-root');
-      expect(groupLabel).not.toHaveAttribute('aria-disabled');
+      const ownedOptionIds = groupLabel.getAttribute('aria-owns')?.split(' ');
+      expect(ownedOptionIds).toHaveLength(optionNames.length);
+      expect(ownedOptionIds?.map(id => document.getElementById(id)?.textContent)).toEqual(
+        optionNames
+      );
     }
+    expect(screen.getAllByRole('option')).toHaveLength(4);
   });
 
   it('enables previous logs for regular and init containers with a previous instance', async () => {

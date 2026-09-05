@@ -75,6 +75,20 @@ const PaddedFormControlLabel = styled(FormControlLabel)(({ theme }) => ({
   paddingRight: theme.spacing(1),
 }));
 
+interface ContainerGroupHeaderProps {
+  label: string;
+  optionIds: string[];
+}
+
+const ContainerGroupHeader = Object.assign(
+  ({ label, optionIds }: ContainerGroupHeaderProps) => (
+    <ListSubheader role="group" aria-label={label} aria-owns={optionIds.join(' ')}>
+      {label}
+    </ListSubheader>
+  ),
+  { muiSkipListHighlight: true }
+);
+
 /** Props for the pod-specific log viewer. */
 interface PodLogViewerProps extends Omit<LogViewerProps, 'logs'> {
   /** Pod whose container logs are streamed. */
@@ -121,6 +135,7 @@ export function normalizeContainerSelection(value: string | string[]): string[] 
  */
 export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
   const { item, onClose, open, initialContainer, ...other } = props;
+  const containerOptionIdPrefix = React.useId();
   const [containers, setContainers] = React.useState(() => [
     resolveContainerName(item, initialContainer),
   ]);
@@ -531,11 +546,24 @@ export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
     setReconnect(value => value + 1);
   }
 
-  function renderContainerOption(name: string, key: string = name): React.ReactElement {
+  function getContainerOptionId(kind: string, name: string): string {
+    return `${containerOptionIdPrefix}-${kind}-${name}`;
+  }
+
+  function renderContainerOption(
+    name: string,
+    kind: string,
+    key: string = name
+  ): React.ReactElement {
     const isSelected = containers.includes(name);
     const isLastSelected = containers.length === 1 && isSelected;
     return (
-      <MenuItem value={name} key={key} disabled={isLastSelected}>
+      <MenuItem
+        id={getContainerOptionId(kind, name)}
+        value={name}
+        key={key}
+        disabled={isLastSelected}
+      >
         <Checkbox checked={isSelected} disabled={isLastSelected} size="small" />
         <ListItemText primary={name} />
       </MenuItem>
@@ -567,22 +595,35 @@ export function PodLogViewer(props: PodLogViewerProps): React.ReactElement {
             inputProps={{ 'aria-describedby': 'container-name-chooser-help' }}
           >
             {!!item?.spec?.containers?.length && (
-              <ListSubheader role="presentation">{t('glossary|Containers')}</ListSubheader>
+              <ContainerGroupHeader
+                label={t('glossary|Containers')}
+                optionIds={item.spec.containers.map(({ name }) =>
+                  getContainerOptionId('container', name)
+                )}
+              />
             )}
-            {item?.spec?.containers.map(({ name }) => renderContainerOption(name))}
+            {item?.spec?.containers.map(({ name }) => renderContainerOption(name, 'container'))}
             {!!item?.spec?.initContainers?.length && (
-              <ListSubheader role="presentation">{t('translation|Init Containers')}</ListSubheader>
+              <ContainerGroupHeader
+                label={t('translation|Init Containers')}
+                optionIds={item.spec.initContainers.map(({ name }) =>
+                  getContainerOptionId('init-container', name)
+                )}
+              />
             )}
             {item.spec.initContainers?.map(({ name }) =>
-              renderContainerOption(name, `init_container_${name}`)
+              renderContainerOption(name, 'init-container', `init_container_${name}`)
             )}
             {!!item?.spec?.ephemeralContainers?.length && (
-              <ListSubheader role="presentation">
-                {t('glossary|Ephemeral Containers')}
-              </ListSubheader>
+              <ContainerGroupHeader
+                label={t('glossary|Ephemeral Containers')}
+                optionIds={item.spec.ephemeralContainers.map(({ name }) =>
+                  getContainerOptionId('ephemeral-container', name)
+                )}
+              />
             )}
             {item.spec.ephemeralContainers?.map(({ name }) =>
-              renderContainerOption(name, `eph_container_${name}`)
+              renderContainerOption(name, 'ephemeral-container', `eph_container_${name}`)
             )}
           </Select>
           <FormHelperText id="container-name-chooser-help">
