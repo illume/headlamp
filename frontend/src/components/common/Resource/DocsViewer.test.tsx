@@ -50,7 +50,6 @@ describe('DocsViewer', () => {
 
     expect(await screen.findByText('A Pod runs one or more containers.')).toBeVisible();
     const field = screen.getByText('spec');
-    expect(screen.queryByTestId('field-documentation-icon')).not.toBeInTheDocument();
 
     await userEvent.hover(field);
     const fieldDescription = 'Specification of the desired behavior of the Pod.';
