@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { act, render, screen } from '@testing-library/react';
+import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { vi } from 'vitest';
 import getDocDefinitions from '../../../lib/docs';
@@ -58,6 +58,7 @@ describe('DocsViewer', () => {
     expect(field).toHaveAccessibleDescription(fieldDescription);
 
     await userEvent.unhover(field);
+    await waitFor(() => expect(screen.queryByRole('tooltip')).not.toBeInTheDocument());
     act(() => field.focus());
     expect(await screen.findByRole('tooltip')).toHaveTextContent(fieldDescription);
     expect(field).toHaveAccessibleName('spec');
