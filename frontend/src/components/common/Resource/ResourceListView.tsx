@@ -70,6 +70,10 @@ export default function ResourceListView(
     );
   }
 
+  if (!('data' in props) && !resourceClass) {
+    throw new Error('ResourceListView requires resourceClass when data is not provided.');
+  }
+
   return (
     <SectionBox
       backLink={backLink}
@@ -95,7 +99,7 @@ export default function ResourceListView(
       ) : (
         <ResourceTable<any>
           {...(tableProps as Omit<ResourceTableFromResourceClassProps<any>, 'resourceClass'>)}
-          resourceClass={resourceClass!}
+          resourceClass={resourceClass}
           enableRowActions={tableProps.enableRowActions ?? true}
           enableRowSelection={tableProps.enableRowSelection ?? true}
         />
