@@ -480,6 +480,8 @@
   "Init Containers": "初期化コンテナー",
   "Conditions": "条件",
   "Volumes": "ボリューム",
+  "Learn more about {{ kind }}": "",
+  "{{ kind }} documentation": "",
   "Kind": "種類",
   "Restarting {{ itemName }}…": "{{ itemName }} を再起動中…",
   "Cancelled restarting {{ itemName }}.": "{{ itemName }} の再起動をキャンセルしました。",

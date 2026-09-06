@@ -480,6 +480,8 @@
   "Init Containers": "Kontainer Init",
   "Conditions": "Kondisi",
   "Volumes": "Volume",
+  "Learn more about {{ kind }}": "",
+  "{{ kind }} documentation": "",
   "Kind": "Jenis",
   "Restarting {{ itemName }}…": "Memulai ulang {{ itemName }}…",
   "Cancelled restarting {{ itemName }}.": "Memulai ulang {{ itemName }} dibatalkan.",

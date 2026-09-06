@@ -484,6 +484,8 @@
   "Init Containers": "Init-Container",
   "Conditions": "Bedingungen",
   "Volumes": "Speicher-Volumes",
+  "Learn more about {{ kind }}": "",
+  "{{ kind }} documentation": "",
   "Kind": "",
   "Restarting {{ itemName }}…": "Starte {{ itemName }} neu…",
   "Cancelled restarting {{ itemName }}.": "Der Neustart von {{ itemName }} wurde abgebrochen.",

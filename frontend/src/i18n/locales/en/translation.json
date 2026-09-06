@@ -484,6 +484,8 @@
   "Init Containers": "Init Containers",
   "Conditions": "Conditions",
   "Volumes": "Volumes",
+  "Learn more about {{ kind }}": "Learn more about {{ kind }}",
+  "{{ kind }} documentation": "{{ kind }} documentation",
   "Kind": "Kind",
   "Restarting {{ itemName }}…": "Restarting {{ itemName }}…",
   "Cancelled restarting {{ itemName }}.": "Cancelled restarting {{ itemName }}.",

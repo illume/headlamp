@@ -40,6 +40,7 @@ export default function SecretList() {
     <ResourceListView
       id="headlamp-secrets"
       title={t('Secrets')}
+      resourceClass={Secret}
       data={filteredSecrets}
       errorMessage={Secret.getErrorMessage(error)}
       headerProps={{

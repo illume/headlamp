@@ -32,11 +32,15 @@
               class="MuiTreeItem-label"
             >
               <div>
-                <p
+                <span
+                  aria-label="apiVersion"
                   class="MuiTypography-root MuiTypography-body1 css-1os2m0i-MuiTypography-root"
+                  data-mui-internal-clone-element="true"
+                  tabindex="0"
+                  title="APIVersion defines the versioned schema of this representation of an object. Servers should convert recognized schemas to the latest internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources"
                 >
                   apiVersion
-                </p>
+                </span>
                  
                 <span
                   class="MuiTypography-root MuiTypography-caption css-i3d2e2-MuiTypography-root"
@@ -66,11 +70,15 @@
               class="MuiTreeItem-label"
             >
               <div>
-                <p
+                <span
+                  aria-label="kind"
                   class="MuiTypography-root MuiTypography-body1 css-1os2m0i-MuiTypography-root"
+                  data-mui-internal-clone-element="true"
+                  tabindex="0"
+                  title="Kind is a string value representing the REST resource this object represents. Servers may infer this from the endpoint the client submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds',"
                 >
                   kind
-                </p>
+                </span>
                  
                 <span
                   class="MuiTypography-root MuiTypography-caption css-i3d2e2-MuiTypography-root"
@@ -100,11 +108,15 @@
               class="MuiTreeItem-label"
             >
               <div>
-                <p
+                <span
+                  aria-label="metadata"
                   class="MuiTypography-root MuiTypography-body1 css-1os2m0i-MuiTypography-root"
+                  data-mui-internal-clone-element="true"
+                  tabindex="0"
+                  title="Standard object's metadata. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata"
                 >
                   metadata
-                </p>
+                </span>
                  
                 <span
                   class="MuiTypography-root MuiTypography-caption css-i3d2e2-MuiTypography-root"
@@ -134,11 +146,15 @@
               class="MuiTreeItem-label"
             >
               <div>
-                <p
+                <span
+                  aria-label="spec"
                   class="MuiTypography-root MuiTypography-body1 css-1os2m0i-MuiTypography-root"
+                  data-mui-internal-clone-element="true"
+                  tabindex="0"
+                  title="Specification of the desired behavior of the pod. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status"
                 >
                   spec
-                </p>
+                </span>
                  
                 <span
                   class="MuiTypography-root MuiTypography-caption css-i3d2e2-MuiTypography-root"

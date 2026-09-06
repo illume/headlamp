@@ -484,6 +484,8 @@
   "Init Containers": "Başlangıç Kapsayıcıları",
   "Conditions": "Koşullar",
   "Volumes": "Birimler",
+  "Learn more about {{ kind }}": "",
+  "{{ kind }} documentation": "",
   "Kind": "Tür",
   "Restarting {{ itemName }}…": "{{ itemName }} yeniden başlatılıyor…",
   "Cancelled restarting {{ itemName }}.": "{{ itemName }} öğesini yeniden başlatma işlemi iptal edildi.",

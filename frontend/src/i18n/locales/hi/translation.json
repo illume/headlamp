@@ -484,6 +484,8 @@
   "Init Containers": "इनिट कंटेनर्स",
   "Conditions": "शर्तें",
   "Volumes": "वॉल्यूम्स",
+  "Learn more about {{ kind }}": "",
+  "{{ kind }} documentation": "",
   "Kind": "काइंड",
   "Restarting {{ itemName }}…": "{{ itemName }} पुनरारंभ कर रहे हैं…",
   "Cancelled restarting {{ itemName }}.": "{{ itemName }} पुनरारंभ करना रद्द किया गया।",
