@@ -484,6 +484,8 @@
   "Init Containers": "Initieringscontainrar",
   "Conditions": "Villkor",
   "Volumes": "Volymer",
+  "Learn more about {{ kind }}": "",
+  "{{ kind }} documentation": "",
   "Kind": "Typ",
   "Restarting {{ itemName }}…": "Startar om {{ itemName }}...",
   "Cancelled restarting {{ itemName }}.": "Omstart av {{ itemName }} avbröts.",

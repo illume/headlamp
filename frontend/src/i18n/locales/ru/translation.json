@@ -492,6 +492,8 @@
   "Init Containers": "Инициализирующие контейнеры",
   "Conditions": "Условия",
   "Volumes": "Тома",
+  "Learn more about {{ kind }}": "",
+  "{{ kind }} documentation": "",
   "Kind": "Вид",
   "Restarting {{ itemName }}…": "Перезапуск {{ itemName }}…",
   "Cancelled restarting {{ itemName }}.": "Перезапуск {{ itemName }} отменен.",

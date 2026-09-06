@@ -492,6 +492,8 @@
   "Init Containers": "Kontenery inicjowania",
   "Conditions": "Warunki",
   "Volumes": "Woluminy",
+  "Learn more about {{ kind }}": "",
+  "{{ kind }} documentation": "",
   "Kind": "Rodzaj",
   "Restarting {{ itemName }}…": "Ponowne uruchamianie urządzenia {{ itemName }}...",
   "Cancelled restarting {{ itemName }}.": "Anulowano ponowne uruchamianie {{ itemName }}.",

@@ -484,6 +484,8 @@
   "Init Containers": "Init Containers",
   "Conditions": "শর্তাবলী",
   "Volumes": "Volumes",
+  "Learn more about {{ kind }}": "",
+  "{{ kind }} documentation": "",
   "Kind": "দয়ালু",
   "Restarting {{ itemName }}…": "পুনঃসূচনা {{ itemName }}…",
   "Cancelled restarting {{ itemName }}.": "বাতিল পুনরায় চালু করা {{ itemName }}।",

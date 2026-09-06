@@ -492,6 +492,8 @@
   "Init Containers": "Kontejnery init",
   "Conditions": "Podmínky",
   "Volumes": "Svazky",
+  "Learn more about {{ kind }}": "",
+  "{{ kind }} documentation": "",
   "Kind": "Druh",
   "Restarting {{ itemName }}…": "Restartuje se {{ itemName }}...",
   "Cancelled restarting {{ itemName }}.": "Restartování {{ itemName }} bylo zrušeno.",

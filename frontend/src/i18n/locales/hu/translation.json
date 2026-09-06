@@ -484,6 +484,8 @@
   "Init Containers": "Inicializáló tárolók",
   "Conditions": "Feltételek",
   "Volumes": "Kötetek",
+  "Learn more about {{ kind }}": "",
+  "{{ kind }} documentation": "",
   "Kind": "Jelleg",
   "Restarting {{ itemName }}…": "A(z) {{ itemName }} újraindítása…",
   "Cancelled restarting {{ itemName }}.": "{{ itemName }} újraindítása visszavonva.",

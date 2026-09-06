@@ -484,6 +484,8 @@
   "Init Containers": "ابتدائی کنٹینرز",
   "Conditions": "شرائط",
   "Volumes": "والیومز",
+  "Learn more about {{ kind }}": "",
+  "{{ kind }} documentation": "",
   "Kind": "قسم",
   "Restarting {{ itemName }}…": "{{ itemName }} دوبارہ شروع کیا جا رہا ہے…",
   "Cancelled restarting {{ itemName }}.": "{{ itemName }} کا دوبارہ آغاز منسوخ کر دیا گیا",

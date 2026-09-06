@@ -480,6 +480,8 @@
   "Init Containers": "初始化容器",
   "Conditions": "条件",
   "Volumes": "卷",
+  "Learn more about {{ kind }}": "",
+  "{{ kind }} documentation": "",
   "Kind": "类型",
   "Restarting {{ itemName }}…": "正在重启 {{ itemName }}…",
   "Cancelled restarting {{ itemName }}.": "取消重启 {{ itemName }}。",

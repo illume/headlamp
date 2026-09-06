@@ -484,6 +484,8 @@
   "Init Containers": "Init-containers",
   "Conditions": "Voorwaarden",
   "Volumes": "Volumes",
+  "Learn more about {{ kind }}": "",
+  "{{ kind }} documentation": "",
   "Kind": "Soort",
   "Restarting {{ itemName }}…": "{{ itemName }} opnieuw starten...",
   "Cancelled restarting {{ itemName }}.": "Het opnieuw opstarten van {{ itemName }} is geannuleerd.",

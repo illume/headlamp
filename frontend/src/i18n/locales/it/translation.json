@@ -488,6 +488,8 @@
   "Init Containers": "Container di Avvio",
   "Conditions": "Condizioni",
   "Volumes": "Volume",
+  "Learn more about {{ kind }}": "",
+  "{{ kind }} documentation": "",
   "Kind": "Kind",
   "Restarting {{ itemName }}…": "Riavvio di {{ itemName }}…",
   "Cancelled restarting {{ itemName }}.": "Riavvio di {{ itemName }} annullato.",
