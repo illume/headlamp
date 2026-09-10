@@ -213,6 +213,12 @@ if (disableGPU === true) {
 }
 const defaultPort = args.port || 4466;
 let actualPort = defaultPort; // Will be updated when backend starts
+let resolveBackendReady = () => {};
+const backendReady = useExternalServer
+  ? Promise.resolve()
+  : new Promise<void>(resolve => {
+      resolveBackendReady = resolve;
+    });
 const MAX_PORT_ATTEMPTS = Math.abs(Number(process.env.HEADLAMP_MAX_PORT_ATTEMPTS) || 100); // Maximum number of ports to try
 
 const legalDocumentsResourcePath = getLegalDocumentsResourcePath(isDev, process.resourcesPath);
@@ -1781,7 +1787,8 @@ function startElectron() {
       }
     });
 
-    ipcMain.on('request-backend-port', event => {
+    ipcMain.on('request-backend-port', async event => {
+      await backendReady;
       if (!isFromMainWindowFrame(event, mainWindow)) {
         return;
       }
@@ -1971,6 +1978,7 @@ function attachServerEventHandlers(serverProcess: ChildProcessWithoutNullStreams
     const portMatch = output.match(/Listen address:.*:(\d+)/);
     if (portMatch && portMatch[1]) {
       actualPort = parseInt(portMatch[1], 10);
+      resolveBackendReady();
       console.info(`Backend server listening on port: ${actualPort}`);
 
       // Update the environment variable for the frontend

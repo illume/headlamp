@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { getHeadlampAPIHeaders } from './getHeadlampAPIHeaders';
+import { getHeadlampAPIHeaders, setBackendToken } from './getHeadlampAPIHeaders';
 
 const BACKEND_TOKEN_HEADER = 'X-HEADLAMP_BACKEND-TOKEN';
 let installed = false;
@@ -62,4 +62,38 @@ export function installBackendTokenFetch(): void {
     () => window.headlampBackendPort ?? 4466
   );
   installed = true;
+}
+
+export interface DesktopBackendApi {
+  send(channel: string): void;
+  receive(channel: 'backend-token', callback: (token: string) => void): (() => void) | undefined;
+  receive(channel: 'backend-port', callback: (port: number) => void): (() => void) | undefined;
+}
+
+export function initializeDesktopBackend(api: DesktopBackendApi, onReady: () => void): () => void {
+  installBackendTokenFetch();
+  let backendPortReady = false;
+  let backendTokenReady = false;
+  const markBackendReady = () => {
+    if (backendPortReady && backendTokenReady) {
+      onReady();
+    }
+  };
+  const unsubscribeToken = api.receive('backend-token', (token: string) => {
+    setBackendToken(token);
+    backendTokenReady = true;
+    markBackendReady();
+  });
+  const unsubscribePort = api.receive('backend-port', (port: number) => {
+    window.headlampBackendPort = port;
+    backendPortReady = true;
+    markBackendReady();
+  });
+  api.send('request-backend-token');
+  api.send('request-backend-port');
+
+  return () => {
+    unsubscribeToken?.();
+    unsubscribePort?.();
+  };
 }
