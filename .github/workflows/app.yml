@@ -58,6 +58,7 @@ jobs:
       run: make app-i18n-check
     - name: App linux
       run: |
+        make backend
         make app-linux
     - name: Install desktop e2e dependencies
       run: |
