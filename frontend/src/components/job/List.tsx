@@ -136,6 +136,7 @@ export function JobsListRenderer(props: JobsListRendererProps) {
   return (
     <ResourceListView
       title={t('Jobs')}
+      resourceClass={Job}
       headerProps={{
         noNamespaceFilter,
         titleSideActions: hideCreateButton

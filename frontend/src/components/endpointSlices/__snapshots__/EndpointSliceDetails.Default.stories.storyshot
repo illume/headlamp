@@ -55,6 +55,17 @@
                 class="MuiBox-root css-ty8jgw"
                 role="status"
               />
+              <button
+                aria-label="Learn more about EndpointSlice"
+                class="MuiButtonBase-root MuiIconButton-root MuiIconButton-sizeMedium css-whz9ym-MuiButtonBase-root-MuiIconButton-root"
+                data-mui-internal-clone-element="true"
+                tabindex="0"
+                type="button"
+              >
+                <span
+                  class="MuiTouchRipple-root css-8je8zh-MuiTouchRipple-root"
+                />
+              </button>
             </div>
           </div>
         </div>

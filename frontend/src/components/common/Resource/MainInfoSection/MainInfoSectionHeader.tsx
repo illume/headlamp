@@ -29,6 +29,7 @@ import SectionHeader, { HeaderStyle } from '../../SectionHeader';
 import CopyButton from '../CopyButton';
 import DeleteButton from '../DeleteButton';
 import EditButton from '../EditButton';
+import ResourceInfoButton from '../ResourceInfoButton';
 import { RestartButton } from '../RestartButton';
 import ScaleButton from '../ScaleButton';
 
@@ -137,7 +138,14 @@ export function MainInfoHeader<T extends KubeObject>(props: MainInfoHeaderProps<
     <SectionHeader
       title={title || (resource ? `${resource.kind}: ${resource.getName()}` : '')}
       headerStyle={headerStyle}
-      titleSideActions={resource ? [<CopyButton text={resource?.getName()} />] : []}
+      titleSideActions={
+        resource
+          ? [
+              <CopyButton key="copy-resource-name" text={resource.getName()} />,
+              <ResourceInfoButton key="resource-information" resourceClass={resource._class()} />,
+            ]
+          : []
+      }
       actions={allActions}
     />
   );

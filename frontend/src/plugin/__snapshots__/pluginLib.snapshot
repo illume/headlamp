@@ -255,6 +255,7 @@
           "form": [Function],
         },
       },
+      "ResourceInfoButton": [Function],
       "ResourceLink": [Function],
       "ResourceListView": [Function],
       "ResourceTable": {
@@ -318,6 +319,7 @@
       "useSelectorPodTemplate": [Function],
       "useThrottle": [Function],
     },
+    "ResourceInfoButton": [Function],
     "ResourceLink": [Function],
     "ResourceListView": [Function],
     "ResourceTable": {
