@@ -899,8 +899,13 @@ async function startServer(
     serverArgs.push(`--watch-plugins-changes=${args.watchPluginsChanges}`);
   }
   const adminSettingsPath = getAdminSettingsPath();
-  if (adminSettingsPath && fs.existsSync(adminSettingsPath)) {
-    serverArgs.push('--settings', adminSettingsPath);
+  if (adminSettingsPath) {
+    try {
+      await fsPromises.access(adminSettingsPath);
+      serverArgs.push('--settings', adminSettingsPath);
+    } catch {
+      // No machine-wide settings were deployed.
+    }
   }
 
   const bundledPlugins = path.join(process.resourcesPath, '.plugins');
