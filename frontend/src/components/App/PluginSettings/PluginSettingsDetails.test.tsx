@@ -64,6 +64,7 @@ describe('PluginSettingsDetails metadata', () => {
       headlamp: {
         settingsSchema: {
           type: 'object',
+          additionalProperties: false,
           properties: {
             endpoint: {
               type: 'string',
@@ -82,7 +83,7 @@ describe('PluginSettingsDetails metadata', () => {
       <TestContext>
         <ThemeProvider theme={theme}>
           <PluginSettingsDetailsPure
-            config={{}}
+            config={{ legacySetting: 'remove me' }}
             plugin={schemaPlugin}
             onSave={onSave}
             onDelete={() => {}}

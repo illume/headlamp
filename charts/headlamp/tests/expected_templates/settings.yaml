@@ -41,10 +41,12 @@ data:
         endpoint: https://manager.example.com
         retries: 3
       source: https://artifacthub.io/packages/headlamp/example/example-plugin
-    - name: second-plugin
+    - name: change-logo
       settings:
-        enabled: true
-      source: https://artifacthub.io/packages/headlamp/example/second-plugin
+        url:
+          $display: disabled
+          $value: https://example.com/logo.svg
+      source: https://artifacthub.io/packages/headlamp/example/change-logo
 ---
 # Source: headlamp/templates/settings-configmap.yaml
 apiVersion: v1
@@ -59,7 +61,7 @@ metadata:
     app.kubernetes.io/version: "0.46.0"
     app.kubernetes.io/managed-by: Helm
 data:
-  settings.json: "{\"defaults\":{\"plugins\":{\"example-plugin\":{\"endpoint\":{\"$display\":\"disabled\",\"$value\":\"https://example.com\"},\"retries\":5},\"second-plugin\":{\"enabled\":true}}}}"
+  settings.json: "{\"defaults\":{\"plugins\":{\"change-logo\":{\"url\":{\"$display\":\"disabled\",\"$value\":\"https://example.com/logo.svg\"}},\"example-plugin\":{\"endpoint\":{\"$display\":\"disabled\",\"$value\":\"https://example.com\"},\"retries\":5}}}}"
 ---
 # Source: headlamp/templates/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -129,7 +131,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/settings: 8d1affaf496ba983e457007acba37b5f48b4ff6585311d870f95caa4c31730c7
+        checksum/settings: 6569ce5bc3559be0cc5778aeb95717f578d724997304173adb24045db84ec3ed
       labels:
         app.kubernetes.io/name: headlamp
         app.kubernetes.io/instance: headlamp

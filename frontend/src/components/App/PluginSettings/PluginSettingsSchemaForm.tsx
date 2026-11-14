@@ -59,16 +59,15 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
   const { pluginName, schema, data, onDataChange, onValidityChange } = props;
   const { t } = useTranslation(pluginName);
   useTypedSelector(state => state.adminSettings);
-  const effectiveData = useMemo(
-    () =>
-      Object.fromEntries(
-        Object.entries<Record<string, any>>(schema.properties ?? {}).flatMap(([name, field]) => {
-          const value = data[name] ?? PluginSettingsAPI.get(pluginName, name) ?? field.default;
-          return value === undefined ? [] : [[name, value]];
-        })
-      ),
-    [data, pluginName, schema]
-  );
+  const effectiveData = useMemo(() => {
+    const knownValues = Object.fromEntries(
+      Object.entries<Record<string, any>>(schema.properties ?? {}).flatMap(([name, field]) => {
+        const value = data[name] ?? PluginSettingsAPI.get(pluginName, name) ?? field.default;
+        return value === undefined ? [] : [[name, value]];
+      })
+    );
+    return schema.additionalProperties === false ? knownValues : { ...data, ...knownValues };
+  }, [data, pluginName, schema]);
   const validation = useMemo(() => {
     try {
       const validate = ajv.compile(schema);

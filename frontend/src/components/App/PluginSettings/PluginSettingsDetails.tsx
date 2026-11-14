@@ -172,10 +172,13 @@ export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps)
     if (!usesSchemaForm) {
       return data;
     }
-    const result = { ...(data ?? {}) };
+    const result = settingsSchema?.additionalProperties === false ? {} : { ...(data ?? {}) };
     for (const [key, field] of Object.entries<Record<string, any>>(
       settingsSchema?.properties ?? {}
     )) {
+      if (data?.[key] !== undefined) {
+        result[key] = data[key];
+      }
       if (
         result[key] === undefined &&
         PluginSettingsAPI.get(plugin.name, key) === undefined &&

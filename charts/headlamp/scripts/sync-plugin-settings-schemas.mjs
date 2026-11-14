@@ -22,7 +22,7 @@ async function readJson(location) {
   return JSON.parse(await readFile(filename, 'utf8'));
 }
 
-function assertSettingsSchema(schema, source) {
+export function assertSettingsSchema(schema, source) {
   if (schema.type !== 'object' || !schema.properties || typeof schema.properties !== 'object') {
     throw new Error(`${source}: headlamp.settingsSchema must be an object schema with properties`);
   }
@@ -31,12 +31,40 @@ function assertSettingsSchema(schema, source) {
     if (!value || typeof value !== 'object') {
       return;
     }
-    if (typeof value.$ref === 'string' && !value.$ref.startsWith('#')) {
-      throw new Error(`${source}: remote JSON Schema references are not supported`);
+    if (typeof value.$ref === 'string') {
+      throw new Error(`${source}: JSON Schema references are not supported`);
     }
     Object.values(value).forEach(visit);
   };
   visit(schema);
+}
+
+function adminSettingsSchema(schema) {
+  const result = structuredClone(schema);
+  result.properties = Object.fromEntries(
+    Object.entries(schema.properties).map(([name, property]) => [
+      name,
+      {
+        anyOf: [
+          property,
+          {
+            type: 'object',
+            required: ['$value'],
+            additionalProperties: false,
+            properties: {
+              $value: property,
+              $display: { enum: ['normal', 'disabled', 'hidden'] },
+              $clusterDefined: {
+                type: 'array',
+                items: { type: 'string' },
+              },
+            },
+          },
+        ],
+      },
+    ])
+  );
+  return result;
 }
 
 export function updateValuesSchema(valuesSchema, packages) {
@@ -46,12 +74,12 @@ export function updateValuesSchema(valuesSchema, packages) {
   const conditions = [];
 
   for (const packageJson of [...packages].sort((a, b) => a.name.localeCompare(b.name))) {
-    const schema = packageJson.headlamp.settingsSchema;
-    const schemaName = `plugin_${createHash('sha256').update(packageJson.name).digest('hex').slice(0, 12)}`;
-    schemas[schemaName] = schema;
+    const pluginName = packageJson.pluginManagerName ?? packageJson.name;
+    const schemaName = `plugin_${createHash('sha256').update(pluginName).digest('hex').slice(0, 12)}`;
+    schemas[schemaName] = adminSettingsSchema(packageJson.headlamp.settingsSchema);
     conditions.push({
       if: {
-        properties: { name: { const: packageJson.name } },
+        properties: { name: { const: pluginName } },
         required: ['name'],
       },
       then: {
@@ -125,7 +153,10 @@ export async function sync({ sourcesPath = defaultSourcesPath, schemaPath = defa
       continue;
     }
     assertSettingsSchema(packageJson.headlamp.settingsSchema, source.packageJson);
-    packages.push(packageJson);
+    packages.push({
+      ...packageJson,
+      pluginManagerName: source.pluginName ?? packageJson.name,
+    });
   }
 
   const schemaFilename = path.isAbsolute(schemaPath) ? schemaPath : path.join(repoRoot, schemaPath);

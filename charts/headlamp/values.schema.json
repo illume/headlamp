@@ -1022,7 +1022,8 @@
                 "properties": {
                   "name": {
                     "type": "string",
-                    "description": "Plugin package name"
+                    "pattern": "^[a-z0-9][a-z0-9-_]*[a-z0-9-]$",
+                    "description": "Plugin manager identifier"
                   },
                   "source": {
                     "type": "string",
@@ -1050,7 +1051,7 @@
                     "if": {
                       "properties": {
                         "name": {
-                          "const": "@kinvolk/headlamp-pod-counter"
+                          "const": "headlamp-pod-counter"
                         }
                       },
                       "required": [
@@ -1060,7 +1061,7 @@
                     "then": {
                       "properties": {
                         "settings": {
-                          "$ref": "#/definitions/knownPluginSettings/plugin_55a88c715470"
+                          "$ref": "#/definitions/knownPluginSettings/plugin_b1e9b087f366"
                         }
                       }
                     }
@@ -1132,16 +1133,48 @@
   },
   "definitions": {
     "knownPluginSettings": {
-      "plugin_55a88c715470": {
+      "plugin_b1e9b087f366": {
         "$schema": "http://json-schema.org/draft-07/schema#",
         "type": "object",
         "additionalProperties": false,
         "properties": {
           "errorMessage": {
-            "type": "string",
-            "title": "Custom Error Message",
-            "description": "The message shown when the pod count cannot be retrieved.",
-            "default": "Uh... pods!?"
+            "anyOf": [
+              {
+                "type": "string",
+                "title": "Custom Error Message",
+                "description": "The message shown when the pod count cannot be retrieved.",
+                "default": "Uh... pods!?"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "$value"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "$value": {
+                    "type": "string",
+                    "title": "Custom Error Message",
+                    "description": "The message shown when the pod count cannot be retrieved.",
+                    "default": "Uh... pods!?"
+                  },
+                  "$display": {
+                    "enum": [
+                      "normal",
+                      "disabled",
+                      "hidden"
+                    ]
+                  },
+                  "$clusterDefined": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            ]
           }
         }
       },
@@ -1151,10 +1184,42 @@
         "additionalProperties": false,
         "properties": {
           "url": {
-            "type": "string",
-            "format": "uri",
-            "title": "Logo URL",
-            "description": "Enter the URL of your logo."
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "uri",
+                "title": "Logo URL",
+                "description": "Enter the URL of your logo."
+              },
+              {
+                "type": "object",
+                "required": [
+                  "$value"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "$value": {
+                    "type": "string",
+                    "format": "uri",
+                    "title": "Logo URL",
+                    "description": "Enter the URL of your logo."
+                  },
+                  "$display": {
+                    "enum": [
+                      "normal",
+                      "disabled",
+                      "hidden"
+                    ]
+                  },
+                  "$clusterDefined": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            ]
           }
         }
       }

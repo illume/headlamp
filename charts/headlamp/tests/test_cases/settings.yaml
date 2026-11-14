@@ -16,7 +16,9 @@ pluginsManager:
       settings:
         endpoint: https://manager.example.com
         retries: 3
-    - name: second-plugin
-      source: https://artifacthub.io/packages/headlamp/example/second-plugin
+    - name: change-logo
+      source: https://artifacthub.io/packages/headlamp/example/change-logo
       settings:
-        enabled: true
+        url:
+          $value: https://example.com/logo.svg
+          $display: disabled
