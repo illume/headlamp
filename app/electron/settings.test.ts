@@ -20,6 +20,7 @@ import path from 'path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   areDevelopmentPluginsEnabled,
+  getAdminSettingsPath,
   loadSettings,
   saveSettings,
   setDevelopmentPluginsEnabled,
@@ -39,6 +40,23 @@ describe('settings load/save', () => {
     } catch {
       // ignore
     }
+  });
+
+  describe('admin settings path', () => {
+    it('uses standard machine-wide locations on macOS and Windows', () => {
+      expect(getAdminSettingsPath('darwin', {})).toBe(
+        '/Library/Application Support/Headlamp/settings.json'
+      );
+      expect(getAdminSettingsPath('win32', { ProgramData: 'D:\\ProgramData' })).toBe(
+        'D:\\ProgramData\\Headlamp\\settings.json'
+      );
+    });
+
+    it('allows managed launchers to select a settings file', () => {
+      expect(
+        getAdminSettingsPath('win32', { HEADLAMP_ADMIN_SETTINGS: 'D:\\Managed\\headlamp.json' })
+      ).toBe('D:\\Managed\\headlamp.json');
+    });
   });
 
   afterEach(() => {

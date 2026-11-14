@@ -140,6 +140,8 @@ config:
   nodeShellImage: ""
   # -- Default namespace to use when creating node shell pods. If empty, Headlamp uses its built-in default.
   nodeShellNamespace: ""
+  # -- Organization-wide Headlamp and plugin settings. See the admin settings documentation.
+  settings: null
   # tlsCertPath: "/headlamp-cert/headlamp-ca.crt"
   # tlsKeyPath: "/headlamp-cert/headlamp-tls.key"
   clusterInventory:

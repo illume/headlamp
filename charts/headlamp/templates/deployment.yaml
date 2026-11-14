@@ -23,6 +23,7 @@
 {{- $clusterInventoryProviderMountDir := "/etc/cluster-inventory" }}
 {{- $clusterInventoryProviderConfigPath := "config.json" }}
 {{- $readOnlyRootFs := eq (include "headlamp.readOnlyRootFilesystem" .Values) "true" }}
+{{- $adminSettings := .Values.config.settings }}
 {{- $pluginManagerSecurityContext := dict }}
 {{- if .Values.pluginsManager.securityContext }}
 {{- $pluginManagerSecurityContext = .Values.pluginsManager.securityContext }}
@@ -303,6 +304,9 @@ spec:
             {{- with .Values.config.nodeShellNamespace }}
             - "-node-shell-namespace={{ . }}"
             {{- end }}
+            {{- with $adminSettings }}
+            - "-settings=/etc/headlamp/settings.json"
+            {{- end }}
             {{- if and .Values.config.inCluster .Values.config.unsafeUseServiceAccountToken }}
             - "-unsafe-use-service-account-token"
             {{- end }}
@@ -443,8 +447,14 @@ spec:
             failureThreshold: {{ .Values.probes.readinessProbe.failureThreshold | default 3 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          {{- if or .Values.pluginsManager.enabled $clusterInventoryEnabled .Values.volumeMounts $tmpCtx.addMount }}
+          {{- if or .Values.pluginsManager.enabled $clusterInventoryEnabled $adminSettings .Values.volumeMounts $tmpCtx.addMount }}
           volumeMounts:
+            {{- with $adminSettings }}
+            - name: headlamp-settings
+              mountPath: /etc/headlamp/settings.json
+              subPath: settings.json
+              readOnly: true
+            {{- end }}
             {{- if .Values.pluginsManager.enabled }}
             - name: plugins-dir
               mountPath: {{ .Values.config.pluginsDir }}
@@ -548,8 +558,13 @@ spec:
       {{- with .Values.priorityClassName }}
       priorityClassName: {{ . | quote }}
       {{- end }}
-      {{- if or .Values.pluginsManager.enabled $clusterInventoryEnabled .Values.volumes $tmpCtx.addVolume $pluginsTmpCtx.addVolume }}
+      {{- if or .Values.pluginsManager.enabled $clusterInventoryEnabled $adminSettings .Values.volumes $tmpCtx.addVolume $pluginsTmpCtx.addVolume }}
       volumes:
+        {{- with $adminSettings }}
+        - name: headlamp-settings
+          configMap:
+            name: {{ include "headlamp.fullname" $ }}-settings
+        {{- end }}
         {{- if .Values.pluginsManager.enabled }}
         - name: plugins-dir
           emptyDir: {}

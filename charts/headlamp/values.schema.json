@@ -143,24 +143,23 @@
           "volumeMounts": {
             "type": "array",
             "description": "Volume mounts of the init container",
-            "items":
-              {
-                "type": "object",
-                "properties": {
-                  "name": {
-                    "type": "string",
-                    "description": "Name of the volume mount"
-                  },
-                  "mountPath": {
-                    "type": "string",
-                    "description": "Mount path of the volume mount"
-                  },
-                  "readOnly": {
-                    "type": "boolean",
-                    "description": "Read only of the volume mount"
-                  }
+            "items": {
+              "type": "object",
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "description": "Name of the volume mount"
+                },
+                "mountPath": {
+                  "type": "string",
+                  "description": "Mount path of the volume mount"
+                },
+                "readOnly": {
+                  "type": "boolean",
+                  "description": "Read only of the volume mount"
                 }
               }
+            }
           }
         }
       }
@@ -191,6 +190,10 @@
         "nodeShellNamespace": {
           "type": "string",
           "description": "Default namespace to use when creating node shell pods"
+        },
+        "settings": {
+          "type": ["object", "null"],
+          "description": "Organization-wide Headlamp and plugin settings written to the backend admin settings file"
         },
         "unsafeUseServiceAccountToken": {
           "type": "boolean",
@@ -278,7 +281,7 @@
           },
           "additionalProperties": false
         },
-         "tlsCertPath": {
+        "tlsCertPath": {
           "type": "string",
           "description": "Path of certificate file for TLS"
         },
@@ -472,19 +475,43 @@
             "oneOf": [
               {
                 "required": ["secretKeyRef"],
-                "not": { "anyOf": [{ "required": ["configMapKeyRef"] }, { "required": ["fieldRef"] }, { "required": ["resourceFieldRef"] }] }
+                "not": {
+                  "anyOf": [
+                    { "required": ["configMapKeyRef"] },
+                    { "required": ["fieldRef"] },
+                    { "required": ["resourceFieldRef"] }
+                  ]
+                }
               },
               {
                 "required": ["configMapKeyRef"],
-                "not": { "anyOf": [{ "required": ["secretKeyRef"] }, { "required": ["fieldRef"] }, { "required": ["resourceFieldRef"] }] }
+                "not": {
+                  "anyOf": [
+                    { "required": ["secretKeyRef"] },
+                    { "required": ["fieldRef"] },
+                    { "required": ["resourceFieldRef"] }
+                  ]
+                }
               },
               {
                 "required": ["fieldRef"],
-                "not": { "anyOf": [{ "required": ["secretKeyRef"] }, { "required": ["configMapKeyRef"] }, { "required": ["resourceFieldRef"] }] }
+                "not": {
+                  "anyOf": [
+                    { "required": ["secretKeyRef"] },
+                    { "required": ["configMapKeyRef"] },
+                    { "required": ["resourceFieldRef"] }
+                  ]
+                }
               },
               {
                 "required": ["resourceFieldRef"],
-                "not": { "anyOf": [{ "required": ["secretKeyRef"] }, { "required": ["configMapKeyRef"] }, { "required": ["fieldRef"] }] }
+                "not": {
+                  "anyOf": [
+                    { "required": ["secretKeyRef"] },
+                    { "required": ["configMapKeyRef"] },
+                    { "required": ["fieldRef"] }
+                  ]
+                }
               }
             ],
             "additionalProperties": false
@@ -697,10 +724,7 @@
                 "type": "array",
                 "items": {
                   "type": "object",
-                  "required": [
-                    "path",
-                    "type"
-                  ],
+                  "required": ["path", "type"],
                   "properties": {
                     "path": {
                       "type": "string"
@@ -731,23 +755,15 @@
                               },
                               "oneOf": [
                                 {
-                                  "required": [
-                                    "number"
-                                  ],
+                                  "required": ["number"],
                                   "not": {
-                                    "required": [
-                                      "name"
-                                    ]
+                                    "required": ["name"]
                                   }
                                 },
                                 {
-                                  "required": [
-                                    "name"
-                                  ],
+                                  "required": ["name"],
                                   "not": {
-                                    "required": [
-                                      "number"
-                                    ]
+                                    "required": ["number"]
                                   }
                                 }
                               ]
@@ -884,10 +900,7 @@
             },
             {
               "type": "string",
-              "enum": [
-                "IfHealthyBudget",
-                "AlwaysAllow"
-              ]
+              "enum": ["IfHealthyBudget", "AlwaysAllow"]
             }
           ],
           "default": null,

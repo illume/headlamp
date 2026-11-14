@@ -1,0 +1,8 @@
+config:
+  settings:
+    defaults:
+      plugins:
+        example-plugin:
+          endpoint:
+            $value: https://example.com
+            $display: disabled

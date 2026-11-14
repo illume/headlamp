@@ -1,6 +1,6 @@
 ---
-title: "Tutorial 8: Adding Plugin Settings"
-sidebar_label: "8. Adding Plugin Settings"
+title: 'Tutorial 8: Adding Plugin Settings'
+sidebar_label: '8. Adding Plugin Settings'
 sidebar_position: 9
 ---
 
@@ -40,11 +40,11 @@ Headlamp has a built-in **Plugin Settings** page (accessible via **Settings → 
 
 `ConfigStore` gives you three ways to interact with your plugin's config:
 
-| Method | When to use |
-|--------|-------------|
-| `store.get()` | Read config once, outside React (e.g. in a processor function) |
-| `store.set(value)` / `store.update(partial)` | Write or update config (from any context) |
-| `store.useConfig()` | Read config **reactively** inside a React component |
+| Method                                       | When to use                                                    |
+| -------------------------------------------- | -------------------------------------------------------------- |
+| `store.get()`                                | Read config once, outside React (e.g. in a processor function) |
+| `store.set(value)` / `store.update(partial)` | Write or update config (from any context)                      |
+| `store.useConfig()`                          | Read config **reactively** inside a React component            |
 
 ### What You'll Build
 
@@ -172,7 +172,7 @@ export default function HelloHeadlampSettings({ data, onDataChange }: PluginSett
         control={
           <Switch
             checked={config.showImageDetails}
-            onChange={(event) =>
+            onChange={event =>
               onDataChange?.({ ...config, showImageDetails: event.target.checked })
             }
           />
@@ -180,8 +180,8 @@ export default function HelloHeadlampSettings({ data, onDataChange }: PluginSett
         label="Show Image Details button"
       />
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        When enabled, an Image Details button appears in the Pod detail page header
-        showing each container's image and pull policy.
+        When enabled, an Image Details button appears in the Pod detail page header showing each
+        container's image and pull policy.
       </Typography>
     </Box>
   );
@@ -190,11 +190,11 @@ export default function HelloHeadlampSettings({ data, onDataChange }: PluginSett
 
 **How it works:**
 
-| | What it does |
-|------|-------------|
-| `data` prop | Current saved config injected by Headlamp — `undefined` until the user has saved at least once |
-| `{ ...DEFAULT_CONFIG, ...data }` | Merges saved values with defaults so the toggle always has a defined value on first load |
-| `onDataChange?.({ ... })` | Stages the updated config; Headlamp persists it when the user clicks Save |
+|                                  | What it does                                                                                   |
+| -------------------------------- | ---------------------------------------------------------------------------------------------- |
+| `data` prop                      | Current saved config injected by Headlamp — `undefined` until the user has saved at least once |
+| `{ ...DEFAULT_CONFIG, ...data }` | Merges saved values with defaults so the toggle always has a defined value on first load       |
+| `onDataChange?.({ ... })`        | Stages the updated config; Headlamp persists it when the user clicks Save                      |
 
 ![Screenshot of the hello-headlamp settings page showing the "Show Image Details button" toggle switch in the on position](./settings-page.png)
 
@@ -210,10 +210,10 @@ import {
   registerDetailsViewHeaderAction,
   registerDetailsViewSectionsProcessor,
   DefaultDetailsViewSection,
-  registerPluginSettings,        // ← add
+  registerPluginSettings, // ← add
 } from '@kinvolk/headlamp-plugin/lib';
 
-import HelloHeadlampSettings from './settings';  // ← add
+import HelloHeadlampSettings from './settings'; // ← add
 ```
 
 Then add the registration at the bottom of the file:
@@ -226,10 +226,10 @@ registerPluginSettings('hello-headlamp', HelloHeadlampSettings, true);
 
 The third argument (`displaySaveButton`) controls how the component is rendered and who is responsible for saving:
 
-| Value | How component is rendered | Who saves |
-|-------|--------------------------|-----------|
-| `false` | `<Comp />` — no props injected | The plugin calls `store.set()` / `store.update()` directly |
-| `true` | `<Comp data={…} onDataChange={…} />` | Headlamp — shows a Save button and persists config when clicked |
+| Value   | How component is rendered            | Who saves                                                       |
+| ------- | ------------------------------------ | --------------------------------------------------------------- |
+| `false` | `<Comp />` — no props injected       | The plugin calls `store.set()` / `store.update()` directly      |
+| `true`  | `<Comp data={…} onDataChange={…} />` | Headlamp — shows a Save button and persists config when clicked |
 
 Because our settings component uses `data`/`onDataChange` and we want Headlamp to show a Save button, we pass `true`.
 
@@ -348,12 +348,12 @@ The config key passed to the constructor must be **unique across all plugins**. 
 
 ```ts
 // Outside React — reads the current value synchronously
-const config = store.get();   // returns MyConfig | undefined on first load
+const config = store.get(); // returns MyConfig | undefined on first load
 
 // Inside a React component — subscribes to changes
 function MyComponent() {
   const useConf = store.useConfig();
-  const config = useConf();   // re-renders when config changes
+  const config = useConf(); // re-renders when config changes
   // ...
 }
 ```
@@ -390,11 +390,11 @@ Config is persisted to the browser's **local storage**, so values survive page r
 registerPluginSettings(pluginName, SettingsComponent, displaySaveButton);
 ```
 
-| Argument | Type | Description |
-|----------|------|-------------|
-| `pluginName` | `string` | Must match the `name` field in the plugin's `package.json` |
-| `SettingsComponent` | `React.ComponentType` | The component Headlamp renders for settings |
-| `displaySaveButton` | `boolean` | `false` — component rendered without props, plugin saves itself; `true` — Headlamp injects `data`/`onDataChange` and shows a Save button |
+| Argument            | Type                  | Description                                                                                                                              |
+| ------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `pluginName`        | `string`              | Must match the `name` field in the plugin's `package.json`                                                                               |
+| `SettingsComponent` | `React.ComponentType` | The component Headlamp renders for settings                                                                                              |
+| `displaySaveButton` | `boolean`             | `false` — component rendered without props, plugin saves itself; `true` — Headlamp injects `data`/`onDataChange` and shows a Save button |
 
 ### The `displaySaveButton` modes
 
@@ -440,13 +440,58 @@ function Settings({ data, onDataChange }: PluginSettingsDetailsProps) {
 registerPluginSettings('my-plugin', Settings, true);
 ```
 
+### Schema-generated settings
+
+For standard settings, a plugin can declare a JSON Schema directly in its
+`package.json`. Headlamp generates the form, validates it before enabling Save,
+and applies defaults from [admin settings](../../../../installation/admin-settings.md):
+
+```json
+{
+  "headlamp": {
+    "i18n": ["en", "de"],
+    "settingsSchema": {
+      "type": "object",
+      "properties": {
+        "endpoint": {
+          "type": "string",
+          "title": "settings.endpoint",
+          "description": "settings.endpoint.help",
+          "format": "uri",
+          "errorMessage": {
+            "format": "settings.endpoint.invalid"
+          }
+        },
+        "enabled": {
+          "type": "boolean",
+          "title": "settings.enabled",
+          "default": true
+        }
+      },
+      "required": ["endpoint"]
+    }
+  }
+}
+```
+
+`title`, `description`, `enumNames`, and `errorMessage` values are passed through
+the plugin's translation files, so they may be either display text or i18n keys.
+`errorMessage` may be a string or an object keyed by a JSON Schema validation
+keyword such as `required`, `format`, `minimum`, or `pattern`.
+
+The generated form supports string, number, integer, boolean, and string/number
+`enum` properties. JSON Schema constraints are validated with Draft 7 semantics.
+Existing plugins remain compatible: plugins without `headlamp.settingsSchema`
+continue to use `registerPluginSettings`, and a registered custom component
+takes precedence when both are present.
+
 ---
 
 ## Complete Example
 
 Below is the full set of files for this tutorial. The code in `src/index.tsx` shown here is **only the additions/changes** — keep everything else from Tutorial 7 in place.
 
-### src/config.ts *(new file)*
+### src/config.ts _(new file)_
 
 ```ts
 import { ConfigStore } from '@kinvolk/headlamp-plugin/lib';
@@ -466,7 +511,7 @@ export function getConfig(): HelloHeadlampConfig {
 }
 ```
 
-### src/settings.tsx *(new file)*
+### src/settings.tsx _(new file)_
 
 ```tsx
 import { FormControlLabel, Switch, Typography, Box } from '@mui/material';
@@ -485,7 +530,7 @@ export default function HelloHeadlampSettings({ data, onDataChange }: PluginSett
         control={
           <Switch
             checked={config.showImageDetails}
-            onChange={(event) =>
+            onChange={event =>
               onDataChange?.({ ...config, showImageDetails: event.target.checked })
             }
           />
@@ -493,8 +538,8 @@ export default function HelloHeadlampSettings({ data, onDataChange }: PluginSett
         label="Show Image Details button"
       />
       <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-        When enabled, an Image Details button appears in the Pod detail page header
-        showing each container's image and pull policy.
+        When enabled, an Image Details button appears in the Pod detail page header showing each
+        container's image and pull policy.
       </Typography>
     </Box>
   );
@@ -609,6 +654,7 @@ You've learned how to make your plugin configurable:
 - ✅ Applying defaults to handle first-load before the user visits settings
 
 **Coming up in Tutorial 9: Applying Custom Themes**
+
 - Registering a custom MUI theme for your plugin
 - Supporting light and dark mode
 - Overriding colour tokens and typography
@@ -626,15 +672,15 @@ import { ConfigStore } from '@kinvolk/headlamp-plugin/lib';
 const store = new ConfigStore<MyConfig>('my-plugin');
 
 // Write
-store.set({ key: 'value' });          // Replace entire config
-store.update({ key: 'value' });       // Merge partial update
+store.set({ key: 'value' }); // Replace entire config
+store.update({ key: 'value' }); // Merge partial update
 
 // Read (outside React)
-const config = store.get();           // undefined until first save
+const config = store.get(); // undefined until first save
 
 // Read (inside React component) — reactive
 const useConf = store.useConfig();
-const config = useConf();             // re-renders on change
+const config = useConf(); // re-renders on change
 ```
 
 ### registerPluginSettings
@@ -656,10 +702,7 @@ import { PluginSettingsDetailsProps } from '@kinvolk/headlamp-plugin/lib';
 
 function MySettings({ data, onDataChange }: PluginSettingsDetailsProps) {
   return (
-    <input
-      value={data?.myKey || ''}
-      onChange={e => onDataChange?.({ myKey: e.target.value })}
-    />
+    <input value={data?.myKey || ''} onChange={e => onDataChange?.({ myKey: e.target.value })} />
   );
 }
 ```

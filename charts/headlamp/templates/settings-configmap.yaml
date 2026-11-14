@@ -1,0 +1,11 @@
+{{- with .Values.config.settings }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "headlamp.fullname" $ }}-settings
+  namespace: {{ include "headlamp.namespace" $ }}
+  labels:
+    {{- include "headlamp.labels" $ | nindent 4 }}
+data:
+  settings.json: {{ toJson . | quote }}
+{{- end }}

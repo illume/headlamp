@@ -21,6 +21,25 @@ import path from 'path';
 export const SETTINGS_PATH = path.join(app?.getPath('userData') || 'testing', 'settings.json');
 const DEVELOPMENT_PLUGINS_SETTING = 'developmentPlugins';
 
+export function getAdminSettingsPath(
+  platform: NodeJS.Platform = process.platform,
+  env: NodeJS.ProcessEnv = process.env
+): string | undefined {
+  if (env.HEADLAMP_ADMIN_SETTINGS) {
+    return env.HEADLAMP_ADMIN_SETTINGS;
+  }
+  if (platform === 'darwin') {
+    return '/Library/Application Support/Headlamp/settings.json';
+  }
+  if (platform === 'win32') {
+    return path.win32.join(env.ProgramData || 'C:\\ProgramData', 'Headlamp', 'settings.json');
+  }
+  if (platform === 'linux') {
+    return '/etc/headlamp/settings.json';
+  }
+  return undefined;
+}
+
 function asSettingsObject(value: unknown): Record<string, any> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, any>)

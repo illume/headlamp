@@ -34,6 +34,7 @@ import ActionButton from '../../common/ActionButton';
 import { ConfirmDialog } from '../../common/Dialog';
 import ErrorBoundary from '../../common/ErrorBoundary';
 import { SectionBox } from '../../common/SectionBox';
+import PluginSettingsSchemaForm from './PluginSettingsSchemaForm';
 import { usePluginDelete } from './usePluginDelete';
 
 // Helper function to open plugin folder in file explorer (Electron only)
@@ -159,8 +160,16 @@ export interface PluginSettingsDetailsPureProps {
 export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps) {
   const { config, plugin, onSave, onDelete } = props;
   const { t } = useTranslation(['translation']);
+  const settingsSchema = plugin.headlamp?.settingsSchema;
+  const hasCustomSettings =
+    isValidElement(plugin.settingsComponent) || typeof plugin.settingsComponent === 'function';
+  const usesSchemaForm = Boolean(settingsSchema && !hasCustomSettings);
   const [data, setData] = useState<{ [key: string]: any } | undefined>(config);
-  const enableSaveButton = useMemo(() => !_.isEqual(config, data), [config, data]);
+  const [isValid, setIsValid] = useState(!usesSchemaForm);
+  const enableSaveButton = useMemo(
+    () => !_.isEqual(config, data) && isValid,
+    [config, data, isValid]
+  );
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const history = useHistory();
   const [author, name] = plugin.name.includes('@')
@@ -203,6 +212,16 @@ export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps)
       } else {
         component = <Comp />;
       }
+    } else if (usesSchemaForm) {
+      component = (
+        <PluginSettingsSchemaForm
+          pluginName={plugin.name}
+          schema={settingsSchema!}
+          data={data ?? {}}
+          onDataChange={onDataChange}
+          onValidityChange={setIsValid}
+        />
+      );
     } else {
       component = null;
     }
@@ -322,22 +341,23 @@ export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps)
           <ErrorBoundary>{component}</ErrorBoundary>
         </ScrollableBox>
       </SectionBox>
-      {plugin.isLoaded !== false && plugin.displaySettingsComponentWithSaveButton && (
-        <Box py={0}>
-          <Stack
-            direction="row"
-            spacing={2}
-            justifyContent="flex-start"
-            alignItems="center"
-            sx={{ borderTop: '2px solid', borderColor: 'divider', padding: '10px' }}
-          >
-            <Button variant="contained" disabled={!enableSaveButton} onClick={handleSave}>
-              {t('translation|Save')}
-            </Button>
-            <Button onClick={handleCancel}>{t('translation|Cancel')}</Button>
-          </Stack>
-        </Box>
-      )}
+      {plugin.isLoaded !== false &&
+        (plugin.displaySettingsComponentWithSaveButton || usesSchemaForm) && (
+          <Box py={0}>
+            <Stack
+              direction="row"
+              spacing={2}
+              justifyContent="flex-start"
+              alignItems="center"
+              sx={{ borderTop: '2px solid', borderColor: 'divider', padding: '10px' }}
+            >
+              <Button variant="contained" disabled={!enableSaveButton} onClick={handleSave}>
+                {t('translation|Save')}
+              </Button>
+              <Button onClick={handleCancel}>{t('translation|Cancel')}</Button>
+            </Stack>
+          </Box>
+        )}
     </>
   );
 }

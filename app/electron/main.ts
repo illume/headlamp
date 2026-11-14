@@ -83,7 +83,12 @@ import {
 } from './runCmd';
 import { pluginConfigDirName } from './runtimeProductIdentity';
 import { isTrustedDocumentUrl, setupSecureStorageHandlers } from './secureStorage';
-import { areDevelopmentPluginsEnabled, loadSettings, SETTINGS_PATH } from './settings';
+import {
+  areDevelopmentPluginsEnabled,
+  getAdminSettingsPath,
+  loadSettings,
+  SETTINGS_PATH,
+} from './settings';
 import { getShellEnv } from './shellEnv';
 import { shouldCheckForAppUpdates } from './shouldCheckForAppUpdates';
 import {
@@ -892,6 +897,10 @@ async function startServer(
   }
   if (args.watchPluginsChanges !== undefined) {
     serverArgs.push(`--watch-plugins-changes=${args.watchPluginsChanges}`);
+  }
+  const adminSettingsPath = getAdminSettingsPath();
+  if (adminSettingsPath && fs.existsSync(adminSettingsPath)) {
+    serverArgs.push('--settings', adminSettingsPath);
   }
 
   const bundledPlugins = path.join(process.resourcesPath, '.plugins');
