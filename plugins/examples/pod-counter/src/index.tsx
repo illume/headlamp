@@ -17,6 +17,7 @@
 import {
   DefaultAppBarAction,
   K8s,
+  Settings as PluginSettings,
   registerAppBarAction,
   registerPluginSettings,
 } from '@kinvolk/headlamp-plugin/lib';
@@ -64,6 +65,8 @@ registerAppBarAction(function reorderNotifications({ actions }) {
  */
 function Settings(props) {
   const { data, onDataChange } = props;
+  const hidden = PluginSettings.isHidden('@kinvolk/headlamp-pod-counter', 'errorMessage');
+  const disabled = PluginSettings.isDisabled('@kinvolk/headlamp-pod-counter', 'errorMessage');
 
   /**
    * Handles changes to the error message input field by invoking the onDataChange callback
@@ -75,12 +78,15 @@ function Settings(props) {
     onDataChange?.({ ...data, errorMessage: event.target.value });
   };
 
-  const settingsRows = [
+  const settingsRows = hidden
+    ? []
+    : [
     {
       name: 'Custom Error Message',
       value: (
         <TextField
           fullWidth
+          disabled={disabled}
           helperText="Enter the custom error message to display when the pod count cannot be retrieved."
           value={data?.errorMessage ?? 'Uh... pods!?'}
           onChange={handleChange}
@@ -88,8 +94,8 @@ function Settings(props) {
           inputProps={{ 'aria-label': 'Custom Error Message' }}
         />
       ),
-    },
-  ];
+        },
+      ];
 
   return (
     <Box width={'80%'}>

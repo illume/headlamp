@@ -17,14 +17,15 @@
 import Alert from '@mui/material/Alert';
 import Checkbox from '@mui/material/Checkbox';
 import FormControlLabel from '@mui/material/FormControlLabel';
+import FormHelperText from '@mui/material/FormHelperText';
 import MenuItem from '@mui/material/MenuItem';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Ajv, { ErrorObject } from 'ajv';
 import addFormats from 'ajv-formats';
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../../../plugin/pluginI18n';
-import { useTypedSelector } from '../../../redux/hooks';
+import { AdminSettingsState } from '../../../settings/adminSettingsSlice';
 import { PluginSettingsAPI } from '../../../settings/pluginSettings';
 
 const ajv = new Ajv({ allErrors: true, strict: false });
@@ -34,6 +35,7 @@ interface PluginSettingsSchemaFormProps {
   pluginName: string;
   schema: Record<string, any>;
   data: Record<string, any>;
+  adminSettings: AdminSettingsState;
   onDataChange: (data: Record<string, any>) => void;
   onValidityChange: (valid: boolean) => void;
 }
@@ -56,23 +58,28 @@ function schemaErrorMessage(schema: Record<string, any>, error: ErrorObject): st
 }
 
 export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaFormProps) {
-  const { pluginName, schema, data, onDataChange, onValidityChange } = props;
+  const { pluginName, schema, data, adminSettings, onDataChange, onValidityChange } = props;
   const { t } = useTranslation(pluginName);
-  useTypedSelector(state => state.adminSettings);
+  const [clearedFields, setClearedFields] = useState<Set<string>>(() => new Set());
   const effectiveData = useMemo(() => {
     const knownValues = Object.fromEntries(
       Object.entries<Record<string, any>>(schema.properties ?? {}).flatMap(([name, field]) => {
         const adminControlled =
           PluginSettingsAPI.isHidden(pluginName, name) ||
           PluginSettingsAPI.isDisabled(pluginName, name);
+        if (!adminControlled && clearedFields.has(name)) {
+          return [];
+        }
         const value = adminControlled
           ? PluginSettingsAPI.get(pluginName, name)
-          : data[name] ?? PluginSettingsAPI.get(pluginName, name) ?? field.default;
+          : Object.hasOwn(data, name)
+          ? data[name]
+          : PluginSettingsAPI.getAdminDefault(pluginName, name) ?? field.default;
         return value === undefined ? [] : [[name, value]];
       })
     );
     return schema.additionalProperties === false ? knownValues : { ...data, ...knownValues };
-  }, [data, pluginName, schema]);
+  }, [adminSettings, clearedFields, data, pluginName, schema]);
   const validation = useMemo(() => {
     try {
       const validate = ajv.compile(schema);
@@ -112,8 +119,14 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
     const next = { ...data };
     if (value === undefined) {
       delete next[name];
+      setClearedFields(fields => new Set(fields).add(name));
     } else {
       next[name] = value;
+      setClearedFields(fields => {
+        const nextFields = new Set(fields);
+        nextFields.delete(name);
+        return nextFields;
+      });
     }
     onDataChange(next);
   }
@@ -130,17 +143,23 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
         const disabled = PluginSettingsAPI.isDisabled(pluginName, name);
         if (field.type === 'boolean') {
           return (
-            <FormControlLabel
-              key={name}
-              control={
-                <Checkbox
-                  checked={effectiveData[name] ?? false}
-                  disabled={disabled}
-                  onChange={event => update(name, event.target.checked)}
-                />
-              }
-              label={label}
-            />
+            <Stack key={name}>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={effectiveData[name] ?? false}
+                    disabled={disabled}
+                    onChange={event => update(name, event.target.checked)}
+                  />
+                }
+                label={label}
+              />
+              {(error || field.description) && (
+                <FormHelperText error={Boolean(error)}>
+                  {error ?? t(field.description)}
+                </FormHelperText>
+              )}
+            </Stack>
           );
         }
 
@@ -163,7 +182,20 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
             }}
             onChange={event => {
               const value = event.target.value;
-              update(name, isNumber ? (value === '' ? undefined : Number(value)) : value);
+              const optionalEmptyString =
+                field.type === 'string' &&
+                !schema.required?.includes(name) &&
+                !ajv.validate(field, '');
+              update(
+                name,
+                isNumber
+                  ? value === ''
+                    ? undefined
+                    : Number(value)
+                  : value === '' && optionalEmptyString
+                  ? undefined
+                  : value
+              );
             }}
           >
             {field.enum?.map((option: string | number) => (
@@ -174,7 +206,18 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
           </TextField>
         );
       })}
-      {errorsByField[''] && <Alert severity="error">{errorsByField['']}</Alert>}
+      {Object.entries(errorsByField)
+        .filter(
+          ([name]) =>
+            name === '' ||
+            PluginSettingsAPI.isHidden(pluginName, name) ||
+            !(name in (schema.properties ?? {}))
+        )
+        .map(([name, message]) => (
+          <Alert key={name || 'schema'} severity="error">
+            {message}
+          </Alert>
+        ))}
     </Stack>
   );
 }

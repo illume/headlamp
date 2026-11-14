@@ -28,6 +28,7 @@ test('adds deterministic conditional schemas for known plugins', () => {
       headlamp: {
         settingsSchema: {
           type: 'object',
+          required: ['endpoint'],
           properties: { endpoint: { type: 'string' } },
         },
       },
@@ -37,6 +38,7 @@ test('adds deterministic conditional schemas for known plugins', () => {
   const result = updateValuesSchema(chartSchema, packages);
 
   const knownSchema = result.definitions.knownPluginSettings.plugin_93457ce1c3d1;
+  assert.equal(knownSchema.required, undefined);
   assert.deepEqual(knownSchema.properties.endpoint.anyOf[0], { type: 'string' });
   assert.deepEqual(knownSchema.properties.endpoint.anyOf[1].properties.$value, {
     type: 'string',

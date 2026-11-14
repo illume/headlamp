@@ -28,6 +28,10 @@ import { ConfigStore } from '../../../plugin/configStore';
 import { PluginInfo } from '../../../plugin/pluginsSlice';
 import { HeadlampEventType, useEventCallback } from '../../../redux/headlampEventSlice';
 import { useTypedSelector } from '../../../redux/hooks';
+import {
+  AdminSettingsState,
+  initialAdminSettingsState,
+} from '../../../settings/adminSettingsSlice';
 import { PluginSettingsAPI } from '../../../settings/pluginSettings';
 import NotFoundComponent from '../../404';
 import { SectionHeader } from '../../common';
@@ -73,6 +77,7 @@ const PluginSettingsDetailsInitializer = (props: { plugin: PluginInfo }) => {
   const store = new ConfigStore(plugin.name);
   const pluginConf = store.useConfig();
   const config = pluginConf() as { [key: string]: any };
+  const adminSettings = useTypedSelector(state => state.adminSettings);
   const deletePluginAction = usePluginDelete();
   const dispatchHeadlampEvent = useEventCallback(HeadlampEventType.PLUGIN_DETAILS_VIEW);
 
@@ -97,6 +102,7 @@ const PluginSettingsDetailsInitializer = (props: { plugin: PluginInfo }) => {
       plugin={plugin}
       onSave={handleSave}
       onDelete={handleDeleteConfirm}
+      adminSettings={adminSettings}
     />
   );
 };
@@ -156,10 +162,11 @@ export interface PluginSettingsDetailsPureProps {
   plugin: PluginInfo;
   onSave?: (data: { [key: string]: any }) => void;
   onDelete: () => void;
+  adminSettings?: AdminSettingsState;
 }
 
 export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps) {
-  const { config, plugin, onSave, onDelete } = props;
+  const { config, plugin, onSave, onDelete, adminSettings = initialAdminSettingsState } = props;
   const { t } = useTranslation(['translation']);
   const settingsSchema = plugin.headlamp?.settingsSchema;
   const hasCustomSettings =
@@ -167,7 +174,6 @@ export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps)
   const usesSchemaForm = Boolean(settingsSchema && !hasCustomSettings);
   const [data, setData] = useState<{ [key: string]: any } | undefined>(config);
   const [isValid, setIsValid] = useState(!usesSchemaForm);
-  const adminSettings = useTypedSelector(state => state.adminSettings);
   const dataToSave = useMemo(() => {
     if (!usesSchemaForm) {
       return data;
@@ -188,7 +194,7 @@ export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps)
       }
       if (
         result[key] === undefined &&
-        PluginSettingsAPI.get(plugin.name, key) === undefined &&
+        PluginSettingsAPI.getAdminDefault(plugin.name, key) === undefined &&
         field.default !== undefined
       ) {
         result[key] = field.default;
@@ -248,6 +254,7 @@ export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps)
           pluginName={plugin.name}
           schema={settingsSchema!}
           data={data ?? {}}
+          adminSettings={adminSettings}
           onDataChange={onDataChange}
           onValidityChange={setIsValid}
         />

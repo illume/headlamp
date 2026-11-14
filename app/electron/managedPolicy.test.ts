@@ -29,6 +29,7 @@ function temporaryDirectory(): string {
 }
 
 afterEach(() => {
+  vi.restoreAllMocks();
   temporaryDirectories
     .splice(0)
     .forEach(directory => fs.rmSync(directory, { recursive: true, force: true }));
@@ -122,6 +123,36 @@ describe('managed desktop policy', () => {
 
     expect(policy.source).toBe('environment');
     expect(policy.adminSettingsPath).toBe(filename);
+  });
+
+  it('does not double-decode a JSON string in a policy file', () => {
+    const directory = temporaryDirectory();
+    const filename = path.join(directory, 'string.json');
+    fs.writeFileSync(filename, '"{}"');
+
+    const policy = loadManagedPolicy({
+      platform: 'linux',
+      env: { HEADLAMP_ADMIN_SETTINGS: filename },
+      userDataPath: directory,
+    });
+
+    expect(policy.adminSettingsPath).toBe(filename);
+  });
+
+  it('does not hide unexpected policy file access failures', () => {
+    const filename = path.join(temporaryDirectory(), 'policy.json');
+    const error = Object.assign(new Error('access denied'), { code: 'EACCES' });
+    vi.spyOn(fs, 'readFileSync').mockImplementation(() => {
+      throw error;
+    });
+
+    expect(() =>
+      loadManagedPolicy({
+        platform: 'linux',
+        env: { HEADLAMP_ADMIN_SETTINGS: filename },
+        userDataPath: temporaryDirectory(),
+      })
+    ).toThrow('access denied');
   });
 
   it('keeps backend policy out of the browser admin settings document', () => {

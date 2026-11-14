@@ -16,8 +16,8 @@
 
 import store from '../redux/stores/store';
 import type { SettingSource } from './adminSettingsSlice';
-import { getNestedValue, resolveSettingValue } from './settingsResolution';
 import { joinSettingsPath } from './settingsPath';
+import { getNestedValue, resolveSettingValue } from './settingsResolution';
 
 /**
  * Read-only access to admin- and cluster-supplied configuration delivered to a

@@ -191,6 +191,46 @@ describe('PluginSettingsDetails metadata', () => {
       })
     );
   });
+
+  it('unsets an optional constrained string and restores a cleared numeric default', async () => {
+    const onSave = vi.fn();
+    render(
+      <TestContext>
+        <ThemeProvider theme={theme}>
+          <PluginSettingsDetailsPure
+            config={{ endpoint: 'https://example.com', retries: 5 }}
+            plugin={{
+              ...plugin,
+              headlamp: {
+                settingsSchema: {
+                  type: 'object',
+                  additionalProperties: false,
+                  properties: {
+                    endpoint: { type: 'string', format: 'uri', title: 'Endpoint' },
+                    retries: { type: 'integer', default: 3, title: 'Retries' },
+                    enabled: {
+                      type: 'boolean',
+                      title: 'Enabled',
+                      description: 'Enable this integration',
+                    },
+                  },
+                },
+              },
+            }}
+            onSave={onSave}
+            onDelete={() => {}}
+          />
+        </ThemeProvider>
+      </TestContext>
+    );
+
+    expect(screen.getByText('Enable this integration')).toBeVisible();
+    await userEvent.clear(screen.getByRole('textbox', { name: 'Endpoint' }));
+    await userEvent.clear(screen.getByRole('spinbutton', { name: 'Retries' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(onSave).toHaveBeenCalledWith({ retries: 3 });
+  });
 });
 
 describe('PluginSettingsDetails events', () => {

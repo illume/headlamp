@@ -41,6 +41,7 @@ export function assertSettingsSchema(schema, source) {
 
 function adminSettingsSchema(schema) {
   const result = structuredClone(schema);
+  delete result.required;
   result.properties = Object.fromEntries(
     Object.entries(schema.properties).map(([name, property]) => [
       name,

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { ConfigStore } from '@kinvolk/headlamp-plugin/lib';
+import { ConfigStore, Settings as PluginSettings } from '@kinvolk/headlamp-plugin/lib';
 import { NameValueTable } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import Box from '@mui/material/Box';
 import TextField from '@mui/material/TextField';
@@ -35,9 +35,17 @@ import { useEffect, useState } from 'react';
  * @param {number} [props.delay=1000] - The delay in milliseconds before the onSave callback is invoked after the user stops typing.
  * @param {string} [props.helperText=''] - Optional helper text to display below the input.
  * @param {string} [props.ariaLabel=''] - Optional accessibility label for the input.
+ * @param {boolean} [props.disabled=false] - Whether the input is read-only.
  * @returns {JSX.Element} The AutoSaveInput component.
  */
-function AutoSaveInput({ onSave, defaultValue = '', delay = 1000, helperText = '', ariaLabel = '' }) {
+function AutoSaveInput({
+  onSave,
+  defaultValue = '',
+  delay = 1000,
+  helperText = '',
+  ariaLabel = '',
+  disabled = false,
+}) {
   const [value, setValue] = useState(defaultValue);
   const [timer, setTimer] = useState(null);
 
@@ -65,6 +73,7 @@ function AutoSaveInput({ onSave, defaultValue = '', delay = 1000, helperText = '
   return (
     <TextField
       fullWidth
+      disabled={disabled}
       InputProps={{ style: { borderBottom: '1px solid rgba(0, 0, 0, 0.42)' } }}
       InputLabelProps={{
         shrink: true,
@@ -93,8 +102,12 @@ export const store = new ConfigStore<pluginConfig>('change-logo');
  * @returns {JSX.Element} The rendered settings component with configuration options.
  */
 export default function Settings() {
+  if (PluginSettings.isHidden('change-logo', 'url')) {
+    return null;
+  }
   // Retrieve initial configuration from the store
   const config = store.get();
+  const disabled = PluginSettings.isDisabled('change-logo', 'url');
   // State to manage the current configuration within the component
   const [currentConfig, setCurrentConfig] = useState(config);
 
@@ -119,7 +132,8 @@ export default function Settings() {
       name: 'Logo URL',
       value: (
         <AutoSaveInput
-          defaultValue={currentConfig?.url}
+          defaultValue={disabled ? PluginSettings.get('change-logo', 'url') : currentConfig?.url}
+          disabled={disabled}
           onSave={handleSave}
           delay={1000}
           helperText={'Enter the URL of your logo.'}

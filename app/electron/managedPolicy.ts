@@ -53,11 +53,12 @@ const BACKEND_POLICY_TYPES: Record<string, 'boolean' | 'number' | 'string'> = {
   'watch-plugins-changes': 'boolean',
 };
 
-function parsePolicy(raw: string): Record<string, any> | undefined {
+function parsePolicy(raw: string, decodeManagedString = false): Record<string, any> | undefined {
   try {
-    const trimmed = raw.trim();
-    const decoded = trimmed.startsWith('"') ? JSON.parse(trimmed) : trimmed;
-    const parsed = JSON.parse(decoded);
+    let parsed = JSON.parse(raw.trim());
+    if (decodeManagedString && typeof parsed === 'string') {
+      parsed = JSON.parse(parsed);
+    }
     return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : undefined;
   } catch {
     return undefined;
@@ -80,7 +81,7 @@ function readWindowsPolicy(run: typeof execFileSync): Record<string, any> | unde
   if (!match) {
     return undefined;
   }
-  const policy = parsePolicy(match[1]);
+  const policy = parsePolicy(match[1], true);
   if (!policy) {
     throw new Error('Windows Headlamp PolicyJSON must contain a JSON object');
   }
@@ -98,18 +99,24 @@ function readMacOSPolicy(run: typeof execFileSync): Record<string, any> | undefi
   } catch {
     return undefined;
   }
-  const policy = parsePolicy(output);
+  const policy = parsePolicy(output, true);
   if (!policy) {
     throw new Error('macOS Headlamp PolicyJSON must contain a JSON object');
   }
   return policy;
 }
 
-function readPolicyFile(filename: string): Record<string, any> | undefined {
+function readPolicyFile(filename: string): {
+  exists: boolean;
+  policy?: Record<string, any>;
+} {
   try {
-    return parsePolicy(fs.readFileSync(filename, 'utf8'));
-  } catch {
-    return undefined;
+    return { exists: true, policy: parsePolicy(fs.readFileSync(filename, 'utf8')) };
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+      return { exists: false };
+    }
+    throw error;
   }
 }
 
@@ -121,7 +128,8 @@ function writeAdminSettings(
   if (sourcePath) {
     return sourcePath;
   }
-  const { backend: _backend, ...adminSettings } = policy;
+  const adminSettings = { ...policy };
+  delete adminSettings.backend;
   if (Object.keys(adminSettings).length === 0) {
     return undefined;
   }
@@ -141,8 +149,11 @@ export function loadManagedPolicy(options: {
   const env = options.env ?? process.env;
   const run = options.run ?? execFileSync;
   const explicitPath = env.HEADLAMP_ADMIN_SETTINGS;
-  const hasExplicitFile = Boolean(explicitPath && fs.existsSync(explicitPath));
-  const explicitPolicy = hasExplicitFile ? readPolicyFile(explicitPath!) : undefined;
+  const explicitResult = explicitPath
+    ? readPolicyFile(explicitPath)
+    : { exists: false, policy: undefined };
+  const hasExplicitFile = explicitResult.exists;
+  const explicitPolicy = explicitResult.policy;
   let policy = hasExplicitFile ? explicitPolicy ?? {} : undefined;
   let source: PolicySource | undefined = hasExplicitFile ? 'environment' : undefined;
   let invalidSourcePath = hasExplicitFile && !explicitPolicy ? explicitPath : undefined;
@@ -160,8 +171,12 @@ export function loadManagedPolicy(options: {
       ...env,
       HEADLAMP_ADMIN_SETTINGS: undefined,
     });
-    if (managedPath && fs.existsSync(managedPath)) {
-      const filePolicy = readPolicyFile(managedPath);
+    if (managedPath) {
+      const fileResult = readPolicyFile(managedPath);
+      const filePolicy = fileResult.policy;
+      if (!fileResult.exists) {
+        return { backend: {} };
+      }
       policy = filePolicy ?? {};
       source = 'managed-file';
       invalidSourcePath = filePolicy ? undefined : managedPath;

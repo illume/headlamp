@@ -276,6 +276,7 @@ func loadAdminSettings(path string) (json.RawMessage, error) {
 	if !json.Valid(data) {
 		return nil, errors.New("settings file is not valid JSON")
 	}
+
 	var settings map[string]any
 	if err := json.Unmarshal(data, &settings); err != nil || settings == nil {
 		return nil, errors.New("settings file must contain a JSON object")

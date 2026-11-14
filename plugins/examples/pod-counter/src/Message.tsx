@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { ConfigStore } from '@kinvolk/headlamp-plugin/lib';
+import { ConfigStore, Settings } from '@kinvolk/headlamp-plugin/lib';
 import { Typography } from '@mui/material';
 
 export interface MessageProps {
@@ -40,7 +40,11 @@ export default function Message({ msg, error }: MessageProps) {
 
   return (
     <Typography color="textPrimary" sx={{ fontStyle: 'italic' }}>
-      {!error ? `# Pods: ${msg}` : conf?.errorMessage ? conf?.errorMessage : 'Uh, pods!?'}
+      {!error
+        ? `# Pods: ${msg}`
+        : Settings.get('@kinvolk/headlamp-pod-counter', 'errorMessage') ??
+          conf?.errorMessage ??
+          'Uh, pods!?'}
     </Typography>
   );
 }

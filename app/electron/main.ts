@@ -58,6 +58,11 @@ import {
   readLegalDocument,
 } from './legal-documents';
 import { runListPluginsCommand } from './list-plugins';
+import {
+  applyManagedBackendPolicy,
+  loadManagedPolicy,
+  logPolicyDiagnostics,
+} from './managedPolicy';
 import MCPClient from './mcp/MCPClient';
 import { AppMenu, menusToTemplate } from './menu';
 import { filterUserOwnedPids } from './ownedProcesses';
@@ -83,11 +88,6 @@ import {
 } from './runCmd';
 import { pluginConfigDirName } from './runtimeProductIdentity';
 import { isTrustedDocumentUrl, setupSecureStorageHandlers } from './secureStorage';
-import {
-  applyManagedBackendPolicy,
-  loadManagedPolicy,
-  logPolicyDiagnostics,
-} from './managedPolicy';
 import { areDevelopmentPluginsEnabled, loadSettings, SETTINGS_PATH } from './settings';
 import { getShellEnv } from './shellEnv';
 import { shouldCheckForAppUpdates } from './shouldCheckForAppUpdates';

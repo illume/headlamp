@@ -206,4 +206,27 @@ describe('updateSettingsPackages tests', () => {
     expect(updatedSettingsPlugins[0].isEnabled).toBe(false);
     expect(updatedSettingsPlugins[0]).not.toHaveProperty('isDevelopmentModeBlocked');
   });
+
+  test('refreshes schema metadata without changing the user enablement choice', () => {
+    const settingsPlugin: PluginInfo = {
+      name: 'ourplugin1',
+      description: 'package description1',
+      homepage: 'https://example.com/1',
+      type: 'user',
+      version: '1.0.0',
+      isEnabled: false,
+      headlamp: { settingsSchema: { type: 'object', properties: {} } },
+    };
+    const backendPlugin: PluginInfo = {
+      ...settingsPlugin,
+      headlamp: {
+        settingsSchema: { type: 'object', properties: { endpoint: { type: 'string' } } },
+      },
+    };
+
+    const [updated] = updateSettingsPackages([backendPlugin], [settingsPlugin]);
+
+    expect(updated.headlamp).toEqual(backendPlugin.headlamp);
+    expect(updated.isEnabled).toBe(false);
+  });
 });

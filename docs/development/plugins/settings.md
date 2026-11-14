@@ -76,6 +76,8 @@ Read the effective value with the package name and, for cluster-aware settings,
 the cluster name:
 
 ```ts
+import { Settings } from '@kinvolk/headlamp-plugin/lib';
+
 const endpoint =
   Settings.get('@example/metrics', 'endpoint', clusterName) ??
   'https://default.example.com';
