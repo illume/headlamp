@@ -105,6 +105,7 @@ describe('PluginSettingsDetails metadata', () => {
     await userEvent.click(save);
 
     expect(onSave).toHaveBeenCalledWith({
+      enabled: true,
       endpoint: 'https://example.com',
     });
   });

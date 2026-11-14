@@ -91,9 +91,14 @@ spec:
       {{- include "headlamp.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- if or .Values.podAnnotations $adminSettings }}
       annotations:
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with $adminSettings }}
+        checksum/settings: {{ toJson . | sha256sum }}
+        {{- end }}
       {{- end }}
       labels:
         {{- include "headlamp.selectorLabels" . | nindent 8 }}

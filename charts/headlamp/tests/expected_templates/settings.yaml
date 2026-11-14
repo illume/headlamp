@@ -103,6 +103,8 @@ spec:
       app.kubernetes.io/instance: headlamp
   template:
     metadata:
+      annotations:
+        checksum/settings: f1910183d41f99c29a8c4b6c15e7b2d87e6bf6f7cd350e108a3181b4aa1472dd
       labels:
         app.kubernetes.io/name: headlamp
         app.kubernetes.io/instance: headlamp

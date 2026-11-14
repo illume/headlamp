@@ -28,6 +28,7 @@ import { ConfigStore } from '../../../plugin/configStore';
 import { PluginInfo } from '../../../plugin/pluginsSlice';
 import { HeadlampEventType, useEventCallback } from '../../../redux/headlampEventSlice';
 import { useTypedSelector } from '../../../redux/hooks';
+import { PluginSettingsAPI } from '../../../settings/pluginSettings';
 import NotFoundComponent from '../../404';
 import { SectionHeader } from '../../common';
 import ActionButton from '../../common/ActionButton';
@@ -166,9 +167,28 @@ export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps)
   const usesSchemaForm = Boolean(settingsSchema && !hasCustomSettings);
   const [data, setData] = useState<{ [key: string]: any } | undefined>(config);
   const [isValid, setIsValid] = useState(!usesSchemaForm);
+  const adminSettings = useTypedSelector(state => state.adminSettings);
+  const dataToSave = useMemo(() => {
+    if (!usesSchemaForm) {
+      return data;
+    }
+    const result = { ...(data ?? {}) };
+    for (const [key, field] of Object.entries<Record<string, any>>(
+      settingsSchema?.properties ?? {}
+    )) {
+      if (
+        result[key] === undefined &&
+        PluginSettingsAPI.get(plugin.name, key) === undefined &&
+        field.default !== undefined
+      ) {
+        result[key] = field.default;
+      }
+    }
+    return result;
+  }, [adminSettings, data, plugin.name, settingsSchema, usesSchemaForm]);
   const enableSaveButton = useMemo(
-    () => !_.isEqual(config, data) && isValid,
-    [config, data, isValid]
+    () => !_.isEqual(config, dataToSave) && isValid,
+    [config, dataToSave, isValid]
   );
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const history = useHistory();
@@ -181,8 +201,8 @@ export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps)
   }
 
   async function handleSave() {
-    if (onSave && data) {
-      await onSave(data);
+    if (onSave && dataToSave) {
+      await onSave(dataToSave);
       history.push('/settings/plugins');
     }
   }
