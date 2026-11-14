@@ -15,6 +15,7 @@
  */
 
 import type { AdminSettingsState, DisplayMode, SettingsSource } from './adminSettingsSlice';
+import { escapeSettingsPathSegment } from './settingsPath';
 
 const DEFAULT_SOURCE_TYPE = 'configmap';
 const DEFAULT_NAMESPACE = 'headlamp-tools';
@@ -74,7 +75,8 @@ function unwrapTree(
   clusterDefined: Record<string, string[]>
 ) {
   for (const key of Object.keys(obj)) {
-    const path = prefix ? `${prefix}.${key}` : key;
+    const escapedKey = escapeSettingsPathSegment(key);
+    const path = prefix ? `${prefix}.${escapedKey}` : escapedKey;
     const val = obj[key];
 
     if (typeof val !== 'object' || val === null || Array.isArray(val)) {

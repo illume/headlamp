@@ -65,32 +65,44 @@ function parsePolicy(raw: string): Record<string, any> | undefined {
 }
 
 function readWindowsPolicy(run: typeof execFileSync): Record<string, any> | undefined {
+  let output: string;
   try {
-    const output = String(
+    output = String(
       run('reg.exe', ['query', WINDOWS_POLICY_KEY, '/v', POLICY_VALUE, '/reg:64'], {
         encoding: 'utf8',
         windowsHide: true,
       })
     );
-    const match = output.match(/PolicyJSON\s+REG_(?:SZ|EXPAND_SZ)\s+([\s\S]+)$/);
-    return match ? parsePolicy(match[1]) : undefined;
   } catch {
     return undefined;
   }
+  const match = output.match(/PolicyJSON\s+REG_(?:SZ|EXPAND_SZ)\s+([\s\S]+)$/);
+  if (!match) {
+    return undefined;
+  }
+  const policy = parsePolicy(match[1]);
+  if (!policy) {
+    throw new Error('Windows Headlamp PolicyJSON must contain a JSON object');
+  }
+  return policy;
 }
 
 function readMacOSPolicy(run: typeof execFileSync): Record<string, any> | undefined {
+  let output: string;
   try {
-    return parsePolicy(
-      String(
-        run('defaults', ['read', MACOS_POLICY_DOMAIN, POLICY_VALUE], {
-          encoding: 'utf8',
-        })
-      )
+    output = String(
+      run('defaults', ['read', MACOS_POLICY_DOMAIN, POLICY_VALUE], {
+        encoding: 'utf8',
+      })
     );
   } catch {
     return undefined;
   }
+  const policy = parsePolicy(output);
+  if (!policy) {
+    throw new Error('macOS Headlamp PolicyJSON must contain a JSON object');
+  }
+  return policy;
 }
 
 function readPolicyFile(filename: string): Record<string, any> | undefined {

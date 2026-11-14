@@ -27,6 +27,15 @@ describe('getNestedValue', () => {
     expect(getNestedValue(obj, 'plugins.myPlugin.address')).toBe('http://localhost');
   });
 
+  it('returns values whose path segments contain dots', () => {
+    expect(
+      getNestedValue(
+        { plugins: { 'example.com/plugin': { 'api.endpoint': 'https://example.com' } } },
+        'plugins.example\\.com/plugin.api\\.endpoint'
+      )
+    ).toBe('https://example.com');
+  });
+
   it('returns undefined for missing path', () => {
     expect(getNestedValue({ a: 1 }, 'b')).toBeUndefined();
   });

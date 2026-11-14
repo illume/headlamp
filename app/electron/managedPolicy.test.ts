@@ -74,6 +74,26 @@ describe('managed desktop policy', () => {
     expect(policy.backend).toEqual({ 'log-level': 'warn' });
   });
 
+  it('rejects malformed enterprise policy instead of falling back', () => {
+    expect(() =>
+      loadManagedPolicy({
+        platform: 'win32',
+        env: {},
+        userDataPath: temporaryDirectory(),
+        run: vi.fn(() => Buffer.from('PolicyJSON    REG_SZ    []')) as any,
+      })
+    ).toThrow(/must contain a JSON object/);
+
+    expect(() =>
+      loadManagedPolicy({
+        platform: 'darwin',
+        env: {},
+        userDataPath: temporaryDirectory(),
+        run: vi.fn(() => 'not-json') as any,
+      })
+    ).toThrow(/must contain a JSON object/);
+  });
+
   it('loads a macOS managed preference', () => {
     const run = vi.fn(() => '{"backend":{"cache-enabled":true}}') as any;
 
