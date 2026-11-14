@@ -444,7 +444,10 @@ registerPluginSettings('my-plugin', Settings, true);
 
 For standard settings, a plugin can declare a JSON Schema directly in its
 `package.json`. Headlamp generates the form, validates it before enabling Save,
-and applies defaults from [admin settings](../../../../installation/admin-settings.md):
+and applies defaults from admin settings. See the canonical
+[plugin settings guide](../../../../development/plugins/settings.md) for schemas,
+package naming, precedence, deployment options, and Kubernetes ConfigMap/Secret
+values:
 
 ```json
 {

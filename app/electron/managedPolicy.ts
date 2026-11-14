@@ -1,0 +1,220 @@
+/*
+ * Copyright 2026 The Kubernetes Authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+import { execFileSync } from 'child_process';
+import fs from 'node:fs';
+import path from 'node:path';
+import { getAdminSettingsPath } from './settings';
+
+const WINDOWS_POLICY_KEY = String.raw`HKLM\Software\Policies\Headlamp`;
+const MACOS_POLICY_DOMAIN = '/Library/Managed Preferences/com.microsoft.Headlamp';
+const POLICY_VALUE = 'PolicyJSON';
+
+type PolicySource =
+  | 'environment'
+  | 'windows-registry'
+  | 'macos-managed-preferences'
+  | 'managed-file';
+type PolicyValueSource = 'command-line' | 'environment' | PolicySource | 'default';
+
+export interface ManagedPolicy {
+  source?: PolicySource;
+  adminSettingsPath?: string;
+  backend: Record<string, unknown>;
+}
+
+export interface PolicyDiagnostic {
+  key: string;
+  source: PolicyValueSource;
+}
+
+const BACKEND_POLICY_TYPES: Record<string, 'boolean' | 'number' | 'string'> = {
+  'cache-enabled': 'boolean',
+  'default-dark-theme': 'string',
+  'default-light-theme': 'string',
+  'force-theme': 'string',
+  'log-level': 'string',
+  'node-shell-image': 'string',
+  'node-shell-namespace': 'string',
+  'pod-debug-image': 'string',
+  'watch-plugins-changes': 'boolean',
+};
+
+function parsePolicy(raw: string): Record<string, any> | undefined {
+  try {
+    const trimmed = raw.trim();
+    const decoded = trimmed.startsWith('"') ? JSON.parse(trimmed) : trimmed;
+    const parsed = JSON.parse(decoded);
+    return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function readWindowsPolicy(run: typeof execFileSync): Record<string, any> | undefined {
+  try {
+    const output = String(
+      run('reg.exe', ['query', WINDOWS_POLICY_KEY, '/v', POLICY_VALUE, '/reg:64'], {
+        encoding: 'utf8',
+        windowsHide: true,
+      })
+    );
+    const match = output.match(/PolicyJSON\s+REG_(?:SZ|EXPAND_SZ)\s+([\s\S]+)$/);
+    return match ? parsePolicy(match[1]) : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function readMacOSPolicy(run: typeof execFileSync): Record<string, any> | undefined {
+  try {
+    return parsePolicy(
+      String(
+        run('defaults', ['read', MACOS_POLICY_DOMAIN, POLICY_VALUE], {
+          encoding: 'utf8',
+        })
+      )
+    );
+  } catch {
+    return undefined;
+  }
+}
+
+function readPolicyFile(filename: string): Record<string, any> | undefined {
+  try {
+    return parsePolicy(fs.readFileSync(filename, 'utf8'));
+  } catch {
+    return undefined;
+  }
+}
+
+function writeAdminSettings(
+  policy: Record<string, any>,
+  sourcePath: string | undefined,
+  userDataPath: string
+): string | undefined {
+  if (sourcePath) {
+    return sourcePath;
+  }
+  const { backend: _backend, ...adminSettings } = policy;
+  if (Object.keys(adminSettings).length === 0) {
+    return undefined;
+  }
+  fs.mkdirSync(userDataPath, { recursive: true });
+  const filename = path.join(userDataPath, 'managed-policy-settings.json');
+  fs.writeFileSync(filename, JSON.stringify(adminSettings), { encoding: 'utf8', mode: 0o600 });
+  return filename;
+}
+
+export function loadManagedPolicy(options: {
+  platform?: NodeJS.Platform;
+  env?: NodeJS.ProcessEnv;
+  userDataPath: string;
+  run?: typeof execFileSync;
+}): ManagedPolicy {
+  const platform = options.platform ?? process.platform;
+  const env = options.env ?? process.env;
+  const run = options.run ?? execFileSync;
+  const explicitPath = env.HEADLAMP_ADMIN_SETTINGS;
+  const hasExplicitFile = Boolean(explicitPath && fs.existsSync(explicitPath));
+  const explicitPolicy = hasExplicitFile ? readPolicyFile(explicitPath!) : undefined;
+  let policy = hasExplicitFile ? explicitPolicy ?? {} : undefined;
+  let source: PolicySource | undefined = hasExplicitFile ? 'environment' : undefined;
+  let invalidSourcePath = hasExplicitFile && !explicitPolicy ? explicitPath : undefined;
+
+  if (!policy && platform === 'win32') {
+    policy = readWindowsPolicy(run);
+    source = policy ? 'windows-registry' : undefined;
+  } else if (!policy && platform === 'darwin') {
+    policy = readMacOSPolicy(run);
+    source = policy ? 'macos-managed-preferences' : undefined;
+  }
+
+  if (!policy) {
+    const managedPath = getAdminSettingsPath(platform, {
+      ...env,
+      HEADLAMP_ADMIN_SETTINGS: undefined,
+    });
+    if (managedPath && fs.existsSync(managedPath)) {
+      const filePolicy = readPolicyFile(managedPath);
+      policy = filePolicy ?? {};
+      source = 'managed-file';
+      invalidSourcePath = filePolicy ? undefined : managedPath;
+    }
+  }
+
+  if (!policy) {
+    return { backend: {} };
+  }
+
+  return {
+    source,
+    adminSettingsPath: writeAdminSettings(policy, invalidSourcePath, options.userDataPath),
+    backend:
+      policy.backend !== null &&
+      typeof policy.backend === 'object' &&
+      !Array.isArray(policy.backend)
+        ? policy.backend
+        : {},
+  };
+}
+
+function environmentName(key: string): string {
+  return `HEADLAMP_CONFIG_${key.replaceAll('-', '_').toUpperCase()}`;
+}
+
+function hasCommandLineValue(args: string[], key: string): boolean {
+  return args.some((value, index) => {
+    if (value === `--${key}` || value.startsWith(`--${key}=`)) {
+      return true;
+    }
+    return index > 0 && args[index - 1] === `--${key}`;
+  });
+}
+
+export function applyManagedBackendPolicy(
+  policy: ManagedPolicy,
+  environment: NodeJS.ProcessEnv,
+  commandLine: string[]
+): { environment: NodeJS.ProcessEnv; diagnostics: PolicyDiagnostic[] } {
+  const result = { ...environment };
+  const diagnostics: PolicyDiagnostic[] = [];
+
+  for (const [key, expectedType] of Object.entries(BACKEND_POLICY_TYPES)) {
+    const envName = environmentName(key);
+    let source: PolicyValueSource = 'default';
+    if (hasCommandLineValue(commandLine, key)) {
+      source = 'command-line';
+    } else if (environment[envName] !== undefined) {
+      source = 'environment';
+    } else if (typeof policy.backend[key] === expectedType) {
+      result[envName] = String(policy.backend[key]);
+      source = policy.source ?? 'managed-file';
+    }
+    diagnostics.push({ key: `backend.${key}`, source });
+  }
+
+  if (policy.adminSettingsPath && policy.source) {
+    diagnostics.push({ key: 'settings', source: policy.source });
+  }
+  return { environment: result, diagnostics };
+}
+
+export function logPolicyDiagnostics(diagnostics: PolicyDiagnostic[]): void {
+  for (const diagnostic of diagnostics) {
+    console.info(`[managed-policy] ${diagnostic.key}: ${diagnostic.source}`);
+  }
+}

@@ -8,6 +8,10 @@ sidebar_label: Admin settings
 Headlamp accepts a JSON admin settings file. It can set defaults for Headlamp and
 plugins and can prevent users from changing selected values.
 
+See the canonical [plugin settings guide](../development/plugins/settings.md)
+for package naming, schemas, user-visible behavior, precedence, and live
+Kubernetes ConfigMap or Secret settings.
+
 ```json
 {
   "defaults": {
@@ -92,3 +96,57 @@ administrators so users cannot replace the policy file.
 A managed launcher can select another absolute path with the
 `HEADLAMP_ADMIN_SETTINGS` environment variable. Headlamp uses the file only when
 it exists and refuses to start its backend if the JSON is invalid.
+
+## Enterprise desktop policy
+
+Headlamp also reads the complete JSON policy from these machine policy values:
+
+- Windows: `HKLM\Software\Policies\Headlamp`, string value `PolicyJSON`
+- macOS: managed preference domain `com.microsoft.Headlamp`, string key
+  `PolicyJSON`
+
+This allows Intune, Group Policy, Jamf, or another MDM to deploy the same policy
+without a separate file. On macOS, deploy the preference through a configuration
+profile; do not write directly to `/Library/Managed Preferences`.
+
+The document may include a typed, allowlisted `backend` section:
+
+```json
+{
+  "defaults": {
+    "plugins": {
+      "@example/metrics": {
+        "endpoint": "https://metrics.example.com"
+      }
+    }
+  },
+  "backend": {
+    "log-level": "warn",
+    "cache-enabled": true
+  }
+}
+```
+
+Supported backend keys are `cache-enabled`, `default-dark-theme`,
+`default-light-theme`, `force-theme`, `log-level`, `node-shell-image`,
+`node-shell-namespace`, `pod-debug-image`, and `watch-plugins-changes`. Other
+keys and values with the wrong type are ignored;
+policy cannot change sensitive process, authentication, TLS, listening, or
+plugin-directory options.
+
+Backend configuration precedence is:
+
+1. command-line flags;
+2. `HEADLAMP_CONFIG_*` environment variables;
+3. managed registry, preference, or file policy;
+4. backend defaults.
+
+At startup, Headlamp logs one `[managed-policy]` diagnostic per supported
+backend key with its effective source (`command-line`, `environment`,
+`windows-registry`, `macos-managed-preferences`, `managed-file`, or `default`).
+Values are deliberately omitted from diagnostics because they may contain
+organization-specific information.
+
+An existing `HEADLAMP_ADMIN_SETTINGS` file takes precedence over registry or
+managed-preference policy. Registry or managed-preference policy takes
+precedence over the conventional machine-wide file.

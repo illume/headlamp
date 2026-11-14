@@ -84,11 +84,11 @@ import {
 import { pluginConfigDirName } from './runtimeProductIdentity';
 import { isTrustedDocumentUrl, setupSecureStorageHandlers } from './secureStorage';
 import {
-  areDevelopmentPluginsEnabled,
-  getAdminSettingsPath,
-  loadSettings,
-  SETTINGS_PATH,
-} from './settings';
+  applyManagedBackendPolicy,
+  loadManagedPolicy,
+  logPolicyDiagnostics,
+} from './managedPolicy';
+import { areDevelopmentPluginsEnabled, loadSettings, SETTINGS_PATH } from './settings';
 import { getShellEnv } from './shellEnv';
 import { shouldCheckForAppUpdates } from './shouldCheckForAppUpdates';
 import {
@@ -898,14 +898,9 @@ async function startServer(
   if (args.watchPluginsChanges !== undefined) {
     serverArgs.push(`--watch-plugins-changes=${args.watchPluginsChanges}`);
   }
-  const adminSettingsPath = getAdminSettingsPath();
-  if (adminSettingsPath) {
-    try {
-      await fsPromises.access(adminSettingsPath);
-      serverArgs.push('--settings', adminSettingsPath);
-    } catch {
-      // No machine-wide settings were deployed.
-    }
+  const managedPolicy = loadManagedPolicy({ userDataPath: app.getPath('userData') });
+  if (managedPolicy.adminSettingsPath) {
+    serverArgs.push('--settings', managedPolicy.adminSettingsPath);
   }
 
   const bundledPlugins = path.join(process.resourcesPath, '.plugins');
@@ -954,6 +949,9 @@ async function startServer(
     console.error('Failed to get shell environment, using default:', error);
     extendedEnv = process.env;
   }
+  const policyResult = applyManagedBackendPolicy(managedPolicy, extendedEnv, serverArgs);
+  extendedEnv = policyResult.environment;
+  logPolicyDiagnostics(policyResult.diagnostics);
 
   const options = {
     detached: true,
