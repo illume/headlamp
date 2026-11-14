@@ -21,6 +21,31 @@ metadata:
 type: Opaque
 data:
 ---
+# Source: headlamp/templates/plugin-configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: headlamp-plugin-config
+  namespace: default
+  labels:
+    helm.sh/chart: headlamp-0.46.0
+    app.kubernetes.io/name: headlamp
+    app.kubernetes.io/instance: headlamp
+    app.kubernetes.io/version: "0.46.0"
+    app.kubernetes.io/managed-by: Helm
+data:
+  plugin.yml: |
+    plugins:
+    - name: example-plugin
+      settings:
+        endpoint: https://manager.example.com
+        retries: 3
+      source: https://artifacthub.io/packages/headlamp/example/example-plugin
+    - name: second-plugin
+      settings:
+        enabled: true
+      source: https://artifacthub.io/packages/headlamp/example/second-plugin
+---
 # Source: headlamp/templates/settings-configmap.yaml
 apiVersion: v1
 kind: ConfigMap
@@ -34,7 +59,7 @@ metadata:
     app.kubernetes.io/version: "0.46.0"
     app.kubernetes.io/managed-by: Helm
 data:
-  settings.json: "{\"defaults\":{\"plugins\":{\"example-plugin\":{\"endpoint\":{\"$display\":\"disabled\",\"$value\":\"https://example.com\"}}}}}"
+  settings.json: "{\"defaults\":{\"plugins\":{\"example-plugin\":{\"endpoint\":{\"$display\":\"disabled\",\"$value\":\"https://example.com\"},\"retries\":5},\"second-plugin\":{\"enabled\":true}}}}"
 ---
 # Source: headlamp/templates/clusterrolebinding.yaml
 apiVersion: rbac.authorization.k8s.io/v1
@@ -104,7 +129,7 @@ spec:
   template:
     metadata:
       annotations:
-        checksum/settings: f1910183d41f99c29a8c4b6c15e7b2d87e6bf6f7cd350e108a3181b4aa1472dd
+        checksum/settings: 8d1affaf496ba983e457007acba37b5f48b4ff6585311d870f95caa4c31730c7
       labels:
         app.kubernetes.io/name: headlamp
         app.kubernetes.io/instance: headlamp
@@ -163,7 +188,41 @@ spec:
               mountPath: /etc/headlamp/settings.json
               subPath: settings.json
               readOnly: true
+            - name: plugins-dir
+              mountPath: /headlamp/plugins
+        - name: headlamp-plugin
+          image: node:lts-alpine
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              if [ -f "/config/plugin.yml" ]; then
+                echo "Installing plugins from config..."
+                cat /config/plugin.yml
+                # Use a writable cache directory
+                export NPM_CONFIG_CACHE=/tmp/npm-cache
+                # Use a writable config directory
+                export NPM_CONFIG_USERCONFIG=/tmp/npm-userconfig
+                mkdir -p /tmp/npm-cache /tmp/npm-userconfig
+                npx --yes @headlamp-k8s/pluginctl@latest install --config /config/plugin.yml --folderName /headlamp/plugins --watch
+              fi
+          volumeMounts:
+            - name: plugins-dir
+              mountPath: /headlamp/plugins
+            - name: plugin-config
+              mountPath: /config
+          resources:
+            null
+          securityContext:
+            privileged: false
+            runAsGroup: 101
+            runAsNonRoot: true
+            runAsUser: 100
       volumes:
         - name: headlamp-settings
           configMap:
             name: headlamp-settings
+        - name: plugins-dir
+          emptyDir: {}
+        - name: plugin-config
+          configMap:
+            name: headlamp-plugin-config

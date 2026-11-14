@@ -113,6 +113,36 @@ config:
 
 ## Configuration
 
+### Plugin settings
+
+Prefer `pluginsManager.config` over the legacy `configContent` string. The
+structured form is validated by Helm tooling and supplies organization defaults
+for each plugin:
+
+```yaml
+pluginsManager:
+  enabled: true
+  config:
+    plugins:
+      - name: example-plugin
+        source: https://artifacthub.io/packages/headlamp/example/example-plugin
+        settings:
+          endpoint: https://api.example.com
+```
+
+Known plugins can expose `headlamp.settingsSchema` in their package manifest.
+The chart imports curated schemas listed in
+`plugin-settings-schema-sources.json`, providing plugin-specific validation and
+documentation in `values.schema.json`. Maintainers can add official or external
+plugins using an immutable package-manifest URL, then run:
+
+```sh
+npm run plugins:sync-settings-schemas
+```
+
+The command warns about plugins that do not yet publish a schema. Sources are
+pinned so chart schema generation is reproducible.
+
 ### Core Parameters
 
 | Key | Type | Default | Description |

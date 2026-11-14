@@ -23,7 +23,7 @@
 {{- $clusterInventoryProviderMountDir := "/etc/cluster-inventory" }}
 {{- $clusterInventoryProviderConfigPath := "config.json" }}
 {{- $readOnlyRootFs := eq (include "headlamp.readOnlyRootFilesystem" .Values) "true" }}
-{{- $adminSettings := .Values.config.settings }}
+{{- $adminSettings := include "headlamp.adminSettings" . | fromJson }}
 {{- $pluginManagerSecurityContext := dict }}
 {{- if .Values.pluginsManager.securityContext }}
 {{- $pluginManagerSecurityContext = .Values.pluginsManager.securityContext }}

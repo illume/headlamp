@@ -6,6 +6,44 @@ Expand the name of the chart.
 {{- end }}
 
 {{/*
+Build the admin settings document. Per-plugin settings in pluginsManager configuration
+act as defaults; explicit config.settings values take precedence.
+*/}}
+{{- define "headlamp.adminSettings" -}}
+{{- $settings := deepCopy (.Values.config.settings | default dict) -}}
+{{- $defaults := deepCopy (get $settings "defaults" | default dict) -}}
+{{- $pluginDefaults := deepCopy (get $defaults "plugins" | default dict) -}}
+{{- if .Values.pluginsManager.enabled -}}
+  {{- $managerConfig := .Values.pluginsManager.config | default (fromYaml (.Values.pluginsManager.configContent | default "{}")) -}}
+  {{- range ($managerConfig.plugins | default list) -}}
+    {{- if .settings -}}
+      {{- $explicit := deepCopy (get $pluginDefaults .name | default dict) -}}
+      {{- $_ := set $pluginDefaults .name (mergeOverwrite (deepCopy .settings) $explicit) -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- if $pluginDefaults -}}
+  {{- $_ := set $defaults "plugins" $pluginDefaults -}}
+{{- end -}}
+{{- if $defaults -}}
+  {{- $_ := set $settings "defaults" $defaults -}}
+{{- end -}}
+{{- toJson $settings -}}
+{{- end }}
+
+{{/*
+Return the plugin manager configuration as YAML. Structured config takes
+precedence over the legacy configContent string.
+*/}}
+{{- define "headlamp.pluginsManagerConfig" -}}
+{{- if .Values.pluginsManager.config -}}
+{{- toYaml .Values.pluginsManager.config -}}
+{{- else -}}
+{{- .Values.pluginsManager.configContent -}}
+{{- end -}}
+{{- end }}
+
+{{/*
 Create a default fully qualified app name.
 We truncate at 63 chars because some Kubernetes name fields are limited to this (by the DNS naming spec).
 If release name contains chart name it will be used as a full name.

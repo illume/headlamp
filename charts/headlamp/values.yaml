@@ -461,9 +461,17 @@ probes:
 pluginsManager:
   # -- Enable plugin manager
   enabled: false
+  # -- Structured plugin manager configuration. Prefer this over configContent so values.schema.json can validate plugin settings.
+  config: null
+  # config:
+  #   plugins:
+  #     - name: example-plugin
+  #       source: https://artifacthub.io/packages/headlamp/example/example-plugin
+  #       settings:
+  #         endpoint: https://api.example.com
   # -- Plugin configuration file name
   configFile: "plugin.yml"
-  # -- Plugin configuration content in YAML format. This is required if plugins.enabled is true.
+  # -- Legacy plugin configuration content in YAML format. Ignored when pluginsManager.config is set.
   configContent: ""
   # -- Base node image to use
   baseImage: node:lts-alpine

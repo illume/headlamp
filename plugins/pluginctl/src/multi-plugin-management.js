@@ -50,6 +50,10 @@ const pluginConfigSchema = {
             items: { type: 'string', pattern: '^[a-z0-9][a-z0-9-_]*[a-z0-9-]$' },
             uniqueItems: true,
           },
+          settings: {
+            type: 'object',
+            description: 'Admin defaults for this plugin, consumed by Headlamp deployments',
+          },
         },
       },
     },

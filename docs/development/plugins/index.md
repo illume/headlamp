@@ -58,6 +58,10 @@ Share your plugins with the community through Artifact Hub.
 
 Add support for multiple languages and locales
 
+### ⚙️ [Plugin Settings Schemas](./settings.md)
+
+Describe settings once for generated forms, validation, localization, and deployment tooling.
+
 ## Ready to Start?
 
 👉 **New to plugins?** Start with our [Getting Started Guide](./getting-started.md)

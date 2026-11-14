@@ -1001,6 +1001,112 @@
         }
       }
     },
+    "pluginsManager": {
+      "type": "object",
+      "description": "Plugin manager sidecar configuration",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable the plugin manager"
+        },
+        "config": {
+          "type": ["object", "null"],
+          "description": "Structured plugin installation and settings configuration",
+          "required": ["plugins"],
+          "properties": {
+            "plugins": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "required": ["name", "source"],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "description": "Plugin package name"
+                  },
+                  "source": {
+                    "type": "string",
+                    "pattern": "^https://artifacthub\\.io/packages/[^\\s]+$",
+                    "description": "Artifact Hub plugin URL"
+                  },
+                  "version": {
+                    "type": "string",
+                    "pattern": "^\\d+\\.\\d+\\.\\d+"
+                  },
+                  "dependencies": {
+                    "type": "array",
+                    "uniqueItems": true,
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "settings": {
+                    "type": "object",
+                    "description": "Organization defaults for this plugin"
+                  }
+                },
+                "allOf": [
+                  {
+                    "if": {
+                      "properties": {
+                        "name": {
+                          "const": "@kinvolk/headlamp-pod-counter"
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ]
+                    },
+                    "then": {
+                      "properties": {
+                        "settings": {
+                          "$ref": "#/definitions/knownPluginSettings/plugin_55a88c715470"
+                        }
+                      }
+                    }
+                  },
+                  {
+                    "if": {
+                      "properties": {
+                        "name": {
+                          "const": "change-logo"
+                        }
+                      },
+                      "required": [
+                        "name"
+                      ]
+                    },
+                    "then": {
+                      "properties": {
+                        "settings": {
+                          "$ref": "#/definitions/knownPluginSettings/plugin_577421e1c66f"
+                        }
+                      }
+                    }
+                  }
+                ]
+              }
+            },
+            "installOptions": {
+              "type": "object",
+              "properties": {
+                "parallel": {
+                  "type": "boolean"
+                },
+                "maxConcurrent": {
+                  "type": "integer",
+                  "minimum": 1
+                }
+              }
+            }
+          }
+        },
+        "configContent": {
+          "type": "string",
+          "description": "Legacy YAML plugin configuration; ignored when config is set"
+        }
+      }
+    },
     "hostAliases": {
       "type": "array",
       "description": "Host aliases to add to the pod's /etc/hosts file",
@@ -1021,6 +1127,36 @@
         },
         "required": ["ip", "hostnames"],
         "additionalProperties": false
+      }
+    }
+  },
+  "definitions": {
+    "knownPluginSettings": {
+      "plugin_55a88c715470": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "errorMessage": {
+            "type": "string",
+            "title": "Custom Error Message",
+            "description": "The message shown when the pod count cannot be retrieved.",
+            "default": "Uh... pods!?"
+          }
+        }
+      },
+      "plugin_577421e1c66f": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "url": {
+            "type": "string",
+            "format": "uri",
+            "title": "Logo URL",
+            "description": "Enter the URL of your logo."
+          }
+        }
       }
     }
   }
