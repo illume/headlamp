@@ -73,6 +73,7 @@ plugins:
 plugins:
   - name: ${PLUGIN_DATA[1].name}
     source: ${PLUGIN_DATA[1].source}
+    settingsName: "@example/${PLUGIN_DATA[1].name}"
     settings:
       endpoint:
         $value: https://example.com
@@ -88,6 +89,7 @@ plugins:
           $display: 'disabled',
         },
       });
+      expect(result.plugins[0].settingsName).toBe(`@example/${PLUGIN_DATA[1].name}`);
     });
 
     it('should reject non-object plugin settings', async () => {

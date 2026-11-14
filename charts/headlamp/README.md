@@ -143,6 +143,11 @@ npm run plugins:sync-settings-schemas
 The command warns about plugins that do not yet publish a schema. Sources are
 pinned so chart schema generation is reproducible.
 
+When the plugin manager `name` differs from the plugin's `package.json` name,
+set `settingsName` to the package name. This keeps organization defaults under
+the identifier used by the plugin at runtime; synced schemas require it for
+known aliases.
+
 ### Core Parameters
 
 | Key | Type | Default | Description |

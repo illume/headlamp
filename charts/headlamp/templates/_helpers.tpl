@@ -17,8 +17,9 @@ act as defaults; explicit config.settings values take precedence.
   {{- $managerConfig := .Values.pluginsManager.config | default (fromYaml (.Values.pluginsManager.configContent | default "{}")) -}}
   {{- range ($managerConfig.plugins | default list) -}}
     {{- if .settings -}}
-      {{- $explicit := deepCopy (get $pluginDefaults .name | default dict) -}}
-      {{- $_ := set $pluginDefaults .name (mergeOverwrite (deepCopy .settings) $explicit) -}}
+      {{- $settingsName := .settingsName | default .name -}}
+      {{- $explicit := deepCopy (get $pluginDefaults $settingsName | default dict) -}}
+      {{- $_ := set $pluginDefaults $settingsName (mergeOverwrite (deepCopy .settings) $explicit) -}}
     {{- end -}}
   {{- end -}}
 {{- end -}}

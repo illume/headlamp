@@ -72,6 +72,10 @@ default without editing the plugin list. The legacy `configContent` YAML string
 remains supported, but structured `config` is preferred because Helm can
 validate and document known plugin settings.
 
+If the manager name differs from the plugin's `package.json` name, add
+`settingsName` with the package name. Headlamp uses that canonical name when
+the plugin reads its settings.
+
 ## Desktop organization deployment
 
 The desktop app reads a machine-wide file from:

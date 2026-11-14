@@ -51,6 +51,16 @@ test('adds deterministic conditional schemas for known plugins', () => {
       .properties.name.const,
     'example-plugin'
   );
+  assert.deepEqual(
+    result.properties.pluginsManager.properties.config.properties.plugins.items.allOf[0].then
+      .required,
+    ['settingsName']
+  );
+  assert.equal(
+    result.properties.pluginsManager.properties.config.properties.plugins.items.allOf[0].then
+      .properties.settingsName.const,
+    '@example/plugin'
+  );
 });
 
 test('rejects references that would resolve outside an imported schema', () => {

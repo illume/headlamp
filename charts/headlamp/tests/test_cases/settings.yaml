@@ -22,3 +22,8 @@ pluginsManager:
         url:
           $value: https://example.com/logo.svg
           $display: disabled
+    - name: headlamp-pod-counter
+      settingsName: "@kinvolk/headlamp-pod-counter"
+      source: https://artifacthub.io/packages/headlamp/example/headlamp-pod-counter
+      settings:
+        errorMessage: Pods unavailable

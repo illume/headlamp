@@ -1034,6 +1034,11 @@
                     "type": "string",
                     "pattern": "^\\d+\\.\\d+\\.\\d+"
                   },
+                  "settingsName": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Package name used by Headlamp when resolving plugin settings"
+                  },
                   "dependencies": {
                     "type": "array",
                     "uniqueItems": true,
@@ -1059,7 +1064,13 @@
                       ]
                     },
                     "then": {
+                      "required": [
+                        "settingsName"
+                      ],
                       "properties": {
+                        "settingsName": {
+                          "const": "@kinvolk/headlamp-pod-counter"
+                        },
                         "settings": {
                           "$ref": "#/definitions/knownPluginSettings/plugin_b1e9b087f366"
                         }

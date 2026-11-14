@@ -467,6 +467,7 @@ pluginsManager:
   #   plugins:
   #     - name: example-plugin
   #       source: https://artifacthub.io/packages/headlamp/example/example-plugin
+  #       # settingsName: "@scope/example-plugin" # Set when package.json name differs from name.
   #       settings:
   #         endpoint: https://api.example.com
   # -- Plugin configuration file name

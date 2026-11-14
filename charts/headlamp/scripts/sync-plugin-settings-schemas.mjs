@@ -75,6 +75,7 @@ export function updateValuesSchema(valuesSchema, packages) {
 
   for (const packageJson of [...packages].sort((a, b) => a.name.localeCompare(b.name))) {
     const pluginName = packageJson.pluginManagerName ?? packageJson.name;
+    const hasAlias = pluginName !== packageJson.name;
     const schemaName = `plugin_${createHash('sha256').update(pluginName).digest('hex').slice(0, 12)}`;
     schemas[schemaName] = adminSettingsSchema(packageJson.headlamp.settingsSchema);
     conditions.push({
@@ -83,7 +84,9 @@ export function updateValuesSchema(valuesSchema, packages) {
         required: ['name'],
       },
       then: {
+        ...(hasAlias ? { required: ['settingsName'] } : {}),
         properties: {
+          ...(hasAlias ? { settingsName: { const: packageJson.name } } : {}),
           settings: { $ref: `#/definitions/knownPluginSettings/${schemaName}` },
         },
       },
