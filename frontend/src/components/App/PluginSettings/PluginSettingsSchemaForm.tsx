@@ -27,6 +27,8 @@ import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from '../../../plugin/pluginI18n';
 import { AdminSettingsState } from '../../../settings/adminSettingsSlice';
 import { PluginSettingsAPI } from '../../../settings/pluginSettings';
+import { joinSettingsPath } from '../../../settings/settingsPath';
+import { getNestedValue } from '../../../settings/settingsResolution';
 
 const ajv = new Ajv({ allErrors: true, strict: false });
 addFormats(ajv);
@@ -64,9 +66,9 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
   const effectiveData = useMemo(() => {
     const knownValues = Object.fromEntries(
       Object.entries<Record<string, any>>(schema.properties ?? {}).flatMap(([name, field]) => {
-        const adminControlled =
-          PluginSettingsAPI.isHidden(pluginName, name) ||
-          PluginSettingsAPI.isDisabled(pluginName, name);
+        const path = joinSettingsPath('plugins', pluginName, name);
+        const display = adminSettings.display[path];
+        const adminControlled = display === 'hidden' || display === 'disabled';
         if (!adminControlled && clearedFields.has(name)) {
           return [];
         }
@@ -74,7 +76,7 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
           ? PluginSettingsAPI.get(pluginName, name)
           : Object.hasOwn(data, name)
           ? data[name]
-          : PluginSettingsAPI.getAdminDefault(pluginName, name) ?? field.default;
+          : getNestedValue(adminSettings.defaults, path) ?? field.default;
         return value === undefined ? [] : [[name, value]];
       })
     );

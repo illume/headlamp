@@ -32,7 +32,8 @@ import {
   AdminSettingsState,
   initialAdminSettingsState,
 } from '../../../settings/adminSettingsSlice';
-import { PluginSettingsAPI } from '../../../settings/pluginSettings';
+import { joinSettingsPath } from '../../../settings/settingsPath';
+import { getNestedValue } from '../../../settings/settingsResolution';
 import NotFoundComponent from '../../404';
 import { SectionHeader } from '../../common';
 import ActionButton from '../../common/ActionButton';
@@ -182,10 +183,9 @@ export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps)
     for (const [key, field] of Object.entries<Record<string, any>>(
       settingsSchema?.properties ?? {}
     )) {
-      if (
-        PluginSettingsAPI.isHidden(plugin.name, key) ||
-        PluginSettingsAPI.isDisabled(plugin.name, key)
-      ) {
+      const path = joinSettingsPath('plugins', plugin.name, key);
+      const display = adminSettings.display[path];
+      if (display === 'hidden' || display === 'disabled') {
         delete result[key];
         continue;
       }
@@ -194,7 +194,7 @@ export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps)
       }
       if (
         result[key] === undefined &&
-        PluginSettingsAPI.getAdminDefault(plugin.name, key) === undefined &&
+        getNestedValue(adminSettings.defaults, path) === undefined &&
         field.default !== undefined
       ) {
         result[key] = field.default;
