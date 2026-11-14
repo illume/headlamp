@@ -62,7 +62,12 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
   const effectiveData = useMemo(() => {
     const knownValues = Object.fromEntries(
       Object.entries<Record<string, any>>(schema.properties ?? {}).flatMap(([name, field]) => {
-        const value = data[name] ?? PluginSettingsAPI.get(pluginName, name) ?? field.default;
+        const adminControlled =
+          PluginSettingsAPI.isHidden(pluginName, name) ||
+          PluginSettingsAPI.isDisabled(pluginName, name);
+        const value = adminControlled
+          ? PluginSettingsAPI.get(pluginName, name)
+          : data[name] ?? PluginSettingsAPI.get(pluginName, name) ?? field.default;
         return value === undefined ? [] : [[name, value]];
       })
     );

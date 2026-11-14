@@ -176,6 +176,13 @@ export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps)
     for (const [key, field] of Object.entries<Record<string, any>>(
       settingsSchema?.properties ?? {}
     )) {
+      if (
+        PluginSettingsAPI.isHidden(plugin.name, key) ||
+        PluginSettingsAPI.isDisabled(plugin.name, key)
+      ) {
+        delete result[key];
+        continue;
+      }
       if (data?.[key] !== undefined) {
         result[key] = data[key];
       }

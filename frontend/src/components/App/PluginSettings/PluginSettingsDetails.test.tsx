@@ -22,6 +22,7 @@ import { createMuiTheme } from '../../../lib/themes';
 import { PluginInfo, setPluginSettings } from '../../../plugin/pluginsSlice';
 import { HeadlampEventType } from '../../../redux/headlampEventSlice';
 import store from '../../../redux/stores/store';
+import { setAdminSettings } from '../../../settings/adminSettingsSlice';
 import { recordHeadlampEvents, TestContext } from '../../../test';
 import PluginSettingsDetails, { PluginSettingsDetailsPure } from './PluginSettingsDetails';
 
@@ -134,6 +135,61 @@ describe('PluginSettingsDetails metadata', () => {
 
     expect(screen.getByText('Legacy settings')).toBeVisible();
     expect(screen.queryByRole('textbox', { name: 'generated' })).not.toBeInTheDocument();
+  });
+
+  it('validates admin-controlled fields with the effective value and removes stale overrides', async () => {
+    store.dispatch(
+      setAdminSettings({
+        defaults: { plugins: { 'my-plugin': { endpoint: 'https://admin.example.com' } } },
+        display: { 'plugins.my-plugin.endpoint': 'disabled' },
+        clusterDefinedSettings: [],
+        clusterDefined: {},
+      })
+    );
+    const onSave = vi.fn();
+
+    render(
+      <TestContext>
+        <ThemeProvider theme={theme}>
+          <PluginSettingsDetailsPure
+            config={{ endpoint: 'invalid stale value', label: 'old' }}
+            plugin={{
+              ...plugin,
+              headlamp: {
+                settingsSchema: {
+                  type: 'object',
+                  additionalProperties: false,
+                  required: ['endpoint'],
+                  properties: {
+                    endpoint: { type: 'string', format: 'uri', title: 'Endpoint' },
+                    label: { type: 'string', title: 'Label' },
+                  },
+                },
+              },
+            }}
+            onSave={onSave}
+            onDelete={() => {}}
+          />
+        </ThemeProvider>
+      </TestContext>
+    );
+
+    expect(screen.getByRole('textbox', { name: 'Endpoint' })).toHaveValue(
+      'https://admin.example.com'
+    );
+    await userEvent.clear(screen.getByRole('textbox', { name: 'Label' }));
+    await userEvent.type(screen.getByRole('textbox', { name: 'Label' }), 'new');
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(onSave).toHaveBeenCalledWith({ label: 'new' });
+    store.dispatch(
+      setAdminSettings({
+        defaults: {},
+        display: {},
+        clusterDefinedSettings: [],
+        clusterDefined: {},
+      })
+    );
   });
 });
 
