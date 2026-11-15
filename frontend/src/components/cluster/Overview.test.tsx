@@ -61,7 +61,7 @@ vi.mock('react-i18next', async importOriginal => ({
   ...(await importOriginal<typeof import('react-i18next')>()),
   useTranslation: () => ({
     t: (key: string, values?: Record<string, string | number>) =>
-      key.replace(/\{\{(\w+)\}\}/g, (_match, name: string) => String(values?.[name] ?? '')),
+      key.replace(/\{\{\s*(\w+)\s*\}\}/g, (_match, name: string) => String(values?.[name] ?? '')),
   }),
 }));
 
@@ -363,7 +363,7 @@ describe('Overview', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Pause live events' }));
     eventUseList.mockReturnValue({
-      items: [makeEvent('new-event', 'default')],
+      items: [makeEvent('new-event', 'default'), makeEvent('other-event', 'default')],
       errors: null,
       hasMore: false,
       remainingItemCount: undefined,
@@ -379,6 +379,7 @@ describe('Overview', () => {
 
     expect(history.location.search).toBe('');
     expect(screen.getByRole('button', { name: 'Resume live events' })).toBeVisible();
+    expect(screen.getByText('Only warnings (1)')).toBeVisible();
     expect(screen.getByRole('note')).toHaveTextContent(
       'Showing 1 loaded events; 7 more events are available.'
     );
@@ -391,8 +392,10 @@ describe('Overview', () => {
     });
     fireEvent.click(screen.getByRole('button', { name: 'Resume live events' }));
     expect(screen.queryByRole('note')).not.toBeInTheDocument();
+    expect(screen.getByText('Only warnings (2)')).toBeVisible();
     expect(resourceListViewMock.mock.lastCall?.[0].data).toEqual([
       expect.objectContaining({ message: 'new-event' }),
+      expect.objectContaining({ message: 'other-event' }),
     ]);
   });
 

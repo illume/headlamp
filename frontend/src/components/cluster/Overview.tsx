@@ -250,8 +250,8 @@ function EventsSection() {
   ];
 
   const numWarnings = React.useMemo(
-    () => events?.filter(e => e.type === 'Warning').length ?? '?',
-    [events]
+    () => sourceEvents?.filter(e => e.type === 'Warning').length ?? '?',
+    [sourceEvents]
   );
   const matchingEventCount = filteredEvents?.length ?? 0;
   const eventStatus =
