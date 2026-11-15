@@ -40,6 +40,7 @@ import {
   validateBuildManifest,
   verifyPackagedResources,
 } from '../scripts/build-manifest.ts';
+import { readMacOSAppId } from '../scripts/product-metadata.ts';
 import {
   applyEnabledByDefault,
   bundledPluginExecutablePaths,
@@ -588,6 +589,23 @@ describe('platform metadata', () => {
 describe('product metadata', () => {
   it.each([null, [], 'manifest'])('rejects an invalid manifest value: %j', manifest => {
     expect(() => applyProductMetadata({}, manifest)).toThrow('Build manifest must be an object');
+  });
+
+  describe('macOS app ID', () => {
+    it('prefers the platform-specific app ID over the product app ID', () => {
+      expect(
+        readMacOSAppId({
+          product: { appId: 'io.example.product' },
+          platforms: { mac: { appId: 'io.example.mac' } },
+        })
+      ).toBe('io.example.mac');
+    });
+
+    it('falls back to the product app ID without a macOS override', () => {
+      expect(readMacOSAppId({ product: { appId: 'io.example.product' } })).toBe(
+        'io.example.product'
+      );
+    });
   });
 
   it('preserves the configuration when product metadata is absent', () => {

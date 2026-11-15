@@ -41,6 +41,7 @@ import {
   readProductMetadata,
   resolveBuildManifestPath,
 } from '../scripts/build-manifest';
+import { readMacOSAppId } from '../scripts/product-metadata';
 import { withBackendMemoryDefaults } from './backendMemory';
 import {
   observeInternalBackendReady,
@@ -936,7 +937,7 @@ async function startServer(
     userDataPath: app.getPath('userData'),
     env: extendedEnv,
     productName: productMetadata?.productName ?? app.getName(),
-    appId: productMetadata?.appId,
+    appId: readMacOSAppId(appBuildManifest),
   });
   if (managedPolicy.adminSettingsPath) {
     serverArgs.push('--settings', managedPolicy.adminSettingsPath);
