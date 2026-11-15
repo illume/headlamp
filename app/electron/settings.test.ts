@@ -48,7 +48,7 @@ describe('settings load/save', () => {
         '/Library/Application Support/Headlamp/settings.json'
       );
       expect(getAdminSettingsPath('win32', { ProgramData: 'D:\\ProgramData' })).toBe(
-        'D:\\ProgramData\\headlamp\\settings.json'
+        'D:\\ProgramData\\Headlamp\\settings.json'
       );
     });
 

@@ -76,7 +76,13 @@ function readWindowsPolicy(
     output = String(
       run(
         path.win32.join(systemRoot, 'System32', 'reg.exe'),
-        ['query', `${WINDOWS_POLICY_KEY}\\${getAdminSettingsName(productName)}`, '/v', POLICY_VALUE, '/reg:64'],
+        [
+          'query',
+          `${WINDOWS_POLICY_KEY}\\${getAdminSettingsName(productName)}`,
+          '/v',
+          POLICY_VALUE,
+          '/reg:64',
+        ],
         {
           encoding: 'utf8',
           maxBuffer: 1024 * 1024,
@@ -100,10 +106,7 @@ function readWindowsPolicy(
   return policy;
 }
 
-function readMacOSPolicy(
-  run: typeof execFileSync,
-  appId: string
-): Record<string, any> | undefined {
+function readMacOSPolicy(run: typeof execFileSync, appId: string): Record<string, any> | undefined {
   let output: string;
   try {
     output = String(
@@ -195,10 +198,14 @@ export function loadManagedPolicy(options: {
   }
 
   if (!policy) {
-    const managedPath = getAdminSettingsPath(platform, {
-      ...env,
-      HEADLAMP_ADMIN_SETTINGS: undefined,
-    }, productName);
+    const managedPath = getAdminSettingsPath(
+      platform,
+      {
+        ...env,
+        HEADLAMP_ADMIN_SETTINGS: undefined,
+      },
+      productName
+    );
     if (managedPath) {
       const fileResult = readPolicyFile(managedPath);
       const filePolicy = fileResult.policy;

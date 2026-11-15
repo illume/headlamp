@@ -22,11 +22,13 @@ export const SETTINGS_PATH = path.join(app?.getPath('userData') || 'testing', 's
 const DEVELOPMENT_PLUGINS_SETTING = 'developmentPlugins';
 
 export function getAdminSettingsName(productName: string = 'Headlamp'): string {
-  return productName
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-|-$/g, '') || 'headlamp';
+  return (
+    productName
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'headlamp'
+  );
 }
 
 function getAdminSettingsDirectoryName(productName: string, platform: NodeJS.Platform): string {
