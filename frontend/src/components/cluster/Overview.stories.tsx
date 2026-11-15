@@ -62,7 +62,32 @@ export default {
   parameters: {
     msw: {
       handlers: {
-        base: null,
+        base: [
+          http.get(`${API_BASE}/api/v1/namespaces`, () =>
+            HttpResponse.json({
+              kind: 'NamespaceList',
+              apiVersion: 'v1',
+              metadata: {},
+              items: [],
+            })
+          ),
+          http.get(`${API_BASE}/api/v1/nodes`, () =>
+            HttpResponse.json({
+              kind: 'NodeList',
+              apiVersion: 'v1',
+              metadata: {},
+              items: [],
+            })
+          ),
+          http.get(`${API_BASE}/apis/metrics.k8s.io/v1beta1/nodes`, () =>
+            HttpResponse.json({
+              kind: 'NodeMetricsList',
+              apiVersion: 'metrics.k8s.io/v1beta1',
+              metadata: {},
+              items: [],
+            })
+          ),
+        ],
         story: [
           http.get(`${API_BASE}/api/v1/events`, () =>
             HttpResponse.json({

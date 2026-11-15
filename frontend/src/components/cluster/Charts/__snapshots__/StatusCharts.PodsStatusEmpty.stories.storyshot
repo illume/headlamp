@@ -34,7 +34,6 @@
         >
           <div
             aria-busy="false"
-            aria-live="polite"
             class="MuiBox-root css-2esbmj"
           >
             <div
@@ -108,7 +107,7 @@
                     class="recharts-text recharts-label"
                     fill="#808080"
                     offset="5"
-                    style="font-size: 16.8px; fill: #000;"
+                    style="font-size: 16.8px; fill: #000; pointer-events: none;"
                     text-anchor="middle"
                     x="61"
                     y="61"
