@@ -129,25 +129,9 @@ for schemas paired with custom settings components.
 
 ## For administrators
 
-The [admin settings guide](../../installation/admin-settings.md) documents Helm,
-the plugin manager, machine-wide desktop files, Intune/Group Policy, macOS
-configuration profiles, and backend policy. Organization defaults use the
-package name:
-
-```json
-{
-  "defaults": {
-    "plugins": {
-      "@example/metrics": {
-        "endpoint": {
-          "$value": "https://metrics.example.com",
-          "$display": "disabled"
-        }
-      }
-    }
-  }
-}
-```
+The [admin settings guide](../../installation/admin-settings.md) covers
+organization defaults, Helm, the plugin manager, desktop policy, and backend
+configuration. Use the package name under `defaults.plugins`.
 
 ## Kubernetes-native settings
 

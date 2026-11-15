@@ -220,7 +220,7 @@ describe('PluginSettingsDetails metadata', () => {
     );
   });
 
-  it('unsets an optional constrained string and restores a cleared numeric default', async () => {
+  it('unsets an optional constrained string and keeps cleared numeric defaults editable', async () => {
     const onSave = vi.fn();
     render(
       <TestContext>
@@ -258,10 +258,50 @@ describe('PluginSettingsDetails metadata', () => {
       'Enable this integration'
     );
     await userEvent.clear(screen.getByRole('textbox', { name: 'Endpoint' }));
-    await userEvent.clear(screen.getByRole('spinbutton', { name: 'Retries' }));
+    const retries = screen.getByRole('spinbutton', { name: 'Retries' });
+    await userEvent.clear(retries);
+    expect(retries).toHaveValue(null);
+    await userEvent.type(retries, '7');
+    expect(retries).toHaveValue(7);
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
-    expect(onSave).toHaveBeenCalledWith({ retries: 3 });
+    expect(onSave).toHaveBeenCalledWith({ retries: 7 });
+  });
+
+  it('unsets an optional URI when other required fields are missing', async () => {
+    const onSave = vi.fn();
+    render(
+      <TestContext>
+        <ThemeProvider theme={theme}>
+          <PluginSettingsDetailsPure
+            config={{ endpoint: 'https://example.com' }}
+            plugin={{
+              ...plugin,
+              headlamp: {
+                settingsSchema: {
+                  type: 'object',
+                  required: ['name'],
+                  properties: {
+                    name: { type: 'string', title: 'Name' },
+                    endpoint: { type: 'string', format: 'uri', title: 'Endpoint' },
+                  },
+                },
+              },
+            }}
+            onSave={onSave}
+            onDelete={() => {}}
+          />
+        </ThemeProvider>
+      </TestContext>
+    );
+
+    await userEvent.clear(screen.getByRole('textbox', { name: 'Endpoint' }));
+    await userEvent.type(screen.getByRole('textbox', { name: 'Name' }), 'example');
+    const save = screen.getByRole('button', { name: 'Save' });
+    await waitFor(() => expect(save).toBeEnabled());
+    await userEvent.click(save);
+
+    expect(onSave).toHaveBeenCalledWith({ name: 'example' });
   });
 
   it('unsets an optional string reference using the root schema context', async () => {
@@ -342,6 +382,7 @@ describe('PluginSettingsDetails metadata', () => {
   });
 
   it('validates cleared schema defaults using the same value as the save payload', async () => {
+    const onSave = vi.fn();
     render(
       <TestContext>
         <ThemeProvider theme={theme}>
@@ -364,7 +405,7 @@ describe('PluginSettingsDetails metadata', () => {
                 },
               },
             }}
-            onSave={vi.fn()}
+            onSave={onSave}
             onDelete={() => {}}
           />
         </ThemeProvider>
@@ -374,8 +415,13 @@ describe('PluginSettingsDetails metadata', () => {
     const retries = screen.getByRole('spinbutton', { name: 'retries' });
     await userEvent.clear(retries);
 
-    expect(retries).toHaveValue(3);
+    expect(retries).toHaveValue(null);
     expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await userEvent.type(retries, '7');
+    expect(retries).toHaveValue(7);
+    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).toHaveBeenCalledWith({ enabled: true, retries: 7 });
   });
 });
 

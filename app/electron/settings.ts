@@ -53,13 +53,13 @@ export function getAdminSettingsPath(
   }
   const settingsName = getAdminSettingsDirectoryName(productName, platform);
   if (platform === 'darwin') {
-    return path.join('/Library/Application Support', settingsName, 'settings.json');
+    return path.posix.join('/Library/Application Support', settingsName, 'settings.json');
   }
   if (platform === 'win32') {
     return path.win32.join(env.ProgramData || 'C:\\ProgramData', settingsName, 'settings.json');
   }
   if (platform === 'linux') {
-    return path.join('/etc', settingsName, 'settings.json');
+    return path.posix.join('/etc', settingsName, 'settings.json');
   }
   return undefined;
 }

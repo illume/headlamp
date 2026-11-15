@@ -46,6 +46,15 @@ function errorField(error: ErrorObject): string {
   return error.instancePath.replace(/^\//, '').split('/')[0];
 }
 
+function acceptsFieldValue(
+  validate: ((value: any) => boolean) & { errors?: ErrorObject[] | null },
+  value: Record<string, any>,
+  fieldName: string
+): boolean {
+  const valid = validate(value);
+  return Boolean(valid || !validate.errors?.some(error => errorField(error) === fieldName));
+}
+
 function schemaErrorMessage(schema: Record<string, any>, error: ErrorObject): string | undefined {
   const field = errorField(error);
   const target = field ? schema.properties?.[field] : schema;
@@ -191,11 +200,12 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
         }
 
         const isNumber = fieldType === 'number' || fieldType === 'integer';
+        const displayedValue = clearedFields.has(name) ? '' : effectiveData[name] ?? '';
         return (
           <TextField
             key={name}
             label={label}
-            value={effectiveData[name] ?? ''}
+            value={displayedValue}
             disabled={disabled}
             type={isNumber ? 'number' : 'text'}
             select={Array.isArray(field.enum)}
@@ -211,11 +221,13 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
               const value = event.target.value;
               const isOptionalString =
                 fieldType === 'string' && !schema.required?.includes(name) && value === '';
+              const validateFieldValue = (candidate: Record<string, any>) =>
+                validator.validate && acceptsFieldValue(validator.validate, candidate, name);
               const emptyStringIsValid =
-                isOptionalString && Boolean(validator.validate?.({ ...effectiveData, [name]: '' }));
+                isOptionalString && validateFieldValue({ ...effectiveData, [name]: '' });
               const unsetValueIsValid =
                 isOptionalString &&
-                validator.validate?.(
+                validateFieldValue(
                   Object.fromEntries(
                     Object.entries(effectiveData).filter(([fieldName]) => fieldName !== name)
                   )
