@@ -15,26 +15,59 @@
  */
 
 import { expect, test } from '@playwright/test';
+import { runA11yScan } from '../tests/a11yHelper';
 
 test('event filters persist and chart drill-down creates a static snapshot', async ({ page }) => {
   await page.addInitScript(() => {
     if (!sessionStorage.getItem('event-filters-test-initialized')) {
       localStorage.removeItem('headlamp.events.filters.v1');
+      localStorage.setItem('EVENT_WARNING_SWITCH_FILTER_STORAGE_KEY', 'invalid-json');
       sessionStorage.setItem('event-filters-test-initialized', 'true');
     }
   });
-  await page.goto('/iframe.html?id=cluster-overview--events&viewMode=story');
+  await page.goto('/iframe.html?id=cluster-overview--large-events&viewMode=story');
 
   const search = page.getByRole('textbox', { name: 'Search events' });
-  await search.fill('*nginx-deployment-abcd*');
-  await expect(page.getByText('nginx-deployment-abcd-1234567890')).toBeVisible();
-  await expect(page.getByText('hello-123-123')).toHaveCount(0);
+  await expect(page.getByRole('checkbox', { name: /Only warnings/ })).toBeChecked();
+  const filterStartedAt = Date.now();
+  await search.fill('*UNIQUE*message');
+  await expect(page.locator('#load-event-1999')).toBeVisible();
+  expect(Date.now() - filterStartedAt).toBeLessThan(5000);
+  await expect(page.getByText('Load-test event 1')).toHaveCount(0);
 
   await page.reload();
-  await expect(search).toHaveValue('*nginx-deployment-abcd*');
+  await expect(search).toHaveValue('*UNIQUE*message');
 
   await search.fill('');
-  await page.getByRole('button', { name: /Pod: 2/ }).focus();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Live events. Showing 2000 matching events.' })
+  ).toHaveCount(1);
+
+  await page.getByRole('button', { name: 'Pod: 1000', exact: true }).click();
+  const resume = page.getByRole('button', { name: 'Resume live events' });
+  await expect(resume).toBeVisible();
+  await expect(
+    page
+      .getByRole('status')
+      .filter({ hasText: 'Static event snapshot. Showing 1000 matching events.' })
+  ).toHaveCount(1);
+
+  await resume.focus();
   await page.keyboard.press('Enter');
-  await expect(page.getByRole('button', { name: 'Resume live events' })).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Pause live events' })).toBeFocused();
+  await runA11yScan(page, expect, ['#storybook-root']);
+});
+
+test('event details remain available at 320 CSS pixels', async ({ page }) => {
+  await page.setViewportSize({ width: 320, height: 800 });
+  await page.goto('/iframe.html?id=cluster-overview--large-events&viewMode=story');
+
+  await page.getByRole('textbox', { name: 'Search events' }).fill('*UNIQUE*message');
+  const eventRow = page.getByRole('row').filter({ hasText: 'Unique load-test message' });
+
+  await expect(eventRow.getByText('pod-1999')).toBeVisible();
+  await expect(eventRow.getByText('FailedScheduling')).toBeVisible();
+  await expect(eventRow.getByText('node-249')).toBeVisible();
+  await expect(eventRow.getByText('Unique load-test message').first()).toBeVisible();
+  await runA11yScan(page, expect, ['#storybook-root']);
 });

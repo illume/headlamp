@@ -200,7 +200,7 @@ export function PercentageCircle(props: PercentageCircleProps) {
   return (
     <Box
       aria-busy={isLoading}
-      aria-live="polite"
+      aria-live={isLoading ? 'polite' : undefined}
       justifyContent="center"
       alignItems="center"
       alignContent="center"
@@ -270,6 +270,7 @@ export function PercentageCircle(props: PercentageCircleProps) {
               style={{
                 fontSize: `${chartSize * 0.15}px`,
                 fill: theme.palette?.chartStyles?.labelColor,
+                pointerEvents: 'none',
               }}
             />
           </Pie>

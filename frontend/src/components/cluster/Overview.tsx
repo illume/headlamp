@@ -23,6 +23,7 @@ import { Theme } from '@mui/material/styles';
 import { useTheme } from '@mui/material/styles';
 import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
+import { visuallyHidden } from '@mui/utils';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
@@ -152,20 +153,22 @@ function EventsSection() {
     EVENT_FILTERS_STORAGE_KEY,
     defaultEventFilters
   );
+  const [savedWarningOnly, setSavedWarningOnly] = useLocalStorageState<boolean>(
+    EVENT_WARNING_SWITCH_FILTER_STORAGE_KEY,
+    EVENT_WARNING_SWITCH_DEFAULT
+  );
   const filters: EventFilters = {
     search: typeof savedFilters.search === 'string' ? savedFilters.search : '',
-    types: Array.isArray(savedFilters.types) ? savedFilters.types : [],
-    nodes: Array.isArray(savedFilters.nodes) ? savedFilters.nodes : [],
+    types: Array.isArray(savedFilters.types)
+      ? savedFilters.types.filter((value): value is string => typeof value === 'string')
+      : [],
+    nodes: Array.isArray(savedFilters.nodes)
+      ? savedFilters.nodes.filter((value): value is string => typeof value === 'string')
+      : [],
   };
   const [snapshotEvents, setSnapshotEvents] = React.useState<Event[] | null>(null);
-  const [isWarningEventSwitchChecked, setIsWarningEventSwitchChecked] = React.useState(
-    Boolean(
-      JSON.parse(
-        localStorage.getItem(EVENT_WARNING_SWITCH_FILTER_STORAGE_KEY) ||
-          EVENT_WARNING_SWITCH_DEFAULT.toString()
-      )
-    )
-  );
+  const isWarningEventSwitchChecked =
+    typeof savedWarningOnly === 'boolean' ? savedWarningOnly : EVENT_WARNING_SWITCH_DEFAULT;
   const namespace = useNamespaces();
   const { items: events, errors: eventsErrors } = Event.useList({
     limit: Event.maxLimit,
@@ -198,6 +201,16 @@ function EventsSection() {
     () => events?.filter(e => e.type === 'Warning').length ?? '?',
     [events]
   );
+  const eventStatus = snapshotEvents
+    ? t('Static event snapshot. Showing {{count}} matching events.', {
+        count: filteredEvents.length,
+      })
+    : t('Live events. Showing {{count}} matching events.', { count: filteredEvents.length });
+
+  function selectResourceKind(kind: string) {
+    setSnapshotEvents(current => current ?? [...(events ?? [])]);
+    setSavedFilters({ ...filters, types: [kind] });
+  }
 
   function makeStatusLabel(event: Event) {
     return (
@@ -225,7 +238,7 @@ function EventsSection() {
 
   return (
     <>
-      <SectionBox title={t('Events by type')} py={2}>
+      <SectionBox title={t('Events by resource kind')} py={2}>
         <PercentageCircle
           title={t('Recent events')}
           label={String(chartEvents.length)}
@@ -234,12 +247,33 @@ function EventsSection() {
             ...item,
             label: item.name,
             fill: chartColors[index % chartColors.length],
-            onClick: () => {
-              setSnapshotEvents(current => current ?? [...(events ?? [])]);
-              setSavedFilters({ ...filters, types: [item.name] });
-            },
+            onClick: () => selectResourceKind(item.name),
           }))}
-          legend={t('Select a slice to inspect a static snapshot')}
+          legend={
+            <Box>
+              <Box>{t('Select a resource kind to inspect a static snapshot')}</Box>
+              <Box
+                component="ul"
+                sx={{
+                  display: 'flex',
+                  flexWrap: 'wrap',
+                  justifyContent: 'center',
+                  gap: 0.5,
+                  listStyle: 'none',
+                  m: 0,
+                  p: 0,
+                }}
+              >
+                {eventTypeCounts.map(item => (
+                  <Box component="li" key={item.name}>
+                    <Button size="small" onClick={() => selectResourceKind(item.name)}>
+                      {item.name}: {item.value}
+                    </Button>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
+          }
         />
       </SectionBox>
       <ResourceListView
@@ -256,24 +290,22 @@ function EventsSection() {
                     numWarnings,
                   })}
                   control={<Switch color="primary" />}
-                  onChange={(event, checked) => {
-                    localStorage.setItem(
-                      EVENT_WARNING_SWITCH_FILTER_STORAGE_KEY,
-                      checked.toString()
-                    );
-                    setIsWarningEventSwitchChecked(checked);
-                  }}
+                  onChange={(event, checked) => setSavedWarningOnly(checked)}
                   key="warning-toggle"
                 />,
-                ...(snapshotEvents
-                  ? [
-                      <Button key="resume-live-events" onClick={() => setSnapshotEvents(null)}>
-                        {t('Resume live events')}
-                      </Button>,
-                    ]
-                  : []),
+                <Button
+                  key="event-mode-toggle"
+                  onClick={() =>
+                    setSnapshotEvents(current => (current ? null : [...(events ?? [])]))
+                  }
+                >
+                  {snapshotEvents ? t('Resume live events') : t('Pause live events')}
+                </Button>,
               ]}
             />
+            <Box role="status" aria-live="polite" aria-atomic="true" sx={visuallyHidden}>
+              {eventStatus}
+            </Box>
             <Box
               sx={{
                 display: 'grid',
@@ -296,7 +328,7 @@ function EventsSection() {
                 value={filters.types}
                 onChange={(event, types) => setSavedFilters({ ...filters, types })}
                 renderInput={params => (
-                  <TextField {...params} label={t('Event types')} size="small" />
+                  <TextField {...params} label={t('Resource kinds')} size="small" />
                 )}
               />
               <Autocomplete
@@ -320,18 +352,35 @@ function EventsSection() {
         errors={eventsErrors}
         columns={[
           {
-            id: 'type',
-            label: t('Type'),
-            gridTemplate: 'min-content',
-            filterVariant: 'multi-select',
-            getValue: event => event.involvedObject.kind,
-          },
-          {
             id: 'name',
             label: t('Name'),
             getValue: event => event.involvedObjectInstance?.getName() ?? event.involvedObject.name,
-            render: event => makeObjectLink(event),
+            render: event => (
+              <Box>
+                {makeObjectLink(event)}
+                <Box
+                  sx={{
+                    display: { xs: 'block', md: 'none' },
+                    mt: 0.5,
+                    color: 'text.secondary',
+                    overflowWrap: 'anywhere',
+                  }}
+                >
+                  <Box>{event.reason}</Box>
+                  {event.source?.host && <Box>{event.source.host}</Box>}
+                  <Box>{event.message}</Box>
+                  <DateLabel date={event.lastOccurrence} format="mini" />
+                </Box>
+              </Box>
+            ),
             gridTemplate: 'auto',
+          },
+          {
+            id: 'type',
+            label: t('Resource Kind'),
+            gridTemplate: 'min-content',
+            filterVariant: 'multi-select',
+            getValue: event => event.involvedObject.kind,
           },
           'namespace',
           'cluster',

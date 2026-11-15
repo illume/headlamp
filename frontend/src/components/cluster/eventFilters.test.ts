@@ -78,11 +78,15 @@ describe('event filters', () => {
       makeEvent(index, index % 2 ? 'Pod' : 'Node', `node-${index % 250}`)
     );
 
-    expect(
-      filterEvents(loadEvents, { search: '*9999', types: ['Pod'], nodes: ['node-249'] }, true).map(
-        event => event.involvedObject.name
-      )
-    ).toEqual(['pod-9999']);
+    const startedAt = performance.now();
+    const matches = filterEvents(
+      loadEvents,
+      { search: '*9999', types: ['Pod'], nodes: ['node-249'] },
+      true
+    );
+
+    expect(matches.map(event => event.involvedObject.name)).toEqual(['pod-9999']);
+    expect(performance.now() - startedAt).toBeLessThan(1000);
   });
 
   it('handles repeated wildcards across a load snapshot', () => {
