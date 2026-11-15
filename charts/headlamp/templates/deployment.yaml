@@ -568,7 +568,7 @@ spec:
         {{- with $adminSettings }}
         - name: headlamp-admin-settings
           configMap:
-            name: {{ include "headlamp.fullname" $ }}-admin-settings
+            name: {{ include "headlamp.adminSettingsName" $ }}
         {{- end }}
         {{- if .Values.pluginsManager.enabled }}
         - name: plugins-dir

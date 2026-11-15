@@ -6,6 +6,13 @@ Expand the name of the chart.
 {{- end }}
 
 {{/*
+Build the name of the administrator settings ConfigMap.
+*/}}
+{{- define "headlamp.adminSettingsName" -}}
+{{- printf "%s-admin-settings" (include "headlamp.fullname" . | trunc 48 | trimSuffix "-") }}
+{{- end }}
+
+{{/*
 Build the admin settings document. Per-plugin settings in pluginsManager configuration
 act as defaults; explicit config.settings values take precedence.
 */}}
