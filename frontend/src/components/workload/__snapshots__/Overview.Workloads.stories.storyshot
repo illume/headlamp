@@ -64,6 +64,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div
@@ -225,6 +226,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div
@@ -352,6 +354,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div
@@ -479,6 +482,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div
@@ -606,6 +610,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div
@@ -738,6 +743,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div
@@ -877,6 +883,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div
@@ -1016,6 +1023,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div
@@ -1137,6 +1145,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div

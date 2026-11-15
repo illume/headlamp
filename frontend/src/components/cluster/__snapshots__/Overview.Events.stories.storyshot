@@ -71,6 +71,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div
@@ -190,6 +191,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div
@@ -316,6 +318,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div
@@ -446,6 +449,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div
@@ -573,7 +577,7 @@
                     <h2
                       class="MuiTypography-root MuiTypography-h2 MuiTypography-noWrap css-m5vcfd-MuiTypography-root"
                     >
-                      Events by resource kind
+                      Loaded events by resource kind
                     </h2>
                     <div
                       class="MuiBox-root css-ldp2l3"
@@ -586,12 +590,13 @@
               >
                 <div
                   aria-busy="false"
+                  aria-live="polite"
                   class="MuiBox-root css-2esbmj"
                 >
                   <p
                     class="MuiTypography-root MuiTypography-body1 css-b7twky-MuiTypography-root"
                   >
-                    Recent events
+                    Loaded events
                   </p>
                   <div
                     class="recharts-wrapper"
@@ -1477,15 +1482,15 @@
                               <div
                                 class="Mui-TableHeadCell-Content-Wrapper MuiBox-root css-lapokc"
                               >
-                                Node
+                                Nodes
                               </div>
                               <span
-                                aria-label="Sort by Node ascending"
+                                aria-label="Sort by Nodes ascending"
                                 class="MuiBadge-root css-1c32n2y-MuiBadge-root"
                                 data-mui-internal-clone-element="true"
                               >
                                 <span
-                                  aria-label="Sort by Node ascending"
+                                  aria-label="Sort by Nodes ascending"
                                   class="MuiButtonBase-root MuiTableSortLabel-root Mui-active css-542clt-MuiButtonBase-root-MuiTableSortLabel-root"
                                   role="button"
                                   tabindex="0"
@@ -1823,6 +1828,16 @@
                               >
                                 failed to get cpu utilization: missing request for cpu
                               </div>
+                            </div>
+                            <div
+                              class="MuiBox-root css-p6auou"
+                            >
+                              <span
+                                class="MuiBox-root css-0"
+                              >
+                                Last Seen
+                                :
+                              </span>
                               <p
                                 aria-label="2024-02-13T15:42:17.000Z"
                                 class="MuiTypography-root MuiTypography-body1 css-1d0cpfm-MuiTypography-root"
@@ -1967,6 +1982,16 @@
                               >
                                 failed to get cpu utilization: missing request for cpu
                               </div>
+                            </div>
+                            <div
+                              class="MuiBox-root css-p6auou"
+                            >
+                              <span
+                                class="MuiBox-root css-0"
+                              >
+                                Last Seen
+                                :
+                              </span>
                               <p
                                 aria-label="2024-02-13T14:42:17.000Z"
                                 class="MuiTypography-root MuiTypography-body1 css-1d0cpfm-MuiTypography-root"
@@ -2111,6 +2136,16 @@
                               >
                                 failed to get cpu utilization: missing request for cpu
                               </div>
+                            </div>
+                            <div
+                              class="MuiBox-root css-p6auou"
+                            >
+                              <span
+                                class="MuiBox-root css-0"
+                              >
+                                Last Seen
+                                :
+                              </span>
                               <p
                                 aria-label="2023-07-13T14:42:17.000Z"
                                 class="MuiTypography-root MuiTypography-body1 css-1d0cpfm-MuiTypography-root"

@@ -94,6 +94,7 @@ export function filterEvents(events: Event[], filters: EventFilters, warningOnly
       event.involvedObject.kind,
       event.involvedObject.name,
       event.involvedObject.namespace,
+      event.getNamespace(),
       event.source?.host,
       event.reason,
       event.message,

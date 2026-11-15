@@ -200,7 +200,7 @@ export function PercentageCircle(props: PercentageCircleProps) {
   return (
     <Box
       aria-busy={isLoading}
-      aria-live={isLoading ? 'polite' : undefined}
+      aria-live="polite"
       justifyContent="center"
       alignItems="center"
       alignContent="center"

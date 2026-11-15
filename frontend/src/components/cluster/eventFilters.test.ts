@@ -64,6 +64,15 @@ describe('event filters', () => {
     ]);
   });
 
+  it('searches the Event namespace when the involved object has none', () => {
+    const event = makeEvent(4, 'Node');
+    event.involvedObject.namespace = '';
+
+    expect(filterEvents([event], { search: 'default', types: [], nodes: [] }, false)).toEqual([
+      event,
+    ]);
+  });
+
   it('matches text containing literal asterisks', () => {
     const event = makeEvent(4, 'Pod', 'node-a', 'Warning', '* controller error');
 

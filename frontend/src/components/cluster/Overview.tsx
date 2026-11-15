@@ -27,7 +27,8 @@ import { visuallyHidden } from '@mui/utils';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
-import { useCluster } from '../../lib/k8s/api/v1/hooks';
+import { useHistory } from 'react-router-dom';
+import { useSelectedClusters } from '../../lib/k8s/api/v1/hooks';
 import Event from '../../lib/k8s/event';
 import Node from '../../lib/k8s/node';
 import Pod from '../../lib/k8s/pod';
@@ -148,35 +149,60 @@ function EventsSection() {
   const { t } = useTranslation(['translation', 'glossary']);
   const theme = useTheme();
   const location = useLocation();
+  const history = useHistory();
   const queryParams = new URLSearchParams(location.search);
   const eventsFilter = queryParams.get('eventsFilter');
-  const cluster = useCluster();
+  const selectedClusters = useSelectedClusters();
+  const clusterFilterKey = [...selectedClusters].sort().map(encodeURIComponent).join('+') || 'all';
   const [savedFilters, setSavedFilters] = useLocalStorageState<EventFilters>(
-    `${EVENT_FILTERS_STORAGE_KEY}.${encodeURIComponent(cluster ?? 'all')}`,
+    `${EVENT_FILTERS_STORAGE_KEY}.${clusterFilterKey}`,
     defaultEventFilters
   );
   const [savedWarningOnly, setSavedWarningOnly] = useLocalStorageState<boolean>(
     EVENT_WARNING_SWITCH_FILTER_STORAGE_KEY,
     EVENT_WARNING_SWITCH_DEFAULT
   );
+  const storedFilters =
+    savedFilters !== null && typeof savedFilters === 'object' ? savedFilters : defaultEventFilters;
   const filters = React.useMemo<EventFilters>(
     () => ({
-      search: typeof savedFilters.search === 'string' ? savedFilters.search : '',
-      types: Array.isArray(savedFilters.types)
-        ? savedFilters.types.filter((value): value is string => typeof value === 'string')
+      search: typeof storedFilters.search === 'string' ? storedFilters.search : '',
+      types: Array.isArray(storedFilters.types)
+        ? storedFilters.types.filter((value): value is string => typeof value === 'string')
         : [],
-      nodes: Array.isArray(savedFilters.nodes)
-        ? savedFilters.nodes.filter((value): value is string => typeof value === 'string')
+      nodes: Array.isArray(storedFilters.nodes)
+        ? storedFilters.nodes.filter((value): value is string => typeof value === 'string')
         : [],
     }),
-    [savedFilters]
+    [storedFilters]
   );
-  const appliedFilters = eventsFilter ? defaultEventFilters : filters;
-  const [snapshotEvents, setSnapshotEvents] = React.useState<Event[] | null>(null);
+  const [dismissedNotificationScope, setDismissedNotificationScope] = React.useState<string | null>(
+    null
+  );
+  const [snapshot, setSnapshot] = React.useState<{ scope: string; events: Event[] } | null>(null);
+  const snapshotScope = `${location.pathname}:${eventsFilter ?? ''}`;
+  const notificationBypass = Boolean(eventsFilter) && dismissedNotificationScope !== snapshotScope;
+  const snapshotEvents = snapshot?.scope === snapshotScope ? snapshot.events : null;
+  const previousSnapshotScope = React.useRef(snapshotScope);
+  React.useEffect(() => {
+    if (previousSnapshotScope.current === snapshotScope) {
+      return;
+    }
+
+    previousSnapshotScope.current = snapshotScope;
+    setSnapshot(current => (current?.scope === snapshotScope ? current : null));
+  }, [eventsFilter, snapshotScope]);
+  const appliedFilters = notificationBypass ? defaultEventFilters : filters;
+  const visibleFilters = notificationBypass ? defaultEventFilters : filters;
   const isWarningEventSwitchChecked =
     typeof savedWarningOnly === 'boolean' ? savedWarningOnly : EVENT_WARNING_SWITCH_DEFAULT;
   const namespace = useNamespaces();
-  const { items: events, errors: eventsErrors } = Event.useList({
+  const {
+    items: events,
+    errors: eventsErrors,
+    hasMore,
+    remainingItemCount,
+  } = Event.useList({
     limit: Event.maxLimit,
     namespace,
     refetchInterval: OVERVIEW_REFETCH_INTERVAL_MS,
@@ -224,17 +250,51 @@ function EventsSection() {
     () => events?.filter(e => e.type === 'Warning').length ?? '?',
     [events]
   );
-  const eventStatus = snapshotEvents
-    ? t('Static event snapshot. Showing {{count}} matching events.', {
-        count: filteredEvents?.length ?? 0,
-      })
-    : t('Live events. Showing {{count}} matching events.', {
-        count: filteredEvents?.length ?? 0,
-      });
+  const matchingEventCount = filteredEvents?.length ?? 0;
+  const eventStatus =
+    matchingEventCount === 1
+      ? snapshotEvents
+        ? t('Static event snapshot. Showing {{count}} matching event.', {
+            count: matchingEventCount,
+          })
+        : t('Live events. Showing {{count}} matching event.', {
+            count: matchingEventCount,
+          })
+      : snapshotEvents
+      ? t('Static event snapshot. Showing {{count}} matching events.', {
+          count: matchingEventCount,
+        })
+      : t('Live events. Showing {{count}} matching events.', {
+          count: matchingEventCount,
+        });
+
+  function leaveNotificationMode() {
+    if (!eventsFilter) {
+      return;
+    }
+
+    setDismissedNotificationScope(snapshotScope);
+    queryParams.delete('eventsFilter');
+    const search = queryParams.toString();
+    history.replace({
+      ...location,
+      search: search ? `?${search}` : '',
+    });
+  }
+
+  function updateFilters(nextFilters: EventFilters) {
+    leaveNotificationMode();
+    setSavedFilters(nextFilters);
+  }
 
   function selectResourceKind(kind: string) {
-    setSnapshotEvents(current => current ?? [...(events ?? [])]);
-    setSavedFilters({ ...filters, types: [kind] });
+    if (!snapshotEvents) {
+      setSnapshot({
+        scope: eventsFilter ? `${location.pathname}:` : snapshotScope,
+        events: [...(events ?? [])],
+      });
+    }
+    updateFilters({ ...visibleFilters, types: [kind] });
   }
 
   function makeStatusLabel(event: Event) {
@@ -263,9 +323,9 @@ function EventsSection() {
 
   return (
     <>
-      <SectionBox title={t('Events by resource kind')} py={2}>
+      <SectionBox title={t('Loaded events by resource kind')} py={2}>
         <PercentageCircle
-          title={t('Recent events')}
+          title={t('Loaded events')}
           label={chartEvents === null ? '' : String(chartEvents.length)}
           total={chartEvents === null ? -1 : chartEvents.length}
           data={eventTypeCounts.map((item, index) => ({
@@ -300,6 +360,18 @@ function EventsSection() {
             </Box>
           }
         />
+        {hasMore && (
+          <Box role="note" textAlign="center" mt={1}>
+            {remainingItemCount === undefined
+              ? t('More events are available beyond the {{count}} loaded events.', {
+                  count: sourceEvents?.length ?? 0,
+                })
+              : t('Showing {{count}} loaded events; {{remaining}} more events are available.', {
+                  count: sourceEvents?.length ?? 0,
+                  remaining: remainingItemCount,
+                })}
+          </Box>
+        )}
       </SectionBox>
       <ResourceListView
         title={
@@ -322,7 +394,9 @@ function EventsSection() {
                   key="event-mode-toggle"
                   disabled={!snapshotEvents && !events}
                   onClick={() =>
-                    setSnapshotEvents(current => (current ? null : [...(events ?? [])]))
+                    setSnapshot(
+                      snapshotEvents ? null : { scope: snapshotScope, events: [...(events ?? [])] }
+                    )
                   }
                 >
                   {snapshotEvents ? t('Resume live events') : t('Pause live events')}
@@ -344,15 +418,15 @@ function EventsSection() {
               <TextField
                 label={t('Search events')}
                 placeholder={t('Use * as a wildcard')}
-                value={filters.search}
-                onChange={event => setSavedFilters({ ...filters, search: event.target.value })}
+                value={visibleFilters.search}
+                onChange={event => updateFilters({ ...visibleFilters, search: event.target.value })}
                 size="small"
               />
               <Autocomplete
                 multiple
                 options={eventTypes}
-                value={filters.types}
-                onChange={(event, types) => setSavedFilters({ ...filters, types })}
+                value={visibleFilters.types}
+                onChange={(event, types) => updateFilters({ ...visibleFilters, types })}
                 renderInput={params => (
                   <TextField {...params} label={t('Resource kinds')} size="small" />
                 )}
@@ -360,11 +434,13 @@ function EventsSection() {
               <Autocomplete
                 multiple
                 options={eventNodes}
-                value={filters.nodes}
-                onChange={(event, nodes) => setSavedFilters({ ...filters, nodes })}
-                renderInput={params => <TextField {...params} label={t('Nodes')} size="small" />}
+                value={visibleFilters.nodes}
+                onChange={(event, nodes) => updateFilters({ ...visibleFilters, nodes })}
+                renderInput={params => (
+                  <TextField {...params} label={t('glossary|Nodes')} size="small" />
+                )}
               />
-              <Button onClick={() => setSavedFilters(defaultEventFilters)}>
+              <Button onClick={() => updateFilters(defaultEventFilters)}>
                 {t('Clear filters')}
               </Button>
             </Box>
@@ -373,7 +449,8 @@ function EventsSection() {
         headerProps={{
           noNamespaceFilter: false,
         }}
-        defaultGlobalFilter={eventsFilter ?? undefined}
+        key={`${location.pathname}:${notificationBypass ? eventsFilter ?? '' : ''}`}
+        defaultGlobalFilter={notificationBypass ? eventsFilter ?? undefined : undefined}
         data={filteredEvents}
         errors={eventsErrors}
         columns={[
@@ -395,6 +472,9 @@ function EventsSection() {
                   <Box>{event.reason}</Box>
                   {event.source?.host && <Box>{event.source.host}</Box>}
                   <Box>{event.message}</Box>
+                </Box>
+                <Box sx={{ mt: 0.5, color: 'text.secondary' }}>
+                  <Box component="span">{t('Last Seen')}:</Box>
                   <DateLabel date={event.lastOccurrence} format="mini" />
                 </Box>
               </Box>
@@ -412,7 +492,7 @@ function EventsSection() {
           'cluster',
           {
             id: 'node',
-            label: t('glossary|Node'),
+            label: t('glossary|Nodes'),
             gridTemplate: 'min-content',
             filterVariant: 'multi-select',
             getValue: event => event.source?.host ?? '',

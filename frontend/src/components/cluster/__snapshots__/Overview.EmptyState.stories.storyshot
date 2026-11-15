@@ -71,6 +71,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div
@@ -190,6 +191,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div
@@ -316,6 +318,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div
@@ -446,6 +449,7 @@
                         >
                           <div
                             aria-busy="false"
+                            aria-live="polite"
                             class="MuiBox-root css-2esbmj"
                           >
                             <div
@@ -573,7 +577,7 @@
                     <h2
                       class="MuiTypography-root MuiTypography-h2 MuiTypography-noWrap css-m5vcfd-MuiTypography-root"
                     >
-                      Events by resource kind
+                      Loaded events by resource kind
                     </h2>
                     <div
                       class="MuiBox-root css-ldp2l3"
@@ -586,12 +590,13 @@
               >
                 <div
                   aria-busy="false"
+                  aria-live="polite"
                   class="MuiBox-root css-2esbmj"
                 >
                   <p
                     class="MuiTypography-root MuiTypography-body1 css-b7twky-MuiTypography-root"
                   >
-                    Recent events
+                    Loaded events
                   </p>
                   <div
                     class="recharts-wrapper"

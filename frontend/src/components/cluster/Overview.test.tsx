@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-import { render } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { createMemoryHistory } from 'history';
 import type React from 'react';
-import { MemoryRouter } from 'react-router-dom';
+import { MemoryRouter, Router } from 'react-router-dom';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Overview from './Overview';
 
@@ -29,6 +30,7 @@ const {
   percentageCircleMock,
   podUseList,
   resourceListViewMock,
+  selectedClusters,
 } = vi.hoisted(() => {
   const mocks = {
     chartMocks: {
@@ -37,13 +39,19 @@ const {
       NodesStatusCircleChart: () => <div>nodes</div>,
       PodsStatusCircleChart: () => <div>pods</div>,
     },
-    eventUseList: vi.fn(() => ({ items: [] as any[] | null, errors: null })),
+    eventUseList: vi.fn(() => ({
+      items: [] as any[] | null,
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined as number | undefined,
+    })),
     namespaceUse: vi.fn(() => [] as string[]),
     nodeUseList: vi.fn(() => [[]]),
     nodeUseMetrics: vi.fn(() => [[], null]),
     percentageCircleMock: vi.fn(),
     podUseList: vi.fn(() => [[]]),
     resourceListViewMock: vi.fn(),
+    selectedClusters: vi.fn(() => ['test']),
   };
   return mocks;
 });
@@ -51,7 +59,8 @@ const {
 vi.mock('react-i18next', async importOriginal => ({
   ...(await importOriginal<typeof import('react-i18next')>()),
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: (key: string, values?: Record<string, string | number>) =>
+      key.replace(/\{\{(\w+)\}\}/g, (_match, name: string) => String(values?.[name] ?? '')),
   }),
 }));
 
@@ -63,7 +72,7 @@ vi.mock('../../lib/k8s/event', () => ({
 }));
 
 vi.mock('../../lib/k8s/api/v1/hooks', () => ({
-  useCluster: () => 'test',
+  useSelectedClusters: selectedClusters,
 }));
 
 vi.mock('../../lib/k8s/node', () => ({
@@ -135,8 +144,14 @@ vi.mock('./Charts/index', () => chartMocks);
 describe('Overview', () => {
   beforeEach(() => {
     localStorage.clear();
-    eventUseList.mockReturnValue({ items: [], errors: null });
+    eventUseList.mockReturnValue({
+      items: [],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
     namespaceUse.mockReturnValue([]);
+    selectedClusters.mockReturnValue(['test']);
     percentageCircleMock.mockClear();
     resourceListViewMock.mockClear();
   });
@@ -160,7 +175,12 @@ describe('Overview', () => {
   });
 
   it('preserves loading state for the event chart and table', () => {
-    eventUseList.mockReturnValue({ items: null, errors: null });
+    eventUseList.mockReturnValue({
+      items: null,
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
 
     render(
       <MemoryRouter>
@@ -177,6 +197,8 @@ describe('Overview', () => {
     eventUseList.mockReturnValue({
       items: [makeEvent('event-a', 'team-a'), makeEvent('event-b', 'team-b')],
       errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
     });
 
     render(
@@ -196,7 +218,12 @@ describe('Overview', () => {
       'headlamp.events.filters.v1.test',
       JSON.stringify({ search: '', types: [], nodes: ['other-node'] })
     );
-    eventUseList.mockReturnValue({ items: [makeEvent('target', 'default')], errors: null });
+    eventUseList.mockReturnValue({
+      items: [makeEvent('target', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
 
     render(
       <MemoryRouter initialEntries={['/?eventsFilter=target']}>
@@ -208,6 +235,194 @@ describe('Overview', () => {
       data: [expect.objectContaining({ message: 'target' })],
       defaultGlobalFilter: 'target',
     });
+  });
+
+  it('handles null persisted filters', () => {
+    localStorage.setItem('headlamp.events.filters.v1.test', 'null');
+    eventUseList.mockReturnValue({
+      items: [makeEvent('event', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+
+    render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('textbox', { name: 'Search events' })).toHaveValue('');
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toHaveLength(1);
+  });
+
+  it('persists filters for the full selected cluster group', () => {
+    selectedClusters.mockReturnValue(['cluster-b', 'cluster-a']);
+    localStorage.setItem(
+      'headlamp.events.filters.v1.cluster-a+cluster-b',
+      JSON.stringify({ search: 'target', types: [], nodes: [] })
+    );
+    eventUseList.mockReturnValue({
+      items: [makeEvent('target', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+
+    render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('textbox', { name: 'Search events' })).toHaveValue('target');
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toHaveLength(1);
+  });
+
+  it('applies filter edits after bypassing notification filters', () => {
+    localStorage.setItem(
+      'headlamp.events.filters.v1.test',
+      JSON.stringify({ search: 'missing', types: [], nodes: [] })
+    );
+    eventUseList.mockReturnValue({
+      items: [makeEvent('target', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    const history = createMemoryHistory({ initialEntries: ['/c/test?eventsFilter=target'] });
+
+    render(
+      <Router history={history}>
+        <Overview />
+      </Router>
+    );
+
+    const search = screen.getByRole('textbox', { name: 'Search events' });
+    expect(search).toHaveValue('');
+    expect(resourceListViewMock.mock.lastCall?.[0].defaultGlobalFilter).toBe('target');
+    fireEvent.change(search, { target: { value: 'target' } });
+
+    expect(history.location.search).toBe('');
+    expect(screen.getByRole('textbox', { name: 'Search events' })).toHaveValue('target');
+    expect(resourceListViewMock.mock.lastCall?.[0]).toMatchObject({
+      data: [expect.objectContaining({ message: 'target' })],
+      defaultGlobalFilter: undefined,
+    });
+  });
+
+  it('clears notification filters when selecting a chart kind', () => {
+    eventUseList.mockReturnValue({
+      items: [makeEvent('target', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    const history = createMemoryHistory({ initialEntries: ['/c/test?eventsFilter=target'] });
+
+    render(
+      <Router history={history}>
+        <Overview />
+      </Router>
+    );
+
+    const firstChartDatum = percentageCircleMock.mock.lastCall?.[0].data[0];
+    act(() => firstChartDatum.onClick());
+
+    expect(history.location.search).toBe('');
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Static event snapshot. Showing 1 matching event.'
+    );
+    expect(resourceListViewMock.mock.lastCall?.[0]).toMatchObject({
+      data: [expect.objectContaining({ message: 'target' })],
+      defaultGlobalFilter: undefined,
+    });
+  });
+
+  it('drops a frozen snapshot when the notification target changes', () => {
+    const history = createMemoryHistory({ initialEntries: ['/c/test'] });
+    eventUseList.mockReturnValue({
+      items: [makeEvent('old-target', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    render(
+      <Router history={history}>
+        <Overview />
+      </Router>
+    );
+
+    const firstChartDatum = percentageCircleMock.mock.lastCall?.[0].data[0];
+    act(() => firstChartDatum.onClick());
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toEqual([
+      expect.objectContaining({ message: 'old-target' }),
+    ]);
+
+    eventUseList.mockReturnValue({
+      items: [makeEvent('new-target', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    act(() => history.push('/c/test?eventsFilter=new-target'));
+
+    expect(resourceListViewMock.mock.lastCall?.[0]).toMatchObject({
+      data: [expect.objectContaining({ message: 'new-target' })],
+      defaultGlobalFilter: 'new-target',
+    });
+
+    eventUseList.mockReturnValue({
+      items: [makeEvent('new-cluster', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    act(() => history.push('/c/other'));
+
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toEqual([
+      expect.objectContaining({ message: 'new-cluster' }),
+    ]);
+  });
+
+  it('announces when the event list is truncated', () => {
+    eventUseList.mockReturnValue({
+      items: [makeEvent('event', 'default')],
+      errors: null,
+      hasMore: true,
+      remainingItemCount: 7,
+    });
+
+    render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('note')).toHaveTextContent(
+      'Showing 1 loaded events; 7 more events are available.'
+    );
+    expect(percentageCircleMock.mock.lastCall?.[0].title).toBe('Loaded events');
+  });
+
+  it('always shows the last-seen timestamp fallback in the name column', () => {
+    eventUseList.mockReturnValue({
+      items: [makeEvent('event', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    const nameColumn = resourceListViewMock.mock.lastCall?.[0].columns.find(
+      (column: { id?: string }) => column.id === 'name'
+    );
+    const timestamp = nameColumn.render(makeEvent('event', 'default')).props.children[2];
+    expect(timestamp.props.sx).not.toHaveProperty('display');
   });
 });
 

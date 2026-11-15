@@ -91,7 +91,7 @@ test('filters and freezes a 2,000-event cluster snapshot', async ({ page }) => {
   await expect(search).toHaveValue('*UNIQUE*message');
 
   await search.fill('');
-  await page.getByRole('button', { name: 'Pod: 1000', exact: true }).focus();
+  await page.getByRole('button', { name: 'Pod: 1000', exact: true }).last().focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('button', { name: 'Resume live events' })).toBeVisible();
   await expect(page.getByText('deployment-0')).toHaveCount(0);
@@ -99,6 +99,7 @@ test('filters and freezes a 2,000-event cluster snapshot', async ({ page }) => {
   useUpdatedEvents = true;
   await page.clock.fastForward(60_000);
   await secondEventRequest;
+  await expect(page.getByRole('button', { name: 'Pod: 1000', exact: true }).last()).toBeVisible();
   await expect(
     page
       .getByRole('status')
@@ -108,7 +109,8 @@ test('filters and freezes a 2,000-event cluster snapshot', async ({ page }) => {
 
   await page.getByRole('button', { name: 'Resume live events' }).click();
   await expect(
-    page.getByRole('status').filter({ hasText: 'Live events. Showing 1 matching events.' })
+    page.getByRole('status').filter({ hasText: 'Live events. Showing 1 matching event.' })
   ).toHaveCount(1);
+  await expect(page.getByRole('button', { name: 'Pod: 1', exact: true }).last()).toBeVisible();
   await expect(page.locator('#event-2001')).toBeVisible();
 });
