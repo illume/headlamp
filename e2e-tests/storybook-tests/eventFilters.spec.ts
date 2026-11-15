@@ -20,7 +20,9 @@ import { runA11yScan } from '../tests/a11yHelper';
 test('event filters persist and chart drill-down creates a static snapshot', async ({ page }) => {
   await page.addInitScript(() => {
     if (!sessionStorage.getItem('event-filters-test-initialized')) {
-      localStorage.removeItem('headlamp.events.filters.v1');
+      Object.keys(localStorage)
+        .filter(key => key.startsWith('headlamp.events.filters.v1'))
+        .forEach(key => localStorage.removeItem(key));
       localStorage.setItem('EVENT_WARNING_SWITCH_FILTER_STORAGE_KEY', 'invalid-json');
       sessionStorage.setItem('event-filters-test-initialized', 'true');
     }

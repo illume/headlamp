@@ -46,35 +46,69 @@ function makeEvent(index: number) {
 test('filters and freezes a 2,000-event cluster snapshot', async ({ page }) => {
   await page.addInitScript(() => {
     if (!sessionStorage.getItem('event-filters-test-initialized')) {
-      localStorage.removeItem('headlamp.events.filters.v1');
+      Object.keys(localStorage)
+        .filter(key => key.startsWith('headlamp.events.filters.v1'))
+        .forEach(key => localStorage.removeItem(key));
       sessionStorage.setItem('event-filters-test-initialized', 'true');
     }
   });
-  await page.route('**/clusters/test/api/v1/events*', route =>
+  await page.clock.install();
+  let useUpdatedEvents = false;
+  let resolveSecondEventRequest = () => {};
+  const secondEventRequest = new Promise<void>(resolve => {
+    resolveSecondEventRequest = resolve;
+  });
+  await page.route('**/clusters/test/api/v1/events*', route => {
+    const items = useUpdatedEvents
+      ? [makeEvent(2001)]
+      : Array.from({ length: 2000 }, (_, index) => makeEvent(index));
+    if (useUpdatedEvents) {
+      resolveSecondEventRequest();
+    }
+
     route.fulfill({
       json: {
         apiVersion: 'v1',
         kind: 'EventList',
         metadata: { resourceVersion: '1' },
-        items: Array.from({ length: 2000 }, (_, index) => makeEvent(index)),
+        items,
       },
-    })
-  );
+    });
+  });
 
   const headlampPage = new HeadlampPage(page);
-  await headlampPage.navigateToCluster('test', process.env.HEADLAMP_TEST_TOKEN);
+  await headlampPage.navigateTopage('/c/test');
+  if (await page.getByRole('heading', { name: 'Authentication', exact: true }).isVisible()) {
+    await headlampPage.authenticate(process.env.HEADLAMP_TEST_TOKEN);
+  }
 
   const search = page.getByRole('textbox', { name: 'Search events' });
   await search.fill('*UNIQUE*message');
-  await expect(page.getByText('Unique load-test message')).toBeVisible();
+  await expect(page.locator('#event-1999')).toBeVisible();
   await expect(page.getByText('Load-test event 1')).toHaveCount(0);
 
   await page.reload();
   await expect(search).toHaveValue('*UNIQUE*message');
 
   await search.fill('');
-  await page.getByRole('button', { name: /Pod: 1000/ }).focus();
+  await page.getByRole('button', { name: 'Pod: 1000', exact: true }).focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('button', { name: 'Resume live events' })).toBeVisible();
   await expect(page.getByText('deployment-0')).toHaveCount(0);
+
+  useUpdatedEvents = true;
+  await page.clock.fastForward(60_000);
+  await secondEventRequest;
+  await expect(
+    page
+      .getByRole('status')
+      .filter({ hasText: 'Static event snapshot. Showing 1000 matching events.' })
+  ).toHaveCount(1);
+  await expect(page.locator('#event-2001')).toHaveCount(0);
+
+  await page.getByRole('button', { name: 'Resume live events' }).click();
+  await expect(
+    page.getByRole('status').filter({ hasText: 'Live events. Showing 1 matching events.' })
+  ).toHaveCount(1);
+  await expect(page.locator('#event-2001')).toBeVisible();
 });

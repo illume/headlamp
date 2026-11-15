@@ -18,7 +18,13 @@ import { describe, expect, it } from 'vitest';
 import Event, { KubeEvent } from '../../lib/k8s/event';
 import { filterEvents, getEventNodes, getEventTypeCounts, getEventTypes } from './eventFilters';
 
-function makeEvent(index: number, type = 'Pod', node = 'node-a', severity = 'Warning') {
+function makeEvent(
+  index: number,
+  type = 'Pod',
+  node = 'node-a',
+  severity = 'Warning',
+  message = `Scheduling ${type.toLowerCase()} ${index}`
+) {
   return new Event(
     {
       metadata: {
@@ -36,7 +42,7 @@ function makeEvent(index: number, type = 'Pod', node = 'node-a', severity = 'War
         resourceVersion: String(index),
         fieldPath: '',
       },
-      message: `Scheduling ${type.toLowerCase()} ${index}`,
+      message,
       reason: index % 2 ? 'FailedScheduling' : 'Started',
       source: { host: node },
       type: severity,
@@ -58,6 +64,14 @@ describe('event filters', () => {
     ]);
   });
 
+  it('matches text containing literal asterisks', () => {
+    const event = makeEvent(4, 'Pod', 'node-a', 'Warning', '* controller error');
+
+    expect(filterEvents([event], { search: 'error', types: [], nodes: [] }, false)).toEqual([
+      event,
+    ]);
+  });
+
   it('combines warning, event type, and node filters', () => {
     expect(filterEvents(events, { search: '', types: ['Pod'], nodes: ['node-b'] }, true)).toEqual([
       events[2],
@@ -70,6 +84,16 @@ describe('event filters', () => {
     expect(getEventTypeCounts(events)).toEqual([
       { name: 'Pod', value: 2 },
       { name: 'Deployment', value: 1 },
+    ]);
+  });
+
+  it('uses Unknown consistently for events without a resource kind', () => {
+    const event = makeEvent(4, '');
+
+    expect(getEventTypes([event])).toEqual(['Unknown']);
+    expect(getEventTypeCounts([event])).toEqual([{ name: 'Unknown', value: 1 }]);
+    expect(filterEvents([event], { search: '', types: ['Unknown'], nodes: [] }, false)).toEqual([
+      event,
     ]);
   });
 
@@ -95,5 +119,15 @@ describe('event filters', () => {
     expect(
       filterEvents(loadEvents, { search: '*a*a*a*a*a*a*a*a*z', types: [], nodes: [] }, true)
     ).toEqual([]);
+  });
+
+  it('handles long repetitive near-matches without rescanning prefixes', () => {
+    const event = makeEvent(1, 'Pod', 'node-a', 'Warning', `${'a'.repeat(100_000)}b`);
+    const startedAt = performance.now();
+
+    expect(
+      filterEvents([event], { search: `${'a'.repeat(10_000)}c`, types: [], nodes: [] }, false)
+    ).toEqual([]);
+    expect(performance.now() - startedAt).toBeLessThan(1000);
   });
 });

@@ -27,6 +27,7 @@ import { visuallyHidden } from '@mui/utils';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
+import { useCluster } from '../../lib/k8s/api/v1/hooks';
 import Event from '../../lib/k8s/event';
 import Node from '../../lib/k8s/node';
 import Pod from '../../lib/k8s/pod';
@@ -149,23 +150,28 @@ function EventsSection() {
   const location = useLocation();
   const queryParams = new URLSearchParams(location.search);
   const eventsFilter = queryParams.get('eventsFilter');
+  const cluster = useCluster();
   const [savedFilters, setSavedFilters] = useLocalStorageState<EventFilters>(
-    EVENT_FILTERS_STORAGE_KEY,
+    `${EVENT_FILTERS_STORAGE_KEY}.${encodeURIComponent(cluster ?? 'all')}`,
     defaultEventFilters
   );
   const [savedWarningOnly, setSavedWarningOnly] = useLocalStorageState<boolean>(
     EVENT_WARNING_SWITCH_FILTER_STORAGE_KEY,
     EVENT_WARNING_SWITCH_DEFAULT
   );
-  const filters: EventFilters = {
-    search: typeof savedFilters.search === 'string' ? savedFilters.search : '',
-    types: Array.isArray(savedFilters.types)
-      ? savedFilters.types.filter((value): value is string => typeof value === 'string')
-      : [],
-    nodes: Array.isArray(savedFilters.nodes)
-      ? savedFilters.nodes.filter((value): value is string => typeof value === 'string')
-      : [],
-  };
+  const filters = React.useMemo<EventFilters>(
+    () => ({
+      search: typeof savedFilters.search === 'string' ? savedFilters.search : '',
+      types: Array.isArray(savedFilters.types)
+        ? savedFilters.types.filter((value): value is string => typeof value === 'string')
+        : [],
+      nodes: Array.isArray(savedFilters.nodes)
+        ? savedFilters.nodes.filter((value): value is string => typeof value === 'string')
+        : [],
+    }),
+    [savedFilters]
+  );
+  const appliedFilters = eventsFilter ? defaultEventFilters : filters;
   const [snapshotEvents, setSnapshotEvents] = React.useState<Event[] | null>(null);
   const isWarningEventSwitchChecked =
     typeof savedWarningOnly === 'boolean' ? savedWarningOnly : EVENT_WARNING_SWITCH_DEFAULT;
@@ -176,18 +182,35 @@ function EventsSection() {
     refetchInterval: OVERVIEW_REFETCH_INTERVAL_MS,
   });
 
-  const sourceEvents = snapshotEvents ?? events ?? [];
+  const sourceEvents = snapshotEvents ?? events ?? null;
+  const namespaceEvents = React.useMemo(
+    () =>
+      sourceEvents === null || namespace.length === 0
+        ? sourceEvents
+        : sourceEvents.filter(event => namespace.includes(event.getNamespace() ?? '')),
+    [namespace, sourceEvents]
+  );
   const filteredEvents = React.useMemo(
-    () => filterEvents(sourceEvents, filters, isWarningEventSwitchChecked),
-    [sourceEvents, filters.search, filters.types, filters.nodes, isWarningEventSwitchChecked]
+    () =>
+      namespaceEvents === null
+        ? null
+        : filterEvents(namespaceEvents, appliedFilters, isWarningEventSwitchChecked),
+    [appliedFilters, isWarningEventSwitchChecked, namespaceEvents]
   );
   const chartEvents = React.useMemo(
-    () => filterEvents(sourceEvents, { ...filters, types: [] }, isWarningEventSwitchChecked),
-    [sourceEvents, filters.search, filters.nodes, isWarningEventSwitchChecked]
+    () =>
+      namespaceEvents === null
+        ? null
+        : filterEvents(
+            namespaceEvents,
+            { ...appliedFilters, types: [] },
+            isWarningEventSwitchChecked
+          ),
+    [appliedFilters, isWarningEventSwitchChecked, namespaceEvents]
   );
-  const eventTypes = React.useMemo(() => getEventTypes(sourceEvents), [sourceEvents]);
-  const eventNodes = React.useMemo(() => getEventNodes(sourceEvents), [sourceEvents]);
-  const eventTypeCounts = React.useMemo(() => getEventTypeCounts(chartEvents), [chartEvents]);
+  const eventTypes = React.useMemo(() => getEventTypes(namespaceEvents ?? []), [namespaceEvents]);
+  const eventNodes = React.useMemo(() => getEventNodes(namespaceEvents ?? []), [namespaceEvents]);
+  const eventTypeCounts = React.useMemo(() => getEventTypeCounts(chartEvents ?? []), [chartEvents]);
   const chartColors = [
     theme.palette.primary.main,
     theme.palette.warning.main,
@@ -203,9 +226,11 @@ function EventsSection() {
   );
   const eventStatus = snapshotEvents
     ? t('Static event snapshot. Showing {{count}} matching events.', {
-        count: filteredEvents.length,
+        count: filteredEvents?.length ?? 0,
       })
-    : t('Live events. Showing {{count}} matching events.', { count: filteredEvents.length });
+    : t('Live events. Showing {{count}} matching events.', {
+        count: filteredEvents?.length ?? 0,
+      });
 
   function selectResourceKind(kind: string) {
     setSnapshotEvents(current => current ?? [...(events ?? [])]);
@@ -241,8 +266,8 @@ function EventsSection() {
       <SectionBox title={t('Events by resource kind')} py={2}>
         <PercentageCircle
           title={t('Recent events')}
-          label={String(chartEvents.length)}
-          total={chartEvents.length}
+          label={chartEvents === null ? '' : String(chartEvents.length)}
+          total={chartEvents === null ? -1 : chartEvents.length}
           data={eventTypeCounts.map((item, index) => ({
             ...item,
             label: item.name,
@@ -295,6 +320,7 @@ function EventsSection() {
                 />,
                 <Button
                   key="event-mode-toggle"
+                  disabled={!snapshotEvents && !events}
                   onClick={() =>
                     setSnapshotEvents(current => (current ? null : [...(events ?? [])]))
                   }

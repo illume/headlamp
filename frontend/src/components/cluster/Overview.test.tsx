@@ -17,21 +17,36 @@
 import { render } from '@testing-library/react';
 import type React from 'react';
 import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Overview from './Overview';
 
-const { chartMocks, eventUseList, nodeUseList, nodeUseMetrics, podUseList } = vi.hoisted(() => ({
-  chartMocks: {
-    CpuCircularChart: () => <div>cpu</div>,
-    MemoryCircularChart: () => <div>memory</div>,
-    NodesStatusCircleChart: () => <div>nodes</div>,
-    PodsStatusCircleChart: () => <div>pods</div>,
-  },
-  eventUseList: vi.fn(() => ({ items: [], errors: null })),
-  nodeUseList: vi.fn(() => [[]]),
-  nodeUseMetrics: vi.fn(() => [[], null]),
-  podUseList: vi.fn(() => [[]]),
-}));
+const {
+  chartMocks,
+  eventUseList,
+  namespaceUse,
+  nodeUseList,
+  nodeUseMetrics,
+  percentageCircleMock,
+  podUseList,
+  resourceListViewMock,
+} = vi.hoisted(() => {
+  const mocks = {
+    chartMocks: {
+      CpuCircularChart: () => <div>cpu</div>,
+      MemoryCircularChart: () => <div>memory</div>,
+      NodesStatusCircleChart: () => <div>nodes</div>,
+      PodsStatusCircleChart: () => <div>pods</div>,
+    },
+    eventUseList: vi.fn(() => ({ items: [] as any[] | null, errors: null })),
+    namespaceUse: vi.fn(() => [] as string[]),
+    nodeUseList: vi.fn(() => [[]]),
+    nodeUseMetrics: vi.fn(() => [[], null]),
+    percentageCircleMock: vi.fn(),
+    podUseList: vi.fn(() => [[]]),
+    resourceListViewMock: vi.fn(),
+  };
+  return mocks;
+});
 
 vi.mock('react-i18next', async importOriginal => ({
   ...(await importOriginal<typeof import('react-i18next')>()),
@@ -45,6 +60,10 @@ vi.mock('../../lib/k8s/event', () => ({
     maxLimit: 2000,
     useList: eventUseList,
   },
+}));
+
+vi.mock('../../lib/k8s/api/v1/hooks', () => ({
+  useCluster: () => 'test',
 }));
 
 vi.mock('../../lib/k8s/node', () => ({
@@ -66,7 +85,7 @@ vi.mock('../../lib/util', () => ({
 
 vi.mock('../../redux/filterSlice', async importOriginal => ({
   ...(await importOriginal<typeof import('../../redux/filterSlice')>()),
-  useNamespaces: () => [],
+  useNamespaces: namespaceUse,
 }));
 
 vi.mock('../../redux/hooks', () => ({
@@ -74,7 +93,17 @@ vi.mock('../../redux/hooks', () => ({
 }));
 
 vi.mock('../common/Resource/ResourceListView', () => ({
-  default: ({ title }: { title: string }) => <div>{title}</div>,
+  default: (props: { title: React.ReactNode }) => {
+    resourceListViewMock(props);
+    return <div>{props.title}</div>;
+  },
+}));
+
+vi.mock('../common/Chart', () => ({
+  PercentageCircle: (props: object) => {
+    percentageCircleMock(props);
+    return <div>event chart</div>;
+  },
 }));
 
 vi.mock('../common/SectionFilterHeader', () => ({
@@ -104,6 +133,14 @@ vi.mock('./Charts', () => chartMocks);
 vi.mock('./Charts/index', () => chartMocks);
 
 describe('Overview', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    eventUseList.mockReturnValue({ items: [], errors: null });
+    namespaceUse.mockReturnValue([]);
+    percentageCircleMock.mockClear();
+    resourceListViewMock.mockClear();
+  });
+
   it('polls overview resources instead of opening watch streams', () => {
     const OVERVIEW_REFETCH_INTERVAL_MS = 60_000;
 
@@ -121,4 +158,66 @@ describe('Overview', () => {
       refetchInterval: OVERVIEW_REFETCH_INTERVAL_MS,
     });
   });
+
+  it('preserves loading state for the event chart and table', () => {
+    eventUseList.mockReturnValue({ items: null, errors: null });
+
+    render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    expect(percentageCircleMock.mock.lastCall?.[0]).toMatchObject({ total: -1 });
+    expect(resourceListViewMock.mock.lastCall?.[0]).toMatchObject({ data: null });
+  });
+
+  it('applies namespace selection before deriving chart and table data', () => {
+    namespaceUse.mockReturnValue(['team-a']);
+    eventUseList.mockReturnValue({
+      items: [makeEvent('event-a', 'team-a'), makeEvent('event-b', 'team-b')],
+      errors: null,
+    });
+
+    render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    expect(percentageCircleMock.mock.lastCall?.[0]).toMatchObject({ total: 1 });
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toEqual([
+      expect.objectContaining({ message: 'event-a' }),
+    ]);
+  });
+
+  it('bypasses saved filters for event notification links', () => {
+    localStorage.setItem(
+      'headlamp.events.filters.v1.test',
+      JSON.stringify({ search: '', types: [], nodes: ['other-node'] })
+    );
+    eventUseList.mockReturnValue({ items: [makeEvent('target', 'default')], errors: null });
+
+    render(
+      <MemoryRouter initialEntries={['/?eventsFilter=target']}>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    expect(resourceListViewMock.mock.lastCall?.[0]).toMatchObject({
+      data: [expect.objectContaining({ message: 'target' })],
+      defaultGlobalFilter: 'target',
+    });
+  });
 });
+
+function makeEvent(message: string, namespace: string) {
+  return {
+    getNamespace: () => namespace,
+    involvedObject: { kind: 'Pod', name: message, namespace },
+    message,
+    reason: 'Started',
+    source: { host: 'node-a' },
+    type: 'Warning',
+  };
+}
