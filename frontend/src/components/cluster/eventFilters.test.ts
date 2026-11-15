@@ -84,4 +84,12 @@ describe('event filters', () => {
       )
     ).toEqual(['pod-9999']);
   });
+
+  it('handles repeated wildcards across a load snapshot', () => {
+    const loadEvents = Array.from({ length: 2_000 }, (_, index) => makeEvent(index));
+
+    expect(
+      filterEvents(loadEvents, { search: '*a*a*a*a*a*a*a*a*z', types: [], nodes: [] }, true)
+    ).toEqual([]);
+  });
 });

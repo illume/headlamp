@@ -28,14 +28,38 @@ export const defaultEventFilters: EventFilters = {
   nodes: [],
 };
 
-function wildcardRegExp(pattern: string) {
-  const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&').replaceAll('*', '.*');
-  return new RegExp(escaped, 'i');
+function wildcardMatch(value: string, pattern: string) {
+  const text = value.toLowerCase();
+  const wildcard = `*${pattern.toLowerCase()}*`;
+  let textIndex = 0;
+  let patternIndex = 0;
+  let starIndex = -1;
+  let starTextIndex = 0;
+
+  while (textIndex < text.length) {
+    if (wildcard[patternIndex] === text[textIndex]) {
+      textIndex++;
+      patternIndex++;
+    } else if (wildcard[patternIndex] === '*') {
+      starIndex = patternIndex++;
+      starTextIndex = textIndex;
+    } else if (starIndex !== -1) {
+      patternIndex = starIndex + 1;
+      textIndex = ++starTextIndex;
+    } else {
+      return false;
+    }
+  }
+
+  while (wildcard[patternIndex] === '*') {
+    patternIndex++;
+  }
+
+  return patternIndex === wildcard.length;
 }
 
 export function filterEvents(events: Event[], filters: EventFilters, warningOnly: boolean) {
   const search = filters.search.trim();
-  const searchPattern = search ? wildcardRegExp(search) : null;
   const types = new Set(filters.types);
   const nodes = new Set(filters.nodes);
 
@@ -49,7 +73,7 @@ export function filterEvents(events: Event[], filters: EventFilters, warningOnly
     if (nodes.size > 0 && !nodes.has(event.source?.host ?? '')) {
       return false;
     }
-    if (!searchPattern) {
+    if (!search) {
       return true;
     }
 
@@ -60,7 +84,7 @@ export function filterEvents(events: Event[], filters: EventFilters, warningOnly
       event.source?.host,
       event.reason,
       event.message,
-    ].some(value => value && searchPattern.test(value));
+    ].some(value => value && wildcardMatch(value, search));
   });
 }
 
