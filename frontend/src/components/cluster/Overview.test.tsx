@@ -77,6 +77,10 @@ vi.mock('../common/Resource/ResourceListView', () => ({
   default: ({ title }: { title: string }) => <div>{title}</div>,
 }));
 
+vi.mock('../common/SectionFilterHeader', () => ({
+  default: ({ title }: { title: string }) => <div>{title}</div>,
+}));
+
 vi.mock('../common/Resource', () => ({
   PageGrid: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }));

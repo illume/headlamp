@@ -36,6 +36,7 @@ export default {
   parameters: {
     msw: {
       handlers: {
+        base: null,
         story: [
           http.get(`${API_BASE}/api/v1/events`, () =>
             HttpResponse.json({

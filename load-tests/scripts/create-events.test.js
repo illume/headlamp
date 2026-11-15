@@ -9,3 +9,12 @@ test('eventYaml creates a DNS-compatible Kubernetes resource name', () => {
   assert.equal(name, 'lorem-event-12-1785114123456');
   assert.match(name, /^[a-z0-9](?:[-a-z0-9]*[a-z0-9])?$/);
 });
+
+test('eventYaml creates filterable event types and node origins', () => {
+  const yaml = eventYaml(3, new Date('2026-07-27T01:02:03.456Z'));
+
+  assert.match(yaml, /^reason: Started$/m);
+  assert.match(yaml, /^  host: kwok-node-3$/m);
+  assert.match(yaml, /^  kind: Job$/m);
+  assert.match(yaml, /^  name: load-test-job-3$/m);
+});
