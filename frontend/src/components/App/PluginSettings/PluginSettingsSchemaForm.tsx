@@ -43,7 +43,11 @@ function errorField(error: ErrorObject): string {
   if (error.keyword === 'required') {
     return String(error.params.missingProperty);
   }
-  return error.instancePath.replace(/^\//, '').split('/')[0];
+  return error.instancePath
+    .replace(/^\//, '')
+    .split('/')[0]
+    .replace(/~1/g, '/')
+    .replace(/~0/g, '~');
 }
 
 function acceptsFieldValue(
@@ -52,7 +56,33 @@ function acceptsFieldValue(
   fieldName: string
 ): boolean {
   const valid = validate(value);
-  return Boolean(valid || !validate.errors?.some(error => errorField(error) === fieldName));
+  const errors = [...(validate.errors ?? [])];
+  if (valid || errors.some(error => errorField(error) === fieldName)) {
+    return Boolean(valid);
+  }
+
+  const rootErrors = errors.filter(error => error.instancePath === '');
+  if (rootErrors.length === 0) {
+    return true;
+  }
+
+  const withoutField = { ...value };
+  delete withoutField[fieldName];
+  const validWithoutField = validate(withoutField);
+  if (validWithoutField) {
+    return false;
+  }
+
+  const remainingRootErrors = (validate.errors ?? []).filter(error => error.instancePath === '');
+  return !rootErrors.some(
+    error =>
+      !remainingRootErrors.some(
+        remaining =>
+          remaining.keyword === error.keyword &&
+          remaining.schemaPath === error.schemaPath &&
+          JSON.stringify(remaining.params) === JSON.stringify(error.params)
+      )
+  );
 }
 
 function schemaErrorMessage(schema: Record<string, any>, error: ErrorObject): string | undefined {
@@ -200,7 +230,8 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
         }
 
         const isNumber = fieldType === 'number' || fieldType === 'integer';
-        const displayedValue = clearedFields.has(name) ? '' : effectiveData[name] ?? '';
+        const displayedValue =
+          !disabled && clearedFields.has(name) ? '' : effectiveData[name] ?? '';
         return (
           <TextField
             key={name}

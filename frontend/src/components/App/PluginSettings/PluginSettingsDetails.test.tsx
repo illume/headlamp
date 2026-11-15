@@ -341,6 +341,135 @@ describe('PluginSettingsDetails metadata', () => {
     expect(onSave).toHaveBeenCalledWith({});
   });
 
+  it('unsets an optional URI property containing a slash', async () => {
+    const onSave = vi.fn();
+    render(
+      <TestContext>
+        <ThemeProvider theme={theme}>
+          <PluginSettingsDetailsPure
+            config={{ 'api/endpoint': 'https://example.com' }}
+            plugin={{
+              ...plugin,
+              headlamp: {
+                settingsSchema: {
+                  type: 'object',
+                  additionalProperties: false,
+                  properties: {
+                    'api/endpoint': { type: 'string', format: 'uri', title: 'Endpoint' },
+                  },
+                },
+              },
+            }}
+            onSave={onSave}
+            onDelete={() => {}}
+          />
+        </ThemeProvider>
+      </TestContext>
+    );
+
+    await userEvent.clear(screen.getByRole('textbox', { name: 'Endpoint' }));
+    const save = screen.getByRole('button', { name: 'Save' });
+    await waitFor(() => expect(save).toBeEnabled());
+    await userEvent.click(save);
+
+    expect(onSave).toHaveBeenCalledWith({});
+  });
+
+  it('unsets an optional empty string rejected by a root constraint', async () => {
+    const onSave = vi.fn();
+    render(
+      <TestContext>
+        <ThemeProvider theme={theme}>
+          <PluginSettingsDetailsPure
+            config={{ endpoint: 'https://example.com' }}
+            plugin={{
+              ...plugin,
+              headlamp: {
+                settingsSchema: {
+                  type: 'object',
+                  additionalProperties: false,
+                  properties: { endpoint: { type: 'string', title: 'Endpoint' } },
+                  not: {
+                    required: ['endpoint'],
+                    properties: { endpoint: { const: '' } },
+                  },
+                },
+              },
+            }}
+            onSave={onSave}
+            onDelete={() => {}}
+          />
+        </ThemeProvider>
+      </TestContext>
+    );
+
+    await userEvent.clear(screen.getByRole('textbox', { name: 'Endpoint' }));
+    const save = screen.getByRole('button', { name: 'Save' });
+    await waitFor(() => expect(save).toBeEnabled());
+    await userEvent.click(save);
+
+    expect(onSave).toHaveBeenCalledWith({});
+  });
+
+  it('shows the managed value when a cleared field becomes administrator-disabled', async () => {
+    const onSave = vi.fn();
+    const resetAdminSettings = () =>
+      store.dispatch(
+        setAdminSettings({
+          defaults: {},
+          display: {},
+          clusterDefinedSettings: [],
+          clusterDefined: {},
+        })
+      );
+    resetAdminSettings();
+
+    const renderSettings = () => (
+      <TestContext store={store}>
+        <ThemeProvider theme={theme}>
+          <PluginSettingsDetailsPure
+            config={{ endpoint: 'https://user.example.com' }}
+            plugin={{
+              ...plugin,
+              headlamp: {
+                settingsSchema: {
+                  type: 'object',
+                  properties: {
+                    endpoint: { type: 'string', default: 'https://default.example.com' },
+                  },
+                },
+              },
+            }}
+            adminSettings={store.getState().adminSettings}
+            onSave={onSave}
+            onDelete={() => {}}
+          />
+        </ThemeProvider>
+      </TestContext>
+    );
+    const { rerender } = render(renderSettings());
+
+    const endpoint = screen.getByRole('textbox', { name: 'endpoint' });
+    await userEvent.clear(endpoint);
+    expect(endpoint).toHaveValue('');
+
+    store.dispatch(
+      setAdminSettings({
+        defaults: { plugins: { 'my-plugin': { endpoint: 'https://admin.example.com' } } },
+        display: { 'plugins.my-plugin.endpoint': 'disabled' },
+        clusterDefinedSettings: [],
+        clusterDefined: {},
+      })
+    );
+    rerender(renderSettings());
+
+    await waitFor(() => {
+      expect(endpoint).toBeDisabled();
+      expect(endpoint).toHaveValue('https://admin.example.com');
+    });
+    resetAdminSettings();
+  });
+
   it('recompiles a refreshed schema that reuses its id', () => {
     const renderPlugin = (title: string): PluginInfo => ({
       ...plugin,
