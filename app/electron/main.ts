@@ -935,6 +935,8 @@ async function startServer(
   const managedPolicy = loadManagedPolicy({
     userDataPath: app.getPath('userData'),
     env: extendedEnv,
+    productName: productMetadata?.productName ?? app.getName(),
+    appId: productMetadata?.appId,
   });
   if (managedPolicy.adminSettingsPath) {
     serverArgs.push('--settings', managedPolicy.adminSettingsPath);

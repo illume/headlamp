@@ -48,7 +48,19 @@ describe('settings load/save', () => {
         '/Library/Application Support/Headlamp/settings.json'
       );
       expect(getAdminSettingsPath('win32', { ProgramData: 'D:\\ProgramData' })).toBe(
-        'D:\\ProgramData\\Headlamp\\settings.json'
+        'D:\\ProgramData\\headlamp\\settings.json'
+      );
+    });
+
+    it('uses the product name for machine-wide admin settings locations', () => {
+      expect(getAdminSettingsPath('darwin', {}, 'Example Desktop')).toBe(
+        '/Library/Application Support/Example Desktop/settings.json'
+      );
+      expect(getAdminSettingsPath('win32', {}, 'Example Desktop')).toBe(
+        'C:\\ProgramData\\Example Desktop\\settings.json'
+      );
+      expect(getAdminSettingsPath('linux', {}, 'Example Desktop')).toBe(
+        '/etc/example-desktop/settings.json'
       );
     });
 

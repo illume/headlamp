@@ -17,10 +17,10 @@
 import { execFileSync } from 'child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { getAdminSettingsPath } from './settings';
+import { getAdminSettingsName, getAdminSettingsPath } from './settings';
 
-const WINDOWS_POLICY_KEY = String.raw`HKLM\Software\Policies\Headlamp`;
-const MACOS_POLICY_DOMAIN = '/Library/Managed Preferences/com.microsoft.Headlamp';
+const WINDOWS_POLICY_KEY = String.raw`HKLM\Software\Policies`;
+const MACOS_POLICY_DOMAIN = 'com.microsoft.Headlamp';
 const POLICY_VALUE = 'PolicyJSON';
 const POLICY_COMMAND_TIMEOUT_MS = 5000;
 
@@ -68,14 +68,15 @@ function parsePolicy(raw: string, decodeManagedString = false): Record<string, a
 
 function readWindowsPolicy(
   run: typeof execFileSync,
-  systemRoot: string
+  systemRoot: string,
+  productName: string
 ): Record<string, any> | undefined {
   let output: string;
   try {
     output = String(
       run(
         path.win32.join(systemRoot, 'System32', 'reg.exe'),
-        ['query', WINDOWS_POLICY_KEY, '/v', POLICY_VALUE, '/reg:64'],
+        ['query', `${WINDOWS_POLICY_KEY}\\${getAdminSettingsName(productName)}`, '/v', POLICY_VALUE, '/reg:64'],
         {
           encoding: 'utf8',
           maxBuffer: 1024 * 1024,
@@ -94,28 +95,35 @@ function readWindowsPolicy(
   }
   const policy = parsePolicy(match[1], true);
   if (!policy) {
-    throw new Error('Windows Headlamp PolicyJSON must contain a JSON object');
+    throw new Error('Windows managed PolicyJSON must contain a JSON object');
   }
   return policy;
 }
 
-function readMacOSPolicy(run: typeof execFileSync): Record<string, any> | undefined {
+function readMacOSPolicy(
+  run: typeof execFileSync,
+  appId: string
+): Record<string, any> | undefined {
   let output: string;
   try {
     output = String(
-      run('/usr/bin/defaults', ['read', MACOS_POLICY_DOMAIN, POLICY_VALUE], {
-        encoding: 'utf8',
-        maxBuffer: 1024 * 1024,
-        stdio: ['ignore', 'pipe', 'ignore'],
-        timeout: POLICY_COMMAND_TIMEOUT_MS,
-      })
+      run(
+        '/usr/bin/defaults',
+        ['read', `/Library/Managed Preferences/${appId || MACOS_POLICY_DOMAIN}`, POLICY_VALUE],
+        {
+          encoding: 'utf8',
+          maxBuffer: 1024 * 1024,
+          stdio: ['ignore', 'pipe', 'ignore'],
+          timeout: POLICY_COMMAND_TIMEOUT_MS,
+        }
+      )
     );
   } catch {
     return undefined;
   }
   const policy = parsePolicy(output, true);
   if (!policy) {
-    throw new Error('macOS Headlamp PolicyJSON must contain a JSON object');
+    throw new Error('macOS managed PolicyJSON must contain a JSON object');
   }
   return policy;
 }
@@ -158,10 +166,13 @@ export function loadManagedPolicy(options: {
   env?: NodeJS.ProcessEnv;
   userDataPath: string;
   run?: typeof execFileSync;
+  productName?: string;
+  appId?: string;
 }): ManagedPolicy {
   const platform = options.platform ?? process.platform;
   const env = options.env ?? process.env;
   const run = options.run ?? execFileSync;
+  const productName = options.productName ?? 'Headlamp';
   const explicitPath = env.HEADLAMP_ADMIN_SETTINGS;
   const explicitResult = explicitPath
     ? readPolicyFile(explicitPath)
@@ -176,10 +187,10 @@ export function loadManagedPolicy(options: {
     const systemRoot = path.win32.isAbsolute(env.SystemRoot ?? '')
       ? env.SystemRoot!
       : 'C:\\Windows';
-    policy = readWindowsPolicy(run, systemRoot);
+    policy = readWindowsPolicy(run, systemRoot, productName);
     source = policy ? 'windows-registry' : undefined;
   } else if (!policy && platform === 'darwin') {
-    policy = readMacOSPolicy(run);
+    policy = readMacOSPolicy(run, options.appId ?? MACOS_POLICY_DOMAIN);
     source = policy ? 'macos-managed-preferences' : undefined;
   }
 
@@ -187,7 +198,7 @@ export function loadManagedPolicy(options: {
     const managedPath = getAdminSettingsPath(platform, {
       ...env,
       HEADLAMP_ADMIN_SETTINGS: undefined,
-    });
+    }, productName);
     if (managedPath) {
       const fileResult = readPolicyFile(managedPath);
       const filePolicy = fileResult.policy;

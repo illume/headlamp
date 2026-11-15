@@ -55,7 +55,7 @@ describe('managed desktop policy', () => {
     expect(policy.backend).toEqual({ 'log-level': 'warn' });
     expect(run).toHaveBeenCalledWith(
       'C:\\Windows\\System32\\reg.exe',
-      ['query', String.raw`HKLM\Software\Policies\Headlamp`, '/v', 'PolicyJSON', '/reg:64'],
+      ['query', String.raw`HKLM\Software\Policies\headlamp`, '/v', 'PolicyJSON', '/reg:64'],
       expect.objectContaining({
         timeout: 5000,
         stdio: ['ignore', 'pipe', 'ignore'],
@@ -64,6 +64,29 @@ describe('managed desktop policy', () => {
     expect(JSON.parse(fs.readFileSync(policy.adminSettingsPath!, 'utf8'))).toEqual({
       defaults: { theme: 'dark' },
     });
+  });
+
+  it('uses the product name for the Windows policy location', () => {
+    const run = vi.fn(() =>
+      Buffer.from('PolicyJSON    REG_SZ    {"defaults":{"theme":"dark"}}')
+    ) as any;
+    const directory = temporaryDirectory();
+
+    const policy = loadManagedPolicy({
+      platform: 'win32',
+      env: {},
+      userDataPath: directory,
+      run,
+      productName: 'Example Desktop',
+    });
+
+    expect(policy.source).toBe('windows-registry');
+    expect(run).toHaveBeenCalledWith(
+      'C:\\Windows\\System32\\reg.exe',
+      ['query', 'HKLM\\Software\\Policies\\example-desktop', '/v', 'PolicyJSON', '/reg:64'],
+      expect.objectContaining({ timeout: 5000 })
+    );
+    expect(policy.adminSettingsPath).toBe(path.join(directory, 'managed-policy-settings.json'));
   });
 
   it('loads multiline JSON from a Windows registry value', () => {
@@ -185,6 +208,25 @@ describe('managed desktop policy', () => {
     expect(JSON.parse(fs.readFileSync(policy.adminSettingsPath!, 'utf8'))).toEqual({
       defaults: { theme: 'dark' },
     });
+  });
+
+  it('uses the app bundle identifier for macOS managed preferences', () => {
+    const run = vi.fn(() => '{"backend":{"cache-enabled":true}}') as any;
+
+    loadManagedPolicy({
+      platform: 'darwin',
+      env: {},
+      userDataPath: temporaryDirectory(),
+      run,
+      productName: 'Example Desktop',
+      appId: 'io.example.desktop',
+    });
+
+    expect(run).toHaveBeenCalledWith(
+      '/usr/bin/defaults',
+      ['read', '/Library/Managed Preferences/io.example.desktop', 'PolicyJSON'],
+      expect.objectContaining({ timeout: 5000 })
+    );
   });
 
   it('applies command line, environment, policy, then default precedence', () => {

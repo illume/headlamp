@@ -88,6 +88,14 @@ The desktop app reads a machine-wide file from:
 - Windows: `%ProgramData%\Headlamp\settings.json`
 - Linux: `/etc/headlamp/settings.json`
 
+For branded desktop builds, the product name from the build manifest scopes
+these locations. The product name is used as the directory on macOS and Windows
+and normalized to a lowercase directory name on Linux. For example, `Example
+Desktop` uses `/Library/Application Support/Example Desktop/settings.json`,
+`%ProgramData%\Example Desktop\settings.json`, and
+`/etc/example-desktop/settings.json`. The standard Headlamp locations remain
+unchanged.
+
 Deploy this file with the same device-management tool used to deploy Headlamp,
 for example a Jamf policy or other MDM package on macOS, or Microsoft Intune,
 Configuration Manager, or Group Policy on Windows. Restrict write access to
@@ -99,11 +107,13 @@ it exists and refuses to start its backend if the JSON is invalid.
 
 ## Enterprise desktop policy
 
-Headlamp also reads the complete JSON policy from these machine policy values:
+The desktop app also reads the complete JSON policy from these machine policy
+values:
 
-- Windows: `HKLM\Software\Policies\Headlamp`, string value `PolicyJSON`
-- macOS: managed preference domain `com.microsoft.Headlamp`, string key
-  `PolicyJSON`
+- Windows: `HKLM\Software\Policies\<product-name-slug>`, string value
+  `PolicyJSON` (for example, `HKLM\Software\Policies\example-desktop`)
+- macOS: the app bundle identifier's managed preference domain, string key
+  `PolicyJSON` (for Headlamp, `com.microsoft.Headlamp`)
 
 This allows Intune, Group Policy, Jamf, or another MDM to deploy the same policy
 without a separate file. On macOS, deploy the preference through a configuration
