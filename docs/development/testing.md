@@ -47,7 +47,7 @@ kubectl config get-contexts
 
 This will create 900 nodes, 9000 pods, and 10,000 events as fast as possible. The events span multiple involved-object types and 1,000 node origins so the event filters and chart can be exercised under load. Finally, it will create 15 clusters.
 
-The cluster Overview loads at most 2,000 events for its chart, search, and table. When additional events exist, the page indicates that the loaded results are incomplete; searches and chart counts apply only to those loaded events. Search supports `*` wildcards, and the resource-kind chart can pause the current results for investigation. Use **Resume live events** to return to refreshed results. Event filters are saved for the selected cluster or cluster group.
+The cluster Overview loads at most 2,000 events for its chart, search, and table. When additional events exist, the page indicates that the loaded results are incomplete; searches and chart counts apply only to those loaded events. Search supports `*` wildcards, and the resource-kind chart can pause the current results and their incompleteness notice for investigation. Editing filters keeps the snapshot paused; use **Resume live events** to return to refreshed results. Event filters are saved for the selected cluster or cluster group.
 
 ```bash
 cd load-tests

@@ -41,7 +41,7 @@ import { DateLabel } from '../common/Label';
 import { StatusLabel } from '../common/Label';
 import Link from '../common/Link';
 import { PageGrid } from '../common/Resource';
-import ResourceListView from '../common/Resource/ResourceListView';
+import ResourceTable from '../common/Resource/ResourceTable';
 import { SectionBox } from '../common/SectionBox';
 import SectionFilterHeader from '../common/SectionFilterHeader';
 import ShowHideLabel from '../common/ShowHideLabel';
@@ -176,13 +176,16 @@ function EventsSection() {
     }),
     [storedFilters]
   );
-  const [dismissedNotificationScope, setDismissedNotificationScope] = React.useState<string | null>(
-    null
-  );
-  const [snapshot, setSnapshot] = React.useState<{ scope: string; events: Event[] } | null>(null);
+  const [snapshot, setSnapshot] = React.useState<{
+    scope: string;
+    events: Event[];
+    hasMore: boolean | undefined;
+    remainingItemCount: number | undefined;
+  } | null>(null);
   const snapshotScope = `${location.pathname}:${eventsFilter ?? ''}`;
-  const notificationBypass = Boolean(eventsFilter) && dismissedNotificationScope !== snapshotScope;
-  const snapshotEvents = snapshot?.scope === snapshotScope ? snapshot.events : null;
+  const notificationBypass = Boolean(eventsFilter);
+  const activeSnapshot = snapshot?.scope === snapshotScope ? snapshot : null;
+  const snapshotEvents = activeSnapshot?.events ?? null;
   const previousSnapshotScope = React.useRef(snapshotScope);
   React.useEffect(() => {
     if (previousSnapshotScope.current === snapshotScope) {
@@ -191,7 +194,7 @@ function EventsSection() {
 
     previousSnapshotScope.current = snapshotScope;
     setSnapshot(current => (current?.scope === snapshotScope ? current : null));
-  }, [eventsFilter, snapshotScope]);
+  }, [snapshotScope]);
   const appliedFilters = notificationBypass ? defaultEventFilters : filters;
   const visibleFilters = notificationBypass ? defaultEventFilters : filters;
   const isWarningEventSwitchChecked =
@@ -273,7 +276,9 @@ function EventsSection() {
       return;
     }
 
-    setDismissedNotificationScope(snapshotScope);
+    setSnapshot(current =>
+      current?.scope === snapshotScope ? { ...current, scope: `${location.pathname}:` } : current
+    );
     queryParams.delete('eventsFilter');
     const search = queryParams.toString();
     history.replace({
@@ -292,6 +297,8 @@ function EventsSection() {
       setSnapshot({
         scope: eventsFilter ? `${location.pathname}:` : snapshotScope,
         events: [...(events ?? [])],
+        hasMore,
+        remainingItemCount,
       });
     }
     updateFilters({ ...visibleFilters, types: [kind] });
@@ -360,20 +367,22 @@ function EventsSection() {
             </Box>
           }
         />
-        {hasMore && (
+        {(activeSnapshot ? activeSnapshot.hasMore : hasMore) && (
           <Box role="note" textAlign="center" mt={1}>
-            {remainingItemCount === undefined
+            {(activeSnapshot ? activeSnapshot.remainingItemCount : remainingItemCount) === undefined
               ? t('More events are available beyond the {{count}} loaded events.', {
                   count: sourceEvents?.length ?? 0,
                 })
               : t('Showing {{count}} loaded events; {{remaining}} more events are available.', {
                   count: sourceEvents?.length ?? 0,
-                  remaining: remainingItemCount,
+                  remaining: activeSnapshot
+                    ? activeSnapshot.remainingItemCount
+                    : remainingItemCount,
                 })}
           </Box>
         )}
       </SectionBox>
-      <ResourceListView
+      <SectionBox
         title={
           <Box>
             <SectionFilterHeader
@@ -395,7 +404,14 @@ function EventsSection() {
                   disabled={!snapshotEvents && !events}
                   onClick={() =>
                     setSnapshot(
-                      snapshotEvents ? null : { scope: snapshotScope, events: [...(events ?? [])] }
+                      snapshotEvents
+                        ? null
+                        : {
+                            scope: snapshotScope,
+                            events: [...(events ?? [])],
+                            hasMore,
+                            remainingItemCount,
+                          }
                     )
                   }
                 >
@@ -446,100 +462,103 @@ function EventsSection() {
             </Box>
           </Box>
         }
-        headerProps={{
-          noNamespaceFilter: false,
-        }}
-        key={`${location.pathname}:${notificationBypass ? eventsFilter ?? '' : ''}`}
-        defaultGlobalFilter={notificationBypass ? eventsFilter ?? undefined : undefined}
-        data={filteredEvents}
-        errors={eventsErrors}
-        columns={[
-          {
-            id: 'name',
-            label: t('Name'),
-            getValue: event => event.involvedObjectInstance?.getName() ?? event.involvedObject.name,
-            render: event => (
-              <Box>
-                {makeObjectLink(event)}
-                <Box
-                  sx={{
-                    display: { xs: 'block', md: 'none' },
-                    mt: 0.5,
-                    color: 'text.secondary',
-                    overflowWrap: 'anywhere',
-                  }}
-                >
-                  <Box>{event.reason}</Box>
-                  {event.source?.host && <Box>{event.source.host}</Box>}
-                  <Box>{event.message}</Box>
+      >
+        <ResourceTable<typeof Event>
+          key={`${location.pathname}:${notificationBypass ? eventsFilter ?? '' : ''}`}
+          enableRowActions
+          enableRowSelection
+          defaultGlobalFilter={notificationBypass ? eventsFilter ?? undefined : undefined}
+          data={filteredEvents}
+          errors={eventsErrors}
+          columns={[
+            {
+              id: 'name',
+              label: t('Name'),
+              getValue: event =>
+                event.involvedObjectInstance?.getName() ?? event.involvedObject.name,
+              render: event => (
+                <Box>
+                  {makeObjectLink(event)}
+                  <Box
+                    sx={{
+                      display: { xs: 'block', md: 'none' },
+                      mt: 0.5,
+                      color: 'text.secondary',
+                      overflowWrap: 'anywhere',
+                    }}
+                  >
+                    <Box>{event.reason}</Box>
+                    {event.source?.host && <Box>{event.source.host}</Box>}
+                    <Box>{event.message}</Box>
+                  </Box>
+                  <Box sx={{ mt: 0.5, color: 'text.secondary' }}>
+                    <Box component="span">{t('Last Seen')}:</Box>
+                    <DateLabel date={event.lastOccurrence} format="mini" />
+                  </Box>
                 </Box>
-                <Box sx={{ mt: 0.5, color: 'text.secondary' }}>
-                  <Box component="span">{t('Last Seen')}:</Box>
-                  <DateLabel date={event.lastOccurrence} format="mini" />
-                </Box>
-              </Box>
-            ),
-            gridTemplate: 'auto',
-          },
-          {
-            id: 'type',
-            label: t('Resource Kind'),
-            gridTemplate: 'min-content',
-            filterVariant: 'multi-select',
-            getValue: event => event.involvedObject.kind,
-          },
-          'namespace',
-          'cluster',
-          {
-            id: 'node',
-            label: t('glossary|Nodes'),
-            gridTemplate: 'min-content',
-            filterVariant: 'multi-select',
-            getValue: event => event.source?.host ?? '',
-          },
-          {
-            id: 'reason',
-            label: t('Reason'),
-            gridTemplate: 'min-content',
-            filterVariant: 'multi-select',
-            getValue: event => event.reason,
-            render: event => (
-              <LightTooltip title={event.reason} interactive>
-                {makeStatusLabel(event)}
-              </LightTooltip>
-            ),
-          },
-          {
-            id: 'message',
-            label: t('Message'),
-            getValue: event => event.message ?? '',
-            render: event => (
-              <ShowHideLabel labelId={event.metadata?.uid || ''}>
-                {event.message || ''}
-              </ShowHideLabel>
-            ),
-            gridTemplate: 'auto',
-          },
-          {
-            id: 'count',
-            label: t('Count'),
-            gridTemplate: 'min-content',
-            cellProps: { align: 'right' },
-            getValue: event => event.count ?? null,
-            render: event => event.count ?? '-',
-          },
-          {
-            id: 'last-seen',
-            label: t('Last Seen'),
-            gridTemplate: 'min-content',
-            cellProps: { align: 'right' },
-            getValue: event => -new Date(event.lastOccurrence).getTime(),
-            render: event => <DateLabel date={event.lastOccurrence} format="mini" />,
-          },
-        ]}
-        defaultSortingColumn={{ id: 'last-seen', desc: false }}
-        id="headlamp-cluster.overview.events"
-      />
+              ),
+              gridTemplate: 'auto',
+            },
+            {
+              id: 'type',
+              label: t('Resource Kind'),
+              gridTemplate: 'min-content',
+              filterVariant: 'multi-select',
+              getValue: event => event.involvedObject.kind,
+            },
+            'namespace',
+            'cluster',
+            {
+              id: 'node',
+              label: t('glossary|Nodes'),
+              gridTemplate: 'min-content',
+              filterVariant: 'multi-select',
+              getValue: event => event.source?.host ?? '',
+            },
+            {
+              id: 'reason',
+              label: t('Reason'),
+              gridTemplate: 'min-content',
+              filterVariant: 'multi-select',
+              getValue: event => event.reason,
+              render: event => (
+                <LightTooltip title={event.reason} interactive>
+                  {makeStatusLabel(event)}
+                </LightTooltip>
+              ),
+            },
+            {
+              id: 'message',
+              label: t('Message'),
+              getValue: event => event.message ?? '',
+              render: event => (
+                <ShowHideLabel labelId={event.metadata?.uid || ''}>
+                  {event.message || ''}
+                </ShowHideLabel>
+              ),
+              gridTemplate: 'auto',
+            },
+            {
+              id: 'count',
+              label: t('Count'),
+              gridTemplate: 'min-content',
+              cellProps: { align: 'right' },
+              getValue: event => event.count ?? null,
+              render: event => event.count ?? '-',
+            },
+            {
+              id: 'last-seen',
+              label: t('Last Seen'),
+              gridTemplate: 'min-content',
+              cellProps: { align: 'right' },
+              getValue: event => -new Date(event.lastOccurrence).getTime(),
+              render: event => <DateLabel date={event.lastOccurrence} format="mini" />,
+            },
+          ]}
+          defaultSortingColumn={{ id: 'last-seen', desc: false }}
+          id="headlamp-cluster.overview.events"
+        />
+      </SectionBox>
     </>
   );
 }

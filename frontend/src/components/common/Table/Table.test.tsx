@@ -64,6 +64,9 @@ vi.mock('./ColumnVisibilityButton', () => ({
 vi.mock('material-react-table', () => ({
   MRT_BottomToolbar: () => <div data-testid="bottom-toolbar" />,
   MRT_TableBodyCell: ({ cell }: any) => {
+    if (cell.column.columnDef.Cell) {
+      return <td>{cell.column.columnDef.Cell({ row: cell.row })}</td>;
+    }
     const checkbox = <input aria-label={`Custom selection for ${cell.row.id}`} type="checkbox" />;
     return (
       <td>
@@ -88,6 +91,7 @@ vi.mock('material-react-table', () => ({
     const rows = options.data.map((item: Record<string, unknown>, index: number) => {
       const row: any = {
         id: String(index),
+        original: item,
         getCanSelect: () => true,
         getIsSelected: () => false,
       };
@@ -161,6 +165,26 @@ function renderTable(props: Partial<TableProps<TestRow>> = {}) {
     </ThemeProvider>
   );
 }
+
+it('updates custom cells when other fields of the row change', () => {
+  const columns = [
+    {
+      accessorKey: 'selected',
+      header: 'Selection',
+      Cell: ({ row }: { row: { original: TestRow } }) => row.original.name,
+    },
+  ];
+  const { rerender } = renderTable({ columns, data: [{ selected: false, name: 'old detail' }] });
+  expect(screen.getByText('old detail')).toBeInTheDocument();
+
+  rerender(
+    <ThemeProvider theme={theme}>
+      <Table columns={columns} data={[{ selected: false, name: 'new detail' }]} />
+    </ThemeProvider>
+  );
+  expect(screen.getByText('new detail')).toBeInTheDocument();
+  expect(screen.queryByText('old detail')).not.toBeInTheDocument();
+});
 
 describe('empty bottom toolbar spacing', () => {
   it('preserves caller toolbar spacing and retains native defaults otherwise', () => {

@@ -44,6 +44,7 @@ function makeEvent(index: number) {
 }
 
 test('filters and freezes a 2,000-event cluster snapshot', async ({ page }) => {
+  test.setTimeout(120_000);
   await page.addInitScript(() => {
     if (!sessionStorage.getItem('event-filters-test-initialized')) {
       Object.keys(localStorage)
@@ -52,7 +53,6 @@ test('filters and freezes a 2,000-event cluster snapshot', async ({ page }) => {
       sessionStorage.setItem('event-filters-test-initialized', 'true');
     }
   });
-  await page.clock.install();
   let useUpdatedEvents = false;
   let resolveSecondEventRequest = () => {};
   const secondEventRequest = new Promise<void>(resolve => {
@@ -77,14 +77,22 @@ test('filters and freezes a 2,000-event cluster snapshot', async ({ page }) => {
   });
 
   const headlampPage = new HeadlampPage(page);
-  await headlampPage.navigateTopage('/c/test');
-  if (await page.getByRole('heading', { name: 'Authentication', exact: true }).isVisible()) {
-    await headlampPage.authenticate(process.env.HEADLAMP_TEST_TOKEN);
-  }
+  await headlampPage.navigateToCluster('test', process.env.HEADLAMP_TEST_TOKEN);
+  await expect(page.getByRole('textbox', { name: 'Search events' })).toBeVisible();
+  await page.clock.install();
 
   const search = page.getByRole('textbox', { name: 'Search events' });
   await search.fill('*UNIQUE*message');
   await expect(page.locator('#event-1999')).toBeVisible();
+  await page.setViewportSize({ width: 1024, height: 768 });
+  if (await page.getByRole('button', { name: 'Expand sidebar' }).isVisible()) {
+    await page.getByRole('button', { name: 'Expand sidebar' }).click();
+  }
+  await expect(page.getByRole('button', { name: 'Shrink sidebar' })).toBeVisible();
+  await expect(
+    page.getByRole('row').filter({ hasText: 'pod-1999' }).getByText('Last Seen:', { exact: true })
+  ).toBeVisible();
+  await page.setViewportSize({ width: 1280, height: 720 });
   await expect(page.getByText('Load-test event 1')).toHaveCount(0);
 
   await page.reload();

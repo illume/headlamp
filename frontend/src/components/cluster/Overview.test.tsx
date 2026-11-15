@@ -15,6 +15,7 @@
  */
 
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { createMemoryHistory } from 'history';
 import type React from 'react';
 import { MemoryRouter, Router } from 'react-router-dom';
@@ -101,10 +102,10 @@ vi.mock('../../redux/hooks', () => ({
   useTypedSelector: (selector: any) => selector({ overviewCharts: { processors: [] } }),
 }));
 
-vi.mock('../common/Resource/ResourceListView', () => ({
-  default: (props: { title: React.ReactNode }) => {
+vi.mock('../common/Resource/ResourceTable', () => ({
+  default: (props: object) => {
     resourceListViewMock(props);
-    return <div>{props.title}</div>;
+    return <div />;
   },
 }));
 
@@ -116,7 +117,12 @@ vi.mock('../common/Chart', () => ({
 }));
 
 vi.mock('../common/SectionFilterHeader', () => ({
-  default: ({ title }: { title: string }) => <div>{title}</div>,
+  default: ({ title, titleSideActions }: { title: string; titleSideActions?: React.ReactNode }) => (
+    <div>
+      {title}
+      {titleSideActions}
+    </div>
+  ),
 }));
 
 vi.mock('../common/Resource', () => ({
@@ -309,6 +315,85 @@ describe('Overview', () => {
       data: [expect.objectContaining({ message: 'target' })],
       defaultGlobalFilter: undefined,
     });
+  });
+
+  it('keeps focus while typing and reapplies a notification on a subsequent visit', async () => {
+    const user = userEvent.setup();
+    eventUseList.mockReturnValue({
+      items: [makeEvent('target', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    const history = createMemoryHistory({ initialEntries: ['/c/test?eventsFilter=target'] });
+    render(
+      <Router history={history}>
+        <Overview />
+      </Router>
+    );
+
+    const search = screen.getByRole('textbox', { name: 'Search events' });
+    await user.type(search, 'missing');
+    expect(search).toHaveFocus();
+    expect(search).toHaveValue('missing');
+    expect(history.location.search).toBe('');
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toEqual([]);
+
+    act(() => history.push('/c/test?eventsFilter=target'));
+    expect(search).toHaveValue('');
+    expect(resourceListViewMock.mock.lastCall?.[0]).toMatchObject({
+      data: [expect.objectContaining({ message: 'target' })],
+      defaultGlobalFilter: 'target',
+    });
+  });
+
+  it('retains a paused notification snapshot and its truncation notice when filters change', () => {
+    const history = createMemoryHistory({ initialEntries: ['/c/test?eventsFilter=target'] });
+    eventUseList.mockReturnValue({
+      items: [makeEvent('target', 'default')],
+      errors: null,
+      hasMore: true,
+      remainingItemCount: 7,
+    });
+    const { rerender } = render(
+      <Router history={history}>
+        <Overview />
+      </Router>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pause live events' }));
+    eventUseList.mockReturnValue({
+      items: [makeEvent('new-event', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    rerender(
+      <Router history={history}>
+        <Overview />
+      </Router>
+    );
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search events' }), {
+      target: { value: 'target' },
+    });
+
+    expect(history.location.search).toBe('');
+    expect(screen.getByRole('button', { name: 'Resume live events' })).toBeVisible();
+    expect(screen.getByRole('note')).toHaveTextContent(
+      'Showing 1 loaded events; 7 more events are available.'
+    );
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toEqual([
+      expect.objectContaining({ message: 'target' }),
+    ]);
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search events' }), {
+      target: { value: '' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Resume live events' }));
+    expect(screen.queryByRole('note')).not.toBeInTheDocument();
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toEqual([
+      expect.objectContaining({ message: 'new-event' }),
+    ]);
   });
 
   it('clears notification filters when selecting a chart kind', () => {

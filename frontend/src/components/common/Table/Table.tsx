@@ -1040,6 +1040,7 @@ const MemoCell = memo(
   },
   (a, b) =>
     a.cell.getValue() === b.cell.getValue() &&
+    (!a.cell.column.columnDef.Cell || a.cell.row.original === b.cell.row.original) &&
     (a.cell.column.id === 'mrt-row-select' && b.cell.column.id === 'mrt-row-select'
       ? a.canSelect === b.canSelect && a.isRowSelected === b.isRowSelected
       : true)

@@ -53,9 +53,10 @@ beforeEach(() => {
   Object.defineProperty(window, 'innerWidth', { value: 1280, configurable: true });
 });
 
-afterEach(() => {
+afterEach(async () => {
   cleanup();
   store.dispatch(activitySlice.actions.reset());
+  await new Promise(resolve => setTimeout(resolve, 210));
 });
 
 function setup(initialPath = '/pods') {
