@@ -102,14 +102,12 @@ export const store = new ConfigStore<pluginConfig>('change-logo');
  * @returns {JSX.Element} The rendered settings component with configuration options.
  */
 export default function Settings() {
+  const config = store.get();
+  const [currentConfig, setCurrentConfig] = useState(config);
   if (PluginSettings.isHidden('change-logo', 'url')) {
     return null;
   }
-  // Retrieve initial configuration from the store
-  const config = store.get();
   const disabled = PluginSettings.isDisabled('change-logo', 'url');
-  // State to manage the current configuration within the component
-  const [currentConfig, setCurrentConfig] = useState(config);
 
   /**
    * Handles saving the updated configuration value to the store.

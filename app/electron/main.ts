@@ -898,11 +898,6 @@ async function startServer(
   if (args.watchPluginsChanges !== undefined) {
     serverArgs.push(`--watch-plugins-changes=${args.watchPluginsChanges}`);
   }
-  const managedPolicy = loadManagedPolicy({ userDataPath: app.getPath('userData') });
-  if (managedPolicy.adminSettingsPath) {
-    serverArgs.push('--settings', managedPolicy.adminSettingsPath);
-  }
-
   const bundledPlugins = path.join(process.resourcesPath, '.plugins');
 
   // Enable the Helm and dynamic cluster endpoints
@@ -930,6 +925,21 @@ async function startServer(
     // Directory doesn't exist or is not readable — ignore and continue.
   }
 
+  let extendedEnv;
+  try {
+    extendedEnv = await getShellEnv();
+  } catch (error) {
+    console.error('Failed to get shell environment, using default:', error);
+    extendedEnv = process.env;
+  }
+  const managedPolicy = loadManagedPolicy({
+    userDataPath: app.getPath('userData'),
+    env: extendedEnv,
+  });
+  if (managedPolicy.adminSettingsPath) {
+    serverArgs.push('--settings', managedPolicy.adminSettingsPath);
+  }
+
   serverArgs = serverArgs.concat([
     '--plugins-dir',
     defaultPluginsDir(),
@@ -942,13 +952,6 @@ async function startServer(
   serverArgs = serverArgs.concat(flags);
   console.log('arguments passed to backend server', serverArgs);
 
-  let extendedEnv;
-  try {
-    extendedEnv = await getShellEnv();
-  } catch (error) {
-    console.error('Failed to get shell environment, using default:', error);
-    extendedEnv = process.env;
-  }
   const policyResult = applyManagedBackendPolicy(managedPolicy, extendedEnv, serverArgs);
   extendedEnv = policyResult.environment;
   logPolicyDiagnostics(policyResult.diagnostics);

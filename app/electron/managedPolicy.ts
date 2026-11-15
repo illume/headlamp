@@ -22,6 +22,7 @@ import { getAdminSettingsPath } from './settings';
 const WINDOWS_POLICY_KEY = String.raw`HKLM\Software\Policies\Headlamp`;
 const MACOS_POLICY_DOMAIN = '/Library/Managed Preferences/com.microsoft.Headlamp';
 const POLICY_VALUE = 'PolicyJSON';
+const POLICY_COMMAND_TIMEOUT_MS = 5000;
 
 type PolicySource =
   | 'environment'
@@ -65,14 +66,24 @@ function parsePolicy(raw: string, decodeManagedString = false): Record<string, a
   }
 }
 
-function readWindowsPolicy(run: typeof execFileSync): Record<string, any> | undefined {
+function readWindowsPolicy(
+  run: typeof execFileSync,
+  systemRoot: string
+): Record<string, any> | undefined {
   let output: string;
   try {
     output = String(
-      run('reg.exe', ['query', WINDOWS_POLICY_KEY, '/v', POLICY_VALUE, '/reg:64'], {
-        encoding: 'utf8',
-        windowsHide: true,
-      })
+      run(
+        path.win32.join(systemRoot, 'System32', 'reg.exe'),
+        ['query', WINDOWS_POLICY_KEY, '/v', POLICY_VALUE, '/reg:64'],
+        {
+          encoding: 'utf8',
+          maxBuffer: 1024 * 1024,
+          stdio: ['ignore', 'pipe', 'ignore'],
+          timeout: POLICY_COMMAND_TIMEOUT_MS,
+          windowsHide: true,
+        }
+      )
     );
   } catch {
     return undefined;
@@ -92,8 +103,11 @@ function readMacOSPolicy(run: typeof execFileSync): Record<string, any> | undefi
   let output: string;
   try {
     output = String(
-      run('defaults', ['read', MACOS_POLICY_DOMAIN, POLICY_VALUE], {
+      run('/usr/bin/defaults', ['read', MACOS_POLICY_DOMAIN, POLICY_VALUE], {
         encoding: 'utf8',
+        maxBuffer: 1024 * 1024,
+        stdio: ['ignore', 'pipe', 'ignore'],
+        timeout: POLICY_COMMAND_TIMEOUT_MS,
       })
     );
   } catch {
@@ -159,7 +173,10 @@ export function loadManagedPolicy(options: {
   let invalidSourcePath = hasExplicitFile && !explicitPolicy ? explicitPath : undefined;
 
   if (!policy && platform === 'win32') {
-    policy = readWindowsPolicy(run);
+    const systemRoot = path.win32.isAbsolute(env.SystemRoot ?? '')
+      ? env.SystemRoot!
+      : 'C:\\Windows';
+    policy = readWindowsPolicy(run, systemRoot);
     source = policy ? 'windows-registry' : undefined;
   } else if (!policy && platform === 'darwin') {
     policy = readMacOSPolicy(run);

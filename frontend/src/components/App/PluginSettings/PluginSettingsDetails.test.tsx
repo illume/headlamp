@@ -137,6 +137,33 @@ describe('PluginSettingsDetails metadata', () => {
     expect(screen.queryByRole('textbox', { name: 'generated' })).not.toBeInTheDocument();
   });
 
+  it('associates boolean validation errors with the checkbox', () => {
+    render(
+      <TestContext>
+        <ThemeProvider theme={theme}>
+          <PluginSettingsDetailsPure
+            plugin={{
+              ...plugin,
+              headlamp: {
+                settingsSchema: {
+                  type: 'object',
+                  required: ['enabled'],
+                  properties: { enabled: { type: 'boolean', title: 'Enabled' } },
+                },
+              },
+            }}
+            onDelete={() => {}}
+          />
+        </ThemeProvider>
+      </TestContext>
+    );
+
+    const enabled = screen.getByRole('checkbox', { name: 'Enabled' });
+    const helperText = document.getElementById(enabled.getAttribute('aria-describedby')!);
+
+    expect(helperText).toHaveTextContent("must have required property 'enabled'");
+  });
+
   it('validates admin-controlled fields with the effective value and removes stale overrides', async () => {
     store.dispatch(
       setAdminSettings({
@@ -167,6 +194,7 @@ describe('PluginSettingsDetails metadata', () => {
                 },
               },
             }}
+            adminSettings={store.getState().adminSettings}
             onSave={onSave}
             onDelete={() => {}}
           />
@@ -225,11 +253,129 @@ describe('PluginSettingsDetails metadata', () => {
     );
 
     expect(screen.getByText('Enable this integration')).toBeVisible();
+    const enabled = screen.getByRole('checkbox', { name: 'Enabled' });
+    expect(document.getElementById(enabled.getAttribute('aria-describedby')!)).toHaveTextContent(
+      'Enable this integration'
+    );
     await userEvent.clear(screen.getByRole('textbox', { name: 'Endpoint' }));
     await userEvent.clear(screen.getByRole('spinbutton', { name: 'Retries' }));
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(onSave).toHaveBeenCalledWith({ retries: 3 });
+  });
+
+  it('unsets an optional string reference using the root schema context', async () => {
+    const onSave = vi.fn();
+    render(
+      <TestContext>
+        <ThemeProvider theme={theme}>
+          <PluginSettingsDetailsPure
+            config={{ endpoint: 'https://example.com' }}
+            plugin={{
+              ...plugin,
+              headlamp: {
+                settingsSchema: {
+                  type: 'object',
+                  additionalProperties: false,
+                  definitions: {
+                    endpoint: { type: 'string', format: 'uri' },
+                  },
+                  properties: {
+                    endpoint: { $ref: '#/definitions/endpoint' },
+                  },
+                },
+              },
+            }}
+            onSave={onSave}
+            onDelete={() => {}}
+          />
+        </ThemeProvider>
+      </TestContext>
+    );
+
+    await userEvent.clear(screen.getByRole('textbox', { name: 'endpoint' }));
+    const save = screen.getByRole('button', { name: 'Save' });
+    await waitFor(() => expect(save).toBeEnabled());
+    await userEvent.click(save);
+
+    expect(onSave).toHaveBeenCalledWith({});
+  });
+
+  it('recompiles a refreshed schema that reuses its id', () => {
+    const renderPlugin = (title: string): PluginInfo => ({
+      ...plugin,
+      headlamp: {
+        settingsSchema: {
+          $id: 'https://example.com/settings.schema.json',
+          type: 'object',
+          required: ['endpoint'],
+          properties: { endpoint: { type: 'string', title } },
+        },
+      },
+    });
+    const { rerender } = render(
+      <TestContext>
+        <ThemeProvider theme={theme}>
+          <PluginSettingsDetailsPure
+            plugin={renderPlugin('Old endpoint')}
+            onSave={vi.fn()}
+            onDelete={() => {}}
+          />
+        </ThemeProvider>
+      </TestContext>
+    );
+
+    rerender(
+      <TestContext>
+        <ThemeProvider theme={theme}>
+          <PluginSettingsDetailsPure
+            plugin={renderPlugin('New endpoint')}
+            onSave={vi.fn()}
+            onDelete={() => {}}
+          />
+        </ThemeProvider>
+      </TestContext>
+    );
+
+    expect(screen.getByRole('textbox', { name: 'New endpoint' })).toBeVisible();
+    expect(screen.queryByText(/schema with key or id already exists/i)).not.toBeInTheDocument();
+  });
+
+  it('validates cleared schema defaults using the same value as the save payload', async () => {
+    render(
+      <TestContext>
+        <ThemeProvider theme={theme}>
+          <PluginSettingsDetailsPure
+            config={{ enabled: true, retries: 6 }}
+            plugin={{
+              ...plugin,
+              headlamp: {
+                settingsSchema: {
+                  type: 'object',
+                  properties: {
+                    enabled: { type: 'boolean', default: false },
+                    retries: { type: 'integer', default: 3 },
+                  },
+                  if: { properties: { enabled: { const: true } } },
+                  then: {
+                    properties: { retries: { minimum: 5 } },
+                    required: ['retries'],
+                  },
+                },
+              },
+            }}
+            onSave={vi.fn()}
+            onDelete={() => {}}
+          />
+        </ThemeProvider>
+      </TestContext>
+    );
+
+    const retries = screen.getByRole('spinbutton', { name: 'retries' });
+    await userEvent.clear(retries);
+
+    expect(retries).toHaveValue(3);
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
   });
 });
 

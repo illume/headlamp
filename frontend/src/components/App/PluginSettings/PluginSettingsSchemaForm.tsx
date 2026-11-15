@@ -30,9 +30,6 @@ import { PluginSettingsAPI } from '../../../settings/pluginSettings';
 import { joinSettingsPath } from '../../../settings/settingsPath';
 import { getNestedValue } from '../../../settings/settingsResolution';
 
-const ajv = new Ajv({ allErrors: true, strict: false });
-addFormats(ajv);
-
 interface PluginSettingsSchemaFormProps {
   pluginName: string;
   schema: Record<string, any>;
@@ -59,22 +56,44 @@ function schemaErrorMessage(schema: Record<string, any>, error: ErrorObject): st
   return message?.[error.keyword];
 }
 
+function getFieldType(schema: Record<string, any>, field: Record<string, any>): string | undefined {
+  if (typeof field.type === 'string') {
+    return field.type;
+  }
+  if (typeof field.$ref !== 'string' || !field.$ref.startsWith('#/')) {
+    return undefined;
+  }
+  return field.$ref
+    .slice(2)
+    .split('/')
+    .reduce(
+      (value: any, part: string) => value?.[part.replace(/~1/g, '/').replace(/~0/g, '~')],
+      schema
+    )?.type;
+}
+
 export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaFormProps) {
   const { pluginName, schema, data, adminSettings, onDataChange, onValidityChange } = props;
   const { t } = useTranslation(pluginName);
   const [clearedFields, setClearedFields] = useState<Set<string>>(() => new Set());
+  const validator = useMemo(() => {
+    try {
+      const ajv = new Ajv({ allErrors: true, strict: false });
+      addFormats(ajv);
+      return { validate: ajv.compile(schema) };
+    } catch (error) {
+      return { error: error instanceof Error ? error.message : String(error) };
+    }
+  }, [schema]);
   const effectiveData = useMemo(() => {
     const knownValues = Object.fromEntries(
       Object.entries<Record<string, any>>(schema.properties ?? {}).flatMap(([name, field]) => {
         const path = joinSettingsPath('plugins', pluginName, name);
         const display = adminSettings.display[path];
         const adminControlled = display === 'hidden' || display === 'disabled';
-        if (!adminControlled && clearedFields.has(name)) {
-          return [];
-        }
         const value = adminControlled
           ? PluginSettingsAPI.get(pluginName, name)
-          : Object.hasOwn(data, name)
+          : Object.hasOwn(data, name) && !clearedFields.has(name)
           ? data[name]
           : getNestedValue(adminSettings.defaults, path) ?? field.default;
         return value === undefined ? [] : [[name, value]];
@@ -83,11 +102,7 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
     return schema.additionalProperties === false ? knownValues : { ...data, ...knownValues };
   }, [adminSettings, clearedFields, data, pluginName, schema]);
   const validation = useMemo(() => {
-    try {
-      const validate = ajv.compile(schema);
-      const valid = validate(effectiveData);
-      return { valid: Boolean(valid), errors: validate.errors ?? [] };
-    } catch (error) {
+    if (!validator.validate) {
       return {
         valid: false,
         errors: [
@@ -96,12 +111,17 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
             instancePath: '',
             schemaPath: '',
             params: {},
-            message: error instanceof Error ? error.message : String(error),
+            message: validator.error ?? 'Invalid schema',
           } as ErrorObject,
         ],
       };
     }
-  }, [effectiveData, schema]);
+    const valid = validator.validate(effectiveData);
+    return {
+      valid: Boolean(valid),
+      errors: validator.validate.errors ? [...validator.validate.errors] : [],
+    };
+  }, [effectiveData, validator]);
 
   useEffect(() => {
     onValidityChange(validation.valid);
@@ -143,7 +163,9 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
         const label = t(field.title ?? name);
         const error = errorsByField[name];
         const disabled = PluginSettingsAPI.isDisabled(pluginName, name);
-        if (field.type === 'boolean') {
+        const fieldType = getFieldType(schema, field);
+        const helperId = `${pluginName}-${name}-helper`;
+        if (fieldType === 'boolean') {
           return (
             <Stack key={name}>
               <FormControlLabel
@@ -151,13 +173,16 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
                   <Checkbox
                     checked={effectiveData[name] ?? false}
                     disabled={disabled}
+                    inputProps={{
+                      'aria-describedby': error || field.description ? helperId : undefined,
+                    }}
                     onChange={event => update(name, event.target.checked)}
                   />
                 }
                 label={label}
               />
               {(error || field.description) && (
-                <FormHelperText error={Boolean(error)}>
+                <FormHelperText id={helperId} error={Boolean(error)}>
                   {error ?? t(field.description)}
                 </FormHelperText>
               )}
@@ -165,7 +190,7 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
           );
         }
 
-        const isNumber = field.type === 'number' || field.type === 'integer';
+        const isNumber = fieldType === 'number' || fieldType === 'integer';
         return (
           <TextField
             key={name}
@@ -180,21 +205,28 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
             inputProps={{
               min: field.minimum,
               max: field.maximum,
-              step: field.type === 'integer' ? 1 : undefined,
+              step: fieldType === 'integer' ? 1 : undefined,
             }}
             onChange={event => {
               const value = event.target.value;
-              const optionalEmptyString =
-                field.type === 'string' &&
-                !schema.required?.includes(name) &&
-                !ajv.validate(field, '');
+              const isOptionalString =
+                fieldType === 'string' && !schema.required?.includes(name) && value === '';
+              const emptyStringIsValid =
+                isOptionalString && Boolean(validator.validate?.({ ...effectiveData, [name]: '' }));
+              const unsetValueIsValid =
+                isOptionalString &&
+                validator.validate?.(
+                  Object.fromEntries(
+                    Object.entries(effectiveData).filter(([fieldName]) => fieldName !== name)
+                  )
+                );
               update(
                 name,
                 isNumber
                   ? value === ''
                     ? undefined
                     : Number(value)
-                  : value === '' && optionalEmptyString
+                  : isOptionalString && !emptyStringIsValid && unsetValueIsValid
                   ? undefined
                   : value
               );

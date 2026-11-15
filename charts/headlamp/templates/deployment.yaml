@@ -455,7 +455,7 @@ spec:
           {{- if or .Values.pluginsManager.enabled $clusterInventoryEnabled $adminSettings .Values.volumeMounts $tmpCtx.addMount }}
           volumeMounts:
             {{- with $adminSettings }}
-            - name: headlamp-settings
+            - name: headlamp-admin-settings
               mountPath: /etc/headlamp/settings.json
               subPath: settings.json
               readOnly: true
@@ -566,9 +566,9 @@ spec:
       {{- if or .Values.pluginsManager.enabled $clusterInventoryEnabled $adminSettings .Values.volumes $tmpCtx.addVolume $pluginsTmpCtx.addVolume }}
       volumes:
         {{- with $adminSettings }}
-        - name: headlamp-settings
+        - name: headlamp-admin-settings
           configMap:
-            name: {{ include "headlamp.fullname" $ }}-settings
+            name: {{ include "headlamp.fullname" $ }}-admin-settings
         {{- end }}
         {{- if .Values.pluginsManager.enabled }}
         - name: plugins-dir

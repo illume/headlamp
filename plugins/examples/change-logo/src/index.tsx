@@ -21,9 +21,9 @@
 
 import {
   AppLogoProps,
-  Settings as PluginSettings,
   registerAppLogo,
   registerPluginSettings,
+  Settings as PluginSettings,
 } from '@kinvolk/headlamp-plugin/lib';
 import { Avatar, SvgIcon } from '@mui/material';
 import LogoWithTextLight from './icon-large-light.svg';

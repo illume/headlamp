@@ -57,7 +57,7 @@ data:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: headlamp-settings
+  name: headlamp-admin-settings
   namespace: default
   labels:
     helm.sh/chart: headlamp-0.46.0
@@ -191,7 +191,7 @@ spec:
           resources:
             {}
           volumeMounts:
-            - name: headlamp-settings
+            - name: headlamp-admin-settings
               mountPath: /etc/headlamp/settings.json
               subPath: settings.json
               readOnly: true
@@ -225,9 +225,9 @@ spec:
             runAsNonRoot: true
             runAsUser: 100
       volumes:
-        - name: headlamp-settings
+        - name: headlamp-admin-settings
           configMap:
-            name: headlamp-settings
+            name: headlamp-admin-settings
         - name: plugins-dir
           emptyDir: {}
         - name: plugin-config

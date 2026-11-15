@@ -53,6 +53,14 @@ describe('managed desktop policy', () => {
 
     expect(policy.source).toBe('windows-registry');
     expect(policy.backend).toEqual({ 'log-level': 'warn' });
+    expect(run).toHaveBeenCalledWith(
+      'C:\\Windows\\System32\\reg.exe',
+      ['query', String.raw`HKLM\Software\Policies\Headlamp`, '/v', 'PolicyJSON', '/reg:64'],
+      expect.objectContaining({
+        timeout: 5000,
+        stdio: ['ignore', 'pipe', 'ignore'],
+      })
+    );
     expect(JSON.parse(fs.readFileSync(policy.adminSettingsPath!, 'utf8'))).toEqual({
       defaults: { theme: 'dark' },
     });
@@ -107,6 +115,14 @@ describe('managed desktop policy', () => {
 
     expect(policy.source).toBe('macos-managed-preferences');
     expect(policy.backend).toEqual({ 'cache-enabled': true });
+    expect(run).toHaveBeenCalledWith(
+      '/usr/bin/defaults',
+      ['read', '/Library/Managed Preferences/com.microsoft.Headlamp', 'PolicyJSON'],
+      expect.objectContaining({
+        timeout: 5000,
+        stdio: ['ignore', 'pipe', 'ignore'],
+      })
+    );
   });
 
   it('passes an invalid explicit file to the backend for fail-closed validation', () => {
