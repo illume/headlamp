@@ -55,7 +55,7 @@ export default function NodeShellSettings(props: SettingsProps) {
   const namespace =
     adminNamespace.disabled || adminNamespace.hidden
       ? adminNamespace.value ?? ''
-      : clusterSettings.nodeShellTerminal?.namespace || adminNamespace.value || '';
+      : clusterSettings.nodeShellTerminal?.namespace ?? adminNamespace.value ?? '';
   // When a setting is admin-managed (disabled or hidden) the admin value is
   // forced; otherwise the user's cluster setting wins, falling back to the
   // admin-provided default.

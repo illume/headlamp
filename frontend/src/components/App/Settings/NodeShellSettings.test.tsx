@@ -17,6 +17,7 @@
 import { ThemeProvider } from '@mui/material/styles';
 import { configureStore } from '@reduxjs/toolkit';
 import { act, fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { Provider } from 'react-redux';
 import { describe, expect, it, vi } from 'vitest';
 import { ClusterSettings } from '../../../helpers/clusterSettings';
@@ -52,11 +53,8 @@ const adminDefaults = {
   },
 };
 
-function renderSettings(
-  adminSettings: Partial<AdminSettingsState>,
-  clusterSettings: ClusterSettings = {}
-) {
-  const store = configureStore({
+function createSettingsStore(adminSettings: Partial<AdminSettingsState>) {
+  return configureStore({
     reducer: {
       config: (state = { settings: {} }) => state,
       adminSettings: adminSettingsReducer,
@@ -66,6 +64,13 @@ function renderSettings(
       adminSettings: { ...initialAdminSettingsState, ...adminSettings },
     },
   });
+}
+
+function renderSettings(
+  adminSettings: Partial<AdminSettingsState>,
+  clusterSettings: ClusterSettings = {}
+) {
+  const store = createSettingsStore(adminSettings);
 
   render(
     <Provider store={store}>
@@ -154,10 +159,10 @@ describe('NodeShellSettings admin-managed settings', () => {
     expect(linuxImageInput()).toHaveValue('cluster-image:3');
   });
 
-  it('uses the namespace default when a saved namespace is empty', () => {
+  it('preserves an explicitly empty namespace', () => {
     renderSettings({ defaults: adminDefaults }, { nodeShellTerminal: { namespace: '' } });
 
-    expect(screen.getByLabelText('Namespace')).toHaveValue('admin-shells');
+    expect(screen.getByLabelText('Namespace')).toHaveValue('');
   });
 
   it('allows a user namespace override in normal mode', () => {
@@ -170,6 +175,35 @@ describe('NodeShellSettings admin-managed settings', () => {
     expect(screen.getByLabelText('Namespace')).toBeEnabled();
     fireEvent.change(screen.getByLabelText('Namespace'), { target: { value: 'new-shells' } });
     expect(screen.getByLabelText('Namespace')).toHaveValue('new-shells');
+  });
+
+  it('preserves a cleared namespace when editing a replacement', () => {
+    const store = createSettingsStore({ defaults: adminDefaults });
+    function StatefulSettings() {
+      const [clusterSettings, setClusterSettings] = useState<ClusterSettings>({
+        nodeShellTerminal: { namespace: 'user-shells' },
+      });
+
+      return (
+        <Provider store={store}>
+          <ThemeProvider theme={createMuiTheme(lightTheme)}>
+            <NodeShellSettings
+              cluster={CLUSTER}
+              clusterSettings={clusterSettings}
+              setClusterSettings={setClusterSettings}
+            />
+          </ThemeProvider>
+        </Provider>
+      );
+    }
+
+    render(<StatefulSettings />);
+    const namespaceInput = screen.getByLabelText('Namespace');
+    fireEvent.change(namespaceInput, { target: { value: '' } });
+    expect(namespaceInput).toHaveValue('');
+
+    fireEvent.change(namespaceInput, { target: { value: 'new-shells' } });
+    expect(namespaceInput).toHaveValue('new-shells');
   });
 
   it('displays the managed namespace instead of a saved override when disabled', () => {

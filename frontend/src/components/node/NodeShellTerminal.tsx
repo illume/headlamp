@@ -118,7 +118,8 @@ async function shell(
   item: Node,
   cluster: string,
   onExec: StreamResultsCb,
-  onError: (message?: string) => void
+  onError: (message?: string) => void,
+  disabledMessage: string
 ) {
   const clusterSettings = loadClusterSettings(cluster);
   const { config, adminSettings } = store.getState();
@@ -129,7 +130,7 @@ async function shell(
     config
   );
   if (!isEnabled) {
-    onError();
+    onError(disabledMessage);
     return {};
   }
   const podName = `node-debugger-${item.getName()}-${uniqueString()}`;
@@ -181,13 +182,19 @@ export function NodeShellTerminal(props: NodeShellTerminalProps) {
       }
 
       xtermRef.current?.xterm.writeln('Trying to open a shell');
-      const { stream } = await shell(item, cluster, onDataCallback, (errorMessage?: string) => {
-        const message = errorMessage || t('translation|Failed to create node shell pod');
-        enqueueSnackbar(t('translation|Failed to open node shell: {{message}}', { message }), {
-          variant: 'error',
-        });
-        xtermRef.current?.xterm.writeln(`\r\n${t('translation|Error')}: ${message}\r\n`);
-      });
+      const { stream } = await shell(
+        item,
+        cluster,
+        onDataCallback,
+        (errorMessage?: string) => {
+          const message = errorMessage || t('translation|Failed to create node shell pod');
+          enqueueSnackbar(t('translation|Failed to open node shell: {{message}}', { message }), {
+            variant: 'error',
+          });
+          xtermRef.current?.xterm.writeln(`\r\n${t('translation|Error')}: ${message}\r\n`);
+        },
+        t('translation|Node shells are disabled in settings')
+      );
       return {
         stream,
       };

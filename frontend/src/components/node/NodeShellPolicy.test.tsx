@@ -30,6 +30,8 @@ import { AuthVisible } from '../common/Resource';
 import { NodeShellAction } from './NodeShellAction';
 import { NodeShellTerminal } from './NodeShellTerminal';
 
+const { enqueueSnackbar } = vi.hoisted(() => ({ enqueueSnackbar: vi.fn() }));
+
 vi.mock('../../lib/k8s/api/v1/apply', () => ({ apply: vi.fn() }));
 vi.mock('../../lib/k8s/api/v1/streamingApi', () => ({ stream: vi.fn() }));
 vi.mock('../../lib/k8s/useTerminalStream', () => ({
@@ -41,6 +43,18 @@ vi.mock('../../lib/k8s/useTerminalStream', () => ({
 }));
 vi.mock('../common/Resource', () => ({
   AuthVisible: vi.fn(({ children }: { children: ReactNode }) => <>{children}</>),
+}));
+vi.mock('notistack', async importOriginal => ({
+  ...(await importOriginal<typeof import('notistack')>()),
+  useSnackbar: () => ({ enqueueSnackbar }),
+}));
+vi.mock('react-i18next', () => ({
+  useTranslation: () => ({
+    t: (key: string, options?: Record<string, unknown>) =>
+      (key.split('|')[1] || key).replace(/\{\{(\w+)\}\}/g, (match, name: string) =>
+        String(options?.[name] ?? match)
+      ),
+  }),
 }));
 
 const cluster = 'policy-cluster';
@@ -176,5 +190,9 @@ describe('node shell policy consumers', () => {
 
     expect(apply).not.toHaveBeenCalled();
     expect(stream).not.toHaveBeenCalled();
+    expect(enqueueSnackbar).toHaveBeenCalledWith(
+      'Failed to open node shell: Node shells are disabled in settings',
+      { variant: 'error' }
+    );
   });
 });
