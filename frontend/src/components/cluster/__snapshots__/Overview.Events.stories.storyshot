@@ -1824,9 +1824,14 @@
                                 FailedGetResourceMetric
                               </div>
                               <div
-                                class="MuiBox-root css-0"
+                                class="MuiBox-root css-13o7eu2"
                               >
-                                failed to get cpu utilization: missing request for cpu
+                                <span
+                                  id="show-hide-label-id"
+                                  style="word-break: break-all; white-space: normal;"
+                                >
+                                  failed to get cpu utilization: missing request for cpu
+                                </span>
                               </div>
                             </div>
                             <div
@@ -1978,9 +1983,14 @@
                                 FailedGetResourceMetric
                               </div>
                               <div
-                                class="MuiBox-root css-0"
+                                class="MuiBox-root css-13o7eu2"
                               >
-                                failed to get cpu utilization: missing request for cpu
+                                <span
+                                  id="show-hide-label-id"
+                                  style="word-break: break-all; white-space: normal;"
+                                >
+                                  failed to get cpu utilization: missing request for cpu
+                                </span>
                               </div>
                             </div>
                             <div
@@ -2132,9 +2142,14 @@
                                 FailedGetResourceMetric
                               </div>
                               <div
-                                class="MuiBox-root css-0"
+                                class="MuiBox-root css-13o7eu2"
                               >
-                                failed to get cpu utilization: missing request for cpu
+                                <span
+                                  id="show-hide-label-id"
+                                  style="word-break: break-all; white-space: normal;"
+                                >
+                                  failed to get cpu utilization: missing request for cpu
+                                </span>
                               </div>
                             </div>
                             <div
