@@ -1,0 +1,17 @@
+{
+  "sources": [
+    {
+      "packageJson": "plugins/examples/change-logo/package.json"
+    },
+    {
+      "packageJson": "plugins/examples/pod-counter/package.json",
+      "pluginName": "headlamp-pod-counter"
+    },
+    {
+      "packageJson": "https://raw.githubusercontent.com/headlamp-k8s/plugins/e6cc25a08ce6d9daf9a83e8a9242d3005ea208e0/ai-assistant/package.json"
+    },
+    {
+      "packageJson": "https://raw.githubusercontent.com/headlamp-k8s/plugins/e6cc25a08ce6d9daf9a83e8a9242d3005ea208e0/prometheus/package.json"
+    }
+  ]
+}

@@ -18,6 +18,7 @@ import { configureStore } from '@reduxjs/toolkit';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { applyBackendThemeConfig } from '../components/App/themeSlice';
 import reducers from '../redux/reducers/reducers';
+import { setPluginSettings } from './pluginsSlice';
 
 let activeStore: any;
 
@@ -38,8 +39,62 @@ vi.mock('../components/resourceMap/sources/definitions/relationIds', () => ({
 import {
   registerAppTheme,
   registerClusterEmptyState,
+  registerPluginSettings,
   registerResourceRelationProvider,
 } from './registry';
+
+describe('registerPluginSettings', () => {
+  let warnSpy: ReturnType<typeof vi.spyOn>;
+
+  beforeEach(() => {
+    activeStore = configureStore({ reducer: reducers });
+    warnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    warnSpy.mockRestore();
+  });
+
+  it('warns when a loaded plugin does not describe its settings with a schema', () => {
+    activeStore.dispatch(
+      setPluginSettings([
+        {
+          name: 'schema-less-plugin',
+          description: '',
+          homepage: '',
+        },
+      ])
+    );
+
+    registerPluginSettings('schema-less-plugin', null);
+
+    expect(warnSpy).toHaveBeenCalledWith(
+      expect.stringContaining('without headlamp.settingsSchema')
+    );
+  });
+
+  it('does not warn when the plugin provides a settings schema', () => {
+    activeStore.dispatch(
+      setPluginSettings([
+        {
+          name: 'schema-plugin',
+          description: '',
+          homepage: '',
+          headlamp: {
+            settingsSchema: {
+              type: 'object',
+              properties: { endpoint: { type: 'string' } },
+            },
+          },
+        },
+      ])
+    );
+
+    registerPluginSettings('schema-plugin', null);
+
+    expect(warnSpy).not.toHaveBeenCalled();
+  });
+});
 
 describe('registerResourceRelationProvider', () => {
   let warnSpy: any;

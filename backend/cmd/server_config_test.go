@@ -125,4 +125,10 @@ func TestLoadAdminSettings(t *testing.T) {
 
 		require.ErrorContains(t, err, "not valid JSON")
 	})
+
+	t.Run("non-object json is an error", func(t *testing.T) {
+		_, err := loadAdminSettings(writeSettings(t, `["not", "a", "settings", "object"]`))
+
+		require.ErrorContains(t, err, "must contain a JSON object")
+	})
 }

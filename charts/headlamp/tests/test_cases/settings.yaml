@@ -1,0 +1,29 @@
+config:
+  settings:
+    defaults:
+      plugins:
+        example-plugin:
+          retries: 5
+          endpoint:
+            $value: https://example.com
+            $display: disabled
+pluginsManager:
+  enabled: true
+  config:
+    plugins:
+    - name: example-plugin
+      source: https://artifacthub.io/packages/headlamp/example/example-plugin
+      settings:
+        endpoint: https://manager.example.com
+        retries: 3
+    - name: change-logo
+      source: https://artifacthub.io/packages/headlamp/example/change-logo
+      settings:
+        url:
+          $value: https://example.com/logo.svg
+          $display: disabled
+    - name: headlamp-pod-counter
+      settingsName: "@kinvolk/headlamp-pod-counter"
+      source: https://artifacthub.io/packages/headlamp/example/headlamp-pod-counter
+      settings:
+        errorMessage: Pods unavailable

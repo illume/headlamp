@@ -45,10 +45,19 @@ const pluginConfigSchema = {
             type: 'string',
             pattern: '^\\d+\\.\\d+\\.\\d+', // Semver format
           },
+          settingsName: {
+            type: 'string',
+            minLength: 1,
+            description: 'Package name used by Headlamp when resolving plugin settings',
+          },
           dependencies: {
             type: 'array',
             items: { type: 'string', pattern: '^[a-z0-9][a-z0-9-_]*[a-z0-9-]$' },
             uniqueItems: true,
+          },
+          settings: {
+            type: 'object',
+            description: 'Admin defaults for this plugin, consumed by Headlamp deployments',
           },
         },
       },

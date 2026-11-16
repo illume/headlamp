@@ -16,13 +16,17 @@
 
 import { ThemeProvider } from '@mui/material/styles';
 import { configureStore } from '@reduxjs/toolkit';
-import { render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen } from '@testing-library/react';
+import { useState } from 'react';
 import { Provider } from 'react-redux';
 import { describe, expect, it, vi } from 'vitest';
 import { ClusterSettings } from '../../../helpers/clusterSettings';
 import { createMuiTheme } from '../../../lib/themes';
 import type { AdminSettingsState, DisplayMode } from '../../../settings/adminSettingsSlice';
-import { initialAdminSettingsState } from '../../../settings/adminSettingsSlice';
+import adminSettingsReducer, {
+  initialAdminSettingsState,
+  setAdminSettings,
+} from '../../../settings/adminSettingsSlice';
 import { lightTheme } from '../defaultAppThemes';
 import NodeShellSettings from './NodeShellSettings';
 
@@ -35,24 +39,38 @@ vi.mock('react-i18next', () => ({
 const CLUSTER = 'my-cluster';
 const IMAGE_PATH = 'clusters.*.nodeShellTerminal.linuxImage';
 const ENABLED_PATH = 'clusters.*.nodeShellTerminal.isEnabled';
+const NAMESPACE_PATH = 'clusters.*.nodeShellTerminal.namespace';
 
 const adminDefaults = {
   clusters: {
-    '*': { nodeShellTerminal: { linuxImage: 'admin-image:1', isEnabled: false } },
+    '*': {
+      nodeShellTerminal: {
+        linuxImage: 'admin-image:1',
+        isEnabled: false,
+        namespace: 'admin-shells',
+      },
+    },
   },
 };
+
+function createSettingsStore(adminSettings: Partial<AdminSettingsState>) {
+  return configureStore({
+    reducer: {
+      config: (state = { settings: {} }) => state,
+      adminSettings: adminSettingsReducer,
+    },
+    preloadedState: {
+      config: { settings: {} },
+      adminSettings: { ...initialAdminSettingsState, ...adminSettings },
+    },
+  });
+}
 
 function renderSettings(
   adminSettings: Partial<AdminSettingsState>,
   clusterSettings: ClusterSettings = {}
 ) {
-  const store = configureStore({
-    reducer: (state: any) => state,
-    preloadedState: {
-      config: { settings: {} },
-      adminSettings: { ...initialAdminSettingsState, ...adminSettings },
-    } as any,
-  });
+  const store = createSettingsStore(adminSettings);
 
   render(
     <Provider store={store}>
@@ -65,6 +83,7 @@ function renderSettings(
       </ThemeProvider>
     </Provider>
   );
+  return store;
 }
 
 const linuxImageInput = () => screen.getByLabelText('Linux image');
@@ -138,5 +157,106 @@ describe('NodeShellSettings admin-managed settings', () => {
     });
 
     expect(linuxImageInput()).toHaveValue('cluster-image:3');
+  });
+
+  it('preserves an explicitly empty namespace', () => {
+    renderSettings({ defaults: adminDefaults }, { nodeShellTerminal: { namespace: '' } });
+
+    expect(screen.getByLabelText('Namespace')).toHaveValue('');
+  });
+
+  it('allows a user namespace override in normal mode', () => {
+    renderSettings(
+      { defaults: adminDefaults },
+      { nodeShellTerminal: { namespace: 'user-shells' } }
+    );
+
+    expect(screen.getByLabelText('Namespace')).toHaveValue('user-shells');
+    expect(screen.getByLabelText('Namespace')).toBeEnabled();
+    fireEvent.change(screen.getByLabelText('Namespace'), { target: { value: 'new-shells' } });
+    expect(screen.getByLabelText('Namespace')).toHaveValue('new-shells');
+  });
+
+  it('preserves a cleared namespace when editing a replacement', () => {
+    const store = createSettingsStore({ defaults: adminDefaults });
+    function StatefulSettings() {
+      const [clusterSettings, setClusterSettings] = useState<ClusterSettings>({
+        nodeShellTerminal: { namespace: 'user-shells' },
+      });
+
+      return (
+        <Provider store={store}>
+          <ThemeProvider theme={createMuiTheme(lightTheme)}>
+            <NodeShellSettings
+              cluster={CLUSTER}
+              clusterSettings={clusterSettings}
+              setClusterSettings={setClusterSettings}
+            />
+          </ThemeProvider>
+        </Provider>
+      );
+    }
+
+    render(<StatefulSettings />);
+    const namespaceInput = screen.getByLabelText('Namespace');
+    fireEvent.change(namespaceInput, { target: { value: '' } });
+    expect(namespaceInput).toHaveValue('');
+
+    fireEvent.change(namespaceInput, { target: { value: 'new-shells' } });
+    expect(namespaceInput).toHaveValue('new-shells');
+  });
+
+  it('displays the managed namespace instead of a saved override when disabled', () => {
+    renderSettings(
+      {
+        defaults: adminDefaults,
+        display: { [NAMESPACE_PATH]: 'disabled' },
+        clusterDefinedSettings: [CLUSTER],
+        clusterSettings: { [CLUSTER]: { nodeShellTerminal: { namespace: 'cluster-shells' } } },
+      },
+      { nodeShellTerminal: { namespace: 'user-shells' } }
+    );
+
+    expect(screen.getByLabelText('Namespace')).toHaveValue('cluster-shells');
+    expect(screen.getByLabelText('Namespace')).toBeDisabled();
+  });
+
+  it('omits a hidden namespace control', () => {
+    renderSettings({ defaults: adminDefaults, display: { [NAMESPACE_PATH]: 'hidden' } });
+
+    expect(screen.queryByLabelText('Namespace')).not.toBeInTheDocument();
+  });
+
+  it('replaces an invalid local draft when namespace policy becomes disabled or changes', () => {
+    const store = renderSettings({ defaults: adminDefaults });
+    const input = screen.getByLabelText('Namespace');
+    fireEvent.change(input, { target: { value: 'INVALID' } });
+    expect(input).toBeInvalid();
+
+    act(() =>
+      store.dispatch(
+        setAdminSettings({
+          ...initialAdminSettingsState,
+          defaults: adminDefaults,
+          display: { [NAMESPACE_PATH]: 'disabled' },
+        })
+      )
+    );
+    expect(input).toHaveValue('admin-shells');
+    expect(input).toBeDisabled();
+    expect(input).not.toBeInvalid();
+
+    act(() =>
+      store.dispatch(
+        setAdminSettings({
+          ...initialAdminSettingsState,
+          defaults: {
+            clusters: { '*': { nodeShellTerminal: { namespace: 'updated-shells' } } },
+          },
+          display: { [NAMESPACE_PATH]: 'disabled' },
+        })
+      )
+    );
+    expect(input).toHaveValue('updated-shells');
   });
 });

@@ -19,6 +19,7 @@ import {
   K8s,
   registerAppBarAction,
   registerPluginSettings,
+  Settings as PluginSettings,
 } from '@kinvolk/headlamp-plugin/lib';
 import { NameValueTable } from '@kinvolk/headlamp-plugin/lib/CommonComponents';
 import Box from '@mui/material/Box';
@@ -26,9 +27,10 @@ import TextField from '@mui/material/TextField';
 import Message from './Message';
 
 function PodCounter() {
+  const cluster = K8s.useCluster();
   const [pods, error] = K8s.ResourceClasses.Pod.useList();
   const msg = pods === null ? 'Loading…' : pods.length.toString();
-  return <Message msg={msg} error={error !== null} />;
+  return <Message msg={msg} error={error !== null} cluster={cluster} />;
 }
 
 registerAppBarAction(PodCounter);
@@ -64,6 +66,8 @@ registerAppBarAction(function reorderNotifications({ actions }) {
  */
 function Settings(props) {
   const { data, onDataChange } = props;
+  const hidden = PluginSettings.isHidden('@kinvolk/headlamp-pod-counter', 'errorMessage');
+  const disabled = PluginSettings.isDisabled('@kinvolk/headlamp-pod-counter', 'errorMessage');
 
   /**
    * Handles changes to the error message input field by invoking the onDataChange callback
@@ -75,21 +79,28 @@ function Settings(props) {
     onDataChange?.({ ...data, errorMessage: event.target.value });
   };
 
-  const settingsRows = [
-    {
-      name: 'Custom Error Message',
-      value: (
-        <TextField
-          fullWidth
-          helperText="Enter the custom error message to display when the pod count cannot be retrieved."
-          value={data?.errorMessage ?? 'Uh... pods!?'}
-          onChange={handleChange}
-          variant="standard"
-          inputProps={{ 'aria-label': 'Custom Error Message' }}
-        />
-      ),
-    },
-  ];
+  const settingsRows = hidden
+    ? []
+    : [
+        {
+          name: 'Custom Error Message',
+          value: (
+            <TextField
+              fullWidth
+              disabled={disabled}
+              helperText="Enter the custom error message to display when the pod count cannot be retrieved."
+              value={
+                disabled
+                  ? PluginSettings.get('@kinvolk/headlamp-pod-counter', 'errorMessage')
+                  : data?.errorMessage ?? 'Uh... pods!?'
+              }
+              onChange={handleChange}
+              variant="standard"
+              inputProps={{ 'aria-label': 'Custom Error Message' }}
+            />
+          ),
+        },
+      ];
 
   return (
     <Box width={'80%'}>

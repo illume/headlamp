@@ -275,6 +275,9 @@ React to Headlamp events with
 
 Plugins can have user settings. Create them with
 [registerPluginSettings](../../api/plugin/registry/functions/registerpluginsettings).
+Declare the accepted values in a
+[plugin settings schema](../settings.md) so Headlamp and deployment tools can
+validate and document them.
 
 - Example plugin: [How to create plugin settings and use them](https://github.com/kubernetes-sigs/headlamp/tree/main/plugins/examples/change-logo)
 

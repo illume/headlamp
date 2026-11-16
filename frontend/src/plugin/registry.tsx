@@ -829,6 +829,13 @@ export function registerPluginSettings(
   component: PluginSettingsComponentType,
   displaySaveButton: boolean = false
 ) {
+  const plugin = store.getState().plugins.pluginSettings.find(plugin => plugin.name === name);
+  if (plugin && !plugin.headlamp?.settingsSchema) {
+    console.warn(
+      `Plugin "${name}" registers settings without headlamp.settingsSchema in package.json. ` +
+        'The custom settings UI remains supported, but Headlamp cannot automatically validate or document these settings.'
+    );
+  }
   store.dispatch(setPluginSettingsComponent({ name, component, displaySaveButton }));
 }
 

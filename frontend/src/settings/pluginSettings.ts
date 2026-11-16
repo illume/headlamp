@@ -16,6 +16,7 @@
 
 import store from '../redux/stores/store';
 import type { SettingSource } from './adminSettingsSlice';
+import { joinSettingsPath } from './settingsPath';
 import { getNestedValue, resolveSettingValue } from './settingsResolution';
 
 /**
@@ -38,7 +39,7 @@ export const PluginSettingsAPI = {
   get(pluginName: string, key: string, clusterName?: string): any {
     const state = store.getState();
     const adminSettings = state.adminSettings;
-    const path = `plugins.${pluginName}.${key}`;
+    const path = joinSettingsPath('plugins', pluginName, key);
     const userValue = state.pluginConfigs?.[pluginName]?.[key];
 
     const { value } = resolveSettingValue(path, userValue, undefined, adminSettings, clusterName);
@@ -50,7 +51,7 @@ export const PluginSettingsAPI = {
    */
   isHidden(pluginName: string, key: string): boolean {
     const state = store.getState();
-    const path = `plugins.${pluginName}.${key}`;
+    const path = joinSettingsPath('plugins', pluginName, key);
     return state.adminSettings.display[path] === 'hidden';
   },
 
@@ -59,7 +60,7 @@ export const PluginSettingsAPI = {
    */
   isDisabled(pluginName: string, key: string): boolean {
     const state = store.getState();
-    const path = `plugins.${pluginName}.${key}`;
+    const path = joinSettingsPath('plugins', pluginName, key);
     return state.adminSettings.display[path] === 'disabled';
   },
 
@@ -69,7 +70,7 @@ export const PluginSettingsAPI = {
   getSource(pluginName: string, key: string, clusterName?: string): SettingSource {
     const state = store.getState();
     const adminSettings = state.adminSettings;
-    const path = `plugins.${pluginName}.${key}`;
+    const path = joinSettingsPath('plugins', pluginName, key);
     const userValue = state.pluginConfigs?.[pluginName]?.[key];
 
     const { source } = resolveSettingValue(path, userValue, undefined, adminSettings, clusterName);
@@ -84,7 +85,10 @@ export const PluginSettingsAPI = {
     if (!state.adminSettings.defaults) {
       return undefined;
     }
-    return getNestedValue(state.adminSettings.defaults, `plugins.${pluginName}.${key}`);
+    return getNestedValue(
+      state.adminSettings.defaults,
+      joinSettingsPath('plugins', pluginName, key)
+    );
   },
 
   /**
@@ -96,6 +100,6 @@ export const PluginSettingsAPI = {
     if (!clusterData) {
       return undefined;
     }
-    return getNestedValue(clusterData, `plugins.${pluginName}.${key}`);
+    return getNestedValue(clusterData, joinSettingsPath('plugins', pluginName, key));
   },
 };

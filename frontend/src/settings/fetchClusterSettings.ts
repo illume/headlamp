@@ -81,7 +81,9 @@ async function fetchSource(
     if (isSecret) {
       const encoded = resource?.data?.[SETTINGS_DATA_KEY];
       if (typeof encoded === 'string') {
-        raw = atob(encoded);
+        raw = new TextDecoder('utf-8', { fatal: true }).decode(
+          Uint8Array.from(atob(encoded), character => character.charCodeAt(0))
+        );
       }
     } else {
       raw = resource?.data?.[SETTINGS_DATA_KEY];
@@ -91,7 +93,8 @@ async function fetchSource(
       return null;
     }
 
-    return JSON.parse(raw);
+    const data: unknown = JSON.parse(raw);
+    return data !== null && typeof data === 'object' && !Array.isArray(data) ? data : null;
   } catch {
     return null;
   }
@@ -193,8 +196,6 @@ export function useClusterDefinedSettings() {
   });
 
   useEffect(() => {
-    if (data) {
-      dispatch(setClusterSettings(data));
-    }
+    dispatch(setClusterSettings(data ?? {}));
   }, [data, dispatch]);
 }

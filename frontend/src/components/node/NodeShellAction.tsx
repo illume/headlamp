@@ -15,11 +15,12 @@
  */
 
 import { useTranslation } from 'react-i18next';
-import { DEFAULT_NODE_SHELL_NAMESPACE, loadClusterSettings } from '../../helpers/clusterSettings';
+import { loadClusterSettings } from '../../helpers/clusterSettings';
 import { getCluster } from '../../lib/cluster';
 import Node from '../../lib/k8s/node';
 import Pod from '../../lib/k8s/pod';
-import store from '../../redux/stores/store';
+import { useTypedSelector } from '../../redux/hooks';
+import { resolveNodeShellSettings } from '../../settings/nodeShellSettings';
 import { Activity } from '../activity/Activity';
 import ActionButton from '../common/ActionButton';
 import { AuthVisible } from '../common/Resource';
@@ -29,45 +30,42 @@ interface NodeShellTerminalProps {
   item: Node | null;
 }
 
-function isNodeTerminalEnabled(cluster: string | null) {
-  if (cluster === null) {
-    return false;
-  }
-  const clusterSettings = loadClusterSettings(cluster);
-  return clusterSettings.nodeShellTerminal?.isEnabled ?? true;
-}
-
-function nodeTerminalNamespace(cluster: string | null) {
-  if (cluster === null) {
-    return DEFAULT_NODE_SHELL_NAMESPACE;
-  }
-  const clusterSettings = loadClusterSettings(cluster);
-  const defaultNamespace = store.getState().config.defaultNodeShellNamespace;
-  return (
-    clusterSettings.nodeShellTerminal?.namespace || defaultNamespace || DEFAULT_NODE_SHELL_NAMESPACE
-  );
-}
-
 export function NodeShellAction(props: NodeShellTerminalProps) {
   const { item } = props;
   const { t } = useTranslation(['glossary']);
+  const adminSettings = useTypedSelector(state => state.adminSettings);
+  const config = useTypedSelector(state => state.config);
   if (item === null) {
     return <></>;
   }
-  const cluster = getCluster();
+  const cluster = item.cluster || getCluster();
+  if (!cluster) {
+    return <></>;
+  }
   function isLinux(item: Node | null): boolean {
     return item?.status?.nodeInfo?.operatingSystem === 'linux';
   }
-  const namespace = nodeTerminalNamespace(cluster);
+  const { namespace, isEnabled } = resolveNodeShellSettings(
+    cluster,
+    loadClusterSettings(cluster),
+    adminSettings,
+    config
+  );
   const activityId = 'node-shell-' + item.metadata.uid;
 
-  if (!isNodeTerminalEnabled(cluster)) {
+  if (!isEnabled) {
     return <></>;
   }
   return (
     <>
-      <AuthVisible authVerb="create" item={Pod} namespace={namespace}>
-        <AuthVisible item={Pod} namespace={namespace} authVerb="get" subresource="exec">
+      <AuthVisible authVerb="create" item={Pod} namespace={namespace} cluster={cluster}>
+        <AuthVisible
+          item={Pod}
+          namespace={namespace}
+          cluster={cluster}
+          authVerb="get"
+          subresource="exec"
+        >
           <ActionButton
             description={
               isLinux(item)

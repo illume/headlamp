@@ -23,6 +23,7 @@ import {
   AppLogoProps,
   registerAppLogo,
   registerPluginSettings,
+  Settings as PluginSettings,
 } from '@kinvolk/headlamp-plugin/lib';
 import { Avatar, SvgIcon } from '@mui/material';
 import LogoWithTextLight from './icon-large-light.svg';
@@ -39,10 +40,11 @@ function SimpleLogo(props: AppLogoProps) {
   const { logoType, className, sx } = props;
 
   const useConf = store.useConfig();
-  const config = useConf();
+  useConf();
+  const url = PluginSettings.get('change-logo', 'url');
 
-  return config?.url ? (
-    <Avatar src={config?.url} alt="logo" className={className} sx={sx} />
+  return url ? (
+    <Avatar src={url} alt="logo" className={className} sx={sx} />
   ) : (
     <SvgIcon
       className={className}

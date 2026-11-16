@@ -345,8 +345,8 @@ export function updateSettingsPackages(
   const pluginsChanged =
     backendPlugins.length !== settingsPlugins.length ||
     settingsPlugins.some(plugin => plugin.isDevelopmentModeBlocked) ||
-    backendPlugins.map(p => getPluginKey(p) + p.version).join('') !==
-      settingsPlugins.map(p => getPluginKey(p) + p.version).join('');
+    backendPlugins.map(p => getPluginKey(p) + p.version + JSON.stringify(p.headlamp)).join('') !==
+      settingsPlugins.map(p => getPluginKey(p) + p.version + JSON.stringify(p.headlamp)).join('');
 
   if (!pluginsChanged) {
     return settingsPlugins;
@@ -366,6 +366,7 @@ export function updateSettingsPackages(
 
     const settingsPlugin = { ...settingsPlugins[index] };
     delete settingsPlugin.isDevelopmentModeBlocked;
+    delete settingsPlugin.headlamp;
 
     // Merge settings with backend info, preserving user's isEnabled preference
     return {
