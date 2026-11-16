@@ -22,6 +22,8 @@ export interface MessageProps {
   msg: string;
   /** True if there's an error. */
   error: boolean;
+  /** Active cluster for resolving cluster-specific settings. */
+  cluster?: string | null;
 }
 
 /**
@@ -33,7 +35,7 @@ export interface MessageProps {
  * See https://storybook.js.org/docs/web-components/writing-stories/build-pages-with-storybook
  *
  */
-export default function Message({ msg, error }: MessageProps) {
+export default function Message({ msg, error, cluster }: MessageProps) {
   const config = new ConfigStore<{ errorMessage?: string }>('@kinvolk/headlamp-pod-counter');
   const useConf = config.useConfig();
   const conf = useConf();
@@ -42,7 +44,7 @@ export default function Message({ msg, error }: MessageProps) {
     <Typography color="textPrimary" sx={{ fontStyle: 'italic' }}>
       {!error
         ? `# Pods: ${msg}`
-        : Settings.get('@kinvolk/headlamp-pod-counter', 'errorMessage') ??
+        : Settings.get('@kinvolk/headlamp-pod-counter', 'errorMessage', cluster ?? undefined) ??
           conf?.errorMessage ??
           'Uh, pods!?'}
     </Typography>

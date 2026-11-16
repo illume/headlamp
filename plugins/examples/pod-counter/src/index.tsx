@@ -27,9 +27,10 @@ import TextField from '@mui/material/TextField';
 import Message from './Message';
 
 function PodCounter() {
+  const cluster = K8s.useCluster();
   const [pods, error] = K8s.ResourceClasses.Pod.useList();
   const msg = pods === null ? 'Loading…' : pods.length.toString();
-  return <Message msg={msg} error={error !== null} />;
+  return <Message msg={msg} error={error !== null} cluster={cluster} />;
 }
 
 registerAppBarAction(PodCounter);

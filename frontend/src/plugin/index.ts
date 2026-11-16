@@ -366,6 +366,7 @@ export function updateSettingsPackages(
 
     const settingsPlugin = { ...settingsPlugins[index] };
     delete settingsPlugin.isDevelopmentModeBlocked;
+    delete settingsPlugin.headlamp;
 
     // Merge settings with backend info, preserving user's isEnabled preference
     return {

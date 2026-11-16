@@ -1064,9 +1064,6 @@
                       ]
                     },
                     "then": {
-                      "required": [
-                        "settingsName"
-                      ],
                       "properties": {
                         "settingsName": {
                           "const": "@kinvolk/headlamp-pod-counter"
@@ -1074,6 +1071,11 @@
                         "settings": {
                           "$ref": "#/definitions/knownPluginSettings/plugin_b1e9b087f366"
                         }
+                      },
+                      "dependencies": {
+                        "settings": [
+                          "settingsName"
+                        ]
                       }
                     }
                   },

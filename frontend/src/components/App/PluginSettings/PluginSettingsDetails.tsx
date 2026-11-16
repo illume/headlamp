@@ -203,8 +203,8 @@ export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps)
     return result;
   }, [adminSettings, data, plugin.name, settingsSchema, usesSchemaForm]);
   const enableSaveButton = useMemo(
-    () => !_.isEqual(config, dataToSave) && isValid,
-    [config, dataToSave, isValid]
+    () => !_.isEqual(config, dataToSave) && (!usesSchemaForm || isValid),
+    [config, dataToSave, isValid, usesSchemaForm]
   );
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const history = useHistory();

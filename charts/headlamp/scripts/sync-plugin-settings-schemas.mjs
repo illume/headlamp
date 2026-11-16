@@ -39,32 +39,50 @@ export function assertSettingsSchema(schema, source) {
   visit(schema);
 }
 
-function adminSettingsSchema(schema) {
+function adminSettingsSchema(schema, stripRequired = true) {
+  if (!schema || typeof schema !== 'object' || Array.isArray(schema)) {
+    return schema;
+  }
+
   const result = structuredClone(schema);
-  delete result.required;
-  result.properties = Object.fromEntries(
-    Object.entries(schema.properties).map(([name, property]) => [
-      name,
-      {
-        anyOf: [
-          property,
-          {
-            type: 'object',
-            required: ['$value'],
-            additionalProperties: false,
-            properties: {
-              $value: property,
-              $display: { enum: ['normal', 'disabled', 'hidden'] },
-              $clusterDefined: {
-                type: 'array',
-                items: { type: 'string' },
+  if (stripRequired) {
+    delete result.required;
+  }
+  if (schema.properties) {
+    result.properties = Object.fromEntries(
+      Object.entries(schema.properties).map(([name, property]) => [
+        name,
+        {
+          anyOf: [
+            property,
+            {
+              type: 'object',
+              required: ['$value'],
+              additionalProperties: false,
+              properties: {
+                $value: property,
+                $display: { enum: ['normal', 'disabled', 'hidden'] },
+                $clusterDefined: {
+                  type: 'array',
+                  items: { type: 'string' },
+                },
               },
             },
-          },
-        ],
-      },
-    ])
-  );
+          ],
+        },
+      ])
+    );
+  }
+  for (const keyword of ['allOf', 'anyOf', 'oneOf']) {
+    if (Array.isArray(schema[keyword])) {
+      result[keyword] = schema[keyword].map(value => adminSettingsSchema(value, false));
+    }
+  }
+  for (const keyword of ['not', 'if', 'then', 'else']) {
+    if (schema[keyword] && typeof schema[keyword] === 'object') {
+      result[keyword] = adminSettingsSchema(schema[keyword], false);
+    }
+  }
   return result;
 }
 
@@ -85,11 +103,11 @@ export function updateValuesSchema(valuesSchema, packages) {
         required: ['name'],
       },
       then: {
-        ...(hasAlias ? { required: ['settingsName'] } : {}),
         properties: {
           ...(hasAlias ? { settingsName: { const: packageJson.name } } : {}),
           settings: { $ref: `#/definitions/knownPluginSettings/${schemaName}` },
         },
+        ...(hasAlias ? { dependencies: { settings: ['settingsName'] } } : {}),
       },
     });
   }

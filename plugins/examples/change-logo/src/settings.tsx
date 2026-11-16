@@ -38,7 +38,7 @@ import { useEffect, useState } from 'react';
  * @param {boolean} [props.disabled=false] - Whether the input is read-only.
  * @returns {JSX.Element} The AutoSaveInput component.
  */
-function AutoSaveInput({
+export function AutoSaveInput({
   onSave,
   defaultValue = '',
   delay = 1000,
@@ -81,7 +81,7 @@ function AutoSaveInput({
       }}
       inputProps={ariaLabel ? { 'aria-label': ariaLabel } : {}}
       helperText={helperText}
-      value={value}
+      value={disabled ? defaultValue : value}
       onChange={handleChange}
       variant="standard"
     />

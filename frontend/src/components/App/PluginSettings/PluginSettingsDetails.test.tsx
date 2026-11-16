@@ -137,6 +137,52 @@ describe('PluginSettingsDetails metadata', () => {
     expect(screen.queryByRole('textbox', { name: 'generated' })).not.toBeInTheDocument();
   });
 
+  it('does not gate custom settings saves on generated-form validity', async () => {
+    const onSave = vi.fn();
+    const renderSettings = (pluginInfo: PluginInfo) => (
+      <TestContext>
+        <ThemeProvider theme={theme}>
+          <PluginSettingsDetailsPure
+            config={{}}
+            plugin={pluginInfo}
+            onSave={onSave}
+            onDelete={() => {}}
+          />
+        </ThemeProvider>
+      </TestContext>
+    );
+    const { rerender } = render(
+      renderSettings({
+        ...plugin,
+        headlamp: {
+          settingsSchema: {
+            type: 'object',
+            required: ['generated'],
+            properties: { generated: { type: 'string' } },
+          },
+        },
+      })
+    );
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled());
+
+    rerender(
+      renderSettings({
+        ...plugin,
+        displaySettingsComponentWithSaveButton: true,
+        settingsComponent: ({ data, onDataChange }: any) => (
+          <button onClick={() => onDataChange({ ...data, custom: 'updated' })}>
+            Update custom setting
+          </button>
+        ),
+      })
+    );
+    await userEvent.click(screen.getByRole('button', { name: 'Update custom setting' }));
+
+    expect(screen.getByRole('button', { name: 'Save' })).toBeEnabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }));
+    expect(onSave).toHaveBeenCalledWith({ custom: 'updated' });
+  });
+
   it('associates boolean validation errors with the checkbox', () => {
     render(
       <TestContext>
@@ -266,6 +312,76 @@ describe('PluginSettingsDetails metadata', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(onSave).toHaveBeenCalledWith({ retries: 7 });
+  });
+
+  it('validates an explicit null administrator default instead of using the schema default', () => {
+    const adminSettings = {
+      defaults: { plugins: { 'my-plugin': { retries: null } } },
+      display: {},
+      clusterDefinedSettings: [],
+      clusterDefined: {},
+      sources: {},
+      clusterSettings: {},
+    };
+    render(
+      <TestContext>
+        <ThemeProvider theme={theme}>
+          <PluginSettingsDetailsPure
+            plugin={{
+              ...plugin,
+              headlamp: {
+                settingsSchema: {
+                  type: 'object',
+                  properties: { retries: { type: 'integer', default: 3 } },
+                },
+              },
+            }}
+            adminSettings={adminSettings}
+            onSave={vi.fn()}
+            onDelete={() => {}}
+          />
+        </ThemeProvider>
+      </TestContext>
+    );
+
+    expect(screen.getByRole('spinbutton', { name: 'retries' })).toHaveValue(null);
+    expect(screen.getByRole('spinbutton', { name: 'retries' })).toHaveAttribute(
+      'aria-invalid',
+      'true'
+    );
+  });
+
+  it('allows clearing an optional enum to return to administrator or plugin defaults', async () => {
+    const onSave = vi.fn();
+    render(
+      <TestContext>
+        <ThemeProvider theme={theme}>
+          <PluginSettingsDetailsPure
+            config={{ mode: 'auto' }}
+            plugin={{
+              ...plugin,
+              headlamp: {
+                settingsSchema: {
+                  type: 'object',
+                  additionalProperties: false,
+                  properties: { mode: { type: 'string', enum: ['auto', 'manual'] } },
+                },
+              },
+            }}
+            onSave={onSave}
+            onDelete={() => {}}
+          />
+        </ThemeProvider>
+      </TestContext>
+    );
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'mode' }));
+    await userEvent.click(screen.getByRole('option', { name: 'Default' }));
+    const save = screen.getByRole('button', { name: 'Save' });
+    await waitFor(() => expect(save).toBeEnabled());
+    await userEvent.click(save);
+
+    expect(onSave).toHaveBeenCalledWith({});
   });
 
   it('unsets an optional URI when other required fields are missing', async () => {

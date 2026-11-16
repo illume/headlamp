@@ -130,11 +130,14 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
         const path = joinSettingsPath('plugins', pluginName, name);
         const display = adminSettings.display[path];
         const adminControlled = display === 'hidden' || display === 'disabled';
+        const adminDefault = getNestedValue(adminSettings.defaults, path);
         const value = adminControlled
           ? PluginSettingsAPI.get(pluginName, name)
           : Object.hasOwn(data, name) && !clearedFields.has(name)
           ? data[name]
-          : getNestedValue(adminSettings.defaults, path) ?? field.default;
+          : adminDefault !== undefined
+          ? adminDefault
+          : field.default;
         return value === undefined ? [] : [[name, value]];
       })
     );
@@ -275,6 +278,9 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
               );
             }}
           >
+            {Array.isArray(field.enum) &&
+              !schema.required?.includes(name) &&
+              !field.enum.includes('') && <MenuItem value="">{t('Default')}</MenuItem>}
             {field.enum?.map((option: string | number) => (
               <MenuItem key={String(option)} value={option}>
                 {t(String(field.enumNames?.[field.enum.indexOf(option)] ?? option))}
