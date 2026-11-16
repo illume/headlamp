@@ -20,11 +20,7 @@ import _ from 'lodash';
 import { useSnackbar } from 'notistack';
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import {
-  DEFAULT_NODE_SHELL_LINUX_IMAGE,
-  DEFAULT_NODE_SHELL_NAMESPACE,
-  loadClusterSettings,
-} from '../../helpers/clusterSettings';
+import { loadClusterSettings } from '../../helpers/clusterSettings';
 import { getCluster } from '../../lib/cluster';
 import { apply } from '../../lib/k8s/api/v1/apply';
 import { stream, StreamResultsCb } from '../../lib/k8s/api/v1/streamingApi';
@@ -32,6 +28,7 @@ import Node from '../../lib/k8s/node';
 import { KubePod } from '../../lib/k8s/pod';
 import { Channel, useTerminalStream, XTerminalConnected } from '../../lib/k8s/useTerminalStream';
 import store from '../../redux/stores/store';
+import { resolveNodeShellSettings } from '../../settings/nodeShellSettings';
 
 interface NodeShellTerminalProps {
   item: Node;
@@ -124,11 +121,17 @@ async function shell(
   onError: (message?: string) => void
 ) {
   const clusterSettings = loadClusterSettings(cluster);
-  const config = clusterSettings.nodeShellTerminal;
-  const defaultNamespace = store.getState().config.defaultNodeShellNamespace;
-  const defaultImage = store.getState().config.defaultNodeShellImage;
-  const linuxImage = config?.linuxImage || defaultImage || DEFAULT_NODE_SHELL_LINUX_IMAGE;
-  const namespace = config?.namespace || defaultNamespace || DEFAULT_NODE_SHELL_NAMESPACE;
+  const { config, adminSettings } = store.getState();
+  const { linuxImage, namespace, isEnabled } = resolveNodeShellSettings(
+    cluster,
+    clusterSettings,
+    adminSettings,
+    config
+  );
+  if (!isEnabled) {
+    onError();
+    return {};
+  }
   const podName = `node-debugger-${item.getName()}-${uniqueString()}`;
   const kubePod = shellPod(podName, namespace, item.getName(), linuxImage);
   try {
@@ -167,7 +170,7 @@ export function NodeShellTerminal(props: NodeShellTerminalProps) {
   const { xtermRef, streamRef, send } = useTerminalStream({
     containerRef: terminalContainerRef,
     connectStream: async onDataCallback => {
-      const cluster = getCluster();
+      const cluster = item.cluster || getCluster();
       if (!cluster) {
         const message = t('translation|No cluster selected');
         enqueueSnackbar(message, { variant: 'error' });

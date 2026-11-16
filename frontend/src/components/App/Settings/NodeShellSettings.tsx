@@ -50,8 +50,12 @@ export default function NodeShellSettings(props: SettingsProps) {
 
   const adminLinuxImage = useSetting<string>('clusters.*.nodeShellTerminal.linuxImage', cluster);
   const adminIsEnabled = useSetting<boolean>('clusters.*.nodeShellTerminal.isEnabled', cluster);
+  const adminNamespace = useSetting<string>('clusters.*.nodeShellTerminal.namespace', cluster);
 
-  const namespace = clusterSettings.nodeShellTerminal?.namespace ?? '';
+  const namespace =
+    adminNamespace.disabled || adminNamespace.hidden
+      ? adminNamespace.value ?? ''
+      : clusterSettings.nodeShellTerminal?.namespace || adminNamespace.value || '';
   // When a setting is admin-managed (disabled or hidden) the admin value is
   // forced; otherwise the user's cluster setting wins, falling back to the
   // admin-provided default.
@@ -67,9 +71,10 @@ export default function NodeShellSettings(props: SettingsProps) {
   const [namespaceInput, setNamespaceInput] = React.useState(namespace);
   React.useEffect(() => {
     setNamespaceInput(namespace);
-  }, [namespace]);
+  }, [namespace, adminNamespace.disabled]);
 
-  const isValidNamespace = isValidNamespaceFormat(namespaceInput);
+  const displayedNamespace = adminNamespace.disabled ? namespace : namespaceInput;
+  const isValidNamespace = isValidNamespaceFormat(displayedNamespace);
   const invalidNamespaceMessage = t(
     "translation|Namespaces must contain only lowercase alphanumeric characters or '-', and must start and end with an alphanumeric character."
   );
@@ -127,6 +132,7 @@ export default function NodeShellSettings(props: SettingsProps) {
           },
           {
             name: 'Namespace',
+            hide: adminNamespace.hidden,
             value: (
               <TextField
                 onChange={event => {
@@ -136,7 +142,8 @@ export default function NodeShellSettings(props: SettingsProps) {
                     updateNodeShell({ namespace: value });
                   }
                 }}
-                value={namespaceInput}
+                value={displayedNamespace}
+                disabled={adminNamespace.disabled}
                 placeholder={defaultNodeShellNamespace}
                 error={!isValidNamespace}
                 helperText={

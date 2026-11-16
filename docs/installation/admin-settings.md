@@ -38,6 +38,28 @@ Plugins read effective values with `Settings.get(pluginName, key)` from
 `headlamp.settingsSchema` automatically applies admin defaults and display
 modes.
 
+Node-shell image, namespace, and enablement use
+`defaults.clusters["*"].nodeShellTerminal.{linuxImage,namespace,isEnabled}`.
+For example, this keeps debugger pods in an administrator-selected namespace:
+
+```json
+{
+  "defaults": {
+    "clusters": {
+      "*": {
+        "nodeShellTerminal": {
+          "namespace": { "$value": "node-debugging", "$display": "disabled" }
+        }
+      }
+    }
+  }
+}
+```
+
+These settings apply both to the settings controls and to new node-shell
+sessions. Enabled cluster sources can override these defaults; Kubernetes RBAC
+still controls whether the user can create or attach to a debugger pod.
+
 ## Helm
 
 Set `config.settings` in the Headlamp chart. The chart creates and mounts the
@@ -160,3 +182,18 @@ organization-specific information.
 An existing `HEADLAMP_ADMIN_SETTINGS` file takes precedence over registry or
 managed-preference policy. Registry or managed-preference policy takes
 precedence over the conventional machine-wide file.
+
+## Scope and follow-up work
+
+This configures shared defaults, not writable per-user storage. Cross-device
+sync, identity/group/role overlays, labeled-namespace discovery, and plugin
+allowlists are not implemented. Plugins must adopt the settings API; configuring
+an arbitrary key does not make an existing plugin consume it.
+
+Cluster sources refresh every minute, but static files require a backend restart
+(Helm settings changes trigger a rollout). Generated plugin forms and known
+plugin chart schemas validate plugin values; arbitrary core settings still lack
+a shared, versioned schema. Reactive plugin hooks, per-read remote selection,
+source diagnostics, and additional built-in settings integrations remain
+follow-up work. Neither UI hiding nor browser-delivered Secret data provides
+backend-only secret storage.
