@@ -253,6 +253,11 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
             }}
             onChange={event => {
               const value = event.target.value;
+              const isOptionalEnumDefault =
+                Array.isArray(field.enum) &&
+                !schema.required?.includes(name) &&
+                value === '' &&
+                !field.enum.includes('');
               const isOptionalString =
                 fieldType === 'string' && !schema.required?.includes(name) && value === '';
               const validateFieldValue = (candidate: Record<string, any>) =>
@@ -268,7 +273,9 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
                 );
               update(
                 name,
-                isNumber
+                isOptionalEnumDefault
+                  ? undefined
+                  : isNumber
                   ? value === ''
                     ? undefined
                     : Number(value)

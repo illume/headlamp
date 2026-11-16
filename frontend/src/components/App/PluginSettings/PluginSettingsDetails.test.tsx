@@ -384,6 +384,42 @@ describe('PluginSettingsDetails metadata', () => {
     expect(onSave).toHaveBeenCalledWith({});
   });
 
+  it.each([
+    { name: 'string', options: ['auto', 'manual'], currentValue: 'auto' },
+    { name: 'numeric', options: [1, 2], currentValue: 1 },
+  ])('allows clearing an untyped optional $name enum', async ({ options, currentValue }) => {
+    const onSave = vi.fn();
+    render(
+      <TestContext>
+        <ThemeProvider theme={theme}>
+          <PluginSettingsDetailsPure
+            config={{ mode: currentValue }}
+            plugin={{
+              ...plugin,
+              headlamp: {
+                settingsSchema: {
+                  type: 'object',
+                  additionalProperties: false,
+                  properties: { mode: { enum: options } },
+                },
+              },
+            }}
+            onSave={onSave}
+            onDelete={() => {}}
+          />
+        </ThemeProvider>
+      </TestContext>
+    );
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'mode' }));
+    await userEvent.click(screen.getByRole('option', { name: 'Default' }));
+    const save = screen.getByRole('button', { name: 'Save' });
+    await waitFor(() => expect(save).toBeEnabled());
+    await userEvent.click(save);
+
+    expect(onSave).toHaveBeenCalledWith({});
+  });
+
   it('unsets an optional URI when other required fields are missing', async () => {
     const onSave = vi.fn();
     render(

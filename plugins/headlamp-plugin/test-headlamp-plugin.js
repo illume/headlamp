@@ -36,6 +36,7 @@ function testHeadlampPlugin() {
   run('npm', ['run', 'test:typescript']);
   run('npm', ['run', 'test:storybook-mocks']);
   run('npm', ['run', 'test:upgrade']);
+  run('node', ['--test', '../../charts/headlamp/scripts/sync-plugin-settings-schemas.test.mjs']);
   run('npm', ['run', 'build']);
   checkFileContains(join('lib', 'index.js'), 'DefaultCreateProject');
   checkFileContains(join('lib', 'index.d.ts'), 'DefaultCreateProject');
