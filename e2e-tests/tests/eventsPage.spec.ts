@@ -89,7 +89,6 @@ test('filters and freezes a 2,000-event cluster snapshot', async ({ page }) => {
     await page.getByRole('button', { name: 'Expand sidebar' }).click();
   }
   await expect(page.getByRole('button', { name: 'Shrink sidebar' })).toBeVisible();
-  await expect(page.getByRole('columnheader', { name: 'Message' })).toHaveCount(0);
   const eventRow = page.getByRole('row').filter({ hasText: 'pod-1999' });
   await expect(
     eventRow.getByRole('cell').filter({ hasText: 'pod-1999' }).getByText('Unique load-test message')

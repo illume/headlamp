@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { act, fireEvent, render, screen } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { createMemoryHistory } from 'history';
 import type React from 'react';
@@ -89,7 +89,8 @@ vi.mock('../../lib/k8s/pod', () => ({
   },
 }));
 
-vi.mock('../../lib/util', () => ({
+vi.mock('../../lib/util', async importOriginal => ({
+  ...(await importOriginal<typeof import('../../lib/util')>()),
   useFilterFunc: () => () => true,
 }));
 
@@ -548,6 +549,36 @@ describe('Overview', () => {
     const timestamp = nameColumn.render(makeEvent('event', 'default')).props.children[2];
     expect(timestamp.props.sx).not.toHaveProperty('display');
   });
+
+  it('lets the Name-column message fallback expand and collapse', async () => {
+    const user = userEvent.setup();
+    const message = 'long event message '.repeat(20);
+    eventUseList.mockReturnValue({
+      items: [makeEvent(message, 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    const nameColumn = resourceListViewMock.mock.lastCall?.[0].columns.find(
+      (column: { id?: string }) => column.id === 'name'
+    );
+    const { container } = render(nameColumn.render(makeEvent(message, 'default')));
+    const messageLabel = container.querySelector('span[id^="show-hide-label-"]') as HTMLElement;
+    const expandButton = within(container).getByRole('button', { name: 'translation|Expand' });
+    expect(messageLabel.textContent).toBe(`${message.slice(0, 256)}…`);
+    await user.click(expandButton);
+    expect(expandButton).toHaveAttribute('aria-expanded', 'true');
+    expect(messageLabel.textContent).toBe(message);
+    await user.click(expandButton);
+    expect(expandButton).toHaveAttribute('aria-expanded', 'false');
+    expect(messageLabel.textContent).toBe(`${message.slice(0, 256)}…`);
+  });
 });
 
 function makeEvent(message: string, namespace: string) {
@@ -555,6 +586,7 @@ function makeEvent(message: string, namespace: string) {
     getNamespace: () => namespace,
     involvedObject: { kind: 'Pod', name: message, namespace },
     message,
+    lastOccurrence: '2026-01-01T00:00:00Z',
     reason: 'Started',
     source: { host: 'node-a' },
     type: 'Warning',

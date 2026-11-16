@@ -488,7 +488,7 @@ function EventsSection() {
                   >
                     <Box>{event.reason}</Box>
                     {event.source?.host && <Box>{event.source.host}</Box>}
-                    <Box>{event.message}</Box>
+                    <ShowHideLabel>{event.message ?? ''}</ShowHideLabel>
                   </Box>
                   <Box sx={{ mt: 0.5, color: 'text.secondary' }}>
                     <Box component="span">{t('Last Seen')}:</Box>
