@@ -73,3 +73,18 @@ test('event details remain available at 320 CSS pixels', async ({ page }) => {
   await expect(eventRow.getByText('Unique load-test message').first()).toBeVisible();
   await runA11yScan(page, expect, ['#storybook-root']);
 });
+
+test('event messages remain visible in a narrow table at desktop viewport widths', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto('/iframe.html?id=cluster-overview--large-events&viewMode=story');
+  await page.addStyleTag({ content: '#storybook-root { width: 760px; }' });
+
+  await page.getByRole('textbox', { name: 'Search events' }).fill('*UNIQUE*message');
+  const eventRow = page.getByRole('row').filter({ hasText: 'pod-1999' });
+  await expect(page.getByRole('columnheader', { name: 'Message' })).toHaveCount(0);
+  await expect(
+    eventRow.getByRole('cell').filter({ hasText: 'pod-1999' }).getByText('Unique load-test message')
+  ).toBeVisible();
+});

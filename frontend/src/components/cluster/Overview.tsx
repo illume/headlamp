@@ -250,8 +250,8 @@ function EventsSection() {
   ];
 
   const numWarnings = React.useMemo(
-    () => sourceEvents?.filter(e => e.type === 'Warning').length ?? '?',
-    [sourceEvents]
+    () => namespaceEvents?.filter(e => e.type === 'Warning').length ?? '?',
+    [namespaceEvents]
   );
   const matchingEventCount = filteredEvents?.length ?? 0;
   const eventStatus =
@@ -481,7 +481,6 @@ function EventsSection() {
                   {makeObjectLink(event)}
                   <Box
                     sx={{
-                      display: { xs: 'block', md: 'none' },
                       mt: 0.5,
                       color: 'text.secondary',
                       overflowWrap: 'anywhere',

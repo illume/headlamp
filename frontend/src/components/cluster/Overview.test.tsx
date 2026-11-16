@@ -219,6 +219,42 @@ describe('Overview', () => {
     ]);
   });
 
+  it('counts warnings in the selected namespace of a paused snapshot', () => {
+    eventUseList.mockReturnValue({
+      items: [makeEvent('event-a', 'team-a'), makeEvent('event-b', 'team-b')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    const { rerender } = render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Only warnings (2)')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Pause live events' }));
+    eventUseList.mockReturnValue({
+      items: [makeEvent('new-event', 'team-b')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    namespaceUse.mockReturnValue(['team-a']);
+    rerender(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Only warnings (1)')).toBeVisible();
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toEqual([
+      expect.objectContaining({ message: 'event-a' }),
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: 'Resume live events' }));
+    expect(screen.getByText('Only warnings (0)')).toBeVisible();
+  });
+
   it('bypasses saved filters for event notification links', () => {
     localStorage.setItem(
       'headlamp.events.filters.v1.test',

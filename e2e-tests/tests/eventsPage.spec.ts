@@ -89,9 +89,12 @@ test('filters and freezes a 2,000-event cluster snapshot', async ({ page }) => {
     await page.getByRole('button', { name: 'Expand sidebar' }).click();
   }
   await expect(page.getByRole('button', { name: 'Shrink sidebar' })).toBeVisible();
+  await expect(page.getByRole('columnheader', { name: 'Message' })).toHaveCount(0);
+  const eventRow = page.getByRole('row').filter({ hasText: 'pod-1999' });
   await expect(
-    page.getByRole('row').filter({ hasText: 'pod-1999' }).getByText('Last Seen:', { exact: true })
+    eventRow.getByRole('cell').filter({ hasText: 'pod-1999' }).getByText('Unique load-test message')
   ).toBeVisible();
+  await expect(eventRow.getByText('Last Seen:', { exact: true })).toBeVisible();
   await page.setViewportSize({ width: 1280, height: 720 });
   await expect(page.getByText('Load-test event 1')).toHaveCount(0);
 

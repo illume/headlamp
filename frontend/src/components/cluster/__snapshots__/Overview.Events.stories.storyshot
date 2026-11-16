@@ -1816,7 +1816,7 @@
                               nginx-deployment-abcd-1234567890
                             </a>
                             <div
-                              class="MuiBox-root css-1qfysi0"
+                              class="MuiBox-root css-6iepsk"
                             >
                               <div
                                 class="MuiBox-root css-0"
@@ -1970,7 +1970,7 @@
                               nginx-deployment-1234567890-abcde
                             </a>
                             <div
-                              class="MuiBox-root css-1qfysi0"
+                              class="MuiBox-root css-6iepsk"
                             >
                               <div
                                 class="MuiBox-root css-0"
@@ -2124,7 +2124,7 @@
                               nginx-deployment
                             </a>
                             <div
-                              class="MuiBox-root css-1qfysi0"
+                              class="MuiBox-root css-6iepsk"
                             >
                               <div
                                 class="MuiBox-root css-0"
