@@ -28,36 +28,54 @@ export const defaultEventFilters: EventFilters = {
   nodes: [],
 };
 
-function findSubstring(text: string, query: string, startIndex: number) {
-  const prefixLengths = new Array(query.length).fill(0);
-  for (let index = 1, prefixLength = 0; index < query.length; index++) {
-    while (prefixLength > 0 && query[index] !== query[prefixLength]) {
-      prefixLength = prefixLengths[prefixLength - 1];
-    }
-    if (query[index] === query[prefixLength]) {
-      prefixLength++;
-    }
-    prefixLengths[index] = prefixLength;
+interface SearchLiteral {
+  value: string;
+  prefixLengths: number[];
+}
+
+function compileSearch(pattern: string): SearchLiteral[] {
+  return pattern
+    .toLowerCase()
+    .split('*')
+    .filter(Boolean)
+    .map(value => {
+      const prefixLengths = new Array(value.length).fill(0);
+      for (let index = 1, prefixLength = 0; index < value.length; index++) {
+        while (prefixLength > 0 && value[index] !== value[prefixLength]) {
+          prefixLength = prefixLengths[prefixLength - 1];
+        }
+        if (value[index] === value[prefixLength]) {
+          prefixLength++;
+        }
+        prefixLengths[index] = prefixLength;
+      }
+
+      return { value, prefixLengths };
+    });
+}
+
+function findSubstring(text: string, query: SearchLiteral, startIndex: number) {
+  if (query.value.length > text.length - startIndex) {
+    return -1;
   }
 
   for (let index = startIndex, matched = 0; index < text.length; index++) {
-    while (matched > 0 && text[index] !== query[matched]) {
-      matched = prefixLengths[matched - 1];
+    while (matched > 0 && text[index] !== query.value[matched]) {
+      matched = query.prefixLengths[matched - 1];
     }
-    if (text[index] === query[matched]) {
+    if (text[index] === query.value[matched]) {
       matched++;
     }
-    if (matched === query.length) {
-      return index - query.length + 1;
+    if (matched === query.value.length) {
+      return index - query.value.length + 1;
     }
   }
 
   return -1;
 }
 
-function wildcardMatch(value: string, pattern: string) {
+function wildcardMatch(value: string, literals: SearchLiteral[]) {
   const text = value.toLowerCase();
-  const literals = pattern.toLowerCase().split('*').filter(Boolean);
   let nextIndex = 0;
 
   for (const literal of literals) {
@@ -65,7 +83,7 @@ function wildcardMatch(value: string, pattern: string) {
     if (matchIndex === -1) {
       return false;
     }
-    nextIndex = matchIndex + literal.length;
+    nextIndex = matchIndex + literal.value.length;
   }
 
   return true;
@@ -73,6 +91,7 @@ function wildcardMatch(value: string, pattern: string) {
 
 export function filterEvents(events: Event[], filters: EventFilters, warningOnly: boolean) {
   const search = filters.search.trim();
+  const searchLiterals = compileSearch(search);
   const types = new Set(filters.types);
   const nodes = new Set(filters.nodes);
 
@@ -98,7 +117,7 @@ export function filterEvents(events: Event[], filters: EventFilters, warningOnly
       event.source?.host,
       event.reason,
       event.message,
-    ].some(value => value && wildcardMatch(value, search));
+    ].some(value => value && wildcardMatch(value, searchLiterals));
   });
 }
 

@@ -166,6 +166,8 @@ export interface ResourceTableProps<RowItem> {
   defaultSortingColumn?: { id: string; desc: boolean };
   /** Apply a global search filter by default. Table will use all columns to search */
   defaultGlobalFilter?: string;
+  /** Render a screen-reader announcement for the number of filtered rows. */
+  renderFilteredRowCount?: (count: number) => ReactNode;
   /** Rows data */
   data: Array<RowItem> | null;
   /** Filter out rows from the table */
@@ -762,6 +764,7 @@ function ResourceTableContent<RowItem extends KubeObject>(props: ResourceTablePr
         columns={allColumns as TableColumn<RowItem>[]}
         data={(data ?? []) as Array<RowItem>}
         loading={data === null}
+        renderFilteredRowCount={props.renderFilteredRowCount}
         initialState={initialState}
         rowsPerPage={storeRowsPerPageOptions}
         state={{

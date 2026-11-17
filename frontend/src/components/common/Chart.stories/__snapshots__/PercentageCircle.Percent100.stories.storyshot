@@ -96,11 +96,11 @@
           </g>
         </svg>
       </div>
-      <p
-        class="MuiTypography-root MuiTypography-body1 css-1linoo0-MuiTypography-root"
+      <div
+        class="MuiBox-root css-1sz7akg"
       >
         9 / 9 Requested
-      </p>
+      </div>
     </div>
   </div>
 </body>

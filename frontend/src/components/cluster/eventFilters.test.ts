@@ -139,4 +139,16 @@ describe('event filters', () => {
     ).toEqual([]);
     expect(performance.now() - startedAt).toBeLessThan(1000);
   });
+
+  it('prepares long query prefixes once when filtering a large event list', () => {
+    const loadEvents = Array.from({ length: 10_000 }, (_, index) =>
+      makeEvent(index, index % 2 ? 'Pod' : 'Node', `node-${index % 250}`)
+    );
+    const startedAt = performance.now();
+
+    expect(
+      filterEvents(loadEvents, { search: `${'a'.repeat(10_000)}c`, types: [], nodes: [] }, false)
+    ).toEqual([]);
+    expect(performance.now() - startedAt).toBeLessThan(1000);
+  });
 });

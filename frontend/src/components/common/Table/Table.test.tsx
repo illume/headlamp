@@ -25,6 +25,7 @@ const { tableMocks } = vi.hoisted(() => ({
     cellContext: 'plain' as 'dialog' | 'plain' | 'switch',
     columnVisibility: {} as Record<string, boolean>,
     forceNoRows: false,
+    filteredRows: null as any[] | null,
     options: null as any,
     setColumnVisibility: vi.fn(),
     setRowSelection: vi.fn(),
@@ -124,6 +125,7 @@ vi.mock('material-react-table', () => ({
         },
       ],
       getRowModel: () => ({ rows }),
+      getFilteredRowModel: () => ({ rows: tableMocks.filteredRows ?? rows }),
       getSelectedRowModel: () => ({ flatRows: [], rows: [] }),
       getState: () => ({
         ...options.state,
@@ -247,6 +249,7 @@ beforeEach(() => {
   tableMocks.cellContext = 'plain';
   tableMocks.columnVisibility = {};
   tableMocks.forceNoRows = false;
+  tableMocks.filteredRows = null;
   tableMocks.options = null;
   tableMocks.setColumnVisibility.mockClear();
   tableMocks.setRowSelection.mockClear();
@@ -344,6 +347,19 @@ describe('Table states and options', () => {
     });
 
     expect(tableMocks.options.data).toEqual([{ name: 'keep', selected: false }]);
+  });
+
+  it('renders a caller announcement from the filtered row count', () => {
+    tableMocks.filteredRows = [{}];
+    renderTable({
+      data: [
+        { name: 'first', selected: false },
+        { name: 'second', selected: false },
+      ],
+      renderFilteredRowCount: count => `Showing ${count} matching rows.`,
+    });
+
+    expect(screen.getByRole('status')).toHaveTextContent('Showing 1 matching rows.');
   });
 
   it('uses caller pagination, ordering, and initial filter options', () => {

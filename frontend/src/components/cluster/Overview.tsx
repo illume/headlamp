@@ -23,7 +23,6 @@ import { Theme } from '@mui/material/styles';
 import { useTheme } from '@mui/material/styles';
 import Switch from '@mui/material/Switch';
 import TextField from '@mui/material/TextField';
-import { visuallyHidden } from '@mui/utils';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { useLocation } from 'react-router';
@@ -253,9 +252,9 @@ function EventsSection() {
     () => namespaceEvents?.filter(e => e.type === 'Warning').length ?? '?',
     [namespaceEvents]
   );
-  const matchingEventCount = filteredEvents?.length ?? 0;
-  const eventStatus =
-    matchingEventCount === 1
+
+  function renderEventStatus(matchingEventCount: number) {
+    return matchingEventCount === 1
       ? snapshotEvents
         ? t('Static event snapshot. Showing {{count}} matching event.', {
             count: matchingEventCount,
@@ -270,6 +269,7 @@ function EventsSection() {
       : t('Live events. Showing {{count}} matching events.', {
           count: matchingEventCount,
         });
+  }
 
   function leaveNotificationMode() {
     if (!eventsFilter) {
@@ -419,9 +419,6 @@ function EventsSection() {
                 </Button>,
               ]}
             />
-            <Box role="status" aria-live="polite" aria-atomic="true" sx={visuallyHidden}>
-              {eventStatus}
-            </Box>
             <Box
               sx={{
                 display: 'grid',
@@ -470,6 +467,9 @@ function EventsSection() {
           defaultGlobalFilter={notificationBypass ? eventsFilter ?? undefined : undefined}
           data={filteredEvents}
           errors={eventsErrors}
+          renderFilteredRowCount={count =>
+            sourceEvents === null ? null : renderEventStatus(count)
+          }
           columns={[
             {
               id: 'name',

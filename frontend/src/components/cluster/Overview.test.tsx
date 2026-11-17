@@ -106,7 +106,12 @@ vi.mock('../../redux/hooks', () => ({
 vi.mock('../common/Resource/ResourceTable', () => ({
   default: (props: object) => {
     resourceListViewMock(props);
-    return <div />;
+    const tableProps = props as {
+      data?: any[] | null;
+      renderFilteredRowCount?: (count: number) => React.ReactNode;
+    };
+    const announcement = tableProps.renderFilteredRowCount?.(tableProps.data?.length ?? 0);
+    return announcement ? <div role="status">{announcement}</div> : null;
   },
 }));
 
@@ -197,6 +202,7 @@ describe('Overview', () => {
 
     expect(percentageCircleMock.mock.lastCall?.[0]).toMatchObject({ total: -1 });
     expect(resourceListViewMock.mock.lastCall?.[0]).toMatchObject({ data: null });
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
   });
 
   it('applies namespace selection before deriving chart and table data', () => {

@@ -277,7 +277,8 @@ export function PercentageCircle(props: PercentageCircleProps) {
         </PieChart>
       )}
       {!isLoading && legend !== null && (
-        <Typography
+        <Box
+          component="div"
           sx={{
             textAlign: 'center',
             fontSize: '1.1em',
@@ -285,7 +286,7 @@ export function PercentageCircle(props: PercentageCircleProps) {
           }}
         >
           {legend}
-        </Typography>
+        </Box>
       )}
     </Box>
   );
