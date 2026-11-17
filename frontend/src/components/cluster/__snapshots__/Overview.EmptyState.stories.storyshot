@@ -676,8 +676,8 @@
                       </g>
                     </svg>
                   </div>
-                  <p
-                    class="MuiTypography-root MuiTypography-body1 css-1linoo0-MuiTypography-root"
+                  <div
+                    class="MuiBox-root css-1sz7akg"
                   >
                     <div
                       class="MuiBox-root css-0"
@@ -691,7 +691,7 @@
                         class="MuiBox-root css-31116v"
                       />
                     </div>
-                  </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -864,14 +864,6 @@
                   </div>
                 </div>
                 <div
-                  aria-atomic="true"
-                  aria-live="polite"
-                  class="MuiBox-root css-ty8jgw"
-                  role="status"
-                >
-                  Live events. Showing 0 matching events.
-                </div>
-                <div
                   class="MuiBox-root css-fdav7z"
                 >
                   <div
@@ -1041,6 +1033,7 @@
                     role="status"
                   >
                     No data to be shown.
+                    Live events. Showing 0 matching events.
                   </div>
                   <div
                     class="MuiPaper-root MuiPaper-outlined MuiPaper-rounded css-1guobrs-MuiPaper-root"
