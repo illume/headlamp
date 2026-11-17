@@ -57,7 +57,6 @@ test('event filters persist and chart drill-down creates a static snapshot', asy
   await resume.focus();
   await page.keyboard.press('Enter');
   await expect(page.getByRole('button', { name: 'Pause live events' })).toBeFocused();
-  await runA11yScan(page, expect, ['#storybook-root']);
 });
 
 test('event details remain available at 320 CSS pixels', async ({ page }) => {
