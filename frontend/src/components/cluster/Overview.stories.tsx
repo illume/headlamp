@@ -20,6 +20,32 @@ import { http, HttpResponse } from 'msw';
 import { API_BASE, TestContext } from '../../test';
 import Overview from './Overview';
 
+function makeLoadEvent(index: number) {
+  const resourceKind = index % 2 ? 'Pod' : 'Deployment';
+  return {
+    apiVersion: 'v1',
+    kind: 'Event',
+    metadata: {
+      name: `load-event-${index}`,
+      namespace: 'default',
+      uid: `load-event-${index}`,
+      creationTimestamp: '2026-01-01T00:00:00Z',
+    },
+    involvedObject: {
+      apiVersion: 'v1',
+      kind: resourceKind,
+      name: `${resourceKind.toLowerCase()}-${index}`,
+      namespace: 'default',
+      uid: `${resourceKind}-${index}`,
+    },
+    message: index === 1999 ? 'Unique load-test message' : `Load-test event ${index}`,
+    reason: index % 2 ? 'FailedScheduling' : 'BackOff',
+    source: { host: `node-${index % 250}` },
+    type: 'Warning',
+    lastTimestamp: '2026-01-01T00:00:00Z',
+  };
+}
+
 export default {
   title: 'cluster/Overview',
   component: Overview,
@@ -36,6 +62,32 @@ export default {
   parameters: {
     msw: {
       handlers: {
+        base: [
+          http.get(`${API_BASE}/api/v1/namespaces`, () =>
+            HttpResponse.json({
+              kind: 'NamespaceList',
+              apiVersion: 'v1',
+              metadata: {},
+              items: [],
+            })
+          ),
+          http.get(`${API_BASE}/api/v1/nodes`, () =>
+            HttpResponse.json({
+              kind: 'NodeList',
+              apiVersion: 'v1',
+              metadata: {},
+              items: [],
+            })
+          ),
+          http.get(`${API_BASE}/apis/metrics.k8s.io/v1beta1/nodes`, () =>
+            HttpResponse.json({
+              kind: 'NodeMetricsList',
+              apiVersion: 'metrics.k8s.io/v1beta1',
+              metadata: {},
+              items: [],
+            })
+          ),
+        ],
         story: [
           http.get(`${API_BASE}/api/v1/events`, () =>
             HttpResponse.json({
@@ -192,6 +244,33 @@ const Template: StoryFn = () => {
 };
 
 export const Events = Template.bind({});
+
+export const LargeEvents = Template.bind({});
+LargeEvents.parameters = {
+  storyshots: { disable: true },
+  msw: {
+    handlers: {
+      story: [
+        http.get(`${API_BASE}/api/v1/events`, () =>
+          HttpResponse.json({
+            kind: 'EventList',
+            apiVersion: 'v1',
+            items: Array.from({ length: 2000 }, (_, index) => makeLoadEvent(index)),
+            metadata: {},
+          })
+        ),
+        http.get(`${API_BASE}/api/v1/pods`, () =>
+          HttpResponse.json({
+            kind: 'PodList',
+            apiVersion: 'v1',
+            metadata: {},
+            items: [],
+          })
+        ),
+      ],
+    },
+  },
+};
 
 export const EmptyState = Template.bind({});
 EmptyState.parameters = {

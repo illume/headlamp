@@ -14,29 +14,54 @@
  * limitations under the License.
  */
 
-import { render } from '@testing-library/react';
+import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import { createMemoryHistory } from 'history';
 import type React from 'react';
-import { MemoryRouter } from 'react-router-dom';
-import { describe, expect, it, vi } from 'vitest';
+import { MemoryRouter, Router } from 'react-router-dom';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Overview from './Overview';
 
-const { chartMocks, eventUseList, nodeUseList, nodeUseMetrics, podUseList } = vi.hoisted(() => ({
-  chartMocks: {
-    CpuCircularChart: () => <div>cpu</div>,
-    MemoryCircularChart: () => <div>memory</div>,
-    NodesStatusCircleChart: () => <div>nodes</div>,
-    PodsStatusCircleChart: () => <div>pods</div>,
-  },
-  eventUseList: vi.fn(() => ({ items: [], errors: null })),
-  nodeUseList: vi.fn(() => [[]]),
-  nodeUseMetrics: vi.fn(() => [[], null]),
-  podUseList: vi.fn(() => [[]]),
-}));
+const {
+  chartMocks,
+  eventUseList,
+  namespaceUse,
+  nodeUseList,
+  nodeUseMetrics,
+  percentageCircleMock,
+  podUseList,
+  resourceListViewMock,
+  selectedClusters,
+} = vi.hoisted(() => {
+  const mocks = {
+    chartMocks: {
+      CpuCircularChart: () => <div>cpu</div>,
+      MemoryCircularChart: () => <div>memory</div>,
+      NodesStatusCircleChart: () => <div>nodes</div>,
+      PodsStatusCircleChart: () => <div>pods</div>,
+    },
+    eventUseList: vi.fn(() => ({
+      items: [] as any[] | null,
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined as number | undefined,
+    })),
+    namespaceUse: vi.fn(() => [] as string[]),
+    nodeUseList: vi.fn(() => [[]]),
+    nodeUseMetrics: vi.fn(() => [[], null]),
+    percentageCircleMock: vi.fn(),
+    podUseList: vi.fn(() => [[]]),
+    resourceListViewMock: vi.fn(),
+    selectedClusters: vi.fn(() => ['test']),
+  };
+  return mocks;
+});
 
 vi.mock('react-i18next', async importOriginal => ({
   ...(await importOriginal<typeof import('react-i18next')>()),
   useTranslation: () => ({
-    t: (key: string) => key,
+    t: (key: string, values?: Record<string, string | number>) =>
+      key.replace(/\{\{\s*(\w+)\s*\}\}/g, (_match, name: string) => String(values?.[name] ?? '')),
   }),
 }));
 
@@ -45,6 +70,10 @@ vi.mock('../../lib/k8s/event', () => ({
     maxLimit: 2000,
     useList: eventUseList,
   },
+}));
+
+vi.mock('../../lib/k8s/api/v1/hooks', () => ({
+  useSelectedClusters: selectedClusters,
 }));
 
 vi.mock('../../lib/k8s/node', () => ({
@@ -60,21 +89,46 @@ vi.mock('../../lib/k8s/pod', () => ({
   },
 }));
 
-vi.mock('../../lib/util', () => ({
+vi.mock('../../lib/util', async importOriginal => ({
+  ...(await importOriginal<typeof import('../../lib/util')>()),
   useFilterFunc: () => () => true,
 }));
 
 vi.mock('../../redux/filterSlice', async importOriginal => ({
   ...(await importOriginal<typeof import('../../redux/filterSlice')>()),
-  useNamespaces: () => [],
+  useNamespaces: namespaceUse,
 }));
 
 vi.mock('../../redux/hooks', () => ({
   useTypedSelector: (selector: any) => selector({ overviewCharts: { processors: [] } }),
 }));
 
-vi.mock('../common/Resource/ResourceListView', () => ({
-  default: ({ title }: { title: string }) => <div>{title}</div>,
+vi.mock('../common/Resource/ResourceTable', () => ({
+  default: (props: object) => {
+    resourceListViewMock(props);
+    const tableProps = props as {
+      data?: any[] | null;
+      renderFilteredRowCount?: (count: number) => React.ReactNode;
+    };
+    const announcement = tableProps.renderFilteredRowCount?.(tableProps.data?.length ?? 0);
+    return announcement ? <div role="status">{announcement}</div> : null;
+  },
+}));
+
+vi.mock('../common/Chart', () => ({
+  PercentageCircle: (props: object) => {
+    percentageCircleMock(props);
+    return <div>event chart</div>;
+  },
+}));
+
+vi.mock('../common/SectionFilterHeader', () => ({
+  default: ({ title, titleSideActions }: { title: string; titleSideActions?: React.ReactNode }) => (
+    <div>
+      {title}
+      {titleSideActions}
+    </div>
+  ),
 }));
 
 vi.mock('../common/Resource', () => ({
@@ -100,6 +154,20 @@ vi.mock('./Charts', () => chartMocks);
 vi.mock('./Charts/index', () => chartMocks);
 
 describe('Overview', () => {
+  beforeEach(() => {
+    localStorage.clear();
+    eventUseList.mockReturnValue({
+      items: [],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    namespaceUse.mockReturnValue([]);
+    selectedClusters.mockReturnValue(['test']);
+    percentageCircleMock.mockClear();
+    resourceListViewMock.mockClear();
+  });
+
   it('polls overview resources instead of opening watch streams', () => {
     const OVERVIEW_REFETCH_INTERVAL_MS = 60_000;
 
@@ -117,4 +185,416 @@ describe('Overview', () => {
       refetchInterval: OVERVIEW_REFETCH_INTERVAL_MS,
     });
   });
+
+  it('preserves loading state for the event chart and table', () => {
+    eventUseList.mockReturnValue({
+      items: null,
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+
+    render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    expect(percentageCircleMock.mock.lastCall?.[0]).toMatchObject({ total: -1 });
+    expect(resourceListViewMock.mock.lastCall?.[0]).toMatchObject({ data: null });
+    expect(screen.queryByRole('status')).not.toBeInTheDocument();
+  });
+
+  it('applies namespace selection before deriving chart and table data', () => {
+    namespaceUse.mockReturnValue(['team-a']);
+    eventUseList.mockReturnValue({
+      items: [makeEvent('event-a', 'team-a'), makeEvent('event-b', 'team-b')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+
+    render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    expect(percentageCircleMock.mock.lastCall?.[0]).toMatchObject({ total: 1 });
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toEqual([
+      expect.objectContaining({ message: 'event-a' }),
+    ]);
+  });
+
+  it('counts warnings in the selected namespace of a paused snapshot', () => {
+    eventUseList.mockReturnValue({
+      items: [makeEvent('event-a', 'team-a'), makeEvent('event-b', 'team-b')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    const { rerender } = render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Only warnings (2)')).toBeVisible();
+    fireEvent.click(screen.getByRole('button', { name: 'Pause live events' }));
+    eventUseList.mockReturnValue({
+      items: [makeEvent('new-event', 'team-b')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    namespaceUse.mockReturnValue(['team-a']);
+    rerender(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByText('Only warnings (1)')).toBeVisible();
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toEqual([
+      expect.objectContaining({ message: 'event-a' }),
+    ]);
+    fireEvent.click(screen.getByRole('button', { name: 'Resume live events' }));
+    expect(screen.getByText('Only warnings (0)')).toBeVisible();
+  });
+
+  it('bypasses saved filters for event notification links', () => {
+    localStorage.setItem(
+      'headlamp.events.filters.v1.test',
+      JSON.stringify({ search: '', types: [], nodes: ['other-node'] })
+    );
+    eventUseList.mockReturnValue({
+      items: [makeEvent('target', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+
+    render(
+      <MemoryRouter initialEntries={['/?eventsFilter=target']}>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    expect(resourceListViewMock.mock.lastCall?.[0]).toMatchObject({
+      data: [expect.objectContaining({ message: 'target' })],
+      defaultGlobalFilter: 'target',
+    });
+  });
+
+  it('handles null persisted filters', () => {
+    localStorage.setItem('headlamp.events.filters.v1.test', 'null');
+    eventUseList.mockReturnValue({
+      items: [makeEvent('event', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+
+    render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('textbox', { name: 'Search events' })).toHaveValue('');
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toHaveLength(1);
+  });
+
+  it('persists filters for the full selected cluster group', () => {
+    selectedClusters.mockReturnValue(['cluster-b', 'cluster-a']);
+    localStorage.setItem(
+      'headlamp.events.filters.v1.cluster-a+cluster-b',
+      JSON.stringify({ search: 'target', types: [], nodes: [] })
+    );
+    eventUseList.mockReturnValue({
+      items: [makeEvent('target', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+
+    render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('textbox', { name: 'Search events' })).toHaveValue('target');
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toHaveLength(1);
+  });
+
+  it('applies filter edits after bypassing notification filters', () => {
+    localStorage.setItem(
+      'headlamp.events.filters.v1.test',
+      JSON.stringify({ search: 'missing', types: [], nodes: [] })
+    );
+    eventUseList.mockReturnValue({
+      items: [makeEvent('target', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    const history = createMemoryHistory({ initialEntries: ['/c/test?eventsFilter=target'] });
+
+    render(
+      <Router history={history}>
+        <Overview />
+      </Router>
+    );
+
+    const search = screen.getByRole('textbox', { name: 'Search events' });
+    expect(search).toHaveValue('');
+    expect(resourceListViewMock.mock.lastCall?.[0].defaultGlobalFilter).toBe('target');
+    fireEvent.change(search, { target: { value: 'target' } });
+
+    expect(history.location.search).toBe('');
+    expect(screen.getByRole('textbox', { name: 'Search events' })).toHaveValue('target');
+    expect(resourceListViewMock.mock.lastCall?.[0]).toMatchObject({
+      data: [expect.objectContaining({ message: 'target' })],
+      defaultGlobalFilter: undefined,
+    });
+  });
+
+  it('keeps focus while typing and reapplies a notification on a subsequent visit', async () => {
+    const user = userEvent.setup();
+    eventUseList.mockReturnValue({
+      items: [makeEvent('target', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    const history = createMemoryHistory({ initialEntries: ['/c/test?eventsFilter=target'] });
+    render(
+      <Router history={history}>
+        <Overview />
+      </Router>
+    );
+
+    const search = screen.getByRole('textbox', { name: 'Search events' });
+    await user.type(search, 'missing');
+    expect(search).toHaveFocus();
+    expect(search).toHaveValue('missing');
+    expect(history.location.search).toBe('');
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toEqual([]);
+
+    act(() => history.push('/c/test?eventsFilter=target'));
+    expect(search).toHaveValue('');
+    expect(resourceListViewMock.mock.lastCall?.[0]).toMatchObject({
+      data: [expect.objectContaining({ message: 'target' })],
+      defaultGlobalFilter: 'target',
+    });
+  });
+
+  it('retains a paused notification snapshot and its truncation notice when filters change', () => {
+    const history = createMemoryHistory({ initialEntries: ['/c/test?eventsFilter=target'] });
+    eventUseList.mockReturnValue({
+      items: [makeEvent('target', 'default')],
+      errors: null,
+      hasMore: true,
+      remainingItemCount: 7,
+    });
+    const { rerender } = render(
+      <Router history={history}>
+        <Overview />
+      </Router>
+    );
+
+    fireEvent.click(screen.getByRole('button', { name: 'Pause live events' }));
+    eventUseList.mockReturnValue({
+      items: [makeEvent('new-event', 'default'), makeEvent('other-event', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    rerender(
+      <Router history={history}>
+        <Overview />
+      </Router>
+    );
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search events' }), {
+      target: { value: 'target' },
+    });
+
+    expect(history.location.search).toBe('');
+    expect(screen.getByRole('button', { name: 'Resume live events' })).toBeVisible();
+    expect(screen.getByText('Only warnings (1)')).toBeVisible();
+    expect(screen.getByRole('note')).toHaveTextContent(
+      'Showing 1 loaded events; 7 more events are available.'
+    );
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toEqual([
+      expect.objectContaining({ message: 'target' }),
+    ]);
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Search events' }), {
+      target: { value: '' },
+    });
+    fireEvent.click(screen.getByRole('button', { name: 'Resume live events' }));
+    expect(screen.queryByRole('note')).not.toBeInTheDocument();
+    expect(screen.getByText('Only warnings (2)')).toBeVisible();
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toEqual([
+      expect.objectContaining({ message: 'new-event' }),
+      expect.objectContaining({ message: 'other-event' }),
+    ]);
+  });
+
+  it('clears notification filters when selecting a chart kind', () => {
+    eventUseList.mockReturnValue({
+      items: [makeEvent('target', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    const history = createMemoryHistory({ initialEntries: ['/c/test?eventsFilter=target'] });
+
+    render(
+      <Router history={history}>
+        <Overview />
+      </Router>
+    );
+
+    const firstChartDatum = percentageCircleMock.mock.lastCall?.[0].data[0];
+    act(() => firstChartDatum.onClick());
+
+    expect(history.location.search).toBe('');
+    expect(screen.getByRole('status')).toHaveTextContent(
+      'Static event snapshot. Showing 1 matching event.'
+    );
+    expect(resourceListViewMock.mock.lastCall?.[0]).toMatchObject({
+      data: [expect.objectContaining({ message: 'target' })],
+      defaultGlobalFilter: undefined,
+    });
+  });
+
+  it('drops a frozen snapshot when the notification target changes', () => {
+    const history = createMemoryHistory({ initialEntries: ['/c/test'] });
+    eventUseList.mockReturnValue({
+      items: [makeEvent('old-target', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    render(
+      <Router history={history}>
+        <Overview />
+      </Router>
+    );
+
+    const firstChartDatum = percentageCircleMock.mock.lastCall?.[0].data[0];
+    act(() => firstChartDatum.onClick());
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toEqual([
+      expect.objectContaining({ message: 'old-target' }),
+    ]);
+
+    eventUseList.mockReturnValue({
+      items: [makeEvent('new-target', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    act(() => history.push('/c/test?eventsFilter=new-target'));
+
+    expect(resourceListViewMock.mock.lastCall?.[0]).toMatchObject({
+      data: [expect.objectContaining({ message: 'new-target' })],
+      defaultGlobalFilter: 'new-target',
+    });
+
+    eventUseList.mockReturnValue({
+      items: [makeEvent('new-cluster', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    act(() => history.push('/c/other'));
+
+    expect(resourceListViewMock.mock.lastCall?.[0].data).toEqual([
+      expect.objectContaining({ message: 'new-cluster' }),
+    ]);
+  });
+
+  it('announces when the event list is truncated', () => {
+    eventUseList.mockReturnValue({
+      items: [makeEvent('event', 'default')],
+      errors: null,
+      hasMore: true,
+      remainingItemCount: 7,
+    });
+
+    render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    expect(screen.getByRole('note')).toHaveTextContent(
+      'Showing 1 loaded events; 7 more events are available.'
+    );
+    expect(percentageCircleMock.mock.lastCall?.[0].title).toBe('Loaded events');
+  });
+
+  it('always shows the last-seen timestamp fallback in the name column', () => {
+    eventUseList.mockReturnValue({
+      items: [makeEvent('event', 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    const nameColumn = resourceListViewMock.mock.lastCall?.[0].columns.find(
+      (column: { id?: string }) => column.id === 'name'
+    );
+    const timestamp = nameColumn.render(makeEvent('event', 'default')).props.children[2];
+    expect(timestamp.props.sx).not.toHaveProperty('display');
+  });
+
+  it('lets the Name-column message fallback expand and collapse', async () => {
+    const user = userEvent.setup();
+    const message = 'long event message '.repeat(20);
+    eventUseList.mockReturnValue({
+      items: [makeEvent(message, 'default')],
+      errors: null,
+      hasMore: false,
+      remainingItemCount: undefined,
+    });
+    render(
+      <MemoryRouter>
+        <Overview />
+      </MemoryRouter>
+    );
+
+    const nameColumn = resourceListViewMock.mock.lastCall?.[0].columns.find(
+      (column: { id?: string }) => column.id === 'name'
+    );
+    const { container } = render(nameColumn.render(makeEvent(message, 'default')));
+    const messageLabel = container.querySelector('span[id^="show-hide-label-"]') as HTMLElement;
+    const expandButton = within(container).getByRole('button', { name: 'translation|Expand' });
+    expect(messageLabel.textContent).toBe(`${message.slice(0, 256)}…`);
+    await user.click(expandButton);
+    expect(expandButton).toHaveAttribute('aria-expanded', 'true');
+    expect(messageLabel.textContent).toBe(message);
+    await user.click(expandButton);
+    expect(expandButton).toHaveAttribute('aria-expanded', 'false');
+    expect(messageLabel.textContent).toBe(`${message.slice(0, 256)}…`);
+  });
 });
+
+function makeEvent(message: string, namespace: string) {
+  return {
+    getNamespace: () => namespace,
+    involvedObject: { kind: 'Pod', name: message, namespace },
+    message,
+    lastOccurrence: '2026-01-01T00:00:00Z',
+    reason: 'Started',
+    source: { host: 'node-a' },
+    type: 'Warning',
+  };
+}

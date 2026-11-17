@@ -103,7 +103,7 @@
               class="recharts-text recharts-label"
               fill="#808080"
               offset="5"
-              style="font-size: 24px; fill: #000;"
+              style="font-size: 24px; fill: #000; pointer-events: none;"
               text-anchor="middle"
               x="85"
               y="85"
@@ -118,11 +118,11 @@
           </g>
         </svg>
       </div>
-      <p
-        class="MuiTypography-root MuiTypography-body1 css-1linoo0-MuiTypography-root"
+      <div
+        class="MuiBox-root css-1sz7akg"
       >
         5 / 10 Requested
-      </p>
+      </div>
     </div>
   </div>
 </body>

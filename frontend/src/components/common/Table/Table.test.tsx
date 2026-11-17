@@ -25,6 +25,7 @@ const { tableMocks } = vi.hoisted(() => ({
     cellContext: 'plain' as 'dialog' | 'plain' | 'switch',
     columnVisibility: {} as Record<string, boolean>,
     forceNoRows: false,
+    filteredRows: null as any[] | null,
     options: null as any,
     setColumnVisibility: vi.fn(),
     setRowSelection: vi.fn(),
@@ -64,6 +65,9 @@ vi.mock('./ColumnVisibilityButton', () => ({
 vi.mock('material-react-table', () => ({
   MRT_BottomToolbar: () => <div data-testid="bottom-toolbar" />,
   MRT_TableBodyCell: ({ cell }: any) => {
+    if (cell.column.columnDef.Cell) {
+      return <td>{cell.column.columnDef.Cell({ row: cell.row })}</td>;
+    }
     const checkbox = <input aria-label={`Custom selection for ${cell.row.id}`} type="checkbox" />;
     return (
       <td>
@@ -88,6 +92,7 @@ vi.mock('material-react-table', () => ({
     const rows = options.data.map((item: Record<string, unknown>, index: number) => {
       const row: any = {
         id: String(index),
+        original: item,
         getCanSelect: () => true,
         getIsSelected: () => false,
       };
@@ -120,6 +125,7 @@ vi.mock('material-react-table', () => ({
         },
       ],
       getRowModel: () => ({ rows }),
+      getFilteredRowModel: () => ({ rows: tableMocks.filteredRows ?? rows }),
       getSelectedRowModel: () => ({ flatRows: [], rows: [] }),
       getState: () => ({
         ...options.state,
@@ -161,6 +167,26 @@ function renderTable(props: Partial<TableProps<TestRow>> = {}) {
     </ThemeProvider>
   );
 }
+
+it('updates custom cells when other fields of the row change', () => {
+  const columns = [
+    {
+      accessorKey: 'selected',
+      header: 'Selection',
+      Cell: ({ row }: { row: { original: TestRow } }) => row.original.name,
+    },
+  ];
+  const { rerender } = renderTable({ columns, data: [{ selected: false, name: 'old detail' }] });
+  expect(screen.getByText('old detail')).toBeInTheDocument();
+
+  rerender(
+    <ThemeProvider theme={theme}>
+      <Table columns={columns} data={[{ selected: false, name: 'new detail' }]} />
+    </ThemeProvider>
+  );
+  expect(screen.getByText('new detail')).toBeInTheDocument();
+  expect(screen.queryByText('old detail')).not.toBeInTheDocument();
+});
 
 describe('empty bottom toolbar spacing', () => {
   it('preserves caller toolbar spacing and retains native defaults otherwise', () => {
@@ -223,6 +249,7 @@ beforeEach(() => {
   tableMocks.cellContext = 'plain';
   tableMocks.columnVisibility = {};
   tableMocks.forceNoRows = false;
+  tableMocks.filteredRows = null;
   tableMocks.options = null;
   tableMocks.setColumnVisibility.mockClear();
   tableMocks.setRowSelection.mockClear();
@@ -320,6 +347,19 @@ describe('Table states and options', () => {
     });
 
     expect(tableMocks.options.data).toEqual([{ name: 'keep', selected: false }]);
+  });
+
+  it('renders a caller announcement from the filtered row count', () => {
+    tableMocks.filteredRows = [{}];
+    renderTable({
+      data: [
+        { name: 'first', selected: false },
+        { name: 'second', selected: false },
+      ],
+      renderFilteredRowCount: count => `Showing ${count} matching rows.`,
+    });
+
+    expect(screen.getByRole('status')).toHaveTextContent('Showing 1 matching rows.');
   });
 
   it('uses caller pagination, ordering, and initial filter options', () => {

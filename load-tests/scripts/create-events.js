@@ -2,15 +2,25 @@
 const { assertContextKwok, batchApply } = require('./helpers');
 
 function eventYaml(index, now) {
+  const objectKinds = ['Pod', 'Deployment', 'Node', 'Job'];
+  const reasons = ['FailedScheduling', 'BackOff', 'Unhealthy', 'Started'];
+  const objectKind = objectKinds[index % objectKinds.length];
+  const reason = reasons[index % reasons.length];
+  const node = `kwok-node-${index % 1000}`;
+
   return `apiVersion: v1
 kind: Event
 metadata:
   name: lorem-event-${index}-${now.getTime()}
   namespace: default
 type: Warning
+reason: ${reason}
 message: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.'
+source:
+  host: ${node}
 involvedObject:
-  kind: someObject`;
+  kind: ${objectKind}
+  name: load-test-${objectKind.toLowerCase()}-${index}`;
 }
 
 /**

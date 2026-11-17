@@ -130,6 +130,8 @@ export type TableProps<RowItem extends Record<string, any>> = Omit<
    * Works in addition to the default table filtering and searching
    */
   filterFunction?: (item: RowItem) => boolean;
+  /** Render a screen-reader announcement for the number of filtered rows. */
+  renderFilteredRowCount?: (count: number) => ReactNode;
   /**
    * Whether to show a loading spinner
    */
@@ -942,6 +944,7 @@ export default function Table<RowItem extends Record<string, any>>({
     <Box ref={tableContainerRef} sx={{ width: '100%' }}>
       <Box role="status" aria-live="polite" aria-atomic="true" sx={visuallyHidden}>
         {announcedStatus}
+        {!loading && tableProps.renderFilteredRowCount?.(table.getFilteredRowModel().rows.length)}
       </Box>
       {content}
     </Box>
@@ -1040,6 +1043,7 @@ const MemoCell = memo(
   },
   (a, b) =>
     a.cell.getValue() === b.cell.getValue() &&
+    (!a.cell.column.columnDef.Cell || a.cell.row.original === b.cell.row.original) &&
     (a.cell.column.id === 'mrt-row-select' && b.cell.column.id === 'mrt-row-select'
       ? a.canSelect === b.canSelect && a.isRowSelected === b.isRowSelected
       : true)

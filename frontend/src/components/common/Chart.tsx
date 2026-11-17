@@ -270,13 +270,15 @@ export function PercentageCircle(props: PercentageCircleProps) {
               style={{
                 fontSize: `${chartSize * 0.15}px`,
                 fill: theme.palette?.chartStyles?.labelColor,
+                pointerEvents: 'none',
               }}
             />
           </Pie>
         </PieChart>
       )}
       {!isLoading && legend !== null && (
-        <Typography
+        <Box
+          component="div"
           sx={{
             textAlign: 'center',
             fontSize: '1.1em',
@@ -284,7 +286,7 @@ export function PercentageCircle(props: PercentageCircleProps) {
           }}
         >
           {legend}
-        </Typography>
+        </Box>
       )}
     </Box>
   );

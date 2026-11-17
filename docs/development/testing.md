@@ -45,16 +45,18 @@ kubectl config get-contexts
 
 #### Generating Initial Data
 
-This will create 900 nodes, 9000 pods, and 1000 events as fast as possible. Then it will create 1 event per second up to a total of 9000 events. Also one per second: 100 new nodes and 1000 new pods. Finally, it will create 15 clusters.
+This will create 900 nodes, 9000 pods, and 10,000 events as fast as possible. The events span multiple involved-object types and 1,000 node origins so the event filters and chart can be exercised under load. Finally, it will create 15 clusters.
+
+The cluster Overview loads at most 2,000 events for its chart, search, and table. When additional events exist, the page indicates that the loaded results are incomplete; searches and chart counts apply only to those loaded events. Search supports `*` wildcards, and the resource-kind chart can pause the current results and their incompleteness notice for investigation. Editing filters keeps the snapshot paused; use **Resume live events** to return to refreshed results. Event filters are saved for the selected cluster or cluster group.
 
 ```bash
 cd load-tests
 npm install
 
-echo "Creating initial activity: 900 nodes, 9000 pods, and 1000 events"
+echo "Creating initial activity: 900 nodes, 9000 pods, and 10000 events"
 node scripts/create-nodes.js 900 0
 node scripts/create-pods.js 9000 0
-node scripts/create-events.js 1000 0
+node scripts/create-events.js 10000 0
 node scripts/create-deployments.js 500 0
 node scripts/create-clusters.js 15 0
 ```
@@ -65,8 +67,8 @@ To make some activity after the initial data is loaded.
 
 ```bash
 echo "---------------"
-echo "creating 1 node, 1 pod, and 1 event per second"
-node scripts/create-events.js 9000 1 & node scripts/create-nodes.js 100 1 & node scripts/create-pods.js 1000 1 &
+echo "creating another 10000 events, 100 nodes, and 1000 pods"
+node scripts/create-events.js 10000 & node scripts/create-nodes.js 100 1 & node scripts/create-pods.js 1000 1 &
 ```
 
 #### Cleaning up clusters
