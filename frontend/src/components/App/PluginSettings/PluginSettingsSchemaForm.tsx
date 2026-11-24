@@ -24,6 +24,7 @@ import TextField from '@mui/material/TextField';
 import Ajv, { ErrorObject } from 'ajv';
 import addFormats from 'ajv-formats';
 import { useEffect, useMemo, useState } from 'react';
+import { useTranslation as useAppTranslation } from 'react-i18next';
 import { useTranslation } from '../../../plugin/pluginI18n';
 import { AdminSettingsState } from '../../../settings/adminSettingsSlice';
 import { PluginSettingsAPI } from '../../../settings/pluginSettings';
@@ -114,6 +115,7 @@ function getFieldType(schema: Record<string, any>, field: Record<string, any>): 
 export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaFormProps) {
   const { pluginName, schema, data, adminSettings, onDataChange, onValidityChange } = props;
   const { t } = useTranslation(pluginName);
+  const { t: tApp } = useAppTranslation();
   const [clearedFields, setClearedFields] = useState<Set<string>>(() => new Set());
   const validator = useMemo(() => {
     try {
@@ -287,7 +289,9 @@ export default function PluginSettingsSchemaForm(props: PluginSettingsSchemaForm
           >
             {Array.isArray(field.enum) &&
               !schema.required?.includes(name) &&
-              !field.enum.includes('') && <MenuItem value="">{t('Default')}</MenuItem>}
+              !field.enum.includes('') && (
+                <MenuItem value="">{tApp('translation|Default')}</MenuItem>
+              )}
             {field.enum?.map((option: string | number) => (
               <MenuItem key={String(option)} value={option}>
                 {t(String(field.enumNames?.[field.enum.indexOf(option)] ?? option))}

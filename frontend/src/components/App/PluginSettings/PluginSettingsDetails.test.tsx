@@ -17,6 +17,8 @@
 import { ThemeProvider } from '@mui/material/styles';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { createInstance } from 'i18next';
+import { I18nextProvider } from 'react-i18next';
 import { describe, expect, it, vi } from 'vitest';
 import { createMuiTheme } from '../../../lib/themes';
 import { PluginInfo, setPluginSettings } from '../../../plugin/pluginsSlice';
@@ -349,6 +351,43 @@ describe('PluginSettingsDetails metadata', () => {
       'aria-invalid',
       'true'
     );
+  });
+
+  it('uses the application locale for the generated enum default', async () => {
+    const i18n = createInstance();
+    await i18n.init({
+      lng: 'de',
+      fallbackLng: 'en',
+      nsSeparator: '|',
+      keySeparator: false,
+      resources: { de: { translation: { Default: 'Standard' } } },
+    });
+    render(
+      <I18nextProvider i18n={i18n}>
+        <TestContext>
+          <ThemeProvider theme={theme}>
+            <PluginSettingsDetailsPure
+              config={{ mode: 'auto' }}
+              plugin={{
+                ...plugin,
+                headlamp: {
+                  settingsSchema: {
+                    type: 'object',
+                    properties: { mode: { title: 'Mode', enum: ['auto', 'manual'] } },
+                  },
+                },
+              }}
+              onSave={vi.fn()}
+              onDelete={() => {}}
+            />
+          </ThemeProvider>
+        </TestContext>
+      </I18nextProvider>
+    );
+
+    await userEvent.click(screen.getByRole('combobox', { name: 'Mode' }));
+    expect(screen.getByRole('option', { name: 'Standard' })).toBeVisible();
+    expect(screen.getByRole('option', { name: 'auto' })).toBeVisible();
   });
 
   it('allows clearing an optional enum to return to administrator or plugin defaults', async () => {

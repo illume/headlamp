@@ -24,11 +24,7 @@ const MACOS_POLICY_DOMAIN = 'com.microsoft.Headlamp';
 const POLICY_VALUE = 'PolicyJSON';
 const POLICY_COMMAND_TIMEOUT_MS = 5000;
 
-type PolicySource =
-  | 'environment'
-  | 'windows-registry'
-  | 'macos-managed-preferences'
-  | 'managed-file';
+type PolicySource = 'windows-registry' | 'macos-managed-preferences' | 'managed-file';
 type PolicyValueSource = 'command-line' | 'environment' | PolicySource | 'default';
 
 export interface ManagedPolicy {
@@ -183,7 +179,7 @@ export function loadManagedPolicy(options: {
   const hasExplicitFile = explicitResult.exists;
   const explicitPolicy = explicitResult.policy;
   let policy = hasExplicitFile ? explicitPolicy ?? {} : undefined;
-  let source: PolicySource | undefined = hasExplicitFile ? 'environment' : undefined;
+  let source: PolicySource | undefined = hasExplicitFile ? 'managed-file' : undefined;
   let invalidSourcePath = hasExplicitFile && !explicitPolicy ? explicitPath : undefined;
 
   if (!policy && platform === 'win32') {

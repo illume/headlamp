@@ -160,7 +160,7 @@ describe('managed desktop policy', () => {
       run: vi.fn() as any,
     });
 
-    expect(policy.source).toBe('environment');
+    expect(policy.source).toBe('managed-file');
     expect(policy.adminSettingsPath).toBe(filename);
   });
 
@@ -208,6 +208,15 @@ describe('managed desktop policy', () => {
     expect(JSON.parse(fs.readFileSync(policy.adminSettingsPath!, 'utf8'))).toEqual({
       defaults: { theme: 'dark' },
     });
+    expect(applyManagedBackendPolicy(policy, {}, []).diagnostics).toEqual(
+      expect.arrayContaining([
+        { key: 'settings', source: 'managed-file' },
+        { key: 'backend.log-level', source: 'managed-file' },
+      ])
+    );
+    expect(
+      applyManagedBackendPolicy(policy, { HEADLAMP_CONFIG_LOG_LEVEL: 'debug' }, []).diagnostics
+    ).toContainEqual({ key: 'backend.log-level', source: 'environment' });
   });
 
   it('uses the app bundle identifier for macOS managed preferences', () => {
