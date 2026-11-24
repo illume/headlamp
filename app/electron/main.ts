@@ -41,6 +41,7 @@ import {
   readProductMetadata,
   resolveBuildManifestPath,
 } from '../scripts/build-manifest';
+import { readMacOSAppId } from '../scripts/product-metadata';
 import { withBackendMemoryDefaults } from './backendMemory';
 import {
   observeInternalBackendReady,
@@ -58,6 +59,11 @@ import {
   readLegalDocument,
 } from './legal-documents';
 import { runListPluginsCommand } from './list-plugins';
+import {
+  applyManagedBackendPolicy,
+  loadManagedPolicy,
+  logPolicyDiagnostics,
+} from './managedPolicy';
 import MCPClient from './mcp/MCPClient';
 import { AppMenu, menusToTemplate } from './menu';
 import { filterUserOwnedPids } from './ownedProcesses';
@@ -893,7 +899,6 @@ async function startServer(
   if (args.watchPluginsChanges !== undefined) {
     serverArgs.push(`--watch-plugins-changes=${args.watchPluginsChanges}`);
   }
-
   const bundledPlugins = path.join(process.resourcesPath, '.plugins');
 
   // Enable the Helm and dynamic cluster endpoints
@@ -921,6 +926,23 @@ async function startServer(
     // Directory doesn't exist or is not readable — ignore and continue.
   }
 
+  let extendedEnv;
+  try {
+    extendedEnv = await getShellEnv();
+  } catch (error) {
+    console.error('Failed to get shell environment, using default:', error);
+    extendedEnv = process.env;
+  }
+  const managedPolicy = loadManagedPolicy({
+    userDataPath: app.getPath('userData'),
+    env: extendedEnv,
+    productName: productMetadata?.productName ?? app.getName(),
+    appId: readMacOSAppId(appBuildManifest),
+  });
+  if (managedPolicy.adminSettingsPath) {
+    serverArgs.push('--settings', managedPolicy.adminSettingsPath);
+  }
+
   serverArgs = serverArgs.concat([
     '--plugins-dir',
     defaultPluginsDir(),
@@ -933,13 +955,9 @@ async function startServer(
   serverArgs = serverArgs.concat(flags);
   console.log('arguments passed to backend server', serverArgs);
 
-  let extendedEnv;
-  try {
-    extendedEnv = await getShellEnv();
-  } catch (error) {
-    console.error('Failed to get shell environment, using default:', error);
-    extendedEnv = process.env;
-  }
+  const policyResult = applyManagedBackendPolicy(managedPolicy, extendedEnv, serverArgs);
+  extendedEnv = policyResult.environment;
+  logPolicyDiagnostics(policyResult.diagnostics);
 
   const options = {
     detached: true,

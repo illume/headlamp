@@ -7,5 +7,5 @@ metadata:
   labels:
     {{- include "headlamp.labels" . | nindent 4 }}
 data:
-  plugin.yml: |{{ .Values.pluginsManager.configContent | nindent 4 }}
+  plugin.yml: |{{ include "headlamp.pluginsManagerConfig" . | nindent 4 }}
 {{- end }}

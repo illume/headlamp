@@ -23,6 +23,7 @@
 {{- $clusterInventoryProviderMountDir := "/etc/cluster-inventory" }}
 {{- $clusterInventoryProviderConfigPath := "config.json" }}
 {{- $readOnlyRootFs := eq (include "headlamp.readOnlyRootFilesystem" .Values) "true" }}
+{{- $adminSettings := include "headlamp.adminSettings" . | fromJson }}
 {{- $pluginManagerSecurityContext := dict }}
 {{- if .Values.pluginsManager.securityContext }}
 {{- $pluginManagerSecurityContext = .Values.pluginsManager.securityContext }}
@@ -90,9 +91,14 @@ spec:
       {{- include "headlamp.selectorLabels" . | nindent 6 }}
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
+      {{- if or .Values.podAnnotations $adminSettings }}
       annotations:
+        {{- with .Values.podAnnotations }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- with $adminSettings }}
+        checksum/settings: {{ toJson . | sha256sum }}
+        {{- end }}
       {{- end }}
       labels:
         {{- include "headlamp.selectorLabels" . | nindent 8 }}
@@ -303,6 +309,9 @@ spec:
             {{- with .Values.config.nodeShellNamespace }}
             - "-node-shell-namespace={{ . }}"
             {{- end }}
+            {{- with $adminSettings }}
+            - "-settings=/etc/headlamp/settings.json"
+            {{- end }}
             {{- if and .Values.config.inCluster .Values.config.unsafeUseServiceAccountToken }}
             - "-unsafe-use-service-account-token"
             {{- end }}
@@ -443,8 +452,14 @@ spec:
             failureThreshold: {{ .Values.probes.readinessProbe.failureThreshold | default 3 }}
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
-          {{- if or .Values.pluginsManager.enabled $clusterInventoryEnabled .Values.volumeMounts $tmpCtx.addMount }}
+          {{- if or .Values.pluginsManager.enabled $clusterInventoryEnabled $adminSettings .Values.volumeMounts $tmpCtx.addMount }}
           volumeMounts:
+            {{- with $adminSettings }}
+            - name: headlamp-admin-settings
+              mountPath: /etc/headlamp/settings.json
+              subPath: settings.json
+              readOnly: true
+            {{- end }}
             {{- if .Values.pluginsManager.enabled }}
             - name: plugins-dir
               mountPath: {{ .Values.config.pluginsDir }}
@@ -548,8 +563,13 @@ spec:
       {{- with .Values.priorityClassName }}
       priorityClassName: {{ . | quote }}
       {{- end }}
-      {{- if or .Values.pluginsManager.enabled $clusterInventoryEnabled .Values.volumes $tmpCtx.addVolume $pluginsTmpCtx.addVolume }}
+      {{- if or .Values.pluginsManager.enabled $clusterInventoryEnabled $adminSettings .Values.volumes $tmpCtx.addVolume $pluginsTmpCtx.addVolume }}
       volumes:
+        {{- with $adminSettings }}
+        - name: headlamp-admin-settings
+          configMap:
+            name: {{ include "headlamp.adminSettingsName" $ }}
+        {{- end }}
         {{- if .Values.pluginsManager.enabled }}
         - name: plugins-dir
           emptyDir: {}

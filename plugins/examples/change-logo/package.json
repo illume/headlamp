@@ -2,6 +2,21 @@
   "name": "change-logo",
   "version": "0.0.1",
   "description": "Changing the logo in Headlamp can be done like this.",
+  "headlamp": {
+    "settingsSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "url": {
+          "type": "string",
+          "format": "uri",
+          "title": "Logo URL",
+          "description": "Enter the URL of your logo."
+        }
+      }
+    }
+  },
   "scripts": {
     "start": "headlamp-plugin start",
     "build": "headlamp-plugin build",

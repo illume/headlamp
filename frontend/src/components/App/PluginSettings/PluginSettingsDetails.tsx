@@ -28,12 +28,19 @@ import { ConfigStore } from '../../../plugin/configStore';
 import { PluginInfo } from '../../../plugin/pluginsSlice';
 import { HeadlampEventType, useEventCallback } from '../../../redux/headlampEventSlice';
 import { useTypedSelector } from '../../../redux/hooks';
+import {
+  AdminSettingsState,
+  initialAdminSettingsState,
+} from '../../../settings/adminSettingsSlice';
+import { joinSettingsPath } from '../../../settings/settingsPath';
+import { getNestedValue } from '../../../settings/settingsResolution';
 import NotFoundComponent from '../../404';
 import { SectionHeader } from '../../common';
 import ActionButton from '../../common/ActionButton';
 import { ConfirmDialog } from '../../common/Dialog';
 import ErrorBoundary from '../../common/ErrorBoundary';
 import { SectionBox } from '../../common/SectionBox';
+import PluginSettingsSchemaForm from './PluginSettingsSchemaForm';
 import { usePluginDelete } from './usePluginDelete';
 
 // Helper function to open plugin folder in file explorer (Electron only)
@@ -71,6 +78,7 @@ const PluginSettingsDetailsInitializer = (props: { plugin: PluginInfo }) => {
   const store = new ConfigStore(plugin.name);
   const pluginConf = store.useConfig();
   const config = pluginConf() as { [key: string]: any };
+  const adminSettings = useTypedSelector(state => state.adminSettings);
   const deletePluginAction = usePluginDelete();
   const dispatchHeadlampEvent = useEventCallback(HeadlampEventType.PLUGIN_DETAILS_VIEW);
 
@@ -95,6 +103,7 @@ const PluginSettingsDetailsInitializer = (props: { plugin: PluginInfo }) => {
       plugin={plugin}
       onSave={handleSave}
       onDelete={handleDeleteConfirm}
+      adminSettings={adminSettings}
     />
   );
 };
@@ -154,13 +163,49 @@ export interface PluginSettingsDetailsPureProps {
   plugin: PluginInfo;
   onSave?: (data: { [key: string]: any }) => void;
   onDelete: () => void;
+  adminSettings?: AdminSettingsState;
 }
 
 export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps) {
-  const { config, plugin, onSave, onDelete } = props;
+  const { config, plugin, onSave, onDelete, adminSettings = initialAdminSettingsState } = props;
   const { t } = useTranslation(['translation']);
+  const settingsSchema = plugin.headlamp?.settingsSchema;
+  const hasCustomSettings =
+    isValidElement(plugin.settingsComponent) || typeof plugin.settingsComponent === 'function';
+  const usesSchemaForm = Boolean(settingsSchema && !hasCustomSettings);
   const [data, setData] = useState<{ [key: string]: any } | undefined>(config);
-  const enableSaveButton = useMemo(() => !_.isEqual(config, data), [config, data]);
+  const [isValid, setIsValid] = useState(!usesSchemaForm);
+  const dataToSave = useMemo(() => {
+    if (!usesSchemaForm) {
+      return data;
+    }
+    const result = settingsSchema?.additionalProperties === false ? {} : { ...(data ?? {}) };
+    for (const [key, field] of Object.entries<Record<string, any>>(
+      settingsSchema?.properties ?? {}
+    )) {
+      const path = joinSettingsPath('plugins', plugin.name, key);
+      const display = adminSettings.display[path];
+      if (display === 'hidden' || display === 'disabled') {
+        delete result[key];
+        continue;
+      }
+      if (data?.[key] !== undefined) {
+        result[key] = data[key];
+      }
+      if (
+        result[key] === undefined &&
+        getNestedValue(adminSettings.defaults, path) === undefined &&
+        field.default !== undefined
+      ) {
+        result[key] = field.default;
+      }
+    }
+    return result;
+  }, [adminSettings, data, plugin.name, settingsSchema, usesSchemaForm]);
+  const enableSaveButton = useMemo(
+    () => !_.isEqual(config, dataToSave) && (!usesSchemaForm || isValid),
+    [config, dataToSave, isValid, usesSchemaForm]
+  );
   const [openDeleteDialog, setOpenDeleteDialog] = useState(false);
   const history = useHistory();
   const [author, name] = plugin.name.includes('@')
@@ -172,8 +217,8 @@ export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps)
   }
 
   async function handleSave() {
-    if (onSave && data) {
-      await onSave(data);
+    if (onSave && dataToSave) {
+      await onSave(dataToSave);
       history.push('/settings/plugins');
     }
   }
@@ -203,6 +248,17 @@ export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps)
       } else {
         component = <Comp />;
       }
+    } else if (usesSchemaForm) {
+      component = (
+        <PluginSettingsSchemaForm
+          pluginName={plugin.name}
+          schema={settingsSchema!}
+          data={data ?? {}}
+          adminSettings={adminSettings}
+          onDataChange={onDataChange}
+          onValidityChange={setIsValid}
+        />
+      );
     } else {
       component = null;
     }
@@ -322,22 +378,23 @@ export function PluginSettingsDetailsPure(props: PluginSettingsDetailsPureProps)
           <ErrorBoundary>{component}</ErrorBoundary>
         </ScrollableBox>
       </SectionBox>
-      {plugin.isLoaded !== false && plugin.displaySettingsComponentWithSaveButton && (
-        <Box py={0}>
-          <Stack
-            direction="row"
-            spacing={2}
-            justifyContent="flex-start"
-            alignItems="center"
-            sx={{ borderTop: '2px solid', borderColor: 'divider', padding: '10px' }}
-          >
-            <Button variant="contained" disabled={!enableSaveButton} onClick={handleSave}>
-              {t('translation|Save')}
-            </Button>
-            <Button onClick={handleCancel}>{t('translation|Cancel')}</Button>
-          </Stack>
-        </Box>
-      )}
+      {plugin.isLoaded !== false &&
+        (plugin.displaySettingsComponentWithSaveButton || usesSchemaForm) && (
+          <Box py={0}>
+            <Stack
+              direction="row"
+              spacing={2}
+              justifyContent="flex-start"
+              alignItems="center"
+              sx={{ borderTop: '2px solid', borderColor: 'divider', padding: '10px' }}
+            >
+              <Button variant="contained" disabled={!enableSaveButton} onClick={handleSave}>
+                {t('translation|Save')}
+              </Button>
+              <Button onClick={handleCancel}>{t('translation|Cancel')}</Button>
+            </Stack>
+          </Box>
+        )}
     </>
   );
 }

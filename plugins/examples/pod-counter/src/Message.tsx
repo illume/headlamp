@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import { ConfigStore } from '@kinvolk/headlamp-plugin/lib';
+import { ConfigStore, Settings } from '@kinvolk/headlamp-plugin/lib';
 import { Typography } from '@mui/material';
 
 export interface MessageProps {
@@ -22,6 +22,8 @@ export interface MessageProps {
   msg: string;
   /** True if there's an error. */
   error: boolean;
+  /** Active cluster for resolving cluster-specific settings. */
+  cluster?: string | null;
 }
 
 /**
@@ -33,14 +35,18 @@ export interface MessageProps {
  * See https://storybook.js.org/docs/web-components/writing-stories/build-pages-with-storybook
  *
  */
-export default function Message({ msg, error }: MessageProps) {
+export default function Message({ msg, error, cluster }: MessageProps) {
   const config = new ConfigStore<{ errorMessage?: string }>('@kinvolk/headlamp-pod-counter');
   const useConf = config.useConfig();
   const conf = useConf();
 
   return (
     <Typography color="textPrimary" sx={{ fontStyle: 'italic' }}>
-      {!error ? `# Pods: ${msg}` : conf?.errorMessage ? conf?.errorMessage : 'Uh, pods!?'}
+      {!error
+        ? `# Pods: ${msg}`
+        : Settings.get('@kinvolk/headlamp-pod-counter', 'errorMessage', cluster ?? undefined) ??
+          conf?.errorMessage ??
+          'Uh, pods!?'}
     </Typography>
   );
 }

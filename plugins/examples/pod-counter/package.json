@@ -4,6 +4,21 @@
   "license": "Apache-2.0",
   "version": "0.0.1",
   "description": "Example Headlamp (Kubernetes GUI) plugin. Gets the number of pods in the cluster and displays that information in the top bar.",
+  "headlamp": {
+    "settingsSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "errorMessage": {
+          "type": "string",
+          "title": "Custom Error Message",
+          "description": "The message shown when the pod count cannot be retrieved.",
+          "default": "Uh... pods!?"
+        }
+      }
+    }
+  },
   "scripts": {
     "start": "headlamp-plugin start",
     "build": "headlamp-plugin build",

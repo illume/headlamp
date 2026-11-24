@@ -26,6 +26,13 @@ export type ProductMetadata = {
   protocols?: Record<string, unknown>;
 };
 
+export function readMacOSAppId(manifest: unknown): string | undefined {
+  const productAppId = readProductMetadata(manifest)?.appId;
+  const platforms = (manifest as { platforms?: { mac?: { appId?: unknown } } }).platforms;
+  const macAppId = platforms?.mac?.appId;
+  return typeof macAppId === 'string' && macAppId !== '' ? macAppId : productAppId;
+}
+
 /**
  * Reads and validates product metadata without depending on build-time paths.
  *

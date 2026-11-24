@@ -21,6 +21,49 @@ import path from 'path';
 export const SETTINGS_PATH = path.join(app?.getPath('userData') || 'testing', 'settings.json');
 const DEVELOPMENT_PLUGINS_SETTING = 'developmentPlugins';
 
+export function getAdminSettingsName(productName: string = 'Headlamp'): string {
+  return (
+    productName
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-|-$/g, '') || 'headlamp'
+  );
+}
+
+function getAdminSettingsDirectoryName(productName: string, platform: NodeJS.Platform): string {
+  const safeName = productName
+    .trim()
+    .replace(/[<>:"/\\|?*\x00-\x1f]/g, '-')
+    .replace(/^\.+/, '')
+    .replace(/[. ]+$/, '');
+  if (!safeName) {
+    return platform === 'linux' ? 'headlamp' : 'Headlamp';
+  }
+  return platform === 'linux' ? getAdminSettingsName(safeName) : safeName;
+}
+
+export function getAdminSettingsPath(
+  platform: NodeJS.Platform = process.platform,
+  env: NodeJS.ProcessEnv = process.env,
+  productName = 'Headlamp'
+): string | undefined {
+  if (env.HEADLAMP_ADMIN_SETTINGS) {
+    return env.HEADLAMP_ADMIN_SETTINGS;
+  }
+  const settingsName = getAdminSettingsDirectoryName(productName, platform);
+  if (platform === 'darwin') {
+    return path.posix.join('/Library/Application Support', settingsName, 'settings.json');
+  }
+  if (platform === 'win32') {
+    return path.win32.join(env.ProgramData || 'C:\\ProgramData', settingsName, 'settings.json');
+  }
+  if (platform === 'linux') {
+    return path.posix.join('/etc', settingsName, 'settings.json');
+  }
+  return undefined;
+}
+
 function asSettingsObject(value: unknown): Record<string, any> {
   return value !== null && typeof value === 'object' && !Array.isArray(value)
     ? (value as Record<string, any>)

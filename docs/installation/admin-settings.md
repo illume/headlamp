@@ -1,0 +1,199 @@
+---
+title: Admin settings
+sidebar_label: Admin settings
+---
+
+# Admin settings
+
+Headlamp accepts a JSON admin settings file. It can set defaults for Headlamp and
+plugins and can prevent users from changing selected values.
+
+See the canonical [plugin settings guide](../development/plugins/settings.md)
+for package naming, schemas, user-visible behavior, precedence, and live
+Kubernetes ConfigMap or Secret settings.
+
+```json
+{
+  "defaults": {
+    "tableRowsPerPageOptions": [20, 50, 100],
+    "plugins": {
+      "example-plugin": {
+        "endpoint": {
+          "$value": "https://api.example.com",
+          "$display": "disabled"
+        }
+      }
+    }
+  }
+}
+```
+
+`$display` may be `normal` (the default), `disabled`, or `hidden`. Disabled and
+hidden values ignore a user's local override. These modes control the UI; they
+are not a security boundary and settings delivered to the browser must not
+contain secrets.
+
+Plugins read effective values with `Settings.get(pluginName, key)` from
+`@kinvolk/headlamp-plugin/lib`. A settings form generated from a plugin's
+`headlamp.settingsSchema` automatically applies admin defaults and display
+modes.
+
+Node-shell image, namespace, and enablement use
+`defaults.clusters["*"].nodeShellTerminal.{linuxImage,namespace,isEnabled}`.
+For example, this keeps debugger pods in an administrator-selected namespace:
+
+```json
+{
+  "defaults": {
+    "clusters": {
+      "*": {
+        "nodeShellTerminal": {
+          "namespace": { "$value": "node-debugging", "$display": "disabled" }
+        }
+      }
+    }
+  }
+}
+```
+
+These settings apply both to the settings controls and to new node-shell
+sessions. Enabled cluster sources can override these defaults; Kubernetes RBAC
+still controls whether the user can create or attach to a debugger pod.
+
+## Helm
+
+Set `config.settings` in the Headlamp chart. The chart creates and mounts the
+admin settings file and passes it to the backend:
+
+```yaml
+config:
+  settings:
+    defaults:
+      plugins:
+        example-plugin:
+          endpoint:
+            $value: https://api.example.com
+            $display: disabled
+```
+
+When the plugin manager installs the plugins, settings can stay next to each
+plugin declaration:
+
+```yaml
+pluginsManager:
+  enabled: true
+  config:
+    plugins:
+    - name: example-plugin
+      source: https://artifacthub.io/packages/headlamp/example/example-plugin
+      settings:
+        endpoint: https://api.example.com
+        retries: 3
+```
+
+The chart merges these values into `defaults.plugins.example-plugin`. Explicit
+values in `config.settings.defaults.plugins` take precedence, so existing
+deployments remain compatible and administrators can override a manager
+default without editing the plugin list. The legacy `configContent` YAML string
+remains supported, but structured `config` is preferred because Helm can
+validate and document known plugin settings.
+
+If the manager name differs from the plugin's `package.json` name, add
+`settingsName` with the package name. Headlamp uses that canonical name when
+the plugin reads its settings.
+
+## Desktop organization deployment
+
+The desktop app reads a machine-wide file from:
+
+- macOS: `/Library/Application Support/Headlamp/settings.json`
+- Windows: `%ProgramData%\Headlamp\settings.json`
+- Linux: `/etc/headlamp/settings.json`
+
+For branded desktop builds, the product name from the build manifest scopes
+these locations. The product name is used as the directory on macOS and Windows
+and normalized to a lowercase directory name on Linux. For example, `Example
+Desktop` uses `/Library/Application Support/Example Desktop/settings.json`,
+`%ProgramData%\Example Desktop\settings.json`, and
+`/etc/example-desktop/settings.json`. The standard Headlamp locations remain
+unchanged.
+
+Deploy this file with the same device-management tool used to deploy Headlamp,
+for example a Jamf policy or other MDM package on macOS, or Microsoft Intune,
+Configuration Manager, or Group Policy on Windows. Restrict write access to
+administrators so users cannot replace the policy file.
+
+A managed launcher can select another absolute path with the
+`HEADLAMP_ADMIN_SETTINGS` environment variable. Headlamp uses the file only when
+it exists and refuses to start its backend if the JSON is invalid.
+
+## Enterprise desktop policy
+
+The desktop app also reads the complete JSON policy from these machine policy
+values:
+
+- Windows: `HKLM\Software\Policies\<product-name-slug>`, string value
+  `PolicyJSON` (for example, `HKLM\Software\Policies\example-desktop`)
+- macOS: the app bundle identifier's managed preference domain, string key
+  `PolicyJSON` (for Headlamp, `com.microsoft.Headlamp`)
+
+This allows Intune, Group Policy, Jamf, or another MDM to deploy the same policy
+without a separate file. On macOS, deploy the preference through a configuration
+profile; do not write directly to `/Library/Managed Preferences`.
+
+The document may include a typed, allowlisted `backend` section:
+
+```json
+{
+  "defaults": {
+    "plugins": {
+      "@example/metrics": {
+        "endpoint": "https://metrics.example.com"
+      }
+    }
+  },
+  "backend": {
+    "log-level": "warn",
+    "cache-enabled": true
+  }
+}
+```
+
+Supported backend keys are `cache-enabled`, `default-dark-theme`,
+`default-light-theme`, `force-theme`, `log-level`, `node-shell-image`,
+`node-shell-namespace`, `pod-debug-image`, and `watch-plugins-changes`. Other
+keys and values with the wrong type are ignored;
+policy cannot change sensitive process, authentication, TLS, listening, or
+plugin-directory options.
+
+Backend configuration precedence is:
+
+1. command-line flags;
+2. `HEADLAMP_CONFIG_*` environment variables;
+3. managed registry, preference, or file policy;
+4. backend defaults.
+
+At startup, Headlamp logs one `[managed-policy]` diagnostic per supported
+backend key with its effective source (`command-line`, `environment`,
+`windows-registry`, `macos-managed-preferences`, `managed-file`, or `default`).
+Values are deliberately omitted from diagnostics because they may contain
+organization-specific information.
+
+An existing `HEADLAMP_ADMIN_SETTINGS` file takes precedence over registry or
+managed-preference policy. Registry or managed-preference policy takes
+precedence over the conventional machine-wide file.
+
+## Scope and follow-up work
+
+This configures shared defaults, not writable per-user storage. Cross-device
+sync, identity/group/role overlays, labeled-namespace discovery, and plugin
+allowlists are not implemented. Plugins must adopt the settings API; configuring
+an arbitrary key does not make an existing plugin consume it.
+
+Cluster sources refresh every minute, but static files require a backend restart
+(Helm settings changes trigger a rollout). Generated plugin forms and known
+plugin chart schemas validate plugin values; arbitrary core settings still lack
+a shared, versioned schema. Reactive plugin hooks, per-read remote selection,
+source diagnostics, and additional built-in settings integrations remain
+follow-up work. Neither UI hiding nor browser-delivered Secret data provides
+backend-only secret storage.

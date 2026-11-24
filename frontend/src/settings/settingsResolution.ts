@@ -15,6 +15,7 @@
  */
 
 import type { AdminSettingsState, DisplayMode, SettingSource } from './adminSettingsSlice';
+import { joinSettingsPath, splitSettingsPath } from './settingsPath';
 
 /**
  * Retrieves a value from a nested object using a dotted path.
@@ -24,7 +25,7 @@ export function getNestedValue(obj: Record<string, any> | null | undefined, path
     return undefined;
   }
 
-  const parts = path.split('.');
+  const parts = splitSettingsPath(path);
   let current: any = obj;
 
   for (const part of parts) {
@@ -90,7 +91,7 @@ function stripClusterPrefix(path: string, clusterName: string): string {
     return path.slice(wildcardPrefix.length);
   }
 
-  const namedPrefix = `clusters.${clusterName}.`;
+  const namedPrefix = `${joinSettingsPath('clusters', clusterName)}.`;
   if (path.startsWith(namedPrefix)) {
     return path.slice(namedPrefix.length);
   }

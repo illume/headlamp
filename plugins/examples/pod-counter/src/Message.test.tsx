@@ -18,9 +18,20 @@
 // @see https://testing-library.com/docs/react-testing-library/intro
 
 import '@testing-library/jest-dom';
+import * as PluginLib from '@kinvolk/headlamp-plugin/lib';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { vi } from 'vitest';
 import Message from './Message';
+
+vi.mock('@kinvolk/headlamp-plugin/lib', () => ({
+  ConfigStore: class {
+    useConfig() {
+      return () => undefined;
+    }
+  },
+  Settings: { get: () => undefined },
+}));
 
 describe('Message', () => {
   it('renders a message', async () => {
@@ -46,5 +57,24 @@ describe('Message', () => {
 
     // Assert
     expect(screen.getByText(/Uh, pods!?/i)).toBeInTheDocument();
+  });
+
+  it('uses the active cluster when resolving an administrator error message', () => {
+    const settings = (PluginLib as any).Settings;
+    const getSetting = vi
+      .spyOn(settings, 'get')
+      .mockImplementation((_pluginName, _key, cluster) =>
+        cluster === 'cluster-b' ? 'Cluster-specific error' : undefined
+      );
+
+    render(<Message msg="Hello World" error cluster="cluster-b" />);
+
+    expect(screen.getByText('Cluster-specific error')).toBeInTheDocument();
+    expect(getSetting).toHaveBeenCalledWith(
+      '@kinvolk/headlamp-pod-counter',
+      'errorMessage',
+      'cluster-b'
+    );
+    getSetting.mockReset();
   });
 });

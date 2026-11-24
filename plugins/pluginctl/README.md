@@ -44,6 +44,9 @@ plugins:
   - name: my-plugin
     source: https://artifacthub.io/packages/headlamp/test-123/my-plugin
     version: 1.0.0
+    settings:
+      endpoint: https://api.example.com
+      retries: 3
   - name: another-plugin
     source: https://artifacthub.io/packages/headlamp/test-123/another-plugin
     dependencies:
@@ -52,6 +55,13 @@ installOptions:
   parallel: true
   maxConcurrent: 3
 ```
+
+`settings` supplies organization defaults for that plugin when this file is used
+through the Headlamp Helm chart's `pluginsManager.configContent`. Values support
+the same `$value`, `$display`, and `$clusterDefined` wrappers as
+`config.settings.defaults.plugins`. Explicit values under
+`config.settings.defaults.plugins` take precedence, which allows chart
+administrators to override settings shipped alongside the plugin list.
 
 ## Available Classes
 

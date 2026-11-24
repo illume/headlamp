@@ -113,6 +113,41 @@ config:
 
 ## Configuration
 
+### Plugin settings
+
+Prefer `pluginsManager.config` over the legacy `configContent` string. The
+structured form is validated by Helm tooling and supplies organization defaults
+for each plugin:
+
+```yaml
+pluginsManager:
+  enabled: true
+  config:
+    plugins:
+      - name: example-plugin
+        source: https://artifacthub.io/packages/headlamp/example/example-plugin
+        settings:
+          endpoint: https://api.example.com
+```
+
+Known plugins can expose `headlamp.settingsSchema` in their package manifest.
+The chart imports curated schemas listed in
+`plugin-settings-schema-sources.json`, providing plugin-specific validation and
+documentation in `values.schema.json`. Maintainers can add official or external
+plugins using an immutable package-manifest URL, then run:
+
+```sh
+npm run plugins:sync-settings-schemas
+```
+
+The command warns about plugins that do not yet publish a schema. Sources are
+pinned so chart schema generation is reproducible.
+
+When the plugin manager `name` differs from the plugin's `package.json` name,
+set `settingsName` to the package name. This keeps organization defaults under
+the identifier used by the plugin at runtime; synced schemas require it for
+known aliases.
+
 ### Core Parameters
 
 | Key | Type | Default | Description |
@@ -133,6 +168,7 @@ config:
 | config.unsafeUseServiceAccountToken | bool | `false` | UNSAFE: authenticate every user as the pod's service account when running in-cluster. Only safe behind an auth proxy |
 | config.serviceAccountTokenPath | string | `""` | Path to the service account token file. Used only when `unsafeUseServiceAccountToken` is true |
 | config.pluginsDir  | string | `"/headlamp/plugins"` | Directory to load Headlamp plugins from                                   |
+| config.settings | object | `null` | Organization-wide Headlamp and plugin settings |
 | config.staticPlugins.enabled | bool | `true` | Serve the bundled static plugins shipped in the image (e.g. the Prometheus "Show Prometheus metrics" plugin). Set to false to disable them |
 | config.enableHelm  | bool   | `false`               | Enable Helm operations like install, upgrade and uninstall of Helm charts |
 | config.podDebugImage | string | `""`                | Default image to use when creating pod debug containers                    |

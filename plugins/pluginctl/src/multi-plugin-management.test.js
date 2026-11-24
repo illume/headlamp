@@ -68,6 +68,44 @@ plugins:
       expect(result.plugins[0].name).toBe(PLUGIN_DATA[1].name);
     });
 
+    it('should preserve plugin settings in a valid configuration', async () => {
+      const config = `
+plugins:
+  - name: ${PLUGIN_DATA[1].name}
+    source: ${PLUGIN_DATA[1].source}
+    settingsName: "@example/${PLUGIN_DATA[1].name}"
+    settings:
+      endpoint:
+        $value: https://example.com
+        $display: disabled
+`;
+      await fsp.writeFile(configPath, config);
+
+      const result = await installer.validateConfig(configPath);
+
+      expect(result.plugins[0].settings).toEqual({
+        endpoint: {
+          $value: 'https://example.com',
+          $display: 'disabled',
+        },
+      });
+      expect(result.plugins[0].settingsName).toBe(`@example/${PLUGIN_DATA[1].name}`);
+    });
+
+    it('should reject non-object plugin settings', async () => {
+      const config = `
+plugins:
+  - name: ${PLUGIN_DATA[1].name}
+    source: ${PLUGIN_DATA[1].source}
+    settings: invalid
+`;
+      await fsp.writeFile(configPath, config);
+
+      await expect(installer.validateConfig(configPath)).rejects.toThrow(
+        'Configuration validation failed'
+      );
+    });
+
     it('should reject invalid configuration', async () => {
       const config = `
 plugins:

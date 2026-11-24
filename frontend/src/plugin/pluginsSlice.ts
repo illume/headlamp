@@ -48,6 +48,8 @@ export interface PluginPackageHeadlampConfig {
   enabledByDefault?: boolean;
   /** Array of supported locales for i18n. */
   i18n?: string[];
+  /** JSON Schema used to generate and validate the plugin settings form. */
+  settingsSchema?: Record<string, any>;
 }
 
 /**
